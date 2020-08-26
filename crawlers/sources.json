@@ -1,0 +1,38 @@
+{
+  "digimovies": {
+    "movie_url": "https://digimoviez.org/page/",
+    "serial_url": "https://digimoviez.org/serie/page/",
+    "page_count": 3,
+    "serial_page_count": 2
+  },
+  "film2media": {
+    "movie_url": "https://www.film2media.top/page/",
+    "page_count": 3
+  },
+  "film2movie": {
+    "movie_url": "https://www.film2movie.asia/page/",
+    "page_count": 3
+  },
+  "mrmovie": {
+    "movie_url": "https://mrmovie.pw/page/",
+    "serial_url": "https://mrmovie.pw/series/page/",
+    "page_count": 3,
+    "serial_page_count": 2
+  },
+  "salamdl": {
+    "movie_url": "https://salamdl.ws/page/",
+    "page_count": 5
+  },
+  "topmovies": {
+    "movie_url": "https://topmoviez.space/page/",
+    "serial_url": "https://topmoviez.space/series/page/",
+    "page_count": 3,
+    "serial_page_count": 2
+  },
+  "valamovie": {
+    "movie_url": "https://valamovie.pw/page/",
+    "serial_url": "https://valamovie.pw/series/page/",
+    "page_count": 4,
+    "serial_page_count": 2
+  }
+}
