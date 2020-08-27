@@ -72,7 +72,7 @@ function getMatchCases(title_array, mode) {
 }
 
 function check_format(link) {
-    let formats = ['mkv', 'mp4', 'avi', 'mov', 'flv', 'wmv'];
+    let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv'];
     let link_array = link.split('.');
     let link_format = link_array.pop();
     for (let i = 0, l = formats.length; i < l; i++) {

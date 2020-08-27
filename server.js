@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const compression = require('compression');
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
@@ -11,12 +12,14 @@ const port = process.env.PORT || 3000;
 import like from './routes/like';
 import title from './routes/title';
 import update from './routes/update';
+import {openFilesAgain} from "./data";
 //--------------------------------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(morgan('combined'));
+app.use(compression());
 //--------------------------------------
 //--------------------------------------
 
@@ -35,6 +38,8 @@ const checkJwt = jwt({
 });
 
 // app.use(checkJwt);// todo
+
+// openFilesAgain();// todo
 
 app.use('/titles', title);
 app.use('/likes', like);
