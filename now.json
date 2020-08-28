@@ -6,6 +6,21 @@
       "src": "/test",
       "dest": "/server.js",
       "methods": ["GET"]
+    },
+    {
+      "src": "updates/:type/titles/:count?",
+      "dest": "/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "updates/:type/title/:title",
+      "dest": "/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "updates/:type/:count?",
+      "dest": "/server.js",
+      "methods": ["GET"]
     }
   ]
 }
