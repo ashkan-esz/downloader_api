@@ -1,4 +1,5 @@
 import express from 'express';
+const http = require('http');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -44,14 +45,20 @@ app.get('/test', (req, res) => {
     res.json('test route happend');
 });
 
-app.use('/titles', title);
-app.use('/likes', like);
-app.use('/updates', update);
+// app.use('/titles', title);
+// app.use('/likes', like);
+app.use(update);
 
 
 app.use(function(req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
 });
+
+
+// const server = http.createServer(app);
+// server.listen(port, () => {
+//     console.log(`http://localhost:${port}`)
+// })
 
 app.listen(port, () => {
     console.log(`http://localhost:${port}`)
