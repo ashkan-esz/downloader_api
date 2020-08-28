@@ -13,6 +13,8 @@ const port = process.env.PORT || 3000;
 import like from './routes/like';
 import title from './routes/title';
 import update from './routes/update';
+import {getMovieUpdates, getSerialUpdates} from "./data";
+import router from "./routes/update";
 //--------------------------------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -45,9 +47,26 @@ app.get('/test', (req, res) => {
     res.json('test route happend');
 });
 
+
+app.get('/:type/:count?', (req, res) => {
+    let type = req.params.type;
+    let count = req.params.count || 50;
+
+    let updates = (type === 'serial') ? getSerialUpdates() : getMovieUpdates();
+
+    let result = updates.slice(0, Math.min(Number(count), 51, updates.length))
+
+    if (result.length !== 0) {
+        res.json(result);
+    } else {
+        res.status(404).send('title not found');
+    }
+
+});
+
 // app.use('/titles', title);
 // app.use('/likes', like);
-app.use(update);
+// app.use('/updates', update);
 
 
 app.use(function(req, res) {
