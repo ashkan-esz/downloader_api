@@ -51,17 +51,7 @@ app.get('/test', (req, res) => {
 app.get('/:type/:count?', (req, res) => {
     let type = req.params.type;
     let count = req.params.count || 50;
-
-    let updates = (type === 'serial') ? getSerialUpdates() : getMovieUpdates();
-
-    let result = updates.slice(0, Math.min(Number(count), 51, updates.length))
-
-    if (result.length !== 0) {
-        res.json(result);
-    } else {
-        res.status(404).send('title not found');
-    }
-
+    res.json(type);
 });
 
 // app.use('/titles', title);
