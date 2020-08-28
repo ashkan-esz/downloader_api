@@ -51,6 +51,8 @@ router.get('/:type/:count?', (req, res) => {
     }catch (error){
         let temp = [];
         temp.push(fs.readdirSync('./'))
+        temp.push(fs.readdirSync('../'))
+        temp.push(fs.readdirSync('../../'))
         res.json(temp);
     }
 
