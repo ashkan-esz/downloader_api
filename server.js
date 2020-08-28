@@ -12,7 +12,6 @@ const port = process.env.PORT || 3000;
 import like from './routes/like';
 import title from './routes/title';
 import update from './routes/update';
-import {openFilesAgain} from "./data";
 //--------------------------------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -40,6 +39,10 @@ const checkJwt = jwt({
 // app.use(checkJwt);// todo
 
 // openFilesAgain();// todo
+
+app.get('/test', (req, res) => {
+    res.json('test route happend');
+});
 
 app.use('/titles', title);
 app.use('/likes', like);
