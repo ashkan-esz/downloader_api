@@ -1,5 +1,4 @@
 import express from 'express';
-const http = require('http');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -13,8 +12,6 @@ const port = process.env.PORT || 3000;
 import like from './routes/like';
 import title from './routes/title';
 import update from './routes/update';
-import {getMovieUpdates, getSerialUpdates} from "./data";
-import router from "./routes/update";
 //--------------------------------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -47,28 +44,16 @@ app.get('/test', (req, res) => {
     res.json('test route happend');
 });
 
-// app.use(update);
-app.use('/updates', update);
-// app.get('/:type/:count?', (req, res) => { //this works
-//     let type = req.params.type;
-//     let count = req.params.count || 50;
-//     res.json(type);
-// });
 
 // app.use('/titles', title);
 // app.use('/likes', like);
-// app.use('/updates', update);
+app.use('/updates', update);
 
 
 app.use(function(req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
 });
 
-
-// const server = http.createServer(app);
-// server.listen(port, () => {
-//     console.log(`http://localhost:${port}`)
-// })
 
 app.listen(port, () => {
     console.log(`http://localhost:${port}`)

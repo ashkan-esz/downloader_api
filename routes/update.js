@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router();
 import {getSerialUpdates, getMovieUpdates} from "../data";
-
+const fs = require('fs');
 
 router.get('/:type/titles/:count?', (req, res) => {
     let type = req.params.type;
@@ -43,18 +43,26 @@ router.get('/:type/:count?', (req, res) => {
     let type = req.params.type;
     let count = req.params.count || 50;
 
-    // res.json(type);
 
-    let updates = (type === 'serial') ? getSerialUpdates() : getMovieUpdates();
-
-    let result = updates.slice(0, Math.min(Number(count), 51, updates.length))
-
-    if (result.length !== 0) {
-        res.json(result);
-    } else {
-        res.status(404).send('title not found');
+    try {
+        let json_file = fs.readFileSync('./crawlers/serial_files/serial_updates.json', 'utf8')
+        let serial_updates = JSON.parse(json_file);
+        res.json(serial_updates)
+    }catch (error){
+        res.json(error);
     }
 
+    // res.json(type);
+
+    // let updates = (type === 'serial') ? getSerialUpdates() : getMovieUpdates();
+    //
+    // let result = updates.slice(0, Math.min(Number(count), 51, updates.length))
+    //
+    // if (result.length !== 0) {
+    //     res.json(result);
+    // } else {
+    //     res.status(404).send('title not found');
+    // }
 });
 
 
