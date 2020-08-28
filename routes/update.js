@@ -37,7 +37,6 @@ router.get('/:type/title/:title', (req, res) => {
     res.status(404).send('title not found');
 });
 
-
 router.get('/:type/:count?', (req, res) => {
     let type = req.params.type;
     let count = req.params.count || 50;

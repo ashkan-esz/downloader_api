@@ -12,6 +12,7 @@ const port = process.env.PORT || 3000;
 import like from './routes/like';
 import title from './routes/title';
 import update from './routes/update';
+import start_crawling from "./start_crawling";
 //--------------------------------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -49,6 +50,18 @@ app.use('/titles', title);
 app.use('/likes', like);
 app.use('/updates', update);
 
+app.get('/search/:password', async (req, res) => {
+    let password = req.params.password;
+    let start = new Date();
+    if (password === 550010) {
+        start_crawling().then(response => {
+            let end = new Date();
+            res.json('searching done : ', (end.getTime() - start.getTime()))
+        });
+    } else {
+        res.json('wrong password');
+    }
+});
 
 app.use(function(req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
