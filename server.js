@@ -53,7 +53,7 @@ app.use('/updates', update);
 app.get('/search/:password', async (req, res) => {
     let password = req.params.password;
     let start = new Date();
-    if (password === 550010) {
+    if (Number(password) === 550010) {
         start_crawling().then(response => {
             let end = new Date();
             res.json('searching done : ', (end.getTime() - start.getTime()))
