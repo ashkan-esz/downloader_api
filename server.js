@@ -47,12 +47,12 @@ app.get('/test', (req, res) => {
     res.json('test route happend');
 });
 
-
-app.get('/:type/:count?', (req, res) => {
-    let type = req.params.type;
-    let count = req.params.count || 50;
-    res.json(type);
-});
+app.use(update);
+// app.get('/:type/:count?', (req, res) => { //this works
+//     let type = req.params.type;
+//     let count = req.params.count || 50;
+//     res.json(type);
+// });
 
 // app.use('/titles', title);
 // app.use('/likes', like);
