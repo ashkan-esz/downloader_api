@@ -45,11 +45,15 @@ router.get('/:type/:count?', (req, res) => {
 
 
     try {
-        let json_file = fs.readFileSync('./crawlers/serial_files/serial_updates.json', 'utf8')
+        let json_file = fs.readFileSync('crawlers/serial_files/serial_updates.json', 'utf8')
         let serial_updates = JSON.parse(json_file);
         res.json(serial_updates)
     }catch (error){
-        res.json(error);
+        let temp = [];
+        temp.push(fs.readdirSync(''))
+        temp.push(fs.readdirSync('./'))
+        temp.push(fs.readdirSync('./crawlers'))
+        res.json(temp);
     }
 
     // res.json(type);
