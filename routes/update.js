@@ -50,9 +50,7 @@ router.get('/:type/:count?', (req, res) => {
         res.json(serial_updates)
     }catch (error){
         let temp = [];
-        temp.push(fs.readdirSync(''))
         temp.push(fs.readdirSync('./'))
-        temp.push(fs.readdirSync('./crawlers'))
         res.json(temp);
     }
 
