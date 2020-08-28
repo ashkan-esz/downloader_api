@@ -3,22 +3,12 @@
   "builds": [{ "src": "server.js", "use": "@now/node-server" }],
   "routes": [
     {
-      "src": "/test",
-      "dest": "/server.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "updates/:type/titles/:count?",
-      "dest": "/server.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "updates/:type/title/:title",
-      "dest": "/server.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "updates/:type/:count?",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Accept"
+      },
+      "src": "/*",
       "dest": "/server.js",
       "methods": ["GET"]
     }
