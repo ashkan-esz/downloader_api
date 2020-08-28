@@ -45,8 +45,8 @@ app.get('/test', (req, res) => {
 });
 
 
-// app.use('/titles', title);
-// app.use('/likes', like);
+app.use('/titles', title);
+app.use('/likes', like);
 app.use('/updates', update);
 
 
