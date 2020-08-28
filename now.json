@@ -19,7 +19,7 @@
         "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Accept"
       },
       "src": "/updates",
-      "dest": "/routes/update.js",
+      "dest": "/server.js",
       "methods": ["GET"]
     }
   ]
