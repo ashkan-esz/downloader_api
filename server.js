@@ -47,7 +47,8 @@ app.get('/test', (req, res) => {
     res.json('test route happend');
 });
 
-app.use(update);
+// app.use(update);
+app.use('/updates', update);
 // app.get('/:type/:count?', (req, res) => { //this works
 //     let type = req.params.type;
 //     let count = req.params.count || 50;
