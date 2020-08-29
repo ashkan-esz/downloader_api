@@ -8,6 +8,8 @@ const compression = require('compression');
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
+import cron from "node-cron";
+import getDatabase from './mongoDB';
 //-------------------------------------
 import like from './routes/like';
 import title from './routes/title';
@@ -41,27 +43,39 @@ const checkJwt = jwt({
 
 // openFilesAgain();// todo
 
-app.get('/test', (req, res) => {
-    res.json('test route happend');
+
+let search_flag = true;
+cron.schedule("0-29 */3 * * *", () => {
+    if (search_flag) {
+        console.log(`this message logs every minute`);//todo
+    }
+    search_flag = false;
+}, {});
+
+cron.schedule("30-59 */3 * * *", () => {
+    search_flag = true;
+}, {});
+
+//--------------------------------
+//--------------------------------
+app.get('/test/db/:count',async (req,res)=>{
+    let count = Number(req.params.count);
+    let startTime = new Date();
+    const database = await getDatabase();
+    const collection = await database.collection("movies").find({},{limit:count}).toArray();
+    let endTime = new Date();
+    console.log('======= time : ',(endTime.getTime()-startTime.getTime()))
+    return res.json(collection);
 });
+//---------------------------------
+//---------------------------------
+
 
 
 app.use('/titles', title);
 app.use('/likes', like);
 app.use('/updates', update);
 
-app.get('/search/:password', async (req, res) => {
-    let password = req.params.password;
-    let start = new Date();
-    if (Number(password) === 550010) {
-        start_crawling().then(response => {
-            let end = new Date();
-            res.json('searching done : ', (end.getTime() - start.getTime()))
-        });
-    } else {
-        res.json('wrong password');
-    }
-});
 
 app.use(function(req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
