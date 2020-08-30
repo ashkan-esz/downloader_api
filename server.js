@@ -58,15 +58,22 @@ cron.schedule("30-59 */3 * * *", () => {
 
 //--------------------------------
 //--------------------------------
-app.get('/test/db/:count',async (req,res)=>{
-    let count = Number(req.params.count);
-    let startTime = new Date();
-    const database = await getDatabase();
-    const collection = await database.collection("movies").find({},{limit:count}).toArray();
-    let endTime = new Date();
-    console.log('======= time : ',(endTime.getTime()-startTime.getTime()))
-    return res.json(collection);
-});
+// todo : update movie/serial files
+// todo : push new files
+// todo : insert this titles to mongodb from heroku with api
+// todo : rebuild 'save_changes.js' file to work with database not files
+// todo : rebuild 'data.js' file to work with database not files
+// todo : rebuild api end points
+//--------------------------------
+//--------------------------------
+// app.get('/test/db/insert/serial',async (req,res)=>{
+//     let startTime = new Date();
+//     const database = await getDatabase();
+//     const collection = await database.collection("movies").find({},{}).toArray();
+//     let endTime = new Date();
+//     console.log('======= time : ',(endTime.getTime()-startTime.getTime()))
+//     return res.json(collection);
+// });
 //---------------------------------
 //---------------------------------
 

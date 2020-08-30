@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node -r esm server.js",
-    "start_dev": "nodemon -r esm server.js"
+    "start_dev": "nodemon -r esm server.js",
+    "test" : "node -r esm test.js"
   },
   "dependencies": {
     "axios": "^0.19.2",
