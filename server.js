@@ -10,6 +10,8 @@ const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
 import cron from "node-cron";
 import getDatabase from './mongoDB';
+const MongoClient = require('mongodb').MongoClient;
+const fs = require('fs');
 //-------------------------------------
 import like from './routes/like';
 import title from './routes/title';
@@ -64,18 +66,38 @@ cron.schedule("30-59 */3 * * *", () => {
 // todo : rebuild 'save_changes.js' file to work with database not files
 // todo : rebuild 'data.js' file to work with database not files
 // todo : rebuild api end points
-//--------------------------------
-//--------------------------------
-// app.get('/test/db/insert/serial',async (req,res)=>{
-//     let startTime = new Date();
-//     const database = await getDatabase();
-//     const collection = await database.collection("movies").find({},{}).toArray();
-//     let endTime = new Date();
-//     console.log('======= time : ',(endTime.getTime()-startTime.getTime()))
-//     return res.json(collection);
-// });
-//---------------------------------
-//---------------------------------
+//------------------------------------------------
+//------------------------------------------------
+app.get('/test/db/insert/:type',async (req,res)=> {
+    let type = req.params.type;
+    const uri = "mongodb://ashkanaz2828:AshkAnAz2828@cluster0-shard-00-00.hbba0.mongodb.net:27017,cluster0-shard-00-01.hbba0.mongodb.net:27017,cluster0-shard-00-02.hbba0.mongodb.net:27017/download?ssl=true&replicaSet=atlas-10ry9r-shard-0&authSource=admin&retryWrites=true&w=majority";
+    let connection = await MongoClient.connect(uri, {useUnifiedTopology: true, useNewUrlParser: true});
+
+    let dir = (type === 'serial') ? './crawlers/serial_files/' : './crawlers/movie_files/';
+    let collection_name = (type === 'serial') ? 'serials' : 'movies';
+    let files = fs.readdirSync(dir);
+    files = files.filter(value => value !== 'serial_likes.json' && value !== 'movie_likes.json' &&
+        value !== 'serial_updates.json' && value !== 'movie_updates.json')
+    files = files.sort((a, b) => a.match(/(\d+)/)[0] - b.match(/(\d+)/)[0])
+
+    for (let k = files.length - 1; k >= 0; k--) {
+
+        let address = dir + files[k];
+        let json_file = fs.readFileSync(address, 'utf8')
+        let saved_array = JSON.parse(json_file);
+
+        let startTime = new Date();
+        await connection.db().collection(collection_name).insertMany(saved_array).then(response => {
+            let endTime = new Date();
+            console.log(`---------time ${address} : `, (endTime.getTime() - startTime.getTime()))
+        })
+
+    }
+
+    return res.json(`inserting ${type} done!`);
+});
+//------------------------------------------------
+//------------------------------------------------
 
 
 
