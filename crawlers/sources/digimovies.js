@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
-const save = require('../save_changes');
+const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
@@ -20,7 +20,7 @@ async function search_title_serial(link, i) {
             if (save_link.length > 0) {
                 let result = sort_links(save_link);
                 if (result.length > 0)
-                    save(title_array, page_link, result, persian_plot, 'serial')
+                    await save(title_array, page_link, result, persian_plot, 'serial');
             }
         }
     }
@@ -37,7 +37,7 @@ async function search_title_movie(link, i) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'movie',
                 get_file_size, get_persian_plot);
             if (save_link.length > 0) {
-                save(title_array, page_link, save_link, persian_plot, 'movie')
+                await save(title_array, page_link, save_link, persian_plot, 'movie');
             }
         }
     }

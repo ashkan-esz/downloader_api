@@ -1,7 +1,7 @@
 {
   "digimovies": {
-    "movie_url": "https://digimoviez.org/page/",
-    "serial_url": "https://digimoviez.org/serie/page/",
+    "movie_url": "https://digimoviez.bid/page/",
+    "serial_url": "https://digimoviez.bid/serie/page/",
     "page_count": 3,
     "serial_page_count": 2
   },
@@ -24,8 +24,8 @@
     "page_count": 5
   },
   "topmovies": {
-    "movie_url": "https://topmoviez.space/page/",
-    "serial_url": "https://topmoviez.space/series/page/",
+    "movie_url": "https://topmoviez.online/page/",
+    "serial_url": "https://topmoviez.online/series/page/",
     "page_count": 3,
     "serial_page_count": 2
   },

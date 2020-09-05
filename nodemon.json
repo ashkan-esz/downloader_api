@@ -1,3 +1,3 @@
 {
-  "ignore": ["crawlers/movie_files/*","crawlers/serial_files/*"]
+  "ignore": ["crawlers/movie_files/*","crawlers/serial_files/*","test.js"]
 }

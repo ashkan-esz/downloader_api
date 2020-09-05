@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
-const save = require('../save_changes');
+const save = require('../save_changes_db');
 
 module.exports = async function salamdl({movie_url, page_count}) {
 
@@ -21,9 +21,9 @@ async function search_title(link, i) {
                 if (mode === "serial") {
                     let result = sort_links(save_link);
                     if (result.length > 0)
-                        save(title_array, page_link, result, persian_plot, 'serial')
+                        await save(title_array, page_link, result, persian_plot, 'serial');
                 } else {
-                    save(title_array, page_link, save_link, persian_plot, 'movie')
+                    await save(title_array, page_link, save_link, persian_plot, 'movie');
                 }
             }
         }
