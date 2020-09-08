@@ -7,9 +7,11 @@ let serial_likes = [];
 
 function search_cached_titles(type, searching_title) {
     let titles_array = (type === 'serial') ? serial_titles : movie_titles;
-    for (const thisTitle of titles_array) {
-        if (thisTitle.title === searching_title) {
-            return thisTitle;
+    if (titles_array.length > 0) {
+        for (const thisTitle of titles_array) {
+            if (thisTitle.title === searching_title) {
+                return thisTitle;
+            }
         }
     }
 
