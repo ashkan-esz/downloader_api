@@ -2,6 +2,9 @@ const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} =
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 
+let collection = '';
+let save_title = '';
+
 module.exports = async function film2media({movie_url, page_count}) {
 
     await wrapper_module(movie_url, page_count, search_title);
@@ -15,10 +18,12 @@ async function search_title(link, i) {
         let page_link = link.attr('href');
         console.log(`film2media/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, mode);
+        save_title = title_array.join('.');
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
                 get_file_size, get_persian_plot, false);
             if (save_link.length > 0) {
+                collection = (page_link.includes('collection')) ? 'collection' : '';
                 if (mode === "serial") {
                     let result = sort_links(save_link);
                     if (result.length > 0)
@@ -41,25 +46,43 @@ function get_persian_plot($) {
 }
 
 function get_file_size($, link, mode) {
-    //'480p.WEB-DL'
-    //'720p.x265.WEB-DL'
-    //'1080p.BluRay.dubbed - 1.8GB'
-    //'1080p.Web-dl - 1.9GB'
-    if (mode === 'serial') {
-        let text_array = $(link).text().split(' ').filter((text) => !persianRex.hasLetter.test(text));
-        text_array.shift();
-        let quality = text_array[0].replace(/[»:«]/g, '');
-        let x265 = (text_array.length > 1) ? text_array[1].replace(/[»:«]/g, '') : ''
-        let href_array = $(link).attr('href').split('.');
-        let release = href_array[href_array.indexOf(quality) + 1];
-        let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi').toLowerCase())) ? 'dubbed' : '';
-        return [quality, x265, release, dubbed].filter(value => value !== '').join('.')
+    //'480p.WEB-DL'  //'720p.x265.WEB-DL'
+    //'1080p.BluRay.dubbed - 1.8GB'  //'1080p.Web-dl - 1.9GB'
+    try {
+        if (mode === 'serial') {
+            let text_array = $(link).text().split(' ').filter((text) => !persianRex.hasLetter.test(text));
+            text_array.shift();
+            let quality = text_array[0].replace(/[»:«]/g, '');
+            let x265 = (text_array.length > 1) ? text_array[1].replace(/[»:«]/g, '') : '';
+            let href_array = $(link).attr('href').split('.');
+            let release = href_array[href_array.indexOf(quality) + 1];
+            let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi').toLowerCase())) ? 'dubbed' : '';
+            return [quality, x265, release, dubbed].filter(value => value !== '').join('.');
+        }
+
+        let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
+        let text = $(parent).prev().text().trim();
+        let link_href = $(link).attr('href').toLowerCase();
+        if (link_href.includes('extras')) {
+            return 'extras';
+        }
+        let dubbed = (link_href.includes('farsi') || link_href.includes('dubbed')) ? 'dubbed' : '';
+        let text_array = text.split(' – ');
+        let extra = '';
+        if (text_array[1] && !text_array[1].includes('MB') && !text_array[1].includes('GB')) {
+            extra = text_array[1];
+            text_array[1] = "";
+        }
+        let year = link_href.replace(/_/g, '.')
+            .match(/\.\d\d\d\d\./g)
+            .pop().replace(/\./g, '');
+        let movie_title = (collection) ? save_title + "." + year : '';
+        let quality_release_array = text_array[0].split(' ');
+        let release = quality_release_array.shift();
+        text_array[0] = [movie_title, ...quality_release_array, release, extra, dubbed].filter(value => value !== '').join('.');
+        return text_array.filter(value => value !== '').join(' - ');
+    } catch (error) {
+        console.error(error);
+        return "";
     }
-    let text = $(link).parent().prev().text().trim()
-    let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi').toLowerCase())) ? 'dubbed' : '';
-    let text_array = text.split(' – ');
-    let quality_release_array = text_array[0].split(' ');
-    let release = quality_release_array.shift();
-    text_array[0] = [...quality_release_array, release, dubbed].filter(value => value !== '').join('.');
-    return text_array.join(' - ')
 }

@@ -129,7 +129,9 @@ function handle_serial_changes(save_link, thisSource, update) {
 function getYear(page_link, save_link) {
     let url_array = page_link.replace(/[-/]/g, ' ').split(' ').filter(value => Number(value) > 1800 && Number(value) < 2100);
     if (url_array.length > 0) {
-        return url_array.pop();
+        let lastPart = url_array.pop();
+        if (Number(lastPart) < 2100)
+            return lastPart;
     }
 
     let link = save_link[0].link;

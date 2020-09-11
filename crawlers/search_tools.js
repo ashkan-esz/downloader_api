@@ -50,11 +50,13 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
 }
 
 function check_download_link(original_link, matchCases, mode) {
-    let link = original_link.toLowerCase();
+    let link = original_link.toLowerCase().replace(/_/g, '.');
     if (link.includes('trailer'))
         return null;
     if (mode === 'movie') {
-        return (link.includes(matchCases.case1) || link.includes(matchCases.case2)) ? original_link : null;
+        return (link.includes(matchCases.case1) ||
+            link.includes(matchCases.case2) ||
+            link.includes(matchCases.case3)) ? original_link : null;
     } else {
         let result = link.match(/(s\d\de\d\d)/g);
         if (result)
@@ -67,17 +69,26 @@ function getMatchCases(title_array, mode) {
         let temp = title_array.map((text) => text.replace(/&/g, 'and').replace(/[’:]/g, ''));
         let case1 = temp.map((text) => text.split('.').filter((t) => t !== '')).flat(1);
         let case2 = case1.map((text) => text.split('-')).flat(1);
-        return {case1: case1.join('.'), case2: case2.join('.')}
+        let case3 = title_array.filter(value => isNaN(value));
+        return {case1: case1.join('.').toLowerCase(),
+            case2: case2.join('.').toLowerCase(),
+            case3: case3.join('.').toLowerCase()}
     } else return null;
 }
 
 function check_format(link) {
-    let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv'];
+    link = link.toLowerCase();
+    let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv', 'mp4'];
     let link_array = link.split('.');
     let link_format = link_array.pop();
     for (let i = 0, l = formats.length; i < l; i++) {
-        if (link_format === formats[i])
-            return true;
+        if (link_format === formats[i]) {
+            // check to !trailer
+            if (link.match(/\d\d\dp/g) !== null || link.match(/\d\d\d\dp/g) !== null ||
+                link.includes('mobile') || link.includes('dvdrip') || link.includes('3d')) {
+                return true;
+            }
+        }
     }
     return false
 }

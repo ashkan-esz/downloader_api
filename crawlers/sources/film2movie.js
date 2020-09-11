@@ -17,7 +17,7 @@ async function search_title(link, i) {
         let title_array = remove_persian_words(title, mode);
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_plot, false);
+                get_file_size, get_persian_plot);
             if (save_link.length > 0) {
                 if (mode === "serial") {
                     let result = sort_links(save_link);
@@ -41,29 +41,53 @@ function get_persian_plot($) {
 }
 
 function get_file_size($, link, mode) {
-    //'۱۰۸۰p.HardSub'
-    //'۷۲۰p.dubbed.Family'
-    //'720p.BluRay.F2M.dubbed.Family'
-    //'720p.BluRay.F2M.Family'
-    //'480p.BluRay.F2M.HardSub.Family'
-    //'1080p.BluRay.F2M'
-    //'480p.BluRay.F2M.HardSub'
-    if (mode === 'serial') {
-        let text = $(link).parent().text().replace(/[:_|]/g, '');
-        let family = (text.includes('Family')) ? 'Family' : '';
-        let text_array = text.split(' ').filter((text) =>
-            !persianRex.hasLetter.test(text) && text !== '' && text !== 'Family');
-        text_array.shift();
-        let HardSub = (text.includes('هاردساب فارسی') || $(link).attr('href').includes('SUBFA')) ? 'HardSub' : '';
-        let dubbed = (text.includes('دوبله فارسی') || $(link).attr('href').includes('Farsi.Dubbed')) ? 'dubbed' : '';
-        return [...text_array, HardSub, dubbed, family].filter(value => value !== '').join('.')
-    }
+    //'۱۰۸۰p.HardSub'  //'۷۲۰p.dubbed.Family'
+    //'720p.BluRay.F2M.dubbed.Family' //'720p.BluRay.F2M.Family'
+    //'480p.BluRay.F2M.HardSub.Family' //'1080p.BluRay.F2M'
+    try {
+        if (mode === 'serial') {
+            let text = $(link).parent().text().replace(/[:_|]/g, '');
+            let family = (text.includes('Family')) ? 'Family' : '';
+            let text_array = text.split(' ').filter((text) =>
+                !persianRex.hasLetter.test(text) && text !== '' && text !== 'Family');
+            text_array.shift();
+            let link_href = $(link).attr('href').toLowerCase();
+            let HardSub = (text.includes('هاردساب فارسی') || link_href.includes('subfa')) ? 'HardSub' : '';
+            let dubbed = (text.includes('دوبله فارسی') || link_href.includes('farsi.dub')) ? 'dubbed' : '';
+            return [...text_array, HardSub, dubbed, family].filter(value => value !== '').join('.');
+        }
+        let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
+        let text = $(parent).prev().text();
+        let link_href = $(link).attr('href').toLowerCase();
+        let HardSub = (link_href.includes('subfa')) ? 'HardSub' : '';
+        let dubbed = (link_href.includes('farsi.dub')) ? 'dubbed' : '';
+        let family = $(link).next().text();
+        family = family.toLowerCase().includes('family') ? family : '';
+        let text_array = text.split(' ').filter((text) => !persianRex.hasLetter.test(text) && text !== '');
 
-    let text = $(link).parent().parent().prev().text();
-    let HardSub = ($(link).attr('href').includes('SUBFA')) ? 'HardSub' : '';
-    let dubbed = ($(link).attr('href').includes('Farsi.Dubbed')) ? 'dubbed' : '';
-    let family = $(link).next().text();
-    let text_array = text.split(' ').filter((text) =>
-        !persianRex.hasLetter.test(text) && text !== '');
-    return [text_array[1], text_array[0], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.')
+        if (text_array.length === 1) {
+            if (link_href.includes('3d')) {
+                return '3D';
+            }
+            if (link_href.includes('dvdrip')) {
+                return 'DVDrip';
+            }
+            let case1 = link_href.match(/\d\d\dp/g);
+            let case2 = link_href.match(/\d\d\d\dp/g);
+            let quality = case1 ? case1[0] : (case2 ? case2[0] : "");
+            let link_href_array = link_href.split('.');
+            let index = link_href_array.indexOf(quality);
+            return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1]].join('.');
+        }
+
+        if (text_array[0].match(/\d\d\dp/g) || text_array[0].match(/\d\d\d\dp/g) ||
+            persianRex.hasNumber.test(text_array[0]) || text_array[0].toLowerCase() === 'mobile') {
+            return [text_array[0], text_array[1], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');
+        }
+        return [text_array[1], text_array[0], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');
+
+    } catch (error) {
+        console.error(error);
+        return "";
+    }
 }

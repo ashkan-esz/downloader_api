@@ -52,11 +52,8 @@ function get_persian_plot($) {
 }
 
 function get_file_size($, link, mode) {
-    //'1080p.HDTV.dubbed - 550MB'
-    //'1080p.WEB-DL.SoftSub - 600MB'
-    //'720p.x265.WEB-DL.SoftSub - 250MB'
-    //'1080p.WEB-DL.SoftSub - 1.82GB'
-    //'720p.WEB-DL.HardSub - 882MB'
+    //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
+    //'720p.x265.WEB-DL.SoftSub - 250MB' //'1080p.WEB-DL.SoftSub - 1.82GB'
     try {
         if (mode === 'serial') {
             let text_array = $(link).parent().parent().parent().parent().prev().text().split('|');
@@ -76,20 +73,19 @@ function get_file_size($, link, mode) {
                 size = (text_array[3].includes('زبان : فارسی')) ? text_array[4] : text_array[3];
                 quality = text_array[2].replace(' کیفیت: ', '').trim().replace(/\s/g, '.')
             }
-
-            return [quality, dubbed].filter(value => value !== '').join('.')
-                + ' - ' +
-                size.replace(' میانگین حجم: ', '')
-                    .replace('مشاهده لینک ها', '')
-                    .replace(' مگابایت', 'MB')
-                    .trim();
+            let info = [quality, dubbed].filter(value => value !== '').join('.');
+            size.replace(' میانگین حجم: ', '').replace('مشاهده لینک ها', '')
+                .replace(' مگابایت', 'MB')
+                .trim();
+            return [info, size].filter(value => value !== '').join(' - ');
         }
-        let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi.Dubbed').toLowerCase())) ? '.dubbed' : '';
+
+        let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi.Dubbed').toLowerCase())) ? 'dubbed' : '';
         let prevNodeChildren = $(link).parent().parent().prev().children();
-        return $(prevNodeChildren[0]).text().replace('کیفیت :', '').replace(/\s/g, '.')
-            + dubbed +
-            ' - ' +
-            $(prevNodeChildren[1]).text().replace('حجم :', '').replace(' ', '');
+        let quality = $(prevNodeChildren[0]).text().replace('کیفیت :', '').replace(/\s/g, '.');
+        let info = [quality,dubbed].filter(value => value!=='').join('.');
+        let size = $(prevNodeChildren[1]).text().replace('حجم :', '').replace(' ', '');
+        return [info,size].filter(value => value!=='').join(' - ');
     } catch (error) {
         return '';
     }

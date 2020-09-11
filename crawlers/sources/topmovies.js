@@ -17,7 +17,7 @@ async function search_title(link, i) {
         let title_array = remove_persian_words(title.toLowerCase(), mode);
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_plot, false);
+                get_file_size, get_persian_plot);
             if (save_link.length > 0) {
                 if (mode === "serial") {
                     let result = sort_links(save_link);
@@ -40,13 +40,40 @@ function get_persian_plot($) {
 }
 
 function get_file_size($, link, mode) {
-    //'480p.WEBRip.HardSub - 180MB'
-    //'720p.HEVC.x265.WEBRip.HardSub - 240MB'
-    //'1080p.BluRay.YTS.HardSub - 1.65G'
-    //'720p.WEB-DL.HardSub - 802.3M'
-    //'1080p.BluRay.YIFY - 1.68G'
-    //'720p.WEB-DL.dubbed - 911.9M'
-    let HardSub = '';
+    //'480p.WEBRip.HardSub - 180MB'  //'720p.HEVC.x265.WEBRip.HardSub - 240MB'
+    //'1080p.BluRay.YTS.HardSub - 1.65G' //'720p.WEB-DL.HardSub - 802.3M'
+    //'1080p.BluRay.YIFY - 1.68G'   //'720p.WEB-DL.dubbed - 911.9M'
+    try {
+        let HardSub = check_hardsub($);
+        let link_href = $(link).attr('href').toLowerCase();
+        let dubbed = (link_href.includes('farsi.dub') || link_href.includes('duble')) ? 'dubbed' : HardSub;
+        if (mode === 'serial') {
+            let prevNodeChildren = $(link).parent().parent().parent().parent().prev().children();
+            let size = $($(prevNodeChildren[1]).children()[0]).text()
+                .replace(/\s/g, '')
+                .replace('میانگینحجم:', '');
+            let text_array = $(prevNodeChildren[0]).text()
+                .replace('WEB.DL', 'WEB-DL')
+                .replace(/\./g, ' ')
+                .split(' ').filter(value => value !== '');
+            let info = [text_array[0], ...text_array.slice(2), text_array[1], dubbed].filter(value => value !== '').join('.');
+            return [info, size].filter(value => value !== '').join(' - ');
+        }
+        let prevNodeChildren = $(link).parent().parent().prev().children();
+        let size = $(prevNodeChildren[0]).text().replace(/\s/g, '').replace('حجم:', '');
+        let text_childs = $(prevNodeChildren[1]).children();
+        let quality = $(text_childs[0]).text().split(' ');
+        let encoder = $(text_childs[2]).text().replace('Encoder:', '').replace(/\s/g, '');
+        let info = [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value !== '').join('.');
+        return [info, size].filter(value => value !== '').join(' - ');
+    } catch (error) {
+        console.error(error);
+        return "";
+    }
+}
+
+function check_hardsub($) {
+    let HardSub = "";
     let divs = $('div');
     for (let i = 0; i < divs.length; i++) {
         if ($(divs[i]).hasClass('item_dl_title') ||
@@ -58,25 +85,5 @@ function get_file_size($, link, mode) {
             }
         }
     }
-    let href = $(link).attr('href');
-    let dubbed = (href.includes('Farsi.Dubbed') || href.includes('DUBLE')) ? 'dubbed' : HardSub;
-    if (mode === 'serial') {
-        let prevNodeChildren = $(link).parent().parent().parent().parent().prev().children();
-        let size = $($(prevNodeChildren[1]).children()[0]).text();
-        let text_array = $(prevNodeChildren[0]).text()
-            .replace('WEB.DL', 'WEB-DL')
-            .replace(/\./g, ' ')
-            .split(' ').filter(value => value !== '');
-        return [text_array[0], ...text_array.slice(2), text_array[1], dubbed].filter(value => value !== '').join('.')
-            + ' - ' +
-            size.replace(/\s/g, '').replace('میانگینحجم:', '')
-    }
-    let prevNodeChildren = $(link).parent().parent().prev().children();
-    let size = $(prevNodeChildren[0]).text();
-    let text_childs = $(prevNodeChildren[1]).children();
-    let quality = $(text_childs[0]).text().split(' ');
-    let encoder = $(text_childs[2]).text().replace('Encoder:', '').replace(/\s/g, '');
-    return [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value !== '').join('.')
-        + ' - ' +
-        size.replace(/\s/g, '').replace('حجم:', '')
+    return HardSub;
 }
