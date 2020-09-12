@@ -3,7 +3,7 @@ const MongoClient = require('mongodb').MongoClient;
 let database = null;
 
 async function startDatabase() {
-    const uri = process.env["DATABASE_URL"];
+    const uri = process.env["DATABASE_URL"]
     const connection = await MongoClient.connect(uri, {useUnifiedTopology: true, useNewUrlParser: true});
     database = connection.db();
 }

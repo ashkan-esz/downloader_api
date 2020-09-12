@@ -16,7 +16,11 @@ module.exports = async function save(title_array, page_link, save_link, persian_
                 url: page_link,
                 links: save_link
             }],
-            year: year
+            year: year,
+            like: 0,
+            dislike: 0,
+            insert_date: new Date(),
+            update_date: new Date()
         };
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
@@ -41,7 +45,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
                     if (update) {
                         update_cached_titles(mode, search_result);
                         update_cashed_likes(mode, [search_result], 'sourceUpdate');
-                        search_result.update_date = new Date();
+                        search_result.update_date = new Date(); //todo : use ._id
                         await collection.findOneAndReplace({title: title}, search_result);
                     }
 
@@ -53,14 +57,13 @@ module.exports = async function save(title_array, page_link, save_link, persian_
                 console.log('-----new source');
                 search_result.sources.push(result.sources[0]);
                 update_cached_titles(mode, search_result);
-                update_cashed_likes(mode, search_result, 'sourceUpdate');
+                update_cashed_likes(mode, [search_result], 'sourceUpdate');
                 search_result.update_date = new Date();
                 await collection.findOneAndReplace({title: title}, search_result);
             }
 
         } else {//new title
             console.log('-----new title');
-            result.insert_date = new Date();
             await collection.insertOne(result);
         }
 
