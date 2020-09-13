@@ -1,26 +1,27 @@
 const express = require('express');
 const router = express.Router();
 import getCollection from '../mongoDB';
-import {add_cached_titles, search_cached_titles} from "../cache";
+import {search_cached_titles, add_cached_titles} from "../cache";
 
+//host/titles/movie/the cove/high
 router.get('/:type/:title/:accuracy?', async (req, res) => {
     let type = req.params.type;
     let searching_title = req.params.title;
     let accuracy = req.params.accuracy || 'low';
-
+    //cache
     if (accuracy === 'high') {
         let cached_titles = search_cached_titles(type, searching_title, accuracy);
         if (cached_titles !== null) {
             return res.json(cached_titles);
         }
     }
-
+    //database
     let collection_name = (type === 'serial') ? 'serials' : 'movies';
     let collection = await getCollection(collection_name);
 
     let result = [];
     if (accuracy === 'high') {
-        let temp = await collection.findOne({title: searching_title});
+        let temp = await collection.find({title: searching_title}).limit(4).toArray();
         result.push(temp);
     } else if (accuracy === 'low') {
         searching_title = searching_title.replace(/-/g, ' ');
@@ -32,12 +33,14 @@ router.get('/:type/:title/:accuracy?', async (req, res) => {
         result = await collection.find({$text: {$search: searching_title}}, {limit: 8}).toArray();
     }
 
-    if (result.length !== 0) {
-        add_cached_titles(type, ...result);
-        res.json(result);
-    } else {
-        res.status(404).send('title not found');
+    if (result.length === 0) {
+        return res.sendStatus(404);
     }
+
+    if (accuracy === 'high') {
+        add_cached_titles(type, ...result);
+    }
+    return res.json(result);
 });
 
 

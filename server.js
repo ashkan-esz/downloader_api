@@ -9,7 +9,6 @@ const compression = require('compression');
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
-import cron from "node-cron";
 //-------------------------------------
 import likes from './routes/likes';
 import titles from './routes/titles';
