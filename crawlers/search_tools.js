@@ -85,7 +85,8 @@ function check_format(link) {
         if (link_format === formats[i]) {
             // check to !trailer
             if (link.match(/\d\d\dp/g) !== null || link.match(/\d\d\d\dp/g) !== null ||
-                link.includes('mobile') || link.includes('dvdrip') || link.includes('3d')) {
+                link.includes('mobile') || link.includes('dvdrip') ||
+                link.includes('3d') || link.includes('hdcam')) {
                 return true;
             }
         }

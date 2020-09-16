@@ -19,11 +19,11 @@ async function search_title(link, i) {
         console.log(`film2media/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, mode);
         save_title = title_array.join('.');
+        collection = (page_link.includes('collection')) ? 'collection' : '';
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
                 get_file_size, get_persian_plot, false);
             if (save_link.length > 0) {
-                collection = (page_link.includes('collection')) ? 'collection' : '';
                 if (mode === "serial") {
                     let result = sort_links(save_link);
                     if (result.length > 0)
@@ -56,30 +56,48 @@ function get_file_size($, link, mode) {
             let x265 = (text_array.length > 1) ? text_array[1].replace(/[»:«]/g, '') : '';
             let href_array = $(link).attr('href').split('.');
             let release = href_array[href_array.indexOf(quality) + 1];
-            let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi').toLowerCase())) ? 'dubbed' : '';
+            let dubbed = ($(link).attr('href').toLowerCase().includes('farsi')) ? 'dubbed' : '';
             return [quality, x265, release, dubbed].filter(value => value !== '').join('.');
         }
 
-        let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
-        let text = $(parent).prev().text().trim();
         let link_href = $(link).attr('href').toLowerCase();
         if (link_href.includes('extras')) {
             return 'extras';
+        } else if (link_href.includes('hdcam')) {
+            return 'HDCam';
         }
-        let dubbed = (link_href.includes('farsi') || link_href.includes('dubbed')) ? 'dubbed' : '';
+        let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
+        let text = $(parent).prev().text().trim();
+
+        if (persianRex.hasLetter.test(text)) {
+            let temp = text.replace(/[()]/g, '')
+                .split(' ').filter((value) => value && !persianRex.hasText.test(value));
+            if (temp.length === 0) {
+                text = $(parent).prev().prev().text().trim();
+            } else {
+                let prev2 = $(parent).prev().prev().text().trim();
+                if (prev2.includes('(') && prev2.includes(')')) {
+                    text = $(parent).prev().prev().prev().text().trim();
+                }
+            }
+        }
+
+
         let text_array = text.split(' – ');
         let extra = '';
         if (text_array[1] && !text_array[1].includes('MB') && !text_array[1].includes('GB')) {
             extra = text_array[1];
             text_array[1] = "";
         }
+        let dubbed = (link_href.includes('farsi') || link_href.includes('dubbed')) ? 'dubbed' : '';
         let year = link_href.replace(/_/g, '.')
             .match(/\.\d\d\d\d\./g)
             .pop().replace(/\./g, '');
         let movie_title = (collection) ? save_title + "." + year : '';
         let quality_release_array = text_array[0].split(' ');
         let release = quality_release_array.shift();
-        text_array[0] = [movie_title, ...quality_release_array, release, extra, dubbed].filter(value => value !== '').join('.');
+        text_array[0] = [movie_title, ...quality_release_array, release, extra, dubbed]
+            .filter(value => value !== '' && !persianRex.hasLetter.test(value)).join('.');
         return text_array.filter(value => value !== '').join(' - ');
     } catch (error) {
         console.error(error);

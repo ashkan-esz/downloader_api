@@ -92,6 +92,11 @@ function handle_movie_changes(save_link, thisSource, update) {
         for (let k = 0; k < links.length; k++) {
             if (links[k].link === save_link[l].link) { //this link exist
                 link_exist = true;
+                if (links[k].info !== save_link[l].info &&
+                    links[k].info.length < save_link[l].info.length) {//link info update
+                    thisSource.links[k].info = save_link[l].info
+                    update = true;
+                }
                 break;
             }
         }

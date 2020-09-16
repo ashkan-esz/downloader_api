@@ -72,8 +72,8 @@ function get_file_size($, link, mode) {
             if (link_href.includes('dvdrip')) {
                 return 'DVDrip';
             }
-            let case1 = link_href.match(/\d\d\dp/g);
-            let case2 = link_href.match(/\d\d\d\dp/g);
+            let case1 = link_href.match(/\d\d\d\dp/g);
+            let case2 = link_href.match(/\d\d\dp/g);
             let quality = case1 ? case1[0] : (case2 ? case2[0] : "");
             let link_href_array = link_href.split('.');
             let index = link_href_array.indexOf(quality);

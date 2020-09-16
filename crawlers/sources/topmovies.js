@@ -1,5 +1,6 @@
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
+const persianRex = require('persian-rex');
 
 module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
 
@@ -59,12 +60,16 @@ function get_file_size($, link, mode) {
             let info = [text_array[0], ...text_array.slice(2), text_array[1], dubbed].filter(value => value !== '').join('.');
             return [info, size].filter(value => value !== '').join(' - ');
         }
+
         let prevNodeChildren = $(link).parent().parent().prev().children();
         let size = $(prevNodeChildren[0]).text().replace(/\s/g, '').replace('حجم:', '');
         let text_childs = $(prevNodeChildren[1]).children();
-        let quality = $(text_childs[0]).text().split(' ');
+        if ($(text_childs[0]).text().includes('زیرنویس فارسی به زودی')) {
+            dubbed = (dubbed === "dubbed") ? "dubbed" : '';
+        }
+        let quality = $(text_childs[0]).text().split(' ').filter((text) => !persianRex.hasLetter.test(text));
         let encoder = $(text_childs[2]).text().replace('Encoder:', '').replace(/\s/g, '');
-        let info = [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value !== '').join('.');
+        let info = [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value).join('.');
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
         console.error(error);

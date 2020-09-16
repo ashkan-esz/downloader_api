@@ -35,6 +35,7 @@ async function search_title_movie(link, i) {
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'movie',
                 get_file_size, get_persian_plot);
+            save_link = remove_duplicate(save_link);
             if (save_link.length > 0) {
                 await save(title_array, page_link, save_link, persian_plot, 'movie');
             }
@@ -59,7 +60,7 @@ function get_file_size($, link, mode) {
     try {
         if (mode === 'serial') {
             let text_array = $(link).parent().parent().parent().parent().prev().text().trim().split('/');
-            let quality, dubbed, temp;
+            let quality, dubbed, size,link_quality;
             if (text_array.length === 1) {
                 quality = $(link).text().split(/[\s-]/g).filter((text) => !persianRex.hasLetter.test(text) && text !== '' && isNaN(text));
                 if (quality[0] === 'X265')
@@ -71,27 +72,47 @@ function get_file_size($, link, mode) {
                 let result = serial_length_3(text_array, $, link, 1, 2);
                 quality = result.quality;
                 dubbed = result.dubbed;
-                temp = result.temp;
+                size = result.size;
+                let link_href = $(link).attr('href').toLowerCase();
+                let case1 = link_href.match(/\d\d\d\dp/g);
+                let case2 = link_href.match(/\d\d\dp/g);
+                link_quality = case1 ? case1[0] : (case2 ? case2[0] : '');
             } else {
                 let result = serial_length_3(text_array, $, link, 2, 3);
                 quality = result.quality;
                 dubbed = result.dubbed;
-                temp = result.temp;
+                size = result.size;
             }
-            let size = (dubbed) ? '' : ' - ' + temp.replace(/\s/g, '');
-            return [quality[1], ...quality.slice(2), quality[0], dubbed].filter(value => value !== '').join('.') + size;
+            let info = [link_quality, quality[1], ...quality.slice(2), quality[0], dubbed].filter(value => value).join('.');
+            return [info , size].filter(value => value).join(' - ');
         }
 
         let prevNodeChildren = $(link).parent().parent().parent().prev().children().children();
-        let dubbed = ($(link).attr('href').toLowerCase().includes('farsi.dub')) ? 'dubbed' : '';
+        let link_href = $(link).attr('href').toLowerCase();
+        let dubbed = (link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
         let quality = $(prevNodeChildren[0]).text().trim().split(' ');
-        let encoder = (!dubbed) ? $(prevNodeChildren[1]).text()
-            .replace('انکودر: ', '').replace('Encoder: ', '').trim() : '';
-        let text = [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value !== '').join('.');
-        let size_text = (!dubbed) ? $(prevNodeChildren[2]).text() : $(prevNodeChildren[1]).text();
-        let size = size_text.replace('Size:', '').replace(/\s/g, '');
-        return [text, size].filter(value => value !== '').join(' - ');
 
+        let encoder , size;
+        if (prevNodeChildren.length === 2) {
+            let text = $(prevNodeChildren[1]).text();
+            if (text.match(/\d:\d\d:\d\d/g)) {
+                size = '';
+            } else {
+                let MB_GB = text.includes('مگابایت') ? 'MB' : text.includes('گیگابایت') ? 'GB' : '';
+                let match = text.match(/[+-]?\d+(\.\d+)?/g);
+                size = match ? match[0] + MB_GB : '';
+            }
+            let text_array = text.split(' ');
+            encoder = (isNaN(text_array[1]) && !persianRex.hasLetter.test(text_array[1])) ? text_array[1] : '';
+        } else {
+            encoder = (!dubbed) ? $(prevNodeChildren[1]).text()
+                .replace('انکودر:', '').replace('Encoder:', '').trim() : '';
+            let size_text = (!dubbed) ? $(prevNodeChildren[2]).text() : $(prevNodeChildren[1]).text();
+            size = size_text.replace('Size:', '').replace(/\s/g, '');
+        }
+
+        let info = [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.');
+        return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
         console.error(error);
         return "";
@@ -100,22 +121,43 @@ function get_file_size($, link, mode) {
 
 function serial_text_length_2(text_array, $, link) {
     let quality = text_array[1].replace('کیفیت :', '').trim().split(' ');
-    let link_href = $(link).attr('href');
-    let link_href_array = link_href.split(/[_.]/g);
-    let x265 = link_href_array.filter(value => value.toLowerCase() === 'x265');
-    x265 = (x265.length > 0) ? x265[0] : '';
-    if (quality.length === 1) {
-        let season_episode = link_href.match(/S\d\dE\d\d/g)[0];
-        let index = link_href_array.indexOf(season_episode);
-        return [link_href_array[index + 1], x265, quality[0]].filter(value => value !== '').join('.');
-    } else {
-        return [quality[1], x265, ...quality.slice(2), quality[0]].filter(value => value !== '').join('.')
+    let link_href = $(link).attr('href').toLowerCase();
+    let x265 = (link_href.includes('x265')) ? 'x265' : '';
+    let case1 = link_href.match(/\d\d\d\dp/g);
+    let case2 = link_href.match(/\d\d\dp/g);
+    let link_quality = case1 ? case1[0] : (case2 ? case2[0] : 'DVDrip');
+    if (quality.length === 2) {
+        if (quality.includes('فارسی')) {
+            quality.pop();
+            quality[0] = 'dubbed';
+        }
     }
+    return [link_quality, quality[1], x265, ...quality.slice(2), quality[0]].filter(value => value).join('.')
 }
 
-function serial_length_3(text_array, $, link,qualityIndex,dubbedIndex) {
+function serial_length_3(text_array, $, link, qualityIndex, dubbedIndex) {
     let quality = text_array[qualityIndex].replace('کیفیت :', '').trim().split(' ');
-    let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') || $(link).attr('href').toLowerCase().includes('farsi.dub')) ? 'dubbed' : '';
+    let link_href = $(link).attr('href').toLowerCase();
+    let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') ||
+        link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
     let temp = text_array[dubbedIndex].replace('میانگین حجم:', '').replace('مگابایت', 'MB');
-    return {quality, dubbed, temp};
+    let size = (dubbed) ? '' : ' - ' + temp.replace(/\s/g, '');
+    return {quality, dubbed, size};
+}
+
+function remove_duplicate(input) {
+    let result = [];
+    for (let i = 0; i < input.length; i++) {
+        let exist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (input[i].link === result[j].link) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            result.push(input[i]);
+        }
+    }
+    return result;
 }

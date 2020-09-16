@@ -36,6 +36,7 @@ async function search_title_movie(link, i) {
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'movie',
                 get_file_size, get_persian_plot);
+            save_link = remove_duplicate(save_link);
             if (save_link.length > 0) {
                 await save(title_array, page_link, save_link, persian_plot, 'movie');
             }
@@ -59,34 +60,72 @@ function get_file_size($, link, mode) {
             let text_array = $(link).parent().parent().parent().parent().prev().text().split('|');
             let dubbed, size, quality;
             if (text_array.length === 1) {
-                text_array = text_array[0].split(' ').filter((text) => !persianRex.hasLetter.test(text));
+                let MB_GB = text_array[0].includes('مگابایت') ? 'MB' : text_array[0].includes('گیگابایت') ? 'GB' : '';
+                text_array = text_array[0].split(/\s|:/g).filter((text) => !persianRex.hasLetter.test(text) && text !== '');
                 text_array.shift();
-                text_array.shift();
-                return text_array.join('.').trim();
+                let size = text_array.pop() + MB_GB;
+                return text_array.join('.').trim() + ' - ' + size;
             } else if (text_array.length === 3) {
                 dubbed = (text_array[2].includes('زبان : فارسی')) ? 'dubbed' : '';
                 let temp = text_array[2].replace(/:/g, '').split(' ')
                 size = temp.filter((text) => !persianRex.hasLetter.test(text) && !isNaN(text)).pop() + 'MB';
                 quality = temp.filter((text) => !persianRex.hasLetter.test(text) && isNaN(text)).join('.')
             } else {
+                quality = text_array[2].replace(/:/g, '')
+                    .replace('کیفیت', '')
+                    .trim().replace(/\s/g, '.');
                 dubbed = (text_array[3].includes('زبان : فارسی')) ? 'dubbed' : '';
                 size = (text_array[3].includes('زبان : فارسی')) ? text_array[4] : text_array[3];
-                quality = text_array[2].replace(' کیفیت: ', '').trim().replace(/\s/g, '.')
             }
             let info = [quality, dubbed].filter(value => value !== '').join('.');
-            size.replace(' میانگین حجم: ', '').replace('مشاهده لینک ها', '')
-                .replace(' مگابایت', 'MB')
-                .trim();
+            let MB_GB = size.includes('مگابایت') ? 'MB' : size.includes('گیگابایت') ? 'GB' : '';
+            size = size.match(/[+-]?\d+(\.\d+)?/g)[0] + MB_GB;
             return [info, size].filter(value => value !== '').join(' - ');
         }
 
-        let dubbed = ($(link).attr('href').toLowerCase().includes(('Farsi.Dubbed').toLowerCase())) ? 'dubbed' : '';
         let prevNodeChildren = $(link).parent().parent().prev().children();
-        let quality = $(prevNodeChildren[0]).text().replace('کیفیت :', '').replace(/\s/g, '.');
-        let info = [quality,dubbed].filter(value => value!=='').join('.');
-        let size = $(prevNodeChildren[1]).text().replace('حجم :', '').replace(' ', '');
-        return [info,size].filter(value => value!=='').join(' - ');
+        let dubbed = ($(link).attr('href').toLowerCase().includes('farsi.dub')) ? 'dubbed' : '';
+        let quality_text = $(prevNodeChildren[0]).text();
+        if (quality_text.includes('کیفیت')){
+            let quality = quality_text.replace('کیفیت :', '').trim().replace(/\s/g, '.');
+            let info = [quality, dubbed].filter(value => value !== '').join('.');
+            let size_text = $(prevNodeChildren[1]).text();
+            let size = (size_text.includes('حجم')) ?
+                size_text.replace('حجم :', '').replace(' ', '') : '';
+            return [info, size].filter(value => value !== '').join(' - ');
+        } else {
+            let link_href = $(link).attr('href').toLowerCase();
+            let link_href_array = link_href.split(/[._]/g);
+            let case1 = link_href.match(/\d\d\d\dp/g);
+            let case2 = link_href.match(/\d\d\dp/g);
+            let link_quality = case1 ? case1.pop() : (case2 ? case2.pop() : '');
+            let index = link_href_array.indexOf(link_quality);
+
+            let quality = link_href_array.slice(index, index + 2).join('.');
+            let info = [quality, dubbed].filter(value => value !== '').join('.');
+            let size_text = $(prevNodeChildren[0]).text();
+            let size = (size_text.includes('حجم')) ?
+                size_text.replace('حجم :', '').replace(' ', '') : '';
+            return [info, size].filter(value => value !== '').join(' - ');
+        }
     } catch (error) {
         return '';
     }
+}
+
+function remove_duplicate(input) {
+    let result = [];
+    for (let i = 0; i < input.length; i++) {
+        let exist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (input[i].link === result[j].link) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            result.push(input[i]);
+        }
+    }
+    return result;
 }
