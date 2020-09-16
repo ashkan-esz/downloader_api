@@ -20,7 +20,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             like: 0,
             dislike: 0,
             insert_date: new Date(),
-            update_date: new Date()
+            update_date: 0
         };
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
