@@ -57,7 +57,7 @@ app.get('/test',(req,res)=>{
 app.post('/start/crawling/:password', async (req, res) => {
     let password = req.params.password;
     if (password === process.env["UPDATE_PASSWORD"]) {
-        start_crawling().then(() => {
+       return  start_crawling().then(() => {
             return res.json('crawling ended');
         });
     }
