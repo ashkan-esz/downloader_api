@@ -16,7 +16,6 @@ async function wrapper_module(url, page_count, searchCB) {
 
             }
         } catch (error) {
-            console.error(error);
             if (error_counter < 3) {
                 error_counter++
                 i--;

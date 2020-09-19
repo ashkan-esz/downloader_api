@@ -53,13 +53,18 @@ app.get('/test',(req,res)=>{
 });
 
 
-
-app.post('/start/crawling/:password', async (req, res) => {
+let crawling_flag = false;
+app.get('/start/crawling/:password', async (req, res) => {
     let password = req.params.password;
-    if (password === process.env["UPDATE_PASSWORD"]) {
-       return  start_crawling().then(() => {
+    if (!crawling_flag) {
+        if (password === process.env["UPDATE_PASSWORD"]) {
+            crawling_flag = true;
+            await start_crawling();
+            crawling_flag = false;
             return res.json('crawling ended');
-        });
+        }
+    } else {
+        return res.json('another crawling is running');
     }
     return res.json('wrong password!');
 });
