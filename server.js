@@ -8,7 +8,7 @@ const compression = require('compression');
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
-import {save_crawling_time, save_error} from './save_logs';
+import {get_saved_crawling_time, get_saved_error, save_crawling_time, save_error} from './save_logs';
 //-------------------------------------
 import likes from './routes/likes';
 import titles from './routes/titles';
@@ -40,19 +40,6 @@ const checkJwt = jwt({
 // app.use(checkJwt);// todo
 
 
-app.get('/test',(req,res)=>{
-    try{
-        throw {hi:'hi error',nested:{nedted2:'bitch'}};
-        return res.json('hi test');
-    }catch (e) {
-        e.time = new Date();
-        save_error(e);
-        return res.json(e);
-    }
-
-});
-
-
 let crawling_flag = false;
 app.get('/start/crawling/:password', async (req, res) => {
     let password = req.params.password;
@@ -67,6 +54,15 @@ app.get('/start/crawling/:password', async (req, res) => {
         return res.json('another crawling is running');
     }
     return res.json('wrong password!');
+});
+
+
+app.get('/logs/:type/:count?', async (req, res) => {
+    let type = req.params.type;
+    let count = Number(req.params.count) || 0;
+
+    let data = (type === 'error') ? await get_saved_error(count) : await get_saved_crawling_time(count);
+    return res.json(data);
 });
 
 

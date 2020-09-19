@@ -1,16 +1,21 @@
 const fs = require('fs');
 
 module.exports.save_error = function (data) {
-
     handle_file('error.json', 'save_error', data);
+}
 
+module.exports.get_saved_error = async function (count) {
+    return await get_file_data('error.json', count);
 }
 
 module.exports.save_crawling_time = function (data) {
-
     handle_file('crawling_time.json', 'save_crawling_time', data);
-
 }
+
+module.exports.get_saved_crawling_time = async function (count) {
+    return await get_file_data('crawling_time.json', count);
+}
+
 
 function handle_file(fileName, func, data) {
     fs.readFile(`logs/${fileName}`, 'utf8', function (error, json_array) {
@@ -35,4 +40,21 @@ function handle_file(fileName, func, data) {
             }
         });
     });
+}
+
+async function get_file_data(fileName, count) {
+    try {
+        let json_array = fs.readFileSync(`logs/${fileName}`, 'utf8');
+        let array = JSON.parse(json_array);
+        if (count === 0) {
+            return array;
+        } else {
+            return array.slice(Math.max(0, array.length - count));
+        }
+    } catch (error) {
+        if (error.code === 'ENOENT') { //file doesnt exist
+            return ['no file'];
+        }
+        return error;
+    }
 }
