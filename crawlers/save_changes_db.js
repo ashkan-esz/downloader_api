@@ -1,12 +1,12 @@
-const {sort_links} = require('./search_tools');
+import {save_error} from "../save_logs";
 import getCollection from '../mongoDB';
 import {add_cached_news, update_cached_news, update_cached_titles, update_cashed_likes} from "../cache";
+const {sort_links} = require('./search_tools');
 
 
 module.exports = async function save(title_array, page_link, save_link, persian_plot, mode) {
     try {
 
-        let startTime = new Date();
         let year = (mode === 'movie') ? getYear(page_link, save_link) : '';
         let title = title_array.join(' ').trim();
         let result = {
@@ -25,9 +25,9 @@ module.exports = async function save(title_array, page_link, save_link, persian_
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
         let collection = await getCollection(collection_name);
-        let search_result = await collection.findOne({title : title});
+        let search_result = await collection.findOne({title: title});
 
-        if (search_result !== null){
+        if (search_result !== null) {
 
             let sources = search_result.sources;
             let source_exist = false;
@@ -43,15 +43,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
                     }
 
                     if (update) {
-                        update_cached_titles(mode, search_result);
-                        update_cashed_likes(mode, [search_result]);
-                        update_cached_news(mode, search_result);
-                        await collection.findOneAndUpdate({_id: search_result._id}, {
-                            $set: {
-                                sources: search_result.sources,
-                                update_date: new Date()
-                            }
-                        });
+                        await handle_update(result, collection, search_result, mode);
                     }
 
                     break;
@@ -59,29 +51,58 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             }
 
             if (!source_exist) {//new source
-                console.log('-----new source');
-                search_result.sources.push(result.sources[0]);
-                update_cached_titles(mode, search_result);
-                update_cashed_likes(mode, [search_result]);
-                update_cached_news(mode, search_result);
-                await collection.findOneAndUpdate({_id: search_result._id}, {
-                    $set: {
-                        sources: search_result.sources,
-                        update_date: new Date()
-                    }
-                });
+                await handle_new_source(result, collection, search_result, mode);
             }
 
         } else {//new title
-            console.log('-----new title');
             add_cached_news(mode, result);
             await collection.insertOne(result);
         }
 
-        let endTime = new Date();
-        console.log('-------------- time : ', (endTime.getTime() - startTime.getTime()))
-    } catch (e) {
-        console.error(e)
+    } catch (error) {
+        error.massage = "module: save_changes_db >> ... ";
+        error.inputData = page_link;
+        error.time = new Date();
+        save_error(error);
+    }
+}
+
+async function handle_update(result, collection, search_result, mode) {
+    try {
+        update_cached_titles(mode, search_result);
+        update_cashed_likes(mode, [search_result]);
+        update_cached_news(mode, search_result);
+        await collection.findOneAndUpdate({_id: search_result._id}, {
+            $set: {
+                sources: search_result.sources,
+                update_date: new Date()
+            }
+        });
+    } catch (error) {
+        error.massage = "module: save_changes_db >> handle_update ";
+        error.inputData = search_result;
+        error.time = new Date();
+        save_error(error);
+    }
+}
+
+async function handle_new_source(result, collection, search_result, mode) {
+    try {
+        search_result.sources.push(result.sources[0]);
+        update_cached_titles(mode, search_result);
+        update_cashed_likes(mode, [search_result]);
+        update_cached_news(mode, search_result);
+        await collection.findOneAndUpdate({_id: search_result._id}, {
+            $set: {
+                sources: search_result.sources,
+                update_date: new Date()
+            }
+        });
+    } catch (error) {
+        error.massage = "module: save_changes_db >> handle_new_source ";
+        error.inputData = search_result;
+        error.time = new Date();
+        save_error(error);
     }
 }
 
@@ -101,7 +122,6 @@ function handle_movie_changes(save_link, thisSource, update) {
             }
         }
         if (!link_exist) {//movie new link
-            console.log('-----movie new link')
             thisSource.links.push(save_link[l]);
             update = true;
         }
@@ -127,7 +147,6 @@ function handle_serial_changes(save_link, thisSource, update) {
                     }
                 }
                 if (!link_exist && season1 === season2) {//serial season new link
-                    console.log('------serial season new link');
                     season_exist = true;
                     thisSource.links[k].push(save_link[s][l]);
                     update = true;
@@ -136,7 +155,6 @@ function handle_serial_changes(save_link, thisSource, update) {
             }
         }//end of checking all of this season links
         if (!season_exist) {//serial new season
-            console.log('------serial new season');
             thisSource.links.push(save_link[s]);
             thisSource.links = sort_links(thisSource.links.flat(1))
             update = true;
@@ -171,5 +189,5 @@ function checkSources(case1, case2) {
     let new_source_name = case2.replace('https://', '')
         .replace('www.', '')
         .split('.')[0];
-    return source_name === new_source_name
+    return source_name === new_source_name;
 }

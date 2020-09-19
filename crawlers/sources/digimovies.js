@@ -1,3 +1,4 @@
+import {save_error} from "../../save_logs";
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
@@ -12,7 +13,7 @@ async function search_title_serial(link, i) {
     let title = link.attr('title');
     if (title && title.includes('دانلود') && link.children()[0].name !== 'img') {
         let page_link = link.attr('href');
-        console.log(`digimovies/serial/${i}/${title}  ========>  `);
+        // console.log(`digimovies/serial/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'serial',
@@ -31,7 +32,7 @@ async function search_title_movie(link, i) {
     if (text && text === 'ادامه مطلب') {
         let title = link.attr('title').toLowerCase();
         let page_link = link.attr('href');
-        console.log(`digimovies/movie/${i}/${title}  ========>  `);
+        // console.log(`digimovies/movie/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, 'movie');
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'movie',
@@ -109,6 +110,10 @@ function get_file_size($, link, mode) {
             return [info, size].filter(value => value !== '').join(' - ');
         }
     } catch (error) {
+        error.massage = "module: digimovies.js >> get_file_size ";
+        error.inputData = $(link).attr('href');
+        error.time = new Date();
+        save_error(error);
         return '';
     }
 }

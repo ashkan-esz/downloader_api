@@ -1,3 +1,4 @@
+import {save_error} from "../save_logs";
 const axios = require('axios').default;
 const cheerio = require('cheerio');
 const persianRex = require('persian-rex');
@@ -19,7 +20,13 @@ async function wrapper_module(url, page_count, searchCB) {
             if (error_counter < 3) {
                 error_counter++
                 i--;
-            } else error_counter = 0;
+            } else {
+                error.massage = "module: search_tools >> wrapper_module ";
+                error.inputData = url + `${i}/`;
+                error.time = new Date();
+                save_error(error);
+                error_counter = 0;
+            }
         }
     }
 }
@@ -44,7 +51,10 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
         }
         return {save_link: save_link, persian_plot: persian_plot}
     } catch (error) {
-        console.error(error);
+        error.massage = "module: search_tools >> search_in_title_page ";
+        error.inputData = page_link;
+        error.time = new Date();
+        save_error(error);
         return {save_link: [], persian_plot: ''};
     }
 }
@@ -59,8 +69,11 @@ function check_download_link(original_link, matchCases, mode) {
             link.includes(matchCases.case3)) ? original_link : null;
     } else {
         let result = link.match(/(s\d\de\d\d)/g);
-        if (result)
+        if (result) {
             return original_link;
+        } else {
+            return null;
+        }
     }
 }
 
@@ -115,7 +128,7 @@ function remove_persian_words(title, mode) {
     return title_array;
 }
 
-function sort_links(save_link) {
+function sort_links(save_link) { //sort links based on season
     let season_numbers = [];
     for (let i = 0; i < save_link.length; i++) {
         let season_episode = save_link[i].link.toLowerCase().match(/s\d\de\d\d/g)[0];
@@ -124,7 +137,7 @@ function sort_links(save_link) {
             season_numbers.push(Number(season))
     }
     season_numbers = season_numbers.sort((a, b) => a - b)
-    // console.log(season_numbers)
+
     let result = [];
     for (let k = 0; k < season_numbers.length; k++) {
         let season_array = [];

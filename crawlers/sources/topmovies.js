@@ -1,3 +1,4 @@
+import {save_error} from "../../save_logs";
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
@@ -14,7 +15,7 @@ async function search_title(link, i) {
         title.toLowerCase().replace(/\s/g, '') === link.text().toLowerCase().replace(/\s/g, '')) {
         let mode = ((title.includes('فیلم') || title.includes('انیمیشن')) && !title.includes('سریال')) ? 'movie' : 'serial';
         let page_link = link.attr('href');
-        console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
+        // console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), mode);
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
@@ -72,7 +73,10 @@ function get_file_size($, link, mode) {
         let info = [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value).join('.');
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
-        console.error(error);
+        error.massage = "module: topmovies.js >> get_file_size ";
+        error.inputData = $(link).attr('href');
+        error.time = new Date();
+        save_error(error);
         return "";
     }
 }

@@ -1,3 +1,4 @@
+import {save_error} from "../../save_logs";
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
@@ -12,7 +13,7 @@ async function search_title_serial(link, i) {
     if (link.hasClass('product-title')) {
         let title = link.text();
         let page_link = link.attr('href');
-        console.log(`valamovie/serial/${i}/${title}  ========>  `);
+        // console.log(`valamovie/serial/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'serial',
@@ -30,7 +31,7 @@ async function search_title_movie(link, i) {
     let title = link.attr('title');
     if (title && title.includes('دانلود') && title.toLowerCase() === link.text().toLowerCase()) {
         let page_link = link.attr('href');
-        console.log(`valamovie/movie/${i}/${title}  ========>  `);
+        // console.log(`valamovie/movie/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), 'movie');
         if (title_array.length > 0) {
             let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, 'movie',
@@ -114,7 +115,10 @@ function get_file_size($, link, mode) {
         let info = [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.');
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
-        console.error(error);
+        error.massage = "module: valamovie.js >> get_file_size ";
+        error.inputData = $(link).attr('href');
+        error.time = new Date();
+        save_error(error);
         return "";
     }
 }

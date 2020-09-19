@@ -1,3 +1,4 @@
+import {save_crawling_time, save_error} from "../save_logs";
 const fs = require('fs');
 const film2media = require('./sources/film2media');
 const digimovies = require('./sources/digimovies');
@@ -24,14 +25,17 @@ async function start_crawling() {
             await valamovie({...saved_array.valamovie});
 
             let time2 = new Date();
-            console.log('total time : ', (time2.getTime() - time1.getTime()));
+            let crawling_time = time2.getTime() - time1.getTime();
+            save_crawling_time({time: time2, crawling_time: crawling_time});
             resolve();
 
         } catch (error) {
-            console.log(error)
+            error.time = new Date();
+            save_crawling_time(error);
+            save_error(error);
             reject();
         }
-    })
+    });
 }
 
 export default start_crawling;

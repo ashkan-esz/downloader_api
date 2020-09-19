@@ -1,3 +1,4 @@
+import {save_error} from "../../save_logs";
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
@@ -16,7 +17,7 @@ async function search_title(link, i) {
         let title = link.text().toLowerCase();
         let mode = ((title.includes('فیلم') || title.includes('انیمیشن')) && !title.includes('سریال')) ? 'movie' : 'serial';
         let page_link = link.attr('href');
-        console.log(`film2media/${mode}/${i}/${title}  ========>  `);
+        // console.log(`film2media/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, mode);
         save_title = title_array.join('.');
         collection = (page_link.includes('collection')) ? 'collection' : '';
@@ -100,7 +101,10 @@ function get_file_size($, link, mode) {
             .filter(value => value !== '' && !persianRex.hasLetter.test(value)).join('.');
         return text_array.filter(value => value !== '').join(' - ');
     } catch (error) {
-        console.error(error);
+        error.massage = "module: film2media.js >> get_file_size ";
+        error.inputData = $(link).attr('href');
+        error.time = new Date();
+        save_error(error);
         return "";
     }
 }
