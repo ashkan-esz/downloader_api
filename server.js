@@ -41,7 +41,7 @@ const checkJwt = jwt({
 
 
 let crawling_flag = false;
-app.get('/start/crawling/:password', async (req, res) => {
+app.post('/start/crawling/:password', async (req, res) => {
     let password = req.params.password;
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {
