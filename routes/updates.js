@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 import getCollection from '../mongoDB';
-import {get_cached_news, update_cached_news} from "../cache";
+import {get_cached_news, get_cached_updates} from "../cache";
 
 //host/updates/movie/news/false/false/10
 router.get('/:type/:mode/:old/:titles/:count?', async (req, res) => {
@@ -10,19 +10,32 @@ router.get('/:type/:mode/:old/:titles/:count?', async (req, res) => {
     let old = req.params.old;
     let titles = req.params.titles;
     let count = Number(req.params.count) || 25;
+    count = Math.min(count, 50);
 
     //cache
     if (mode === 'news') {
         let cached_news = get_cached_news(type, count);
         if (cached_news !== null) {
-            cached_news = cached_news.slice(0, count);
             if (old === 'false' && type !== 'serial') {//new movies from 2020
                 cached_news = cached_news.filter(value => Number(value.year) >= 2020);
             }
             if (titles === 'true') {//titles only
                 cached_news = cached_news.map(value => value.title);
             }
+            cached_news = cached_news.slice(0, count);
             return res.json(cached_news);
+        }
+    } else {
+        let cached_updates = get_cached_updates(type, count);
+        if (cached_updates !== null) {
+            if (old === 'false' && type !== 'serial') {//new movies from 2020
+                cached_updates = cached_updates.filter(value => Number(value.year) >= 2020);
+            }
+            if (titles === 'true') {//titles only
+                cached_updates = cached_updates.map(value => value.title);
+            }
+            cached_updates = cached_updates.slice(0, count);
+            return res.json(cached_updates);
         }
     }
 
@@ -52,11 +65,6 @@ router.get('/:type/:mode/:old/:titles/:count?', async (req, res) => {
             }
         }
     }
-
-    if (mode === 'news') {
-        update_cached_news(type, result, true);
-    }
-
 
     if (titles === 'true') {
         result = result.map(thisTitle => thisTitle.title);

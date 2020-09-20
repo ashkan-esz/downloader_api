@@ -1,6 +1,6 @@
 import {save_error} from "../save_logs";
 import getCollection from '../mongoDB';
-import {add_cached_news, update_cached_news, update_cached_titles, update_cashed_likes} from "../cache";
+import {update_cached_titles, update_cashed_likes} from "../cache";
 const {sort_links} = require('./search_tools');
 
 
@@ -55,7 +55,6 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             }
 
         } else {//new title
-            add_cached_news(mode, result);
             await collection.insertOne(result);
         }
 
@@ -71,7 +70,6 @@ async function handle_update(result, collection, search_result, mode) {
     try {
         update_cached_titles(mode, search_result);
         update_cashed_likes(mode, [search_result]);
-        update_cached_news(mode, search_result);
         await collection.findOneAndUpdate({_id: search_result._id}, {
             $set: {
                 sources: search_result.sources,
@@ -91,7 +89,6 @@ async function handle_new_source(result, collection, search_result, mode) {
         search_result.sources.push(result.sources[0]);
         update_cached_titles(mode, search_result);
         update_cashed_likes(mode, [search_result]);
-        update_cached_news(mode, search_result);
         await collection.findOneAndUpdate({_id: search_result._id}, {
             $set: {
                 sources: search_result.sources,

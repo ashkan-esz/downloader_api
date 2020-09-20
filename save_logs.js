@@ -46,7 +46,9 @@ async function get_file_data(fileName, count) {
     try {
         let json_array = fs.readFileSync(`logs/${fileName}`, 'utf8');
         let array = JSON.parse(json_array);
-        if (count === 0) {
+        if (array.length === 0) {
+            return [0];
+        } else if (count === 0) {
             return array;
         } else {
             return array.slice(Math.max(0, array.length - count));

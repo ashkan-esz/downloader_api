@@ -21,7 +21,7 @@ router.get('/:type/:title/:accuracy?', async (req, res) => {
 
     let result = [];
     if (accuracy === 'high') {
-        let temp = await collection.find({title: searching_title}).limit(4).toArray();
+        let temp = await collection.findOne({title: searching_title});
         result.push(temp);
     } else if (accuracy === 'low') {
         searching_title = searching_title.replace(/-/g, ' ');
@@ -38,7 +38,7 @@ router.get('/:type/:title/:accuracy?', async (req, res) => {
     }
 
     if (accuracy === 'high') {
-        add_cached_titles(type, ...result);
+        add_cached_titles(type, result);
     }
     return res.json(result);
 });

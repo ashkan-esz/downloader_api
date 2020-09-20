@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
 import getCollection from "../mongoDB";
-import {get_cached_likes, update_cached_news, update_cached_titles, update_cashed_likes} from "../cache";
+import {
+    get_cached_likes, update_cashed_likes,
+    update_cached_news,
+    update_cached_updates,
+    update_cached_titles
+} from "../cache";
 
 //host/likes/movie/top/true/5
 router.get('/:type/top/:titles/:count?', async (req, res) => {
@@ -84,6 +89,7 @@ router.put('/:type/:title/:like.:inc', async (req, res) => {
     update_cashed_likes(type, [search_result]);
     update_cached_titles(type, search_result);
     update_cached_news(type, search_result);
+    update_cached_updates(type, search_result);
     await collection.findOneAndUpdate({_id: search_result._id}, {
         $set: {
             like: search_result.like,
