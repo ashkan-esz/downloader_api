@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node -r esm server.js",
     "start_dev": "nodemon -r esm server.js",
-    "test": "node -r esm test.js"
+    "test": "node -r esm test.js",
+    "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm server.js"
   },
   "dependencies": {
     "autocannon": "^6.4.0",

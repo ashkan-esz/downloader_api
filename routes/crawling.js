@@ -14,6 +14,7 @@ router.post('/:password', async (req, res) => {
             //reset cached data
             await set_cached_news();
             await set_cached_updates();
+            console.log('crawling api ended!');
             return res.json('crawling ended');
         }
     } else {

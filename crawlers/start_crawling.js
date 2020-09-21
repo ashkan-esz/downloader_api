@@ -1,4 +1,4 @@
-import {save_crawling_time, save_error} from "../save_logs";
+import {save_error} from "../save_logs";
 const fs = require('fs');
 const film2media = require('./sources/film2media');
 const digimovies = require('./sources/digimovies');
@@ -26,12 +26,12 @@ async function start_crawling() {
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();
-            save_crawling_time({time: time2, crawling_time: crawling_time});
+            save_error({time: time2, crawling_time: crawling_time});
             resolve();
 
         } catch (error) {
+            error.massage = "module: start_crawling >> start_crawling ";
             error.time = new Date();
-            save_crawling_time(error);
             save_error(error);
             reject();
         }
