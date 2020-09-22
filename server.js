@@ -9,6 +9,7 @@ const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
 import {set_cached_news, set_cached_updates} from "./cache";
+import {save_error} from "./save_logs";
 //---------------Routes-----------------
 import crawling from './routes/crawling';
 import logs from './routes/logs';
@@ -57,6 +58,16 @@ app.use(function(req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
 });
 
+app.use(async (err, req, res, next) => {
+
+    await save_error({
+        massage: "module: server.js >> Internal Server Error ",
+        time: new Date()
+    });
+
+    res.status(500);
+    res.send('Internal Server Error');
+});
 
 app.listen(port, () => {
     console.log(`http://localhost:${port}`)
