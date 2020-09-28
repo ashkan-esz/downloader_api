@@ -54,10 +54,11 @@ function get_file_size($, link, mode) {
             let size = $($(prevNodeChildren[1]).children()[0]).text()
                 .replace(/\s/g, '')
                 .replace('میانگینحجم:', '');
-            let text_array = $(prevNodeChildren[0]).text()
+            let text_array = $(prevNodeChildren[0]).text().trim()
+                .replace(/[\n\t]/g, '')
                 .replace('WEB.DL', 'WEB-DL')
                 .replace(/\./g, ' ')
-                .split(' ').filter(value => value !== '');
+                .split(' ').filter(value => value && !persianRex.hasLetter.test(value));
             let info = [text_array[0], ...text_array.slice(2), text_array[1], dubbed].filter(value => value !== '').join('.');
             return [info, size].filter(value => value !== '').join(' - ');
         }
