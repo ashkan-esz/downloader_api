@@ -145,7 +145,7 @@ function serial_length_3(text_array, $, link, qualityIndex, dubbedIndex) {
     let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') ||
         link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
     let temp = text_array[dubbedIndex].replace('میانگین حجم:', '').replace('مگابایت', 'MB');
-    let size = (dubbed) ? '' : ' - ' + temp.replace(/\s/g, '');
+    let size = (dubbed) ? '' : temp.replace(/\s/g, '');
     return {quality, dubbed, size};
 }
 
