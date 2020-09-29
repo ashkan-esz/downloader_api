@@ -3,10 +3,11 @@ const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} =
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 
-module.exports = async function hiva({movie_url, serial_url, page_count, serial_page_count}) {
-
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
+    await Promise.all([
+        wrapper_module(serial_url, serial_page_count, search_title),
+        wrapper_module(movie_url, page_count, search_title)
+    ]);
 }
 
 async function search_title(link, i) {

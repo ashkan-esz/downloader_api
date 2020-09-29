@@ -17,7 +17,9 @@ router.get('/:type/:mode/:old/:titles/:count?', async (req, res) => {
         let cached_news = get_cached_news(type, count);
         if (cached_news !== null) {
             if (old === 'false' && type !== 'serial') {//new movies from 2020
-                cached_news = cached_news.filter(value => Number(value.year) >= 2020);
+                cached_news = cached_news
+                    .filter(value => Number(value.year) >= 2020)
+                    .sort((a, b) => Number(b.year) - Number(a.year));
             }
             if (titles === 'true') {//titles only
                 cached_news = cached_news.map(value => value.title);
@@ -29,7 +31,9 @@ router.get('/:type/:mode/:old/:titles/:count?', async (req, res) => {
         let cached_updates = get_cached_updates(type, count);
         if (cached_updates !== null) {
             if (old === 'false' && type !== 'serial') {//new movies from 2020
-                cached_updates = cached_updates.filter(value => Number(value.year) >= 2020);
+                cached_updates = cached_updates
+                    .filter(value => Number(value.year) >= 2020)
+                    .sort((a, b) => Number(b.year) - Number(a.year));
             }
             if (titles === 'true') {//titles only
                 cached_updates = cached_updates.map(value => value.title);

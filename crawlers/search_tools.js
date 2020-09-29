@@ -12,7 +12,7 @@ async function wrapper_module(url, page_count, searchCB) {
             let links = $('a');
             for (let j = 0; j < links.length; j++) {
 
-                await searchCB($(links[j]), i);
+                 searchCB($(links[j]), i);
 
             }
         } catch (error) {

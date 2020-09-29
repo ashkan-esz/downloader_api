@@ -4,9 +4,10 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 
 module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
-
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+    await Promise.all([
+        await wrapper_module(serial_url, serial_page_count, search_title),
+        await wrapper_module(movie_url, page_count, search_title)
+    ]);
 }
 
 async function search_title(link, i) {

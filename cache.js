@@ -93,6 +93,8 @@ function get_cached_news(type, count) {
 }
 
 async function set_cached_news() {
+    serial_news = [];
+    movie_news = [];
     let serials_collection = await getCollection('serials');
     serial_news = await serials_collection.find({}).sort({insert_date: -1}).limit(50).toArray();
     let movies_collection = await getCollection('movies');
@@ -120,14 +122,16 @@ function update_cached_news(type, news_doc) {
 //-------------------------------
 //------------UPDATES------------
 function get_cached_updates(type, count) {
-    let news_array = (type === 'serial') ? serial_updates : movie_updates;
-    if (news_array.length === 0 || news_array.length < count) {
+    let updates_array = (type === 'serial') ? serial_updates : movie_updates;
+    if (updates_array.length === 0 || updates_array.length < count) {
         return null;
     }
-    return news_array;
+    return updates_array;
 }
 
 async function set_cached_updates() {
+    serial_updates = [];
+    movie_updates = [];
     let serials_collection = await getCollection('serials');
     serial_updates = await serials_collection.find({}).sort({update_date: -1}).limit(50).toArray();
     let movies_collection = await getCollection('movies');

@@ -4,9 +4,10 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
-
-    await wrapper_module(serial_url, serial_page_count, search_title_serial);
-    await wrapper_module(movie_url, page_count, search_title_movie);
+    await Promise.all([
+        wrapper_module(serial_url, serial_page_count, search_title_serial),
+        wrapper_module(movie_url, page_count, search_title_movie)
+    ]);
 }
 
 async function search_title_serial(link, i) {

@@ -1,4 +1,3 @@
-import {save_error} from "../save_logs";
 const fs = require('fs');
 const film2media = require('./sources/film2media');
 const digimovies = require('./sources/digimovies');
@@ -7,6 +6,7 @@ const film2movie = require('./sources/film2movie');
 const mrmovie = require('./sources/mrmovie');
 const topmovies = require('./sources/topmovies');
 const valamovie = require('./sources/valamovie');
+import {save_error} from "../save_logs";
 
 async function start_crawling() {
     return new Promise(async (resolve, reject) => {
