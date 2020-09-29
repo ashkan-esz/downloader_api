@@ -80,7 +80,11 @@ function get_file_size($, link, mode) {
             }
             let info = [quality, dubbed].filter(value => value !== '').join('.');
             let MB_GB = size.includes('مگابایت') ? 'MB' : size.includes('گیگابایت') ? 'GB' : '';
-            size = size.match(/[+-]?\d+(\.\d+)?/g)[0] + MB_GB;
+            let size_match = size.match(/[+-]?\d+(\.\d+)?/g);
+            size = size_match ? size_match[0]
+                : size.includes('یک') ? '1'
+                    : size.includes('دو') ? '2' : '';
+            size += MB_GB;
             return [info, size].filter(value => value !== '').join(' - ');
         }
 
