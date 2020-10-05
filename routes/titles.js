@@ -22,7 +22,9 @@ router.get('/:type/:title/:accuracy?', async (req, res) => {
     let result = [];
     if (accuracy === 'high') {
         let temp = await collection.findOne({title: searching_title});
-        result.push(temp);
+        if (temp !== null) {
+            result.push(temp);
+        }
     } else if (accuracy === 'low') {
         searching_title = searching_title.replace(/-/g, ' ');
         let splitted_title = searching_title.split(' ');

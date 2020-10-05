@@ -55,6 +55,8 @@ function search_cached_titles(type, searching_title) {
 }
 
 function add_cached_titles(type, title_doc) {
+    if (title_doc === null)
+        return;
     let titles_array = (type === 'serial') ? serial_titles : movie_titles;
     titles_array.unshift(title_doc[0]);
     while (titles_array.length > 500) {
