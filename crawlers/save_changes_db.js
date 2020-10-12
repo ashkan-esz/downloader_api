@@ -1,10 +1,10 @@
-import {save_error} from "../save_logs";
 import getCollection from '../mongoDB';
 import {update_cached_titles, update_cashed_likes} from "../cache";
 const {sort_links} = require('./search_tools');
+import {save_error} from "../save_logs";
 
 
-module.exports = async function save(title_array, page_link, save_link, persian_plot, mode) {
+module.exports = async function save(title_array, page_link, save_link, persian_plot, poster, mode) {
     try {
 
         let year = (mode === 'movie') ? getYear(page_link, save_link) : '';
@@ -20,7 +20,8 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             like: 0,
             dislike: 0,
             insert_date: new Date(),
-            update_date: 0
+            update_date: 0,
+            poster: [poster]
         };
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
@@ -33,7 +34,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             let source_exist = false;
             for (let j = 0; j < sources.length; j++) {//check source exist
                 let update = false;
-                if (checkSources(sources[j].url, page_link)) { // this source exist // no need to search anymore
+                if (checkSources(sources[j].url, page_link)) { // this source exist
                     source_exist = true;
 
                     if (mode === 'movie') { //movie
@@ -43,7 +44,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
                     }
 
                     if (update) {
-                        await handle_update(result, collection, search_result, mode);
+                        await handle_update(collection, search_result, poster, mode);
                     }
 
                     break;
@@ -66,22 +67,58 @@ module.exports = async function save(title_array, page_link, save_link, persian_
     }
 }
 
-async function handle_update(result, collection, search_result, mode) {
+async function handle_update(collection, search_result, poster, mode) {
     try {
         update_cached_titles(mode, search_result);
         update_cashed_likes(mode, [search_result]);
-        await collection.findOneAndUpdate({_id: search_result._id}, {
-            $set: {
-                sources: search_result.sources,
-                update_date: new Date()
-            }
-        });
+
+        if (check_poster(search_result, poster)) {
+            await collection.findOneAndUpdate({_id: search_result._id}, {
+                $set: {
+                    sources: search_result.sources,
+                    update_date: new Date(),
+                    poster: search_result.poster
+                }
+            });
+        } else {
+            await collection.findOneAndUpdate({_id: search_result._id}, {
+                $set: {
+                    sources: search_result.sources,
+                    update_date: new Date()
+                }
+            });
+        }
+
     } catch (error) {
         error.massage = "module: save_changes_db >> handle_update ";
         error.inputData = search_result;
         error.time = new Date();
         save_error(error);
     }
+}
+
+function check_poster(search_result, poster) {
+    let poster_exist = false;
+    let no_poster = false;
+
+    if (!search_result.poster || search_result.poster === '') { //no poster exist
+        search_result.poster = [poster];
+        no_poster = true;
+    }
+
+    for (let i = 0; i < search_result.poster.length; i++) { // check to add poster
+        if (search_result.poster[i] === poster ||
+            checkSources(search_result.poster[i], poster)) {//this poster exist
+            poster_exist = true;
+            break;
+        }
+    }
+
+    if (!poster_exist) {
+        search_result.poster.push(poster);
+    }
+
+    return (!poster_exist || no_poster);
 }
 
 async function handle_new_source(result, collection, search_result, mode) {

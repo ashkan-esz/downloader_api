@@ -1,12 +1,12 @@
-import {save_error} from "../../save_logs";
 const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
+import {save_error} from "../../save_logs";
 
 module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
-        await wrapper_module(serial_url, serial_page_count, search_title),
-        await wrapper_module(movie_url, page_count, search_title)
+         wrapper_module(serial_url, serial_page_count, search_title),
+         wrapper_module(movie_url, page_count, search_title)
     ]);
 }
 
@@ -19,15 +19,15 @@ async function search_title(link, i) {
         // console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), mode);
         if (title_array.length > 0) {
-            let {save_link, persian_plot} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_plot);
+            let {save_link, persian_plot, poster} = await search_in_title_page(title_array, page_link, mode,
+                get_file_size, get_persian_plot, get_poster);
             if (save_link.length > 0) {
                 if (mode === "serial") {
                     let result = sort_links(save_link);
                     if (result.length > 0)
-                        await save(title_array, page_link, result, persian_plot, 'serial');
+                        await save(title_array, page_link, result, persian_plot, poster, 'serial');
                 } else {
-                    await save(title_array, page_link, save_link, persian_plot, 'movie');
+                    await save(title_array, page_link, save_link, persian_plot, poster, 'movie');
                 }
             }
         }
@@ -35,10 +35,37 @@ async function search_title(link, i) {
 }
 
 function get_persian_plot($) {
-    let divs = $('div');
-    for (let i = 0; i < divs.length; i++) {
-        if ($(divs[i]).hasClass('summary_text'))
-            return $(divs[i]).text().trim();
+    try {
+        let divs = $('div');
+        for (let i = 0; i < divs.length; i++) {
+            if ($(divs[i]).hasClass('summary_text'))
+                return $(divs[i]).text().trim();
+        }
+        return '';
+    } catch (error) {
+        error.massage = "module: topmovies.js >> get_persian_plot ";
+        error.time = new Date();
+        save_error(error);
+        return '';
+    }
+}
+
+function get_poster($) {
+    try {
+        let imgs = $('img');
+        for (let i = 0; i < imgs.length; i++) {
+            let src = imgs[i].attribs['data-src'];
+            let parent = imgs[i].parent.name;
+            if (parent === 'a' && src) {
+                return src;
+            }
+        }
+        return '';
+    } catch (error) {
+        error.massage = "module: topmovies.js >> get_poster ";
+        error.time = new Date();
+        save_error(error);
+        return '';
     }
 }
 
@@ -49,7 +76,9 @@ function get_file_size($, link, mode) {
     try {
         let HardSub = check_hardsub($);
         let link_href = $(link).attr('href').toLowerCase();
-        let dubbed = (link_href.includes('farsi.dub') || link_href.includes('duble')) ? 'dubbed' : HardSub;
+        let dubbed = (link_href.includes('farsi.dub') ||
+            link_href.includes('duble') ||
+            link_href.includes('dubbed')) ? 'dubbed' : HardSub;
         if (mode === 'serial') {
             let prevNodeChildren = $(link).parent().parent().parent().parent().prev().children();
             let size = $($(prevNodeChildren[1]).children()[0]).text()

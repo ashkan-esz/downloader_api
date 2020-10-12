@@ -1,11 +1,17 @@
-import {save_error} from "../save_logs";
 const axios = require('axios').default;
+import axiosRetry from "axios-retry";
 const cheerio = require('cheerio');
 const persianRex = require('persian-rex');
+import {save_error} from "../save_logs";
+
+axiosRetry(axios, {
+    retries: 4, retryDelay: (retryCount) => {
+        return retryCount * 1000;
+    }
+});
 
 async function wrapper_module(url, page_count, searchCB) {
-    let error_counter = 0;
-    for (let i = 1; i < page_count; i++) {
+    for (let i = 1 ; i <= page_count; i++) {
         try {
             let response = await axios.get(url + `${i}/`);
             let $ = cheerio.load(response.data);
@@ -14,28 +20,32 @@ async function wrapper_module(url, page_count, searchCB) {
 
                  searchCB($(links[j]), i);
 
+                // await searchCB($(links[j]), i);
+
+                // if (j % 30 === 0) {
+                //     await searchCB($(links[j]), i);
+                // } else {
+                //     searchCB($(links[j]), i);
+                // }
+
+
             }
         } catch (error) {
-            if (error_counter < 3) {
-                error_counter++
-                i--;
-            } else {
-                error.massage = "module: search_tools >> wrapper_module ";
-                error.inputData = url + `${i}/`;
-                error.time = new Date();
-                save_error(error);
-                error_counter = 0;
-            }
+            error.massage = "module: search_tools >> wrapper_module ";
+            error.inputData = url + `${i}/`;
+            error.time = new Date();
+            save_error(error);
         }
     }
 }
 
-async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_plot) {
+async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_plot,get_poster) {
     try {
         let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
         let links = $('a');
         let persian_plot = get_persian_plot($);
+        let poster = get_poster($);
         let matchCases = getMatchCases(title_array, mode);
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
@@ -44,11 +54,13 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
                 let result = check_download_link(link, matchCases, mode);
                 if (result) {
                     let link_info = get_file_size($, links[j], mode);
-                    save_link.push({link: result, info: link_info});
+                    if (link_info !== 'trailer' && link_info !== 'ignore') {
+                        save_link.push({link: result, info: link_info});
+                    }
                 }
             }
         }
-        return {save_link: save_link, persian_plot: persian_plot}
+        return {save_link: save_link, persian_plot: persian_plot, poster: poster}
     } catch (error) {
         error.massage = "module: search_tools >> search_in_title_page ";
         error.inputData = page_link;
@@ -96,8 +108,11 @@ function check_format(link) {
     for (let i = 0, l = formats.length; i < l; i++) {
         if (link_format === formats[i]) {
             // check to !trailer
+            if (link.includes('teaser') || link.includes('trailer')) {
+                return false;
+            }
             if (link.match(/\d\d\dp/g) !== null || link.match(/\d\d\d\dp/g) !== null ||
-                link.includes('mobile') || link.includes('dvdrip') ||
+                link.includes('bluray') || link.includes('mobile') || link.includes('dvdrip') ||
                 link.includes('3d') || link.includes('hdcam')) {
                 return true;
             }
