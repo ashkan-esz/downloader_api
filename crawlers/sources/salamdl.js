@@ -1,4 +1,7 @@
-const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
+const {
+    search_in_title_page, wrapper_module,
+    remove_persian_words, sort_links, getMode
+} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 import {save_error} from "../../save_logs";
@@ -12,7 +15,7 @@ async function search_title(link, i) {
     let rel = link.attr('rel');
     if (rel && rel === 'bookmark') {
         let title = link.text().toLowerCase();
-        let mode = ((title.includes('فیلم') || title.includes('انیمیشن')) && !title.includes('سریال')) ? 'movie' : 'serial';
+        let mode = getMode(title);
         let page_link = link.attr('href');
         // console.log(`salamdl/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, mode);
@@ -56,6 +59,20 @@ function get_poster($) {
             let src = imgs[i].attribs.src;
             let parent = imgs[i].parent.name;
             if (parent === 'a') {
+                return src;
+            }
+        }
+        for (let i = 0; i < imgs.length; i++) {
+            let src = imgs[i].attribs.src;
+            let parent = imgs[i].parent.name;
+            if (parent === 'p') {
+                return src;
+            }
+        }
+        for (let i = 0; i < imgs.length; i++) {
+            let src = imgs[i].attribs.src;
+            let parent = imgs[i].parent.name;
+            if (parent === 'div') {
                 return src;
             }
         }

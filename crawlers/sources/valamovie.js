@@ -1,4 +1,7 @@
-const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
+const {
+    search_in_title_page, wrapper_module,
+    remove_persian_words, sort_links
+} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 import {save_error} from "../../save_logs";
@@ -74,6 +77,16 @@ function get_poster($) {
                 }
             }
         }
+        let divs = $('div');
+        for (let i = 0; i < divs.length; i++) {
+            if ($(divs[i]).hasClass('container')) {
+                let style = $(divs[i]).attr('style');
+                if (style) {
+                    return style.replace('background:url(\'', '')
+                        .replace('\');', '');
+                }
+            }
+        }
         return '';
     } catch (error) {
         error.massage = "module: valamovie.js >> get_poster ";
@@ -88,7 +101,7 @@ function get_file_size($, link, mode) {
     //'1080p.BluRay.dubbed - 1.77GB' //'1080p.x265.BluRay.RMTeam - 1.17GB'
     try {
         if (mode === 'serial') {
-            let {info, size} = get_file_size_serial($, link)
+            let {info, size} = get_file_size_serial($, link);
             return [info, size].filter(value => value).join(' - ');
         }
         let {info, size} = get_file_size_movie($, link)

@@ -1,4 +1,7 @@
-const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
+const {
+    search_in_title_page, wrapper_module,
+    remove_persian_words, sort_links
+} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 import {save_error} from "../../save_logs";

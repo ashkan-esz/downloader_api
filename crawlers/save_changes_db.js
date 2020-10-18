@@ -6,7 +6,6 @@ import {save_error} from "../save_logs";
 
 module.exports = async function save(title_array, page_link, save_link, persian_plot, poster, mode) {
     try {
-
         let year = (mode === 'movie') ? getYear(page_link, save_link) : '';
         let title = title_array.join(' ').trim();
         let result = {
@@ -26,37 +25,42 @@ module.exports = async function save(title_array, page_link, save_link, persian_
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
         let collection = await getCollection(collection_name);
-        let search_result = await collection.findOne({title: title});
+        let search_result = searchOnCollection(title, year, mode);
 
-        if (search_result !== null) {
-
-            let sources = search_result.sources;
-            let source_exist = false;
-            for (let j = 0; j < sources.length; j++) {//check source exist
-                let update = false;
-                if (checkSources(sources[j].url, page_link)) { // this source exist
-                    source_exist = true;
-
-                    if (mode === 'movie') { //movie
-                        update = handle_movie_changes(save_link, sources[j], update);
-                    } else { //serial
-                        update = handle_serial_changes(save_link, sources[j], update);
-                    }
-
-                    if (update) {
-                        await handle_update(collection, search_result, poster, mode);
-                    }
-
-                    break;
-                }
-            }
-
-            if (!source_exist) {//new source
-                await handle_new_source(result, collection, search_result, mode);
-            }
-
-        } else {//new title
+        if (search_result === null) {//new title
             await collection.insertOne(result);
+            return;
+        }
+
+        let sources = search_result.sources;
+        let source_exist = false;
+        for (let j = 0; j < sources.length; j++) {//check source exist
+            let update = false;
+            if (checkSources(sources[j].url, page_link)) { // this source exist
+                source_exist = true;
+
+                if (mode === 'movie') { //movie
+                    update = handle_movie_changes(save_link, sources[j], update);
+                } else { //serial
+                    update = handle_serial_changes(save_link, sources[j], update);
+                }
+
+                if (update) {
+                    await handle_update(collection, search_result, poster, mode);
+                } else if (check_poster_changed(search_result, poster)) { //todo
+                    await collection.findOneAndUpdate({_id: search_result._id}, {
+                        $set: {
+                            poster: search_result.poster
+                        }
+                    });
+                }
+
+                break;
+            }
+        }
+
+        if (!source_exist) {//new source
+            await handle_new_source(result, collection, search_result, poster, mode);
         }
 
     } catch (error) {
@@ -67,12 +71,30 @@ module.exports = async function save(title_array, page_link, save_link, persian_
     }
 }
 
+async function searchOnCollection(title, year, mode) {
+    let search_result;
+    if (mode === 'serial') {
+        search_result = await collection.findOne({title: title});
+    } else {
+        let YEAR = Number(year);
+        let cases = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
+        search_result = await collection.findOne({title: title, year: cases[0]});
+        if (search_result === null) {
+            search_result = await collection.findOne({title: title, year: cases[1]});
+        }
+        if (search_result === null) {
+            search_result = await collection.findOne({title: title, year: cases[2]});
+        }
+    }
+    return search_result;
+}
+
 async function handle_update(collection, search_result, poster, mode) {
     try {
         update_cached_titles(mode, search_result);
         update_cashed_likes(mode, [search_result]);
 
-        if (check_poster(search_result, poster)) {
+        if (check_poster_changed(search_result, poster)) {
             await collection.findOneAndUpdate({_id: search_result._id}, {
                 $set: {
                     sources: search_result.sources,
@@ -97,15 +119,23 @@ async function handle_update(collection, search_result, poster, mode) {
     }
 }
 
-function check_poster(search_result, poster) {
+function check_poster_changed(search_result, poster) {
     let poster_exist = false;
     let no_poster = false;
 
-    if (!search_result.poster || search_result.poster === '') { //no poster exist
+    if (poster === '') {
+        return false;
+    }
+
+    //no poster exist
+    if (!search_result.poster ||
+        search_result.poster === '' ||
+        search_result.poster.length === 0) {
         search_result.poster = [poster];
         no_poster = true;
     }
 
+    //todo : check  domain of the poser changed or not
     for (let i = 0; i < search_result.poster.length; i++) { // check to add poster
         if (search_result.poster[i] === poster ||
             checkSources(search_result.poster[i], poster)) {//this poster exist
@@ -121,17 +151,29 @@ function check_poster(search_result, poster) {
     return (!poster_exist || no_poster);
 }
 
-async function handle_new_source(result, collection, search_result, mode) {
+async function handle_new_source(result, collection, search_result, poster, mode) {
     try {
         search_result.sources.push(result.sources[0]);
         update_cached_titles(mode, search_result);
         update_cashed_likes(mode, [search_result]);
-        await collection.findOneAndUpdate({_id: search_result._id}, {
-            $set: {
-                sources: search_result.sources,
-                update_date: new Date()
-            }
-        });
+
+        if (check_poster_changed(search_result, poster)) {
+            await collection.findOneAndUpdate({_id: search_result._id}, {
+                $set: {
+                    sources: search_result.sources,
+                    update_date: new Date(),
+                    poster: search_result.poster
+                }
+            });
+        } else {
+            await collection.findOneAndUpdate({_id: search_result._id}, {
+                $set: {
+                    sources: search_result.sources,
+                    update_date: new Date()
+                }
+            });
+        }
+
     } catch (error) {
         error.massage = "module: save_changes_db >> handle_new_source ";
         error.inputData = search_result;
@@ -198,18 +240,23 @@ function handle_serial_changes(save_link, thisSource, update) {
 }
 
 function getYear(page_link, save_link) {
-    let url_array = page_link.replace(/[-/]/g, ' ').split(' ').filter(value => Number(value) > 1800 && Number(value) < 2100);
+    let url_array = page_link.replace(/[-/]/g, ' ').split(' ')
+        .filter(value => Number(value) > 1800 && Number(value) < 2100);
     if (url_array.length > 0) {
         let lastPart = url_array.pop();
         if (Number(lastPart) < 2100)
             return lastPart;
     }
 
-    let link = save_link[0].link;
-    let link_array = link.replace(/[-_()]/g, '.').split('.').filter(value => Number(value) > 1800 && Number(value) < 2100);
-    if (link_array.length > 0) {
-        return link_array.pop()
-    } else return '';
+    for (let i = 0; i < save_link.length; i++) {
+        let link = save_link[i].link;
+        let link_array = link.replace(/[-_()]/g, '.').split('.')
+            .filter(value => Number(value) > 1800 && Number(value) < 2100);
+        if (link_array.length > 0) {
+            return link_array.pop()
+        }
+    }
+    return '';
 }
 
 function getSeason(link) {
@@ -219,9 +266,11 @@ function getSeason(link) {
 function checkSources(case1, case2) {
     let source_name = case1.replace('https://', '')
         .replace('www.', '')
+        .replace('image.', '')
         .split('.')[0];
     let new_source_name = case2.replace('https://', '')
         .replace('www.', '')
+        .replace('image.', '')
         .split('.')[0];
     return source_name === new_source_name;
 }

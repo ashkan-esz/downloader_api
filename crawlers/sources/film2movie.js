@@ -1,4 +1,7 @@
-const {search_in_title_page, wrapper_module, remove_persian_words, sort_links} = require('../search_tools');
+const {
+    search_in_title_page, wrapper_module,
+    remove_persian_words, sort_links, getMode
+} = require('../search_tools');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 import {save_error} from "../../save_logs";
@@ -12,7 +15,7 @@ async function search_title(link, i) {
     let rel = link.attr('rel');
     if (rel && rel === 'bookmark') {
         let title = link.text().toLowerCase();
-        let mode = ((title.includes('فیلم') || title.includes('انیمیشن')) && !title.includes('سریال')) ? 'movie' : 'serial';
+        let mode = getMode(title);
         let page_link = link.attr('href');
         // console.log(`film2movie/${mode}/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title, mode);
@@ -59,6 +62,13 @@ function get_poster($) {
                 return src;
             }
         }
+        for (let i = 0; i < imgs.length; i++) {
+            let src = imgs[i].attribs.src;
+            let alt = imgs[i].attribs.alt;
+            if (src.includes('.jpg') && alt.includes('دانلود')) {
+                return src;
+            }
+        }
         return '';
     } catch (error) {
         error.massage = "module: film2media.js >> get_poster ";
@@ -93,7 +103,9 @@ function get_file_size_serial($, link) {
     text_array.shift();
     let link_href = $(link).attr('href').toLowerCase();
     let HardSub = (text.includes('هاردساب فارسی') || link_href.includes('subfa')) ? 'HardSub' : '';
-    let dubbed = (text.includes('دوبله فارسی') || link_href.includes('farsi.dub')) ? 'dubbed' : '';
+    let dubbed = (text.includes('دوبله فارسی') ||
+        link_href.includes('farsi.dub') ||
+        link_href.includes('dubbed')) ? 'dubbed' : '';
     return [...text_array, HardSub, dubbed, family].filter(value => value !== '').join('.');
 }
 
@@ -102,11 +114,10 @@ function get_file_size_movie($, link) {
     let text = $(parent).prev().text();
     let link_href = $(link).attr('href').toLowerCase();
     let HardSub = (link_href.includes('subfa')) ? 'HardSub' : '';
-    let dubbed = (link_href.includes('farsi.dub')) ? 'dubbed' : '';
+    let dubbed = (link_href.includes('farsi.dub') || link_href.includes('dubbed')) ? 'dubbed' : '';
     let family = $(link).next().text();
     family = family.toLowerCase().includes('family') ? family : '';
-    let text_array = text.split(' ').filter((text) => !persianRex.hasLetter.test(text) && text !== '');
-
+    let text_array = text.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
     if (text_array.length === 1) {
         if (link_href.includes('3d')) {
             return '3D';
@@ -117,6 +128,9 @@ function get_file_size_movie($, link) {
         let case1 = link_href.match(/\d\d\d\dp/g);
         let case2 = link_href.match(/\d\d\dp/g);
         let quality = case1 ? case1[0] : (case2 ? case2[0] : "");
+        if (quality === '') {
+            return text_array[0];
+        }
         let link_href_array = link_href.split('.');
         let index = link_href_array.indexOf(quality);
         return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1]].join('.');

@@ -11,7 +11,7 @@ axiosRetry(axios, {
 });
 
 async function wrapper_module(url, page_count, searchCB) {
-    for (let i = 1 ; i <= page_count; i++) {
+    for (let i = 1; i <= page_count; i++) {
         try {
             let response = await axios.get(url + `${i}/`);
             let $ = cheerio.load(response.data);
@@ -39,7 +39,7 @@ async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_plot,get_poster) {
+async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_plot, get_poster) {
     try {
         let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
@@ -50,7 +50,7 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
-            if (link && check_format(link)) {
+            if (link && check_format(link, mode)) {
                 let result = check_download_link(link, matchCases, mode);
                 if (result) {
                     let link_info = get_file_size($, links[j], mode);
@@ -75,9 +75,28 @@ function check_download_link(original_link, matchCases, mode) {
     if (link.includes('trailer'))
         return null;
     if (mode === 'movie') {
-        return (link.includes(matchCases.case1) ||
+        let isMatched = (link.includes(matchCases.case1) ||
             link.includes(matchCases.case2) ||
-            link.includes(matchCases.case3)) ? original_link : null;
+            link.includes(matchCases.case3));
+        if (isMatched) {
+            return original_link;
+        } else {
+            if (link.includes(matchCases.case1.replace('.ii', '.2'))) {
+                return original_link;
+            }
+            let splitted_matchCase = matchCases.case1.split('.');
+            if (splitted_matchCase.length > 3) {
+                let newMatchCase = splitted_matchCase.slice(0, 3).join('.');
+                if (link.includes(newMatchCase)) {
+                    return original_link;
+                } else {
+                    let replacedAnd_MatchCase = matchCases.case1.replace('.and', '');
+                    return (link.includes(replacedAnd_MatchCase)) ? original_link : null;
+                }
+            } else {
+                return null;
+            }
+        }
     } else {
         let result = link.match(/(s\d\de\d\d)/g);
         if (result) {
@@ -94,15 +113,19 @@ function getMatchCases(title_array, mode) {
         let case1 = temp.map((text) => text.split('.').filter((t) => t !== '')).flat(1);
         let case2 = case1.map((text) => text.split('-')).flat(1);
         let case3 = title_array.filter(value => isNaN(value));
-        return {case1: case1.join('.').toLowerCase(),
+        return {
+            case1: case1.join('.').toLowerCase(),
             case2: case2.join('.').toLowerCase(),
-            case3: case3.join('.').toLowerCase()}
+            case3: case3.join('.').toLowerCase()
+        }
     } else return null;
 }
 
-function check_format(link) {
+function check_format(link, mode) {
     link = link.toLowerCase();
     let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv', 'mp4'];
+    let qualities = ['bluray', 'mobile', 'dvdrip', 'hdrip', 'brip', 'webrip', 'web-dl', 'web.dl',
+        'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '1080p'];
     let link_array = link.split('.');
     let link_format = link_array.pop();
     for (let i = 0, l = formats.length; i < l; i++) {
@@ -111,9 +134,15 @@ function check_format(link) {
             if (link.includes('teaser') || link.includes('trailer')) {
                 return false;
             }
-            if (link.match(/\d\d\dp/g) !== null || link.match(/\d\d\d\dp/g) !== null ||
-                link.includes('bluray') || link.includes('mobile') || link.includes('dvdrip') ||
-                link.includes('3d') || link.includes('hdcam')) {
+
+            if (link.match(/\d\d\d\dp|\d\d\dp/g) !== null) {
+                for (let j = 0; j < qualities.length; j++) {
+                    if (link.includes(qualities[j])) {
+                        return true;
+                    }
+                }
+            }
+            if (mode === 'serial' && link.match(/s\d\de\d\d/g)) {
                 return true;
             }
         }
@@ -122,8 +151,13 @@ function check_format(link) {
 }
 
 function remove_persian_words(title, mode) {
-    let title_array = title.split(' ').filter((text) => !persianRex.hasLetter.test(text) && text!=='');
-    if (title_array.length > 0) {
+    let title_array = title.trim()
+        .replace('&', 'and')
+        .replace(/[’:]/g, '')
+        .replace(/_/g, ' ')
+        .split(' ')
+        .filter((text) => !persianRex.hasLetter.test(text) && text !== '');
+    if (title_array.length > 1) {
         let year = title_array[title_array.length - 1];
         if (!isNaN(year) && Number(year) > 1000) {
             title_array.pop();
@@ -131,11 +165,11 @@ function remove_persian_words(title, mode) {
             title_array.shift();
         }
     }
-    if (mode === 'serial' && title_array.length > 0) {
+    if (mode === 'serial' && title_array.length > 1) {
         let season = title_array[title_array.length - 1];
-        if (!isNaN(season) || persianRex.number.test(season)) {
+        if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 13) {
             title_array.pop();
-        } else if (!isNaN(title_array[0]) || persianRex.number.test(title_array[0])) {
+        } else if ((!isNaN(title_array[0]) || persianRex.number.test(title_array[0])) && Number(title_array[0]) < 13) {
             title_array.shift();
         }
     }
@@ -167,6 +201,12 @@ function sort_links(save_link) { //sort links based on season
     return result;
 }
 
+function getMode(title){
+    return((title.includes('فیلم') || title.includes('انیمیشن')) &&
+        !title.includes('سریال'))
+        ? 'movie' : 'serial';
+}
+
 exports.check_format = check_format;
 exports.check_download_link = check_download_link;
 exports.getMatchCases = getMatchCases;
@@ -174,3 +214,4 @@ exports.search_in_title_page = search_in_title_page;
 exports.wrapper_module = wrapper_module;
 exports.remove_persian_words = remove_persian_words;
 exports.sort_links = sort_links;
+exports.getMode = getMode;
