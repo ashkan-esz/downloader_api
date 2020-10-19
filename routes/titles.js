@@ -58,9 +58,9 @@ router.get('/:type/:title/:accuracy?', async (req, res) => {
         let splitted_title = searching_title.split(' ');
         let phrase = (splitted_title.length > 1) ? splitted_title[0] + ' ' + splitted_title[1] : splitted_title[0];
         searching_title = searching_title.replace(phrase, `\"${phrase}\"`);
-        result = await collection.find({$text: {$search: searching_title}}, {limit: 8}).toArray();
+        result = await collection.find({$text: {$search: searching_title}}, {limit: 12}).toArray();
     } else {
-        result = await collection.find({$text: {$search: searching_title}}, {limit: 8}).toArray();
+        result = await collection.find({$text: {$search: searching_title}}, {limit: 16}).toArray();
     }
 
     if (result.length === 0) {

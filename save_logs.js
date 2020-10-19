@@ -8,7 +8,6 @@ module.exports.save_error = async function (data) {
         delete data.writable;
         collection.insertOne(data).then(() => {});
     } catch (e) {
-        console.log(e) //todo
         collection.insertOne({
             massage1: data.massage,
             massage2: "module: save_logs >> save_error ",

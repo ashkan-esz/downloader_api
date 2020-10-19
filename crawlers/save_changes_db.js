@@ -47,7 +47,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
 
                 if (update) {
                     await handle_update(collection, search_result, poster, mode);
-                } else if (check_poster_changed(search_result, poster)) { //todo
+                } else if (check_poster_changed(search_result, poster)) {
                     await collection.findOneAndUpdate({_id: search_result._id}, {
                         $set: {
                             poster: search_result.poster
@@ -68,7 +68,6 @@ module.exports = async function save(title_array, page_link, save_link, persian_
         error.inputData = page_link;
         error.time = new Date();
         save_error(error);
-        console.log(error) //todo
     }
 }
 
@@ -136,7 +135,6 @@ function check_poster_changed(search_result, poster) {
         no_poster = true;
     }
 
-    //todo : check  domain of the poser changed or not
     for (let i = 0; i < search_result.poster.length; i++) { // check to add poster
         if (search_result.poster[i] === poster ||
             checkSources(search_result.poster[i], poster)) {//this poster exist

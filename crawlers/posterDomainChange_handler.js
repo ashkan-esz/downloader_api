@@ -49,7 +49,6 @@ module.exports = async function(sourcesObject){
         error.massage = "module: search_tools >> wrapper_module ";
         error.time = new Date();
         save_error(error);
-        console.log(error); //todo
     }
 };
 
@@ -62,7 +61,7 @@ async function updatePosterLinks(sources, dominNames, collectionName) {
         let changed = false;
         let posters = docs_array[i].poster;
         for (let j = 0; j < posters.length; j++) {
-            if (posters[j].includes('digimovies')) {
+            if (posters[j].includes('digimoviez')) {
                 let temp = domainChangeHandler(posters[j], dominNames[0]);
                 if (temp!==posters[j]){
                     posters[j] = temp;
@@ -111,7 +110,7 @@ async function updatePosterLinks(sources, dominNames, collectionName) {
             //update posters
             await collection.findOneAndUpdate({_id: docs_array[i]._id}, {
                 $set: {
-                    posters: posters
+                    poster: posters
                 }
             })
         }
@@ -142,7 +141,11 @@ function updateSourceFields(sourcesObject, sources, dominNames) {
 }
 
 function domainChangeHandler(poster, dominName) {
-    let prevDomain = purify(poster).split('.')[1];
+    let prevDomain = poster
+        .replace(/www.|https:\/\//g, '')
+        .replace(/[\/_-]/g, '.')
+        .split('.')
+        .filter(value => value && !value.includes('image'))[1];
     let newDomain = dominName.split('.')[1];
     if (prevDomain !== newDomain) {
         return poster.replace(prevDomain, newDomain);

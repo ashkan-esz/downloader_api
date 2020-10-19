@@ -35,7 +35,6 @@ async function wrapper_module(url, page_count, searchCB) {
             error.inputData = url + `${i}/`;
             error.time = new Date();
             save_error(error);
-            console.log(error) //todo
         }
     }
 }
@@ -67,7 +66,6 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
         error.inputData = page_link;
         error.time = new Date();
         save_error(error);
-        console.log(error) //todo
         return {save_link: [], persian_plot: ''};
     }
 }

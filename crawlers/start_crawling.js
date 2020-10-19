@@ -36,7 +36,6 @@ async function start_crawling() {
             error.massage = "module: start_crawling >> start_crawling ";
             error.time = new Date();
             save_error(error);
-            console.log(error) //todo
             reject();
         }
     });
