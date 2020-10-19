@@ -68,6 +68,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
         error.inputData = page_link;
         error.time = new Date();
         save_error(error);
+        console.log(error) //todo
     }
 }
 

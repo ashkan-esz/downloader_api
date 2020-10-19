@@ -48,6 +48,7 @@ module.exports = async function(sourcesObject){
         error.massage = "module: search_tools >> wrapper_module ";
         error.time = new Date();
         save_error(error);
+        console.log(error); //todo
     }
 };
 
