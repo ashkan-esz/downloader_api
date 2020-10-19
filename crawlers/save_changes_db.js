@@ -25,7 +25,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
         let collection = await getCollection(collection_name);
-        let search_result = searchOnCollection(collection, title, year, mode);
+        let search_result = await searchOnCollection(collection, title, year, mode);
 
         if (search_result === null) {//new title
             await collection.insertOne(result);
