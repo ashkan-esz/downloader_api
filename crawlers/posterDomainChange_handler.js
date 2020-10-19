@@ -22,7 +22,8 @@ module.exports = async function(sourcesObject){
 
         let isChanged = false;
         for (let i = 0; i < dominNames.length; i++) {
-            let response = await axios.get('https://www.' + dominNames[i]);
+            let http = (i!==1 && i!==2) ? 'https://' : 'https://www.';
+            let response = await axios.get(http + dominNames[i]);
             let responseUrl = response.request.res.responseUrl;
             responseUrl = purify(responseUrl);
             if (dominNames[i] !== responseUrl) {
