@@ -120,24 +120,40 @@ async function updatePosterLinks(sources, dominNames, collectionName) {
 function updateSourceFields(sourcesObject, sources, dominNames) {
     sourcesObject.digimovies.movie_url = sources[0];
     let temp = sourcesObject.digimovies.serial_url;
-    sourcesObject.digimovies.serial_url = temp.replace(temp.split('.')[1], dominNames[0].split('.')[1]);
+    sourcesObject.digimovies.serial_url = temp.replace(
+        temp.replace(/www.|https:\/\//g, '')
+        .replace(/[\/_-]/g, '.')
+        .split('.').split('.')[1],
+        dominNames[0].split('.')[1]);
 
     sourcesObject.film2media.movie_url = sources[1];
     sourcesObject.film2movie.movie_url = sources[2];
 
     sourcesObject.mrmovie.movie_url = sources[3];
     temp = sourcesObject.mrmovie.serial_url;
-    sourcesObject.mrmovie.serial_url = temp.replace(temp.split('.')[1], dominNames[3].split('.')[1]);
+    sourcesObject.mrmovie.serial_url = temp.replace(
+        temp.replace(/www.|https:\/\//g, '')
+            .replace(/[\/_-]/g, '.')
+            .split('.').split('.')[1],
+        dominNames[3].split('.')[1]);
 
     sourcesObject.salamdl.movie_url = sources[4];
 
     sourcesObject.topmovies.movie_url = sources[5];
     temp = sourcesObject.topmovies.serial_url;
-    sourcesObject.topmovies.serial_url = temp.replace(temp.split('.')[1], dominNames[5].split('.')[1]);
+    sourcesObject.topmovies.serial_url = temp.replace(
+        temp.replace(/www.|https:\/\//g, '')
+            .replace(/[\/_-]/g, '.')
+            .split('.').split('.')[1],
+        dominNames[5].split('.')[1]);
 
     sourcesObject.valamovie.movie_url = sources[6];
     temp = sourcesObject.topmovies.serial_url;
-    sourcesObject.valamovie.serial_url = temp.replace(temp.split('.')[1], dominNames[6].split('.')[1]);
+    sourcesObject.valamovie.serial_url = temp.replace(
+        temp.replace(/www.|https:\/\//g, '')
+            .replace(/[\/_-]/g, '.')
+            .split('.').split('.')[1],
+        dominNames[6].split('.')[1]);
 }
 
 function domainChangeHandler(poster, dominName) {
