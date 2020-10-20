@@ -5,9 +5,12 @@ import { ObjectId } from "mongodb";
 import {search_cached_titles, add_cached_titles} from "../cache";
 
 //host/titles/550010/movie?
-router.get('/:id/:type?', async (req, res) => {
+router.get('/:id/:type?', async (req, res,next) => {
     let id = req.params.id;
     let type = req.params.type || null;
+    if (id === 'movie' || id === 'serial') {
+        return next();
+    }
     if (type) { //todo check again
         let collection_name = (type === 'serial') ? 'serials' : 'movies';
         let collection = await getCollection(collection_name);
