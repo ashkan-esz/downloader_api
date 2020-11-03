@@ -1,8 +1,8 @@
 const axios = require('axios').default;
 import axiosRetry from "axios-retry";
+import {save_error} from "../save_logs";
 const cheerio = require('cheerio');
 const persianRex = require('persian-rex');
-import {save_error} from "../save_logs";
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -39,12 +39,12 @@ async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_plot, get_poster) {
+async function search_in_title_page(title_array, page_link, mode, get_file_size, get_persian_summary, get_poster) {
     try {
         let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
         let links = $('a');
-        let persian_plot = get_persian_plot($);
+        let persian_summary = get_persian_summary($);
         let poster = get_poster($);
         let matchCases = getMatchCases(title_array, mode);
         let save_link = [];
@@ -60,7 +60,7 @@ async function search_in_title_page(title_array, page_link, mode, get_file_size,
                 }
             }
         }
-        return {save_link: save_link, persian_plot: persian_plot, poster: poster}
+        return {save_link: save_link, persian_summary: persian_summary, poster: poster}
     } catch (error) {
         error.massage = "module: search_tools >> search_in_title_page ";
         error.inputData = page_link;
@@ -80,23 +80,23 @@ function check_download_link(original_link, matchCases, mode) {
             link.includes(matchCases.case3));
         if (isMatched) {
             return original_link;
-        } else {
-            if (link.includes(matchCases.case1.replace('.ii', '.2'))) {
-                return original_link;
-            }
-            let splitted_matchCase = matchCases.case1.split('.');
-            if (splitted_matchCase.length > 3) {
-                let newMatchCase = splitted_matchCase.slice(0, 3).join('.');
-                if (link.includes(newMatchCase)) {
-                    return original_link;
-                } else {
-                    let replacedAnd_MatchCase = matchCases.case1.replace('.and', '');
-                    return (link.includes(replacedAnd_MatchCase)) ? original_link : null;
-                }
-            } else {
-                return null;
-            }
         }
+        if (link.includes(matchCases.case1.replace('.ii', '.2'))) {
+            return original_link;
+        }
+        let splitted_matchCase = matchCases.case1.split('.');
+        if (splitted_matchCase.length > 3) {
+            let newMatchCase = splitted_matchCase.slice(0, 3).join('.');
+            if (link.includes(newMatchCase)) {
+                return original_link;
+            } else {
+                let replacedAnd_MatchCase = matchCases.case1.replace('.and', '');
+                return (link.includes(replacedAnd_MatchCase)) ? original_link : null;
+            }
+        } else {
+            return null;
+        }
+
     } else {
         let result = link.match(/(s\d\de\d\d)/g);
         if (result) {
@@ -151,12 +151,10 @@ function check_format(link, mode) {
 }
 
 function remove_persian_words(title, mode) {
-    let title_array = title.trim()
-        .replace('&', 'and')
-        .replace(/[’:]/g, '')
-        .replace(/_/g, ' ')
-        .split(' ')
-        .filter((text) => !persianRex.hasLetter.test(text) && text !== '');
+    let titleIncluesSeason = title.includes('فصل');
+    title = replacePersianNumbers(title);
+    title = replaceSpecialCharacters(title.trim());
+    let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
     if (title_array.length > 1) {
         let year = title_array[title_array.length - 1];
         if (!isNaN(year) && Number(year) > 1000) {
@@ -165,15 +163,45 @@ function remove_persian_words(title, mode) {
             title_array.shift();
         }
     }
-    if (mode === 'serial' && title_array.length > 1) {
+
+    if (mode === 'serial' && titleIncluesSeason && title_array.length > 1) {
         let season = title_array[title_array.length - 1];
-        if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 13) {
+        if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 10) {
             title_array.pop();
-        } else if ((!isNaN(title_array[0]) || persianRex.number.test(title_array[0])) && Number(title_array[0]) < 13) {
-            title_array.shift();
         }
     }
     return title_array;
+}
+
+function replaceSpecialCharacters(input) {
+    return input
+        .replace(/["'’:?!+.#,()]/g, '')
+        .replace(/[\/_–-]/g, ' ')
+        .replace(/\s\s\s\s/g, ' ')
+        .replace(/\s\s\s/g, ' ')
+        .replace(/\s\s/g, ' ')
+        .replace('twelve', '12')
+        .replace('&', 'and')
+        .replace(/[áåä]/g, 'a')
+        .replace(/[éëè]/g, 'e')
+        .replace('ß', 'b')
+        .replace('ç', 'c')
+        .replace('ş', 's')
+        .replace(/[ôöøó]/g, 'o')
+        .replace(/[üú]/g, 'u')
+        .replace(/[ıí]/g, 'i')
+        .replace(' iii', ' 3')
+        .replace(' ii', ' 2')
+        .replace('…', '');
+}
+
+function replacePersianNumbers(input) {
+    let persianNumbers = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+    let arabicNumbers = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+    for (let i = 0; i < 10; i++) {
+        input = input.replace(persianNumbers[i], i).replace(arabicNumbers[i], i);
+    }
+    return input;
 }
 
 function sort_links(save_link) { //sort links based on season
@@ -207,11 +235,51 @@ function getMode(title){
         ? 'movie' : 'serial';
 }
 
+function getYear(page_link, save_link) {
+    let url_array = page_link.replace(/[-/]/g, ' ').split(' ')
+        .filter(value => Number(value) > 1800 && Number(value) < 2100);
+    if (url_array.length > 0) {
+        let lastPart = url_array.pop();
+        if (Number(lastPart) < 2100)
+            return lastPart;
+    }
+
+    for (let i = 0; i < save_link.length; i++) {
+        let link = save_link[i].link;
+        let link_array = link.replace(/[-_()]/g, '.').split('.')
+            .filter(value => Number(value) > 1800 && Number(value) < 2100);
+        if (link_array.length > 0) {
+            return link_array.pop()
+        }
+    }
+    return '';
+}
+
+function getSeason(link) {
+    return Number(link.toLowerCase().match(/s\d\de\d\d/g)[0].slice(1, 3));
+}
+
+function checkSources(case1, case2) {
+    let source_name = case1.replace('https://', '')
+        .replace('www.', '')
+        .replace('image.', '')
+        .split('.')[0];
+    let new_source_name = case2.replace('https://', '')
+        .replace('www.', '')
+        .replace('image.', '')
+        .split('.')[0];
+    return source_name === new_source_name;
+}
+
 exports.check_format = check_format;
 exports.check_download_link = check_download_link;
 exports.getMatchCases = getMatchCases;
 exports.search_in_title_page = search_in_title_page;
 exports.wrapper_module = wrapper_module;
 exports.remove_persian_words = remove_persian_words;
+exports.replaceSpecialCharacters = replaceSpecialCharacters;
 exports.sort_links = sort_links;
 exports.getMode = getMode;
+exports.getYear = getYear;
+exports.getSeason = getSeason;
+exports.checkSources = checkSources;

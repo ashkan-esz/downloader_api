@@ -20,12 +20,12 @@ async function search_title_serial(link, i) {
         // console.log(`valamovie/serial/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
-            let {save_link, persian_plot, poster} = await search_in_title_page(title_array, page_link, 'serial',
-                get_file_size, get_persian_plot, get_poster);
+            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'serial',
+                get_file_size, get_persian_summary, get_poster);
             if (save_link.length > 0) {
                 let result = sort_links(save_link);
                 if (result.length > 0)
-                    await save(title_array, page_link, result, persian_plot, poster, 'serial');
+                    await save(title_array, page_link, result, persian_summary, poster, 'serial');
             }
         }
     }
@@ -38,17 +38,17 @@ async function search_title_movie(link, i) {
         // console.log(`valamovie/movie/${i}/${title}  ========>  `);
         let title_array = remove_persian_words(title.toLowerCase(), 'movie');
         if (title_array.length > 0) {
-            let {save_link, persian_plot, poster} = await search_in_title_page(title_array, page_link, 'movie',
-                get_file_size, get_persian_plot, get_poster);
+            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'movie',
+                get_file_size, get_persian_summary, get_poster);
             save_link = remove_duplicate(save_link);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_plot, poster, 'movie');
+                await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
             }
         }
     }
 }
 
-function get_persian_plot($) {
+function get_persian_summary($) {
     try {
         let paragraphs = $('p');
         for (let i = 0; i < paragraphs.length; i++) {
@@ -59,7 +59,7 @@ function get_persian_plot($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: valamovie.js >> get_persian_plot ";
+        error.massage = "module: valamovie.js >> get_persian_summary ";
         error.time = new Date();
         save_error(error);
         return '';

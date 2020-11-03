@@ -25,7 +25,7 @@ async function start_crawling() {
             await topmovies(sources.topmovies);
             await valamovie(sources.valamovie);
 
-            await posterDomainChange_handler(sources);
+            // await posterDomainChange_handler(sources); //todo : fix
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();

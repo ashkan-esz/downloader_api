@@ -1,16 +1,15 @@
 import getCollection from '../mongoDB';
 import {update_cached_titles, update_cashed_likes} from "../cache";
-const {sort_links} = require('./search_tools');
+const {sort_links, getYear, getSeason, checkSources} = require('./search_tools');
+const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
 import {save_error} from "../save_logs";
 
-
-module.exports = async function save(title_array, page_link, save_link, persian_plot, poster, mode) {
+module.exports = async function save(title_array, page_link, save_link, persian_summary, poster, mode) {
     try {
         let year = (mode === 'movie') ? getYear(page_link, save_link) : '';
         let title = title_array.join(' ').trim();
         let result = {
             title: title,
-            persian_plot: persian_plot,
             sources: [{
                 url: page_link,
                 links: save_link
@@ -20,7 +19,9 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             dislike: 0,
             insert_date: new Date(),
             update_date: 0,
-            poster: [poster]
+            poster: [poster],
+            summary: {persian: persian_summary},
+            type : mode
         };
 
         let collection_name = (mode === 'serial') ? 'serials' : 'movies';
@@ -28,26 +29,28 @@ module.exports = async function save(title_array, page_link, save_link, persian_
         let search_result = await searchOnCollection(collection, title, year, mode);
 
         if (search_result === null) {//new title
-            await collection.insertOne(result);
+            let newResult = await getInfoFromAPI(result, mode);
+            await collection.insertOne(newResult);
             return;
         }
 
-        let sources = search_result.sources;
+        let posterChanged = check_poster_changed(search_result, poster);
+
         let source_exist = false;
-        for (let j = 0; j < sources.length; j++) {//check source exist
+        for (let j = 0; j < search_result.sources.length; j++) {//check source exist
             let update = false;
-            if (checkSources(sources[j].url, page_link)) { // this source exist
+            if (checkSources(search_result.sources[j].url, page_link)) { // this source exist
                 source_exist = true;
 
                 if (mode === 'movie') { //movie
-                    update = handle_movie_changes(save_link, sources[j], update);
+                    update = handle_movie_changes(save_link, search_result.sources[j], update);
                 } else { //serial
-                    update = handle_serial_changes(save_link, sources[j], update);
+                    update = handle_serial_changes(save_link, search_result.sources[j], update);
                 }
 
                 if (update) {
-                    await handle_update(collection, search_result, poster, mode);
-                } else if (check_poster_changed(search_result, poster)) {
+                    await handle_update(collection, search_result, persian_summary, posterChanged, mode, null);
+                } else if (posterChanged) {
                     await collection.findOneAndUpdate({_id: search_result._id}, {
                         $set: {
                             poster: search_result.poster
@@ -60,7 +63,7 @@ module.exports = async function save(title_array, page_link, save_link, persian_
         }
 
         if (!source_exist) {//new source
-            await handle_new_source(result, collection, search_result, poster, mode);
+            await handle_update(collection, search_result, persian_summary, posterChanged, mode, result);
         }
 
     } catch (error) {
@@ -89,30 +92,49 @@ async function searchOnCollection(collection, title, year, mode) {
     return search_result;
 }
 
-async function handle_update(collection, search_result, poster, mode) {
-    try {
-        update_cached_titles(mode, search_result);
-        update_cashed_likes(mode, [search_result]);
+async function getInfoFromAPI(result, mode) {
+    let omdb_data = await get_OMDB_Api_Data(result.title, result.year, mode);
+    let apiFields = (omdb_data === null) ?
+        get_OMDB_Api_nullFields(result.summary, mode) :
+        get_OMDB_Api_Fields(omdb_data, result.summary, mode);
+    return {...result, ...apiFields};
+}
 
-        if (check_poster_changed(search_result, poster)) {
-            await collection.findOneAndUpdate({_id: search_result._id}, {
-                $set: {
-                    sources: search_result.sources,
-                    update_date: new Date(),
-                    poster: search_result.poster
-                }
-            });
-        } else {
-            await collection.findOneAndUpdate({_id: search_result._id}, {
-                $set: {
-                    sources: search_result.sources,
-                    update_date: new Date()
-                }
-            });
+async function handle_update(collection, search_result, persian_summary, posterChanged, mode, result) {
+    try {
+        if (result !== null) {
+            search_result.sources.push(result.sources[0]);
         }
 
+        // update_cached_titles(mode, search_result); //todo : fix cache
+        // update_cashed_likes(mode, [search_result]);
+
+        let updateFields = {
+            sources: search_result.sources,
+            update_date: new Date()
+        };
+        let persianSummary = search_result.summary.persian;
+        if (persianSummary === null || persianSummary === '') {
+            search_result.summary.persian = persian_summary;
+            updateFields.summary = search_result.summary;
+        }
+        if (posterChanged) {
+            updateFields.poster = search_result.poster;
+        }
+
+        let omdb_data = await get_OMDB_Api_Data(search_result.title, search_result.year, mode);
+        if (omdb_data !== null) {
+            let apiFields = get_OMDB_Api_Fields(omdb_data, search_result.summary, mode);
+            updateFields = {...updateFields, ...apiFields};
+        }
+
+        await collection.findOneAndUpdate({_id: search_result._id}, {
+            $set: updateFields
+        });
+
     } catch (error) {
-        error.massage = "module: save_changes_db >> handle_update ";
+        let type = (result) ? 'new source' : 'update links';
+        error.massage = `module: save_changes_db >> handle_update >> ${type}`;
         error.inputData = search_result;
         error.time = new Date();
         save_error(error);
@@ -148,37 +170,6 @@ function check_poster_changed(search_result, poster) {
     }
 
     return (!poster_exist || no_poster);
-}
-
-async function handle_new_source(result, collection, search_result, poster, mode) {
-    try {
-        search_result.sources.push(result.sources[0]);
-        update_cached_titles(mode, search_result);
-        update_cashed_likes(mode, [search_result]);
-
-        if (check_poster_changed(search_result, poster)) {
-            await collection.findOneAndUpdate({_id: search_result._id}, {
-                $set: {
-                    sources: search_result.sources,
-                    update_date: new Date(),
-                    poster: search_result.poster
-                }
-            });
-        } else {
-            await collection.findOneAndUpdate({_id: search_result._id}, {
-                $set: {
-                    sources: search_result.sources,
-                    update_date: new Date()
-                }
-            });
-        }
-
-    } catch (error) {
-        error.massage = "module: save_changes_db >> handle_new_source ";
-        error.inputData = search_result;
-        error.time = new Date();
-        save_error(error);
-    }
 }
 
 function handle_movie_changes(save_link, thisSource, update) {
@@ -236,40 +227,4 @@ function handle_serial_changes(save_link, thisSource, update) {
         }
     }//end of seasons
     return update;
-}
-
-function getYear(page_link, save_link) {
-    let url_array = page_link.replace(/[-/]/g, ' ').split(' ')
-        .filter(value => Number(value) > 1800 && Number(value) < 2100);
-    if (url_array.length > 0) {
-        let lastPart = url_array.pop();
-        if (Number(lastPart) < 2100)
-            return lastPart;
-    }
-
-    for (let i = 0; i < save_link.length; i++) {
-        let link = save_link[i].link;
-        let link_array = link.replace(/[-_()]/g, '.').split('.')
-            .filter(value => Number(value) > 1800 && Number(value) < 2100);
-        if (link_array.length > 0) {
-            return link_array.pop()
-        }
-    }
-    return '';
-}
-
-function getSeason(link) {
-    return Number(link.toLowerCase().match(/s\d\de\d\d/g)[0].slice(1, 3));
-}
-
-function checkSources(case1, case2) {
-    let source_name = case1.replace('https://', '')
-        .replace('www.', '')
-        .replace('image.', '')
-        .split('.')[0];
-    let new_source_name = case2.replace('https://', '')
-        .replace('www.', '')
-        .replace('image.', '')
-        .split('.')[0];
-    return source_name === new_source_name;
 }
