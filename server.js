@@ -15,6 +15,7 @@ import crawling from './routes/crawling';
 import logs from './routes/logs';
 import likes from './routes/likes';
 import titles from './routes/titles';
+import search from './routes/search';
 import updates from './routes/updates';
 //--------------middleware--------------
 app.use(helmet());
@@ -50,6 +51,7 @@ set_cached_updates().then(()=>{});
 app.use('/start/crawling', crawling);
 app.use('/logs', logs);
 app.use('/titles', titles);
+app.use('/search', search);
 app.use('/likes', likes);
 app.use('/updates', updates);
 
