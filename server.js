@@ -15,8 +15,12 @@ import crawling from './routes/crawling';
 import logs from './routes/logs';
 import likes from './routes/likes';
 import titles from './routes/titles';
-import search from './routes/search';
 import updates from './routes/updates';
+
+import search from './routes/search';
+import update from './routes/update';
+import news from './routes/news';
+import like from './routes/like';
 //--------------middleware--------------
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -51,9 +55,13 @@ set_cached_updates().then(()=>{});
 app.use('/start/crawling', crawling);
 app.use('/logs', logs);
 app.use('/titles', titles);
-app.use('/search', search);
 app.use('/likes', likes);
 app.use('/updates', updates);
+
+app.use('/search', search);
+app.use('/update', update);
+app.use('/news', news);
+app.use('/like', like);
 
 
 app.use(function(req, res) {
