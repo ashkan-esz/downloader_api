@@ -1,4 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
+const {saveError} = require("./saveError");
 
 let database = null;
 
@@ -9,8 +10,13 @@ async function startDatabase() {
 }
 
 async function getCollection(collection_name) {
-    if (!database) await startDatabase();
-    return database.collection(collection_name);
+    try {
+        if (!database) await startDatabase();
+        return database.collection(collection_name);
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
 }
 
 module.exports = getCollection;

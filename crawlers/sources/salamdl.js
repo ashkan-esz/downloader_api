@@ -1,14 +1,17 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links, getMode
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function salamdl({movie_url, page_count}) {
 
     await wrapper_module(movie_url, page_count, search_title);
+
+
+    // for local test
+    // await wrapper_module('https://salamdl.fun/page/', 10, search_title);
 }
 
 async function search_title(link, i) {
@@ -17,19 +20,17 @@ async function search_title(link, i) {
         let title = link.text().toLowerCase();
         let mode = getMode(title);
         let page_link = link.attr('href');
-        // console.log(`salamdl/${mode}/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`salamdl/${mode}/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title, mode);
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, mode, get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
+            let trailers = getTrailers($2);
             if (save_link.length > 0) {
-                if (mode === "serial") {
-                    let result = sort_links(save_link);
-                    if (result.length > 0)
-                        await save(title_array, page_link, result, persian_summary, poster, 'serial');
-                } else {
-                    await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
-                }
+                await save(title_array, page_link, save_link, persian_summary, poster, trailers, mode);
             }
         }
     }
@@ -45,9 +46,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: salamdl.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -78,10 +77,31 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: salamdl.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
+    }
+}
+
+function getTrailers($) {
+    try {
+        let result = [];
+        let a = $('a');
+        for (let i = 0; i < a.length; i++) {
+            let href = $(a[i]).attr('href');
+            if (href && href.toLowerCase().includes('trailer')) {
+                if (href.includes('.mp4') || href.includes('.mkv')) {
+                    let quality = href.includes('360p') ? '360p' : '720p';
+                    result.push({
+                        link: href,
+                        info: 'salamdl-' + quality
+                    });
+                }
+            }
+        }
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 
@@ -105,26 +125,16 @@ function get_file_size($, link, mode) {
         text_array = text.split('|');
 
         if (text.includes('لینک مستقیم')) {
-            return get_file_size_extrLink($, link);
+            return get_file_size_extraLink($, link);
         }
 
         let {info, size} = get_movie_size_info(text_array, dubbed);
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
         try {
-            if (text_array[0].includes('دانلود تریلر') || text_array[0].includes('دانلود تیزر')) {
-                return 'trailer';
-            }
-            return movie_year_catch($, link);
+            return checkTrailer_year($, link, text_array);
         } catch (error2) {
-            error.massage = "module: salamdl.js >> get_file_size ";
-            error.inputData = $(link).attr('href');
-            error.time = new Date();
-            save_error(error);
-            error2.massage = "module: salamdl.js >> get_file_size >> year based ";
-            error2.inputData = $(link).attr('href');
-            error2.time = new Date();
-            save_error(error2);
+            saveError(error2);
             return "";
         }
     }
@@ -132,7 +142,7 @@ function get_file_size($, link, mode) {
 
 function get_file_size_serial($, link) {
     let prevNodeChildren = $(link).parent().parent().parent().prev().children();
-    let text_array = $(prevNodeChildren[3]).text().split(' ');
+    let text_array = $(prevNodeChildren[3]).text().replace('Web-DL', 'WEB-DL').split(' ');
     let size = $(prevNodeChildren[5]).text().replace(' مگابایت', 'MB');
     let filtered_text_array = text_array.filter(value => value && !persianRex.hasLetter.test(value));
     if (filtered_text_array.length === 0) {
@@ -150,7 +160,7 @@ function get_file_size_serial($, link) {
         }
     }
     if (text_array.length === 1 && text_array[0] === '') {
-        text_array = $(link).parent().prev().text().split(' ');
+        text_array = $(link).parent().prev().text().replace('Web-DL', 'WEB-DL').split(' ');
         if ($(link).parent().text().includes('|') ||
             (text_array.length === 1 && text_array[0] === '')) {
             let text = $(link).text();
@@ -173,12 +183,12 @@ function get_movie_size_info(text_array, dubbed) {
         (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1 : '';
     if (encoder_index) {
         encoder = text_array[encoder_index]
-            .replace('انکدر','')
+            .replace('انکدر', '')
             .replace('انکودر', '')
             .split(' ')
             .filter(value =>
                 value && !persianRex.hasLetter.test(value) &&
-                isNaN(value) && value!=='GB' && value!=='MB')
+                isNaN(value) && value !== 'GB' && value !== 'MB')
             .join('')
             .replace(/[\s:]/g, '');
     }
@@ -195,8 +205,8 @@ function get_movie_size_info(text_array, dubbed) {
             .split(' ')
             .filter(value => value && !persianRex.hasLetter.test(value))
             .join('')
-            .replace(encoder,'')
-            .replace(/\s/g,'');
+            .replace(encoder, '')
+            .replace(/\s/g, '');
     }
 
 
@@ -217,7 +227,7 @@ function get_movie_size_info(text_array, dubbed) {
     return {size, info};
 }
 
-function get_file_size_extrLink($, link) {
+function get_file_size_extraLink($, link) {
     let link_href = $(link).attr('href');
     let link_href_array = link_href.split('.');
     let quality_match = link_href.match(/\d\d\d\dp|\d\d\dp/g);
@@ -241,7 +251,10 @@ function get_file_size_extrLink($, link) {
     }
 }
 
-function movie_year_catch($, link) {
+function checkTrailer_year($, link, text_array) {
+    if (text_array[0].includes('دانلود تریلر') || text_array[0].includes('دانلود تیزر')) {
+        return 'trailer';
+    }
     let link_href = $(link).attr('href');
     let link_href_array = link_href.split('.');
     let year_match = link_href.match(/\d\d\d\d/g);

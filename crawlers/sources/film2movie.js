@@ -1,14 +1,17 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links, getMode
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words, replacePersianNumbers, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function film2movie({movie_url, page_count}) {
 
     await wrapper_module(movie_url, page_count, search_title);
+
+
+    // for local test
+    // await wrapper_module('https://www.film2movie.asia/page/', 10, search_title);
 }
 
 async function search_title(link, i) {
@@ -17,19 +20,17 @@ async function search_title(link, i) {
         let title = link.text().toLowerCase();
         let mode = getMode(title);
         let page_link = link.attr('href');
-        // console.log(`film2movie/${mode}/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`film2movie/${mode}/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title, mode);
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, mode, get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
+            let trailers = getTrailers($2);
             if (save_link.length > 0) {
-                if (mode === "serial") {
-                    let result = sort_links(save_link);
-                    if (result.length > 0)
-                        await save(title_array, page_link, result, persian_summary, poster, 'serial');
-                } else {
-                    await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
-                }
+                await save(title_array, page_link, save_link, persian_summary, poster, trailers, mode);
             }
         }
     }
@@ -45,9 +46,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -71,15 +70,36 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
 
+function getTrailers($) {
+    try {
+        let result = [];
+        let a = $('a');
+        for (let i = 0; i < a.length; i++) {
+            let href = $(a[i]).attr('href');
+            if (href && href.toLowerCase().includes('trailer')) {
+                if (href.includes('.mp4') || href.includes('.mkv')) {
+                    let quality = href.includes('360p') ? '360p' : '720p';
+                    result.push({
+                        link: href,
+                        info: 'film2movie-' + quality
+                    });
+                }
+            }
+        }
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
 function get_file_size($, link, mode) {
-    //'۱۰۸۰p.HardSub'  //'720p.BluRay.F2M.dubbed.Family'
+    //'1080p.HardSub'  //'720p.BluRay.F2M.dubbed.Family'
     //'480p.BluRay.F2M.HardSub.Family'  //'720p.BluRay.F2M.Family'
     try {
         if (mode === 'serial') {
@@ -87,16 +107,14 @@ function get_file_size($, link, mode) {
         }
         return get_file_size_movie($, link)
     } catch (error) {
-        error.massage = "module: film2media.js >> get_file_size ";
-        error.inputData = [$(link).attr('href'), mode];
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return "";
     }
 }
 
 function get_file_size_serial($, link) {
     let text = $(link).parent().text().replace(/[:_|]/g, '');
+    text = replacePersianNumbers(text);
     let family = (text.includes('Family')) ? 'Family' : '';
     let text_array = text.split(' ').filter((text) =>
         !persianRex.hasLetter.test(text) && text !== '' && text !== 'Family');
@@ -112,12 +130,13 @@ function get_file_size_serial($, link) {
 function get_file_size_movie($, link) {
     let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
     let text = $(parent).prev().text();
+    text = replacePersianNumbers(text);
     let link_href = $(link).attr('href').toLowerCase();
     let HardSub = (link_href.includes('subfa')) ? 'HardSub' : '';
     let dubbed = (link_href.includes('farsi.dub') || link_href.includes('dubbed')) ? 'dubbed' : '';
-    let family = $(link).next().text();
-    family = family.toLowerCase().includes('family') ? family : '';
-    let text_array = text.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
+    let family = $(link).next().text().toLowerCase().includes('family') ? 'family' : '';
+    let text_array = text.replace(/[()]/g, '').split(' ')
+        .filter((text) => text && !persianRex.hasLetter.test(text));
     if (text_array.length === 1) {
         if (link_href.includes('3d')) {
             return '3D';
@@ -135,9 +154,10 @@ function get_file_size_movie($, link) {
         let index = link_href_array.indexOf(quality);
         return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1]].join('.');
     }
-
-    if (text_array[0].match(/\d\d\dp/g) || text_array[0].match(/\d\d\d\dp/g) ||
-        persianRex.hasNumber.test(text_array[0]) || text_array[0].toLowerCase() === 'mobile') {
+    if (text_array[2].match(/\d\d\d\dp|\d\d\dp/g) && text_array[0] === 'x265') {
+        return [text_array[2], text_array[0], text_array[1], ...text_array.slice(3), HardSub, dubbed, family].filter(value => value !== '').join('.');
+    }
+    if (text_array[0].match(/\d\d\d\dp|\d\d\dp/g) || text_array[0].toLowerCase() === 'mobile') {
         return [text_array[0], text_array[1], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');
     }
     return [text_array[1], text_array[0], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');

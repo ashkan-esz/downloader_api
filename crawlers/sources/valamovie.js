@@ -1,31 +1,36 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
         wrapper_module(serial_url, serial_page_count, search_title_serial),
         wrapper_module(movie_url, page_count, search_title_movie)
     ]);
+
+
+    // for local test
+    // await wrapper_module('https://valamovie.xyz/series/page/', 10, search_title_serial);
+    // await wrapper_module('https://valamovie.xyz/page/', 10, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
     if (link.hasClass('product-title')) {
         let title = link.text();
         let page_link = link.attr('href');
-        // console.log(`valamovie/serial/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`valamovie/serial/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'serial',
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             if (save_link.length > 0) {
-                let result = sort_links(save_link);
-                if (result.length > 0)
-                    await save(title_array, page_link, result, persian_summary, poster, 'serial');
+                await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial');
             }
         }
     }
@@ -35,14 +40,17 @@ async function search_title_movie(link, i) {
     let title = link.attr('title');
     if (title && title.includes('دانلود') && title.toLowerCase() === link.text().toLowerCase()) {
         let page_link = link.attr('href');
-        // console.log(`valamovie/movie/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`valamovie/movie/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title.toLowerCase(), 'movie');
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'movie',
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             save_link = remove_duplicate(save_link);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
+                await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie');
             }
         }
     }
@@ -59,9 +67,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: valamovie.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -89,9 +95,7 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: valamovie.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -101,16 +105,11 @@ function get_file_size($, link, mode) {
     //'1080p.BluRay.dubbed - 1.77GB' //'1080p.x265.BluRay.RMTeam - 1.17GB'
     try {
         if (mode === 'serial') {
-            let {info, size} = get_file_size_serial($, link);
-            return [info, size].filter(value => value).join(' - ');
+            return get_file_size_serial($, link);
         }
-        let {info, size} = get_file_size_movie($, link)
-        return [info, size].filter(value => value !== '').join(' - ');
+        return get_file_size_movie($, link)
     } catch (error) {
-        error.massage = "module: valamovie.js >> get_file_size ";
-        error.inputData = $(link).attr('href');
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return "";
     }
 }
@@ -142,38 +141,42 @@ function get_file_size_serial($, link) {
         size = result.size;
     }
     let info = [link_quality, quality[1], ...quality.slice(2), quality[0], dubbed].filter(value => value).join('.');
-    return {info, size};
+    return [info, size].filter(value => value).join(' - ');
 }
 
 function get_file_size_movie($, link) {
-    let prevNodeChildren = $(link).parent().parent().parent().prev().children().children();
+    let prevNode = $(link).parent().parent().parent().prev();
+    if ($(prevNode)[0].name === 'br') {
+        prevNode = $(prevNode).prev();
+    }
     let link_href = $(link).attr('href').toLowerCase();
     let dubbed = (link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
-    let quality = $(prevNodeChildren[0]).text().trim().split(' ');
 
-    let encoder, size;
-    if (prevNodeChildren.length === 2) {
-        let text = $(prevNodeChildren[1]).text();
-        if (text.match(/\d:\d\d:\d\d/g)) {
-            size = '';
-        } else {
-            let MB_GB = text.includes('مگابایت') ? 'MB' : text.includes('گیگابایت') ? 'GB' : '';
-            let match = text.match(/[+-]?\d+(\.\d+)?/g);
-            size = match ? match[0] + MB_GB : '';
-        }
-        let text_array = text.split(' ');
-        encoder = (isNaN(text_array[1]) && !persianRex.hasLetter.test(text_array[1])) ? text_array[1] : '';
-    } else {
-        encoder = (!dubbed) ?
-            $(prevNodeChildren[1]).text()
-                .replace('انکودر:', '')
-                .replace('Encoder:', '').trim() : '';
-        let size_text = (!dubbed) ? $(prevNodeChildren[2]).text() : $(prevNodeChildren[1]).text();
-        size = size_text.replace('Size:', '').replace(/\s/g, '');
+    let text = $(prevNode).text();
+    let trash = $($(prevNode).children()).text().split(' ');
+    for (let i = 0; i < trash.length; i++) {
+        text = text.replace(trash[i], '');
     }
-
-    let info = [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.');
-    return {info, size};
+    let text_array = text.replace(/:/g, '').split('  ').filter(value => value !== '' && value !== ' ');
+    // console.log(text_array);
+    let quality = text_array[0].split(' ');
+    let encoder = text_array[1];
+    let size = (text_array.length > 2) ? text_array[2].replace(/\s/g, '') : '';
+    if (text_array[1].toLowerCase().includes('mb') ||
+        text_array[1].toLowerCase().includes('gb') ||
+        text_array[1].toLowerCase().includes('گیگابایت') ||
+        text_array[1].toLowerCase().includes('مگابایت') ||
+        dubbed === 'dubbed') {
+        encoder = '';
+        size = text_array[1]
+            .replace('مگابایت', 'MB')
+            .replace('گیگابایت', 'GB')
+            .replace(/\s/g, '');
+    }
+    let info = (quality[2] === '10bit') ?
+        [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.') :
+        [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.')
+    return [info, size].filter(value => value !== '').join(' - ');
 }
 
 function serial_text_length_2(text_array, $, link) {

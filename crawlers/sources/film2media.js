@@ -1,10 +1,8 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links, getMode
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
 
 let collection = '';
 let save_title = '';
@@ -12,6 +10,10 @@ let save_title = '';
 module.exports = async function film2media({movie_url, page_count}) {
 
     await wrapper_module(movie_url, page_count, search_title);
+
+
+    // for local test
+    // await wrapper_module('https://www.film2media.website/page/', 10, search_title);
 }
 
 async function search_title(link, i) {
@@ -20,21 +22,18 @@ async function search_title(link, i) {
         let title = link.text().toLowerCase();
         let mode = getMode(title);
         let page_link = link.attr('href');
-        // console.log(`film2media/${mode}/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`film2media/${mode}/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title, mode);
         save_title = title_array.join('.');
         collection = (page_link.includes('collection')) ? 'collection' : '';
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, mode, get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             if (save_link.length > 0) {
-                if (mode === "serial") {
-                    let result = sort_links(save_link);
-                    if (result.length > 0)
-                        await save(title_array, page_link, result, persian_summary, poster, 'serial');
-                } else {
-                    await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
-                }
+                await save(title_array, page_link, save_link, persian_summary, poster, [], mode);
             }
         }
     }
@@ -50,9 +49,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -69,9 +66,7 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -85,23 +80,26 @@ function get_file_size($, link, mode) {
         }
         return get_file_size_movie($, link);
     } catch (error) {
-        error.massage = "module: film2media.js >> get_file_size ";
-        error.inputData = [$(link).attr('href'), mode];
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return "";
     }
 }
 
 function get_file_size_serial($, link) {
-    let text_array = $(link).text().split(' ').filter((text) => !persianRex.hasLetter.test(text));
+    let text_array = $(link).text()
+        .split(' ')
+        .filter((text) => !persianRex.hasLetter.test(text));
     text_array.shift();
     let quality = text_array[0].replace(/[»:«]/g, '');
     let x265 = (text_array.length > 1) ? text_array[1].replace(/[»:«]/g, '') : '';
     let href_array = $(link).attr('href').split('.');
     let release = href_array[href_array.indexOf(quality) + 1];
-    let dubbed = ($(link).attr('href').toLowerCase().includes('farsi')) ? 'dubbed' : '';
-    return [quality, x265, release, dubbed].filter(value => value !== '').join('.');
+    let linkHref = $(link).attr('href').toLowerCase();
+    let dubbed = (linkHref.includes('farsi') || linkHref.includes('dubbed')) ? 'dubbed' : '';
+    return [quality, x265, release, dubbed]
+        .filter(value => value !== '')
+        .join('.')
+        .replace(/Web-dl|web-dl/g, 'WEB-DL');
 }
 
 function get_file_size_movie($, link) {
@@ -113,7 +111,7 @@ function get_file_size_movie($, link) {
     }
 
     let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
-    let text = $(parent).prev().text().trim();
+    let text = $(parent).prev().text().replace('Web-dl', 'WEB-DL').trim();
 
     if (persianRex.hasLetter.test(text)) {
         text = remove_persian_from_info(text, $, parent);

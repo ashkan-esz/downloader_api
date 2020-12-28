@@ -1,4 +1,4 @@
-const {replaceSpecialCharacters} = require("./search_tools");
+const {replaceSpecialCharacters} = require("./utils");
 
 const axios = require('axios').default;
 import axiosRetry from "axios-retry";

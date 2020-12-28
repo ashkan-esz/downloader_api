@@ -1,16 +1,20 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links, getMode
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module,} = require('../search_tools');
+const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
-         wrapper_module(serial_url, serial_page_count, search_title),
-         wrapper_module(movie_url, page_count, search_title)
+        wrapper_module(serial_url, serial_page_count, search_title),
+        wrapper_module(movie_url, page_count, search_title)
     ]);
+
+
+    // for local test
+    // await wrapper_module('https://1topmoviez.pw/series/page/', 10, search_title);
+    // await wrapper_module('https://1topmoviez.pw/page/', 10, search_title);
 }
 
 async function search_title(link, i) {
@@ -20,19 +24,16 @@ async function search_title(link, i) {
         link.text().toLowerCase().replace(/\s/g, '')) {
         let mode = getMode(title);
         let page_link = link.attr('href');
-        // console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title.toLowerCase(), mode);
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, mode, get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             if (save_link.length > 0) {
-                if (mode === "serial") {
-                    let result = sort_links(save_link);
-                    if (result.length > 0)
-                        await save(title_array, page_link, result, persian_summary, poster, 'serial');
-                } else {
-                    await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
-                }
+                await save(title_array, page_link, save_link, persian_summary, poster, [], mode);
             }
         }
     }
@@ -42,14 +43,14 @@ function get_persian_summary($) {
     try {
         let divs = $('div');
         for (let i = 0; i < divs.length; i++) {
-            if ($(divs[i]).hasClass('summary_text'))
-                return $(divs[i]).text().trim();
+            if ($(divs[i]).hasClass('summary_text')) {
+                let movieName = $($(divs[i]).children()[0]).text();
+                return $(divs[i]).text().replace(movieName, '').trim();
+            }
         }
         return '';
     } catch (error) {
-        error.massage = "module: topmovies.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -58,27 +59,26 @@ function get_poster($) {
     try {
         let imgs = $('img');
         for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs['data-src'];
-            let parent = imgs[i].parent.name;
-            if (parent === 'a' && src) {
-                return src;
+            if ($(imgs[i]).hasClass('wp-post-image')) {
+                let src = imgs[i].attribs['src'];
+                let parent = imgs[i].parent.name;
+                if (parent === 'a' && src) {
+                    return src;
+                }
             }
         }
         return '';
     } catch (error) {
-        error.massage = "module: topmovies.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
 
 function get_file_size($, link, mode) {
-    //'480p.WEBRip.HardSub - 180MB'  //'720p.HEVC.x265.WEBRip.HardSub - 240MB'
+    //'480p.WEBRip.HardSub - 180MB'  //'720p.WEB-DL.dubbed - 911.9M'
     //'1080p.BluRay.YTS.HardSub - 1.65G' //'720p.WEB-DL.HardSub - 802.3M'
-    //'1080p.BluRay.YIFY - 1.68G'   //'720p.WEB-DL.dubbed - 911.9M'
     try {
-        let HardSub = check_hardsub($);
+        let HardSub = check_hardSub($);
         let link_href = $(link).attr('href').toLowerCase();
         let dubbed = (link_href.includes('farsi.dub') ||
             link_href.includes('duble') ||
@@ -89,6 +89,7 @@ function get_file_size($, link, mode) {
                 .replace(/\s/g, '')
                 .replace('میانگینحجم:', '');
             let text_array = $(prevNodeChildren[0]).text().trim()
+                .replace('»', '')
                 .replace(/[\n\t]/g, '')
                 .replace('WEB.DL', 'WEB-DL')
                 .replace(/\./g, ' ')
@@ -108,15 +109,12 @@ function get_file_size($, link, mode) {
         let info = [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value).join('.');
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
-        error.massage = "module: topmovies.js >> get_file_size ";
-        error.inputData = $(link).attr('href');
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return "";
     }
 }
 
-function check_hardsub($) {
+function check_hardSub($) {
     let HardSub = "";
     let divs = $('div');
     for (let i = 0; i < divs.length; i++) {

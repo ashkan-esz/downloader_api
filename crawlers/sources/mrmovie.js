@@ -1,16 +1,20 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links, getMode
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
         wrapper_module(serial_url, serial_page_count, search_title),
         wrapper_module(movie_url, page_count, search_title)
     ]);
+
+
+    // for local test
+    // await wrapper_module(serial_url, serial_page_count, search_title);
+    // await wrapper_module(movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -18,19 +22,22 @@ async function search_title(link, i) {
         let title = link.parent().parent().prev().prev().text().toLowerCase();
         let mode = getMode(title);
         let page_link = link.attr('href');
-        // console.log(`mrmovie/${mode}/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`mrmovie/${mode}/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title, mode);
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, mode,
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, mode, get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             if (save_link.length > 0) {
                 if (mode === "serial") {
-                    let result = sort_links(save_link);
-                    if (result.length > 0)
-                        await save(title_array, page_link, result, persian_summary, poster, 'serial');
+                    await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial');
                 } else {
                     save_link = remove_duplicate(save_link);
-                    await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
+                    if (save_link.length > 0) {
+                        await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie');
+                    }
                 }
             }
         }
@@ -47,9 +54,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -66,9 +71,7 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: film2media.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -104,10 +107,7 @@ function get_file_size($, link, mode) {
         let info = [quality, x265, bit10, bit12, dolby_vision, fps60, uhd, text_array[1], encoder].filter(value => value !== '').join('.');
         return [info, size].filter(value => value !== '').join(' - ');
     } catch (error) {
-        error.massage = "module: mrmovie.js >> get_file_size ";
-        error.inputData = $(link).attr('href');
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return "";
     }
 }

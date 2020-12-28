@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "start": "node -r esm server.js",
-    "start_dev": "nodemon -r esm server.js",
-    "test": "node -r esm test.js",
+    "start_dev": "NODE_ENV=dev nodemon -r esm server.js",
+    "test": "NODE_ENV=dev node -r esm test.js",
     "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm server.js"
   },
   "dependencies": {
-    "autocannon": "^6.4.0",
-    "axios": "^0.19.2",
+    "@sentry/node": "^5.29.2",
+    "@sentry/tracing": "^5.29.2",
+    "autocannon": "^7.0.0",
+    "axios": "^0.21.0",
     "axios-retry": "^3.1.9",
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
@@ -22,14 +24,14 @@
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
-    "helmet": "^4.1.0",
+    "helmet": "^4.2.0",
     "http-errors": "~1.6.3",
-    "jwks-rsa": "^1.9.0",
-    "mongodb": "^3.6.0",
+    "jwks-rsa": "^1.11.0",
+    "mongodb": "^3.6.3",
     "node-cron": "^2.0.3",
     "persian-rex": "^2.3.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.6"
   }
 }

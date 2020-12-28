@@ -1,18 +1,17 @@
-import getCollection from '../mongoDB';
-import {update_cached_titles, update_cashed_likes} from "../cache";
-const {sort_links, getYear, getSeason, checkSources} = require('./search_tools');
+const {sort_Serial_links, checkSources, getYear} = require('./utils');
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
-import {save_error} from "../save_logs";
+import getCollection from '../mongoDB';
+import {saveError} from "../saveError";
 
-module.exports = async function save(title_array, page_link, save_link, persian_summary, poster, mode) {
+module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode) {
     try {
-        let year = (mode === 'movie') ? getYear(page_link, save_link) : '';
+        let year = (mode === 'movie') ? getYear(page_link, site_links) : '';
         let title = title_array.join(' ').trim();
         let result = {
             title: title,
             sources: [{
                 url: page_link,
-                links: save_link
+                links: mode === 'movie' ? site_links : sort_Serial_links(site_links)
             }],
             year: year,
             like: 0,
@@ -21,75 +20,151 @@ module.exports = async function save(title_array, page_link, save_link, persian_
             update_date: 0,
             poster: [poster],
             summary: {persian: persian_summary},
-            type : mode
+            trailers: trailers,
+            type: mode
         };
 
-        let collection_name = (mode === 'serial') ? 'serials' : 'movies';
-        let collection = await getCollection(collection_name);
-        let search_result = await searchOnCollection(collection, title, year, mode);
+        let {collection, db_data} = await searchOnCollection(title, year, mode);
 
-        if (search_result === null) {//new title
+        if (db_data === null) {//new title
             let newResult = await getInfoFromAPI(result, mode);
             await collection.insertOne(newResult);
             return;
         }
 
-        let posterChanged = check_poster_changed(search_result, poster);
+        let posterChange = handlePosterUpdate(db_data, poster);
+        let trailerChange = handleTrailerUpdate(db_data, trailers);
 
-        let source_exist = false;
-        for (let j = 0; j < search_result.sources.length; j++) {//check source exist
-            let update = false;
-            if (checkSources(search_result.sources[j].url, page_link)) { // this source exist
-                source_exist = true;
-
+        for (let j = 0; j < db_data.sources.length; j++) {//check source exist
+            if (checkSources(db_data.sources[j].url, page_link)) { // this source exist
+                let update = false;
                 if (mode === 'movie') { //movie
-                    update = handle_movie_changes(save_link, search_result.sources[j], update);
+                    update = check_movieLinks_changed(site_links, db_data.sources[j].links);
+                    if (update) {
+                        db_data.sources[j].links = site_links;
+                    }
                 } else { //serial
-                    update = handle_serial_changes(save_link, search_result.sources[j], update);
+                    update = check_serialLinks_changed(site_links, db_data.sources[j].links);
+                    if (update) {
+                        db_data.sources[j].links = sort_Serial_links(site_links);
+                    }
                 }
-
-                if (update) {
-                    await handle_update(collection, search_result, persian_summary, posterChanged, mode, null);
-                } else if (posterChanged) {
-                    await collection.findOneAndUpdate({_id: search_result._id}, {
-                        $set: {
-                            poster: search_result.poster
-                        }
-                    });
+                if (update || posterChange || trailerChange) {
+                    await handle_update(collection, db_data, update, persian_summary, posterChange, trailerChange, mode, null);
                 }
-
-                break;
+                return;
             }
         }
 
-        if (!source_exist) {//new source
-            await handle_update(collection, search_result, persian_summary, posterChanged, mode, result);
-        }
+        await handle_update(collection, db_data, false, persian_summary, posterChange, trailerChange, mode, result);
 
     } catch (error) {
-        error.massage = "module: save_changes_db >> ... ";
-        error.inputData = page_link;
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
     }
 }
 
-async function searchOnCollection(collection, title, year, mode) {
-    let search_result;
+async function searchOnCollection(title, year, mode) {
+    let collection_name = (mode === 'serial') ? 'serials' : 'movies';
+    let collection = await getCollection(collection_name);
+    let db_data;
+    let lowDataConfig = {
+        title: 1,
+        year: 1,
+        sources: 1,
+        summary: 1,
+        poster: 1,
+        trailers: 1,
+    }
     if (mode === 'serial') {
-        search_result = await collection.findOne({title: title});
+        db_data = await collection.findOne({title: title}, {projection: lowDataConfig});
     } else {
         let YEAR = Number(year);
         let cases = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        search_result = await collection.findOne({title: title, year: cases[0]});
-        if (search_result === null) {
-            search_result = await collection.findOne({title: title, year: cases[1]});
+        db_data = await collection.findOne({title: title, year: cases[0]}, {projection: lowDataConfig});
+        if (db_data === null) {
+            db_data = await collection.findOne({title: title, year: cases[1]}, {projection: lowDataConfig});
         }
-        if (search_result === null) {
-            search_result = await collection.findOne({title: title, year: cases[2]});
+        if (db_data === null) {
+            db_data = await collection.findOne({title: title, year: cases[2]}, {projection: lowDataConfig});
         }
     }
-    return search_result;
+    return {collection, db_data};
+}
+
+async function handle_update(collection, db_data, update, site_persian_summary, posterChange, trailerChange, mode, result) {
+    try {
+        let updateFields = {
+            update_date: new Date()
+        };
+
+        if (update) {
+            updateFields.sources = db_data.sources;
+        } else if (result !== null) {
+            db_data.sources.push(result.sources[0]);
+            updateFields.sources = db_data.sources;
+        }
+
+        if (db_data.summary.persian === '') {
+            db_data.summary.persian = site_persian_summary;
+            updateFields.summary = db_data.summary;
+        }
+
+        if (posterChange) {
+            updateFields.poster = db_data.poster;
+        }
+        if (trailerChange) {
+            updateFields.trailers = db_data.trailers;
+        }
+
+        if (update || result !== null) {
+            let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.year, mode);
+            if (omdb_data !== null) {
+                let apiFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, mode);
+                updateFields = {...updateFields, ...apiFields};
+            }
+        }
+
+        await collection.findOneAndUpdate({_id: db_data._id}, {
+            $set: updateFields
+        });
+
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+function check_movieLinks_changed(site_links, db_links) {
+    if (site_links.length !== db_links.length) {
+        return true;
+    }
+
+    for (let i = 0; i < site_links.length; i++) {
+        if (site_links[i].link !== db_links[i].link) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function check_serialLinks_changed(site_links, db_links) {
+    db_links = [].concat.apply([], db_links);
+
+    if (site_links.length !== db_links.length) {
+        return true;
+    }
+
+    for (let i = 0; i < site_links.length; i++) {//check links exist
+        let link_exist = false;
+        for (let j = 0; j < db_links.length; j++) {
+            if (site_links[i].link === db_links[j].link) { //this link exist
+                link_exist = true;
+            }
+        }
+        if (!link_exist) { //new link
+            return true;
+        }
+    }
+    return false;
 }
 
 async function getInfoFromAPI(result, mode) {
@@ -100,131 +175,44 @@ async function getInfoFromAPI(result, mode) {
     return {...result, ...apiFields};
 }
 
-async function handle_update(collection, search_result, persian_summary, posterChanged, mode, result) {
-    try {
-        if (result !== null) {
-            search_result.sources.push(result.sources[0]);
-        }
-
-        // update_cached_titles(mode, search_result); //todo : fix cache
-        // update_cashed_likes(mode, [search_result]);
-
-        let updateFields = {
-            sources: search_result.sources,
-            update_date: new Date()
-        };
-        let persianSummary = search_result.summary.persian;
-        if (persianSummary === null || persianSummary === '') {
-            search_result.summary.persian = persian_summary;
-            updateFields.summary = search_result.summary;
-        }
-        if (posterChanged) {
-            updateFields.poster = search_result.poster;
-        }
-
-        let omdb_data = await get_OMDB_Api_Data(search_result.title, search_result.year, mode);
-        if (omdb_data !== null) {
-            let apiFields = get_OMDB_Api_Fields(omdb_data, search_result.summary, mode);
-            updateFields = {...updateFields, ...apiFields};
-        }
-
-        await collection.findOneAndUpdate({_id: search_result._id}, {
-            $set: updateFields
-        });
-
-    } catch (error) {
-        let type = (result) ? 'new source' : 'update links';
-        error.massage = `module: save_changes_db >> handle_update >> ${type}`;
-        error.inputData = search_result;
-        error.time = new Date();
-        save_error(error);
-    }
-}
-
-function check_poster_changed(search_result, poster) {
-    let poster_exist = false;
-    let no_poster = false;
-
+function handlePosterUpdate(db_data, poster) {
     if (poster === '') {
         return false;
     }
 
-    //no poster exist
-    if (!search_result.poster ||
-        search_result.poster === '' ||
-        search_result.poster.length === 0) {
-        search_result.poster = [poster];
-        no_poster = true;
-    }
-
-    for (let i = 0; i < search_result.poster.length; i++) { // check to add poster
-        if (search_result.poster[i] === poster ||
-            checkSources(search_result.poster[i], poster)) {//this poster exist
-            poster_exist = true;
-            break;
+    for (let i = 0; i < db_data.poster.length; i++) {
+        if (checkSources(db_data.poster[i], poster)) {//this poster exist
+            if (db_data.poster[i] !== poster) { //replace link
+                db_data.poster[i] = poster;
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
-    if (!poster_exist) {
-        search_result.poster.push(poster);
-    }
-
-    return (!poster_exist || no_poster);
+    db_data.poster.push(poster); //new poster
+    return true;
 }
 
-function handle_movie_changes(save_link, thisSource, update) {
-    let links = thisSource.links;
-    for (let l = 0; l < save_link.length; l++) {//check links exist
-        let link_exist = false;
-        for (let k = 0; k < links.length; k++) {
-            if (links[k].link === save_link[l].link) { //this link exist
-                link_exist = true;
-                if (links[k].info !== save_link[l].info &&
-                    links[k].info.length < save_link[l].info.length) {//link info update
-                    thisSource.links[k].info = save_link[l].info
-                    update = true;
+function handleTrailerUpdate(db_data, site_trailers) {
+    let trailersChanged = false;
+    for (let i = 0; i < site_trailers.length; i++) {
+        let trailer_exist = false;
+        for (let j = 0; j < db_data.trailers.length; j++) {
+            if (site_trailers[i].info === db_data.trailers[j].info) {//this trailer exist
+                if (site_trailers[i].link !== db_data.trailers[j].link) { //replace link
+                    db_data.trailers[j].link = site_trailers[i].link;
+                    trailersChanged = true;
                 }
+                trailer_exist = true;
                 break;
             }
         }
-        if (!link_exist) {//movie new link
-            thisSource.links.push(save_link[l]);
-            update = true;
+        if (!trailer_exist) { //new trailer
+            db_data.trailers.push(site_trailers[i]);
+            trailersChanged = true;
         }
     }
-    return update;
-}
-
-function handle_serial_changes(save_link, thisSource, update) {
-    let links = thisSource.links;
-    for (let s = 0; s < save_link.length; s++) {//check links exist
-        let season1 = getSeason(save_link[s][0].link);
-        let season_exist = false;
-        for (let l = 0; l < save_link[s].length; l++) {
-            let link_exist = false;
-            E :for (let k = 0; k < links.length; k++) {
-                let season2 = getSeason(links[k][0].link);
-                for (let h = 0; h < links[k].length; h++) {
-                    if (links[k][h].link === save_link[s][l].link) { //this link exist
-                        link_exist = true;
-                        if (season1 === season2)
-                            season_exist = true;
-                        break E;
-                    }
-                }
-                if (!link_exist && season1 === season2) {//serial season new link
-                    season_exist = true;
-                    thisSource.links[k].push(save_link[s][l]);
-                    update = true;
-                    break;
-                }
-            }
-        }//end of checking all of this season links
-        if (!season_exist) {//serial new season
-            thisSource.links.push(save_link[s]);
-            thisSource.links = sort_links(thisSource.links.flat(1))
-            update = true;
-        }
-    }//end of seasons
-    return update;
+    return trailersChanged;
 }

@@ -1,49 +1,56 @@
-const {
-    search_in_title_page, wrapper_module,
-    remove_persian_words, sort_links
-} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {remove_persian_words} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {save_error} from "../../save_logs";
+import {saveError} from "../../saveError";
+
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
         wrapper_module(serial_url, serial_page_count, search_title_serial),
         wrapper_module(movie_url, page_count, search_title_movie)
     ]);
+
+    // for local test
+    // await wrapper_module('https://digimoviez.com/serie/page/', 10, search_title_serial);
+    // await wrapper_module('https://digimoviez.com/page/', 10, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
     let title = link.attr('title');
     if (title && title.includes('دانلود') && link.children()[0].name !== 'img') {
         let page_link = link.attr('href');
-        // console.log(`digimovies/serial/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`digimovies/serial/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'serial',
-                get_file_size, get_persian_summary, get_poster);
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             if (save_link.length > 0) {
-                let result = sort_links(save_link);
-                if (result.length > 0)
-                    await save(title_array, page_link, result, persian_summary, poster, 'serial');
+                await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial');
             }
         }
     }
 }
 
-async function search_title_movie(link, i) {
+async function search_title_movie(link, i, $) {
     let text = link.text();
     if (text && text === 'ادامه مطلب') {
         let title = link.attr('title').toLowerCase();
         let page_link = link.attr('href');
-        // console.log(`digimovies/movie/${i}/${title}  ========>  `);
+        if (process.env.NODE_ENV === 'dev') {
+            console.log(`digimovies/movie/${i}/${title}  ========>  `);
+        }
         let title_array = remove_persian_words(title, 'movie');
-        if (title_array.length > 0) {
-            let {save_link, persian_summary, poster} = await search_in_title_page(title_array, page_link, 'movie',
-                get_file_size, get_persian_summary, get_poster);
+        if (title_array.length > 0 && !isPersianMovies($, link)) {
+            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
+            let persian_summary = get_persian_summary($2);
+            let poster = get_poster($2);
             save_link = remove_duplicate(save_link);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, 'movie');
+                await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie');
             }
         }
     }
@@ -58,9 +65,7 @@ function get_persian_summary($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: digimovies.js >> get_persian_summary ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -79,26 +84,30 @@ function get_poster($) {
         }
         return '';
     } catch (error) {
-        error.massage = "module: digimovies.js >> get_poster ";
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
+    }
+}
+
+function isPersianMovies($, link) {
+    try {
+        let prevNodeChildren = $(link).parent().parent().parent().parent().parent().prev().children()[0];
+        return $(prevNodeChildren).text().includes('فیلم ایرانی');
+    } catch (e) {
+        return false;
     }
 }
 
 function get_file_size($, link, mode) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
-    //'720p.x265.WEB-DL.SoftSub - 250MB' //'1080p.WEB-DL.SoftSub - 1.82GB'
+    //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.BluRay.10bit.IMAX.SoftSub - 4.42GB'
     try {
         if (mode === 'serial') {
             return get_file_size_serial($, link);
         }
         return get_file_size_movie($, link);
     } catch (error) {
-        error.massage = "module: digimovies.js >> get_file_size ";
-        error.inputData = [$(link).attr('href'), mode];
-        error.time = new Date();
-        save_error(error);
+        saveError(error);
         return '';
     }
 }
@@ -118,6 +127,7 @@ function get_file_size_serial($, link) {
         quality = text_array[2].replace(/:/g, '')
             .replace('کیفیت', '')
             .trim().replace(/\s/g, '.');
+        quality = sortQualityInfo(quality);
         dubbed = (text_array[3].includes('زبان : فارسی')) ? 'dubbed' : '';
         size = (text_array[3].includes('زبان : فارسی')) ? text_array[4] : text_array[3];
     }
@@ -137,6 +147,7 @@ function get_file_size_movie($, link) {
     let quality_text = $(prevNodeChildren[0]).text();
     if (quality_text.includes('کیفیت')) {
         let quality = quality_text.replace('کیفیت :', '').trim().replace(/\s/g, '.');
+        quality = sortQualityInfo(quality);
         let info = [quality, dubbed].filter(value => value !== '').join('.');
         let size_text = $(prevNodeChildren[1]).text();
         let size = (size_text.includes('حجم')) ?
@@ -170,6 +181,22 @@ function get_serial_text_len1(text_array) {
         ? [text_array[1], text_array[0]].join('.')
         : text_array.join('.').trim();
     return {info, size};
+}
+
+function sortQualityInfo(quality) {
+    let spited_quality = quality.split('.');
+    if (spited_quality.length > 1 && spited_quality[1].match(/\d\d\d\dp|\d\d\dp/g)) {
+        quality = [spited_quality[1], spited_quality[0], ...spited_quality.slice(2)].filter(value => value).join('.');
+    } else if (spited_quality.length > 2 && spited_quality[2].match(/\d\d\d\dp|\d\d\dp/g) && spited_quality[1] === 'x265') {
+        quality = [spited_quality[2], spited_quality[1], spited_quality[0], ...spited_quality.slice(3)].filter(value => value).join('.');
+    } else if (spited_quality.length > 2 &&
+        (spited_quality[1].includes('WEB-DL') || spited_quality[1].includes('BluRay')) &&
+        spited_quality[2] === 'x265') {
+        quality = [spited_quality[0], spited_quality[2], spited_quality[1], ...spited_quality.slice(3)].filter(value => value).join('.');
+    } else if (spited_quality.length > 3 && spited_quality[1].includes('10bit') && spited_quality[3] === 'x265') {
+        quality = [spited_quality[0], spited_quality[3], spited_quality[1], spited_quality[0], ...spited_quality.slice(4)].filter(value => value).join('.');
+    }
+    return quality;
 }
 
 function get_movie_quality($, link) {
