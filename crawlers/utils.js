@@ -86,7 +86,9 @@ export function getMode(title){
 }
 
 export function getYear(page_link, save_link) {
-    let url_array = page_link.replace(/[-/]/g, ' ').split(' ')
+    let url_array = page_link
+        .replace(/[-/]/g, ' ')
+        .split(' ')
         .filter(value => Number(value) > 1800 && Number(value) < 2100);
     if (url_array.length > 0) {
         let lastPart = url_array.pop();
@@ -124,3 +126,13 @@ export function checkSources(case1, case2) {
         .split('.')[0];
     return source_name === new_source_name;
 }
+
+export function getNewURl(url, newDomain) {
+    let domain = url
+        .replace(/www.|https:\/\/|\/page\//g, '')
+        .replace(/[\/_-]/g, '.');
+    return url
+        .replace(domain.split('.')[0], newDomain.split('.')[0])
+        .replace(domain.split('.')[1], newDomain.split('.')[1]);
+}
+

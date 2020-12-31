@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const cheerio = require('cheerio');
-import axiosRetry from "axios-retry";
-import {saveError} from "../saveError";
+const axiosRetry = require("axios-retry");
+const {saveError} = require("../saveError");
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -9,7 +9,8 @@ axiosRetry(axios, {
     }
 });
 
-async function wrapper_module(url, page_count, searchCB) {
+async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
+    //todo : speed based on RECRAWL
     for (let i = 1; i <= page_count; i++) {//todo : i=1
         try {
             let response = await axios.get(url + `${i}/`);

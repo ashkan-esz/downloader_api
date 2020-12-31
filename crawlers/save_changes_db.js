@@ -1,9 +1,10 @@
 const {sort_Serial_links, checkSources, getYear} = require('./utils');
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
 import getCollection from '../mongoDB';
+import {getNewURl} from "./utils";
 import {saveError} from "../saveError";
 
-module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode) {
+module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, reCrawl = false) {
     try {
         let year = (mode === 'movie') ? getYear(page_link, site_links) : '';
         let title = title_array.join(' ').trim();
@@ -49,14 +50,15 @@ module.exports = async function save(title_array, page_link, site_links, persian
                         db_data.sources[j].links = sort_Serial_links(site_links);
                     }
                 }
+                update = handleUrlChange(db_data, db_data.sources[j], page_link, update);
                 if (update || posterChange || trailerChange) {
-                    await handle_update(collection, db_data, update, persian_summary, posterChange, trailerChange, mode, null);
+                    await handle_update(collection, db_data, update, persian_summary, posterChange, trailerChange, mode, null, reCrawl);
                 }
                 return;
             }
         }
 
-        await handle_update(collection, db_data, false, persian_summary, posterChange, trailerChange, mode, result);
+        await handle_update(collection, db_data, false, persian_summary, posterChange, trailerChange, mode, result, reCrawl);
 
     } catch (error) {
         saveError(error);
@@ -91,11 +93,13 @@ async function searchOnCollection(title, year, mode) {
     return {collection, db_data};
 }
 
-async function handle_update(collection, db_data, update, site_persian_summary, posterChange, trailerChange, mode, result) {
+async function handle_update(collection, db_data, update, site_persian_summary, posterChange, trailerChange, mode, result, reCrawl) {
     try {
-        let updateFields = {
-            update_date: new Date()
-        };
+        let updateFields = {};
+
+        if ((update || result !== null) && !reCrawl) {
+            updateFields.update_date = new Date();
+        }
 
         if (update) {
             updateFields.sources = db_data.sources;
@@ -116,7 +120,7 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
             updateFields.trailers = db_data.trailers;
         }
 
-        if (update || result !== null) {
+        if ((update || result !== null) && reCrawl) {
             let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.year, mode);
             if (omdb_data !== null) {
                 let apiFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, mode);
@@ -215,4 +219,15 @@ function handleTrailerUpdate(db_data, site_trailers) {
         }
     }
     return trailersChanged;
+}
+
+function handleUrlChange(db_data, thiaSource, page_link, update) {
+    let newDomain = page_link.replace(/www.|https:\/\/|\/page\/|\//g, '');
+    let newUrl = getNewURl(thiaSource.url, newDomain);
+    if (thiaSource.url !== newUrl) {
+        thiaSource.url = newUrl;
+        return true;
+    } else {
+        return update;
+    }
 }

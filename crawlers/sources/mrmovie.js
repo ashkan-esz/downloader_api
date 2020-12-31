@@ -4,11 +4,13 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 import {saveError} from "../../saveError";
 
+let RECRAWL;
 
-module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
+module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}, reCrawl = false) {
+    RECRAWL = reCrawl;
     await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title),
-        wrapper_module(movie_url, page_count, search_title)
+        wrapper_module(serial_url, serial_page_count, search_title, RECRAWL),
+        wrapper_module(movie_url, page_count, search_title, RECRAWL)
     ]);
 
 
@@ -32,11 +34,11 @@ async function search_title(link, i) {
             let poster = get_poster($2);
             if (save_link.length > 0) {
                 if (mode === "serial") {
-                    await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial');
+                    await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial', RECRAWL);
                 } else {
                     save_link = remove_duplicate(save_link);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie');
+                        await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie', RECRAWL);
                     }
                 }
             }

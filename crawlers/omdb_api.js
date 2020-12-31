@@ -1,7 +1,6 @@
-const {replaceSpecialCharacters} = require("./utils");
-
 const axios = require('axios').default;
-import axiosRetry from "axios-retry";
+const axiosRetry = require("axios-retry");
+const {replaceSpecialCharacters} = require("./utils");
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -9,7 +8,7 @@ axiosRetry(axios, {
     }
 });
 
-async function get_OMDB_Api_Data(title, thisYear, mode) {
+export async function get_OMDB_Api_Data(title, thisYear, mode) {
     let apiKeyArray = [
         '48621e95', '4de5ec8d', '1bc90abf', '7c0fe6e', '16070419', '8cf4fc9a',
         'e42203dc', '25e38d4e', 'a3a8d729', '51f6c05a', 'b9a766e3',
@@ -58,7 +57,7 @@ async function get_OMDB_Api_Data(title, thisYear, mode) {
     return data;
 }
 
-function get_OMDB_Api_Fields(data, summary, mode) {
+export function get_OMDB_Api_Fields(data, summary, mode) {
     summary.english = (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '';
     let year = data.Year.split(/[-–]/g)[0];
     let collectedData = {
@@ -87,7 +86,7 @@ function get_OMDB_Api_Fields(data, summary, mode) {
     return collectedData;
 }
 
-function get_OMDB_Api_nullFields(summary, mode) {
+export function get_OMDB_Api_nullFields(summary, mode) {
     summary.english = '';
     let collectedData = {
         totalSeasons: '',
@@ -112,7 +111,3 @@ function get_OMDB_Api_nullFields(summary, mode) {
     }
     return collectedData;
 }
-
-exports.get_OMDB_Api_Data = get_OMDB_Api_Data;
-exports.get_OMDB_Api_Fields = get_OMDB_Api_Fields;
-exports.get_OMDB_Api_nullFields = get_OMDB_Api_nullFields;

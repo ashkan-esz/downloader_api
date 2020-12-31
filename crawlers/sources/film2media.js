@@ -6,10 +6,11 @@ import {saveError} from "../../saveError";
 
 let collection = '';
 let save_title = '';
+let RECRAWL;
 
-module.exports = async function film2media({movie_url, page_count}) {
-
-    await wrapper_module(movie_url, page_count, search_title);
+module.exports = async function film2media({movie_url, page_count}, reCrawl = false) {
+    RECRAWL = reCrawl;
+    await wrapper_module(movie_url, page_count, search_title, RECRAWL);
 
 
     // for local test
@@ -33,7 +34,7 @@ async function search_title(link, i) {
             let persian_summary = get_persian_summary($2);
             let poster = get_poster($2);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, [], mode);
+                await save(title_array, page_link, save_link, persian_summary, poster, [], mode, RECRAWL);
             }
         }
     }
