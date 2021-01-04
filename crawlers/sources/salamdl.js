@@ -2,12 +2,13 @@ const {search_in_title_page, wrapper_module} = require('../search_tools');
 const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {saveError} from "../../saveError";
+const {saveError} = require("../../saveError");
 
+let RECRAWL;
 
-module.exports = async function salamdl({movie_url, page_count}) {
-
-    await wrapper_module(movie_url, page_count, search_title);
+module.exports = async function salamdl({movie_url, page_count}, reCrawl = false) {
+    RECRAWL = reCrawl;
+    await wrapper_module(movie_url, page_count, search_title, RECRAWL);
 
 
     // for local test

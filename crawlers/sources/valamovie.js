@@ -2,13 +2,15 @@ const {search_in_title_page, wrapper_module} = require('../search_tools');
 const {remove_persian_words} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {saveError} from "../../saveError";
+const {saveError} = require("../../saveError");
 
+let RECRAWL;
 
-module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
+module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}, reCrawl = false) {
+    RECRAWL = reCrawl;
     await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title_serial),
-        wrapper_module(movie_url, page_count, search_title_movie)
+        wrapper_module(serial_url, serial_page_count, search_title_serial, RECRAWL),
+        wrapper_module(movie_url, page_count, search_title_movie, RECRAWL)
     ]);
 
 
@@ -116,15 +118,16 @@ function get_file_size($, link, mode) {
 
 function get_file_size_serial($, link) {
     let text_array = $(link).parent().parent().parent().parent().prev().text().trim().split('/');
+    let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let quality, dubbed, size, link_quality;
     if (text_array.length === 1) {
         quality = $(link).text().split(/[\s-]/g).filter((text) => !persianRex.hasLetter.test(text) && text !== '' && isNaN(text));
         if (quality[0] === 'X265') {
             quality[0] = '720p.x265';
         }
-        return quality.join('.');
+        return [...quality, bit10].filter(value => value).join('.');
     } else if (text_array.length === 2) {
-        return serial_text_length_2(text_array, $, link);
+        return serial_text_length_2(text_array, $, link, bit10);
     } else if (text_array.length === 3) {
         let result = serial_text_length_3(text_array, $, link, 1, 2);
         quality = result.quality;
@@ -140,11 +143,12 @@ function get_file_size_serial($, link) {
         dubbed = result.dubbed;
         size = result.size;
     }
-    let info = [link_quality, quality[1], ...quality.slice(2), quality[0], dubbed].filter(value => value).join('.');
+    let info = [link_quality, quality[1], ...quality.slice(2), bit10, quality[0], dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
 
 function get_file_size_movie($, link) {
+    let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let prevNode = $(link).parent().parent().parent().prev();
     if ($(prevNode)[0].name === 'br') {
         prevNode = $(prevNode).prev();
@@ -158,7 +162,7 @@ function get_file_size_movie($, link) {
         text = text.replace(trash[i], '');
     }
     let text_array = text.replace(/:/g, '').split('  ').filter(value => value !== '' && value !== ' ');
-    // console.log(text_array);
+
     let quality = text_array[0].split(' ');
     let encoder = text_array[1];
     let size = (text_array.length > 2) ? text_array[2].replace(/\s/g, '') : '';
@@ -175,11 +179,11 @@ function get_file_size_movie($, link) {
     }
     let info = (quality[2] === '10bit') ?
         [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.') :
-        [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.')
+        [quality[1], ...quality.slice(2), quality[0], bit10, encoder, dubbed].filter(value => value).join('.')
     return [info, size].filter(value => value !== '').join(' - ');
 }
 
-function serial_text_length_2(text_array, $, link) {
+function serial_text_length_2(text_array, $, link, bit10) {
     let quality = text_array[1].replace('کیفیت :', '').trim().split(' ');
     let link_href = $(link).attr('href').toLowerCase();
     let x265 = (link_href.includes('x265')) ? 'x265' : '';
@@ -192,7 +196,7 @@ function serial_text_length_2(text_array, $, link) {
             quality[0] = 'dubbed';
         }
     }
-    return [link_quality, quality[1], x265, ...quality.slice(2), quality[0]].filter(value => value).join('.')
+    return [link_quality, quality[1], x265, ...quality.slice(2), bit10, quality[0]].filter(value => value).join('.')
 }
 
 function serial_text_length_3(text_array, $, link, qualityIndex, dubbedIndex) {

@@ -1,29 +1,17 @@
 const {sort_Serial_links, checkSources, getYear} = require('./utils');
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
-import getCollection from '../mongoDB';
-import {getNewURl} from "./utils";
-import {saveError} from "../saveError";
+const getCollection = require('../mongoDB');
+const {getNewURl, getSeasonEpisode, checkBetterQuality, getHardSub, getDubbed} = require("./utils");
+const {saveError} = require("../saveError");
+
+//todo : sort posters based on size
+//todo : total time for movie/serial (api available in a project)
 
 module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, reCrawl = false) {
     try {
         let year = (mode === 'movie') ? getYear(page_link, site_links) : '';
         let title = title_array.join(' ').trim();
-        let result = {
-            title: title,
-            sources: [{
-                url: page_link,
-                links: mode === 'movie' ? site_links : sort_Serial_links(site_links)
-            }],
-            year: year,
-            like: 0,
-            dislike: 0,
-            insert_date: new Date(),
-            update_date: 0,
-            poster: [poster],
-            summary: {persian: persian_summary},
-            trailers: trailers,
-            type: mode
-        };
+        let result = getSaveObj(title, page_link, mode, site_links, year, poster, persian_summary, trailers);
 
         let {collection, db_data} = await searchOnCollection(title, year, mode);
 
@@ -33,36 +21,44 @@ module.exports = async function save(title_array, page_link, site_links, persian
             return;
         }
 
-        let posterChange = handlePosterUpdate(db_data, poster);
-        let trailerChange = handleTrailerUpdate(db_data, trailers);
-
-        for (let j = 0; j < db_data.sources.length; j++) {//check source exist
-            if (checkSources(db_data.sources[j].url, page_link)) { // this source exist
-                let update = false;
-                if (mode === 'movie') { //movie
-                    update = check_movieLinks_changed(site_links, db_data.sources[j].links);
-                    if (update) {
-                        db_data.sources[j].links = site_links;
-                    }
-                } else { //serial
-                    update = check_serialLinks_changed(site_links, db_data.sources[j].links);
-                    if (update) {
-                        db_data.sources[j].links = sort_Serial_links(site_links);
-                    }
-                }
-                update = handleUrlChange(db_data, db_data.sources[j], page_link, update);
-                if (update || posterChange || trailerChange) {
-                    await handle_update(collection, db_data, update, persian_summary, posterChange, trailerChange, mode, null, reCrawl);
-                }
-                return;
-            }
+        let subUpdates = handle_subUpdates(db_data, poster, trailers, result, mode);
+        let isEnd = await handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, reCrawl);
+        if (isEnd) {
+            return;
         }
-
-        await handle_update(collection, db_data, false, persian_summary, posterChange, trailerChange, mode, result, reCrawl);
+        //new source
+        await handle_update(collection, db_data, false, persian_summary, subUpdates, mode, result, reCrawl);
 
     } catch (error) {
         saveError(error);
     }
+}
+
+function getSaveObj(title, page_link, mode, site_links, year, poster, persian_summary, trailers) {
+    let {season, episode, quality, hardSub, dubbed} = getLatestData(site_links, mode);
+    return {
+        title: title,
+        sources: [{
+            url: page_link,
+            links: mode === 'movie' ? site_links : sort_Serial_links(site_links)
+        }],
+        year: year,
+        like: 0,
+        dislike: 0,
+        insert_date: new Date(),
+        update_date: 0,
+        poster: [poster],
+        summary: {persian: persian_summary},
+        trailers: trailers,
+        type: mode,
+        latestData: {
+            season: mode === 'movie' ? 0 : season,
+            episode: mode === 'movie' ? 0 : episode,
+            quality: quality,
+            hardSub: hardSub,
+            dubbed: dubbed
+        }
+    };
 }
 
 async function searchOnCollection(title, year, mode) {
@@ -76,6 +72,7 @@ async function searchOnCollection(title, year, mode) {
         summary: 1,
         poster: 1,
         trailers: 1,
+        latestData: 1
     }
     if (mode === 'serial') {
         db_data = await collection.findOne({title: title}, {projection: lowDataConfig});
@@ -93,7 +90,32 @@ async function searchOnCollection(title, year, mode) {
     return {collection, db_data};
 }
 
-async function handle_update(collection, db_data, update, site_persian_summary, posterChange, trailerChange, mode, result, reCrawl) {
+async function handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, reCrawl) {
+    for (let j = 0; j < db_data.sources.length; j++) {//check source exist
+        if (checkSources(db_data.sources[j].url, page_link)) { // this source exist
+            let update = false;
+            if (mode === 'movie') { //movie
+                update = check_movieLinks_changed(site_links, db_data.sources[j].links);
+                if (update) {
+                    db_data.sources[j].links = site_links;
+                }
+            } else { //serial
+                update = check_serialLinks_changed(site_links, db_data.sources[j].links);
+                if (update) {
+                    db_data.sources[j].links = sort_Serial_links(site_links);
+                }
+            }
+            update = handleUrlChange(db_data, db_data.sources[j], page_link, update);
+            if (update || subUpdates.posterChange || subUpdates.trailerChange || subUpdates.latestDataChange) {
+                await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, null, reCrawl);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+async function handle_update(collection, db_data, update, site_persian_summary, subUpdates, mode, result, reCrawl) {
     try {
         let updateFields = {};
 
@@ -113,11 +135,14 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
             updateFields.summary = db_data.summary;
         }
 
-        if (posterChange) {
+        if (subUpdates.posterChange) {
             updateFields.poster = db_data.poster;
         }
-        if (trailerChange) {
+        if (subUpdates.trailerChange) {
             updateFields.trailers = db_data.trailers;
+        }
+        if (subUpdates.latestDataChange) {
+            updateFields.latestData = db_data.latestData;
         }
 
         if ((update || result !== null) && reCrawl) {
@@ -179,6 +204,17 @@ async function getInfoFromAPI(result, mode) {
     return {...result, ...apiFields};
 }
 
+function handle_subUpdates(db_data, poster, trailers, result, mode) {
+    let posterChange = handlePosterUpdate(db_data, poster);
+    let trailerChange = handleTrailerUpdate(db_data, trailers);
+    let latestDataChange = handleLatestDataUpdate(db_data, result.latestData, mode);
+    return {
+        posterChange,
+        trailerChange,
+        latestDataChange
+    };
+}
+
 function handlePosterUpdate(db_data, poster) {
     if (poster === '') {
         return false;
@@ -219,6 +255,95 @@ function handleTrailerUpdate(db_data, site_trailers) {
         }
     }
     return trailersChanged;
+}
+
+function handleLatestDataUpdate(db_data, latestData, mode) {
+    let changed = false;
+    let hardSubChange = false;
+    let dubbedChange = false;
+    let prevLatestData = db_data.latestData;
+
+    if (mode === 'serial') {
+        if ((latestData.season > prevLatestData.season) ||
+            (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) ||
+            (latestData.season === prevLatestData.season &&
+                latestData.episode === prevLatestData.episode &&
+                checkBetterQuality(latestData.quality, prevLatestData.quality))) {
+            changed = true;
+        }
+    } else if (checkBetterQuality(latestData.quality, prevLatestData.quality)) {
+        changed = true;
+    }
+
+    if (prevLatestData.hardSub !== latestData.hardSub ||
+        prevLatestData.dubbed !== latestData.dubbed) {
+        if (mode === 'serial') {
+            let prev = getSeasonEpisode(prevLatestData.hardSub);
+            let current = getSeasonEpisode(latestData.hardSub);
+            hardSubChange = (prev.season < current.season) ||
+                (prev.season === current.season && prev.episode < current.episode);
+            prev = getSeasonEpisode(prevLatestData.dubbed);
+            current = getSeasonEpisode(latestData.dubbed);
+            dubbedChange = (prev.season < current.season) ||
+                (prev.season === current.season && prev.episode < current.episode);
+        } else {
+            hardSubChange = !prevLatestData.hardSub && latestData.hardSub;
+            dubbedChange = !prevLatestData.dubbed && latestData.dubbed;
+        }
+    }
+
+    if (changed) {
+        db_data.latestData.season = latestData.season;
+        db_data.latestData.episode = latestData.episode;
+        db_data.latestData.quality = latestData.quality;
+    }
+    if (hardSubChange) {
+        db_data.latestData.hardSub = latestData.hardSub;
+    }
+    if (dubbedChange) {
+        db_data.latestData.dubbed = latestData.dubbed;
+    }
+
+    return changed || hardSubChange || dubbedChange;
+}
+
+function getLatestData(site_links, mode) {
+    let latestSeason = mode === 'movie' ? 0 : 1;
+    let latestEpisode = mode === 'movie' ? 0 : 1;
+    let latestQuality = site_links[0].info;
+    let hardSub = mode === 'movie' ? false : '';
+    let dubbed = mode === 'movie' ? false : '';
+
+    for (let i = 0; i < site_links.length; i++) {
+        let link = site_links[i].link;
+        let info = site_links[i].info;
+        if (mode === 'serial') {
+            let {season, episode} = getSeasonEpisode(link);
+            if (season > latestSeason) { //found new season
+                latestSeason = season;
+                latestEpisode = episode;
+                latestQuality = info;
+                hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+            } else if (season === latestSeason) {
+                if (episode > latestEpisode) {
+                    latestEpisode = episode;
+                    latestQuality = info;
+                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+                } else if (episode === latestEpisode) {
+                    latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
+                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+                }
+            }
+        } else if (mode === 'movie') {
+            latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
+            hardSub = getHardSub(info) || hardSub;
+            dubbed = getDubbed(link, info) || dubbed;
+        }
+    }
+    return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};
 }
 
 function handleUrlChange(db_data, thiaSource, page_link, update) {

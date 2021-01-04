@@ -2,7 +2,7 @@ const {search_in_title_page, wrapper_module} = require('../search_tools');
 const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {saveError} from "../../saveError";
+const {saveError} = require("../../saveError");
 
 let collection = '';
 let save_title = '';
@@ -74,7 +74,7 @@ function get_poster($) {
 
 function get_file_size($, link, mode) {
     //'480p.WEB-DL'  //'720p.x265.WEB-DL'
-    //'1080p.BluRay.dubbed - 1.8GB'  //'1080p.Web-dl - 1.9GB'
+    //'1080p.BluRay.dubbed - 1.8GB'  //'1080p.WEB-DL - 1.9GB'
     try {
         if (mode === 'serial') {
             return get_file_size_serial($, link);

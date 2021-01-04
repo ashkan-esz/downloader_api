@@ -2,7 +2,7 @@ const {search_in_title_page, wrapper_module} = require('../search_tools');
 const {remove_persian_words, getMode} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-import {saveError} from "../../saveError";
+const {saveError} = require("../../saveError");
 
 let RECRAWL;
 

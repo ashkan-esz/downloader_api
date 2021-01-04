@@ -9,7 +9,7 @@ axiosRetry(axios, {
     }
 });
 
-async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
+export async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
     //todo : speed based on RECRAWL
     for (let i = 1; i <= page_count; i++) {//todo : i=1
         try {
@@ -36,7 +36,7 @@ async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
     }
 }
 
-async function search_in_title_page(title_array, page_link, mode, get_file_size) {
+export async function search_in_title_page(title_array, page_link, mode, get_file_size) {
     try {
         let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
@@ -135,7 +135,9 @@ function check_format(link, mode) {
     let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv', 'mp4'];
     let qualities = ['bluray', 'mobile', 'dvdrip', 'hdrip', 'brip', 'webrip', 'web-dl', 'web.dl',
         'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '1080p', 'farsi.dubbed'];
-    let encodes = ['pahe', 'imax', 'psa', 'yify', 'rarbg']
+    let encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
+        'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
+
     let link_array = link.split('.');
     let link_format = link_array.pop();
     for (let i = 0, l = formats.length; i < l; i++) {
@@ -165,9 +167,3 @@ function check_format(link, mode) {
     }
     return false;
 }
-
-exports.check_format = check_format;
-exports.check_download_link = check_download_link;
-exports.getMatchCases = getMatchCases;
-exports.search_in_title_page = search_in_title_page;
-exports.wrapper_module = wrapper_module;
