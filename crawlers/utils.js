@@ -181,8 +181,6 @@ export function getNewURl(url, newDomain) {
 export function checkBetterQuality(quality, prevQuality) {
     let x265 = quality.includes('x265');
     let prevX265 = prevQuality.includes('x265');
-    let bit10 = quality.includes('10bit');
-    let prevBit10 = prevQuality.includes('10bit');
     quality = quality.split('- ')[0].toLowerCase()
         .replace(/.x265|.10bit/g, '')
         .replace(/[-._]/g, ' ');

@@ -159,7 +159,7 @@ function check_format(link, mode) {
                     }
                 }
             }
-            if (link.includes('dvdrip') || link.includes('hdcam')) {
+            if (link.includes('dvdrip') || link.includes('hdcam') || link.includes('mobile')) {
                 return true;
             }
             return (mode === 'serial' && link.match(/s\d\de\d\d/g));

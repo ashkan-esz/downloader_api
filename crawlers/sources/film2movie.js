@@ -145,15 +145,16 @@ function get_file_size_movie($, link) {
         if (link_href.includes('dvdrip')) {
             return 'DVDrip';
         }
-        let case1 = link_href.match(/\d\d\d\dp/g);
-        let case2 = link_href.match(/\d\d\dp/g);
-        let quality = case1 ? case1[0] : (case2 ? case2[0] : "");
-        if (quality === '') {
+        let case1 = link_href.match(/\d\d\d\dp|\d\d\dp/g);
+        let quality = case1 ? case1[0] : null;
+        if (quality === null) {
             return text_array[0];
         }
         let link_href_array = link_href.split('.');
         let index = link_href_array.indexOf(quality);
-        return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1]].join('.');
+        return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1], dubbed, HardSub].filter(value => value).join('.');
+    } else if (text_array.length === 2) {
+        return [...text_array, dubbed, HardSub].filter(value => value).join('.');
     }
     if (text_array[2].match(/\d\d\d\dp|\d\d\dp/g) && text_array[0] === 'x265') {
         return [text_array[2], text_array[0], text_array[1], ...text_array.slice(3), HardSub, dubbed, family].filter(value => value !== '').join('.');

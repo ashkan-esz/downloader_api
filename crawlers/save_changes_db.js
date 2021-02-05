@@ -1,11 +1,12 @@
 const {sort_Serial_links, checkSources, getYear} = require('./utils');
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
 const getCollection = require('../mongoDB');
-const {getNewURl, getSeasonEpisode, checkBetterQuality, getHardSub, getDubbed} = require("./utils");
+const {getNewURl} = require("./utils");
+const {handleSeasonEpisodeUpdate} = require("./SeasonEpisodeUpdateHandler");
+const {handleLatestDataUpdate, getLatestData} = require("./latestDataUpdateHandler");
 const {saveError} = require("../saveError");
 
-//todo : sort posters based on size
-//todo : total time for movie/serial (api available in a project)
+let omdb_filter = []; //todo : filter recent titles to stop omdb_api waste
 
 module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, reCrawl = false) {
     try {
@@ -16,8 +17,8 @@ module.exports = async function save(title_array, page_link, site_links, persian
         let {collection, db_data} = await searchOnCollection(title, year, mode);
 
         if (db_data === null) {//new title
-            let newResult = await getInfoFromAPI(result, mode);
-            await collection.insertOne(newResult);
+            let newResult = await fillNewTitleFields(result,site_links, mode);
+            // await collection.insertOne(newResult); //todo : active
             return;
         }
 
@@ -27,7 +28,7 @@ module.exports = async function save(title_array, page_link, site_links, persian
             return;
         }
         //new source
-        await handle_update(collection, db_data, false, persian_summary, subUpdates, mode, result, reCrawl);
+        await handle_update(collection, db_data, false, persian_summary, subUpdates, mode, site_links, result, reCrawl);
 
     } catch (error) {
         saveError(error);
@@ -47,6 +48,8 @@ function getSaveObj(title, page_link, mode, site_links, year, poster, persian_su
         dislike: 0,
         insert_date: new Date(),
         update_date: 0,
+        seasons : [],
+        episodes : [],
         poster: [poster],
         summary: {persian: persian_summary},
         trailers: trailers,
@@ -67,12 +70,17 @@ async function searchOnCollection(title, year, mode) {
     let db_data;
     let lowDataConfig = {
         title: 1,
+        rawTitle: 1,
         year: 1,
         sources: 1,
         summary: 1,
         poster: 1,
         trailers: 1,
-        latestData: 1
+        latestData: 1,
+        duration: 1,
+        totalSeasons: 1,
+        seasons: 1,
+        episodes: 1
     }
     if (mode === 'serial') {
         db_data = await collection.findOne({title: title}, {projection: lowDataConfig});
@@ -90,6 +98,18 @@ async function searchOnCollection(title, year, mode) {
     return {collection, db_data};
 }
 
+async function fillNewTitleFields(result, site_links, mode) {
+    let omdb_data = await get_OMDB_Api_Data(result.title, result.year, mode);
+    let apiFields = (omdb_data === null) ?
+        get_OMDB_Api_nullFields(result.summary, mode) :
+        get_OMDB_Api_Fields(omdb_data, result.summary, mode);
+    result = {...result, ...apiFields};
+    if (mode === 'serial') {
+        await handleSeasonEpisodeUpdate(result, apiFields.totalSeasons, site_links,false);
+    }
+    return result;
+}
+
 async function handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, reCrawl) {
     for (let j = 0; j < db_data.sources.length; j++) {//check source exist
         if (checkSources(db_data.sources[j].url, page_link)) { // this source exist
@@ -105,9 +125,9 @@ async function handleNewLinkChange(collection, db_data, page_link, persian_summa
                     db_data.sources[j].links = sort_Serial_links(site_links);
                 }
             }
-            update = handleUrlChange(db_data, db_data.sources[j], page_link, update);
-            if (update || subUpdates.posterChange || subUpdates.trailerChange || subUpdates.latestDataChange) {
-                await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, null, reCrawl);
+            update = handleUrlChange(db_data, db_data.sources[j], page_link) || update;
+            if (update || subUpdates.hasChangedField) {
+                await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, site_links, null, reCrawl);
             }
             return true;
         }
@@ -115,13 +135,9 @@ async function handleNewLinkChange(collection, db_data, page_link, persian_summa
     return false;
 }
 
-async function handle_update(collection, db_data, update, site_persian_summary, subUpdates, mode, result, reCrawl) {
+async function handle_update(collection, db_data, update, site_persian_summary, subUpdates, mode, site_links, result, reCrawl) {
     try {
         let updateFields = {};
-
-        if ((update || result !== null) && !reCrawl) {
-            updateFields.update_date = new Date();
-        }
 
         if (update) {
             updateFields.sources = db_data.sources;
@@ -143,9 +159,10 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
         }
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
+            updateFields.update_date = new Date();
         }
 
-        if ((update || result !== null) && reCrawl) {
+        if ((update || result !== null) && !reCrawl) {
             let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.year, mode);
             if (omdb_data !== null) {
                 let apiFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, mode);
@@ -153,9 +170,17 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
             }
         }
 
-        await collection.findOneAndUpdate({_id: db_data._id}, {
-            $set: updateFields
-        });
+        let seasonEpisodesUpdate = await handleSeasonEpisodeUpdate(db_data, updateFields.totalSeasons, site_links,true);
+        if (seasonEpisodesUpdate.seasonsUpdate){
+            updateFields.seasons = db_data.seasons;
+        }
+        if (seasonEpisodesUpdate.episodesUpdate){
+            updateFields.episodes = db_data.episodes;
+        }
+
+        // await collection.findOneAndUpdate({_id: db_data._id}, { //todo : active
+        //     $set: updateFields
+        // });
 
     } catch (error) {
         saveError(error);
@@ -196,22 +221,16 @@ function check_serialLinks_changed(site_links, db_links) {
     return false;
 }
 
-async function getInfoFromAPI(result, mode) {
-    let omdb_data = await get_OMDB_Api_Data(result.title, result.year, mode);
-    let apiFields = (omdb_data === null) ?
-        get_OMDB_Api_nullFields(result.summary, mode) :
-        get_OMDB_Api_Fields(omdb_data, result.summary, mode);
-    return {...result, ...apiFields};
-}
-
 function handle_subUpdates(db_data, poster, trailers, result, mode) {
     let posterChange = handlePosterUpdate(db_data, poster);
     let trailerChange = handleTrailerUpdate(db_data, trailers);
     let latestDataChange = handleLatestDataUpdate(db_data, result.latestData, mode);
+    let hasChangedField = posterChange || trailerChange || latestDataChange;
     return {
         posterChange,
         trailerChange,
-        latestDataChange
+        latestDataChange,
+        hasChangedField
     };
 }
 
@@ -257,102 +276,12 @@ function handleTrailerUpdate(db_data, site_trailers) {
     return trailersChanged;
 }
 
-function handleLatestDataUpdate(db_data, latestData, mode) {
-    let changed = false;
-    let hardSubChange = false;
-    let dubbedChange = false;
-    let prevLatestData = db_data.latestData;
-
-    if (mode === 'serial') {
-        if ((latestData.season > prevLatestData.season) ||
-            (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) ||
-            (latestData.season === prevLatestData.season &&
-                latestData.episode === prevLatestData.episode &&
-                checkBetterQuality(latestData.quality, prevLatestData.quality))) {
-            changed = true;
-        }
-    } else if (checkBetterQuality(latestData.quality, prevLatestData.quality)) {
-        changed = true;
-    }
-
-    if (prevLatestData.hardSub !== latestData.hardSub ||
-        prevLatestData.dubbed !== latestData.dubbed) {
-        if (mode === 'serial') {
-            let prev = getSeasonEpisode(prevLatestData.hardSub);
-            let current = getSeasonEpisode(latestData.hardSub);
-            hardSubChange = (prev.season < current.season) ||
-                (prev.season === current.season && prev.episode < current.episode);
-            prev = getSeasonEpisode(prevLatestData.dubbed);
-            current = getSeasonEpisode(latestData.dubbed);
-            dubbedChange = (prev.season < current.season) ||
-                (prev.season === current.season && prev.episode < current.episode);
-        } else {
-            hardSubChange = !prevLatestData.hardSub && latestData.hardSub;
-            dubbedChange = !prevLatestData.dubbed && latestData.dubbed;
-        }
-    }
-
-    if (changed) {
-        db_data.latestData.season = latestData.season;
-        db_data.latestData.episode = latestData.episode;
-        db_data.latestData.quality = latestData.quality;
-    }
-    if (hardSubChange) {
-        db_data.latestData.hardSub = latestData.hardSub;
-    }
-    if (dubbedChange) {
-        db_data.latestData.dubbed = latestData.dubbed;
-    }
-
-    return changed || hardSubChange || dubbedChange;
-}
-
-function getLatestData(site_links, mode) {
-    let latestSeason = mode === 'movie' ? 0 : 1;
-    let latestEpisode = mode === 'movie' ? 0 : 1;
-    let latestQuality = site_links[0].info;
-    let hardSub = mode === 'movie' ? false : '';
-    let dubbed = mode === 'movie' ? false : '';
-
-    for (let i = 0; i < site_links.length; i++) {
-        let link = site_links[i].link;
-        let info = site_links[i].info;
-        if (mode === 'serial') {
-            let {season, episode} = getSeasonEpisode(link);
-            if (season > latestSeason) { //found new season
-                latestSeason = season;
-                latestEpisode = episode;
-                latestQuality = info;
-                hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
-            } else if (season === latestSeason) {
-                if (episode > latestEpisode) {
-                    latestEpisode = episode;
-                    latestQuality = info;
-                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
-                } else if (episode === latestEpisode) {
-                    latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
-                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
-                }
-            }
-        } else if (mode === 'movie') {
-            latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
-            hardSub = getHardSub(info) || hardSub;
-            dubbed = getDubbed(link, info) || dubbed;
-        }
-    }
-    return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};
-}
-
-function handleUrlChange(db_data, thiaSource, page_link, update) {
+function handleUrlChange(db_data, thiaSource, page_link) {
     let newDomain = page_link.replace(/www.|https:\/\/|\/page\/|\//g, '');
     let newUrl = getNewURl(thiaSource.url, newDomain);
     if (thiaSource.url !== newUrl) {
         thiaSource.url = newUrl;
         return true;
-    } else {
-        return update;
     }
+    return false;
 }
