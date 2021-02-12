@@ -10,25 +10,22 @@ axiosRetry(axios, {
 });
 
 export async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
-    //todo : speed based on RECRAWL
-    for (let i = 1; i <= page_count; i++) {//todo : i=1
+    let forceWaitNumber = RECRAWL ? 50 : 30;
+    for (let i = 1; i <= page_count; i++) {
         try {
             let response = await axios.get(url + `${i}/`);
             let $ = cheerio.load(response.data);
             let links = $('a');
             for (let j = 0; j < links.length; j++) {
-
-                // searchCB($(links[j]), i, $);
-
-                await searchCB($(links[j]), i, $);
-
-                // if (j % 30 === 0) { // todo : use this way to prevent errors
-                //     await searchCB($(links[j]), i, $);
-                // } else {
-                //     searchCB($(links[j]), i, $);
-                // }
-
-
+                if (process.env.NODE_ENV === 'dev') {
+                    await searchCB($(links[j]), i, $);
+                } else {
+                    if (j % forceWaitNumber === 0) {
+                        await searchCB($(links[j]), i, $);
+                    } else {
+                        searchCB($(links[j]), i, $);
+                    }
+                }
             }
         } catch (error) {
             saveError(error);

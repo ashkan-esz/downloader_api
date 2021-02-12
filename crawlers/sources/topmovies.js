@@ -5,9 +5,11 @@ const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
 let RECRAWL;
+let RECENT_TITLES;
 
-module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}, reCrawl = false) {
+module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}, recentTitles = [], reCrawl = false) {
     RECRAWL = reCrawl;
+    RECENT_TITLES = recentTitles;
     await Promise.all([
         wrapper_module(serial_url, serial_page_count, search_title, RECRAWL),
         wrapper_module(movie_url, page_count, search_title, RECRAWL)
@@ -35,7 +37,7 @@ async function search_title(link, i) {
             let persian_summary = get_persian_summary($2);
             let poster = get_poster($2);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, [], mode, RECRAWL);
+                await save(title_array, page_link, save_link, persian_summary, poster, [], mode, RECENT_TITLES, RECRAWL);
             }
         }
     }

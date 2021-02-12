@@ -17,14 +17,14 @@ async function start_crawling() {
 
             let collection = await getCollection('sources');
             let sources = await collection.findOne({title: 'sources'});
-
-            await digimovies(sources.digimovies);
-            await film2media(sources.film2media);
-            await film2movie(sources.film2movie);
-            await mrmovie(sources.mrmovie);
-            await salamdl(sources.salamdl);
-            await topmovies(sources.topmovies);
-            await valamovie(sources.valamovie);
+            let recentTitles = [];
+            await digimovies(sources.digimovies, recentTitles);
+            await film2media(sources.film2media, recentTitles);
+            await film2movie(sources.film2movie, recentTitles);
+            await mrmovie(sources.mrmovie, recentTitles);
+            await salamdl(sources.salamdl, recentTitles);
+            await topmovies(sources.topmovies, recentTitles);
+            await valamovie(sources.valamovie, recentTitles);
 
             await domainChangeHandler(sources);
 

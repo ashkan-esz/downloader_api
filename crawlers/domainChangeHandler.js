@@ -87,24 +87,24 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
                 ...sourcesObject.digimovies,
                 page_count: 330,
                 serial_page_count: 50
-            }, true);
+            }, [], true);
         } else if (domain.includes('film2media')) {
             await film2media({
                 ...sourcesObject.film2media,
                 page_count: 380,
-            }, true);
+            }, [], true);
         } else if (domain.includes('mrmovie')) {
             await mrmovie({
                 ...sourcesObject.mrmovie,
                 page_count: 300,
                 serial_page_count: 55
-            }, true);
+            }, [], true);
         } else if (domain.includes('topmovie')) {
             await topmovies({
                 ...sourcesObject.topmovies,
                 page_count: 345,
                 serial_page_count: 45
-            }, true);
+            }, [], true);
         }
     }
 }
@@ -114,7 +114,7 @@ async function update_Poster_Trailers(sources, domains, changedDomains, collecti
     let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
     let sourcesNames = domains.map(value => value.replace(/\d/g, '').split('.')[0]);
     let changedSourcesName = changedDomains.map(value => value.replace(/\d/g, '').split('.')[0]);
-
+    let promiseArray = [];
     for (let i = 0; i < docs_array.length; i++) {
         let posterChanged = false;
         let trailerChanged = false;
@@ -151,9 +151,14 @@ async function update_Poster_Trailers(sources, domains, changedDomains, collecti
             updateObj.trailers = trailers;
         }
         if (posterChanged || trailerChanged) {
-            await collection.findOneAndUpdate({_id: docs_array[i]._id}, {
+            let resultPromise = collection.findOneAndUpdate({_id: docs_array[i]._id}, {
                 $set: updateObj
-            })
+            });
+            promiseArray.push(resultPromise);
+        }
+        if (i % 50 === 0) {
+            await Promise.all(promiseArray);
+            promiseArray = [];
         }
     }
 }

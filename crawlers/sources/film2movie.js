@@ -5,9 +5,11 @@ const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
 let RECRAWL;
+let RECENT_TITLES;
 
-module.exports = async function film2movie({movie_url, page_count}, reCrawl = false) {
+module.exports = async function film2movie({movie_url, page_count}, recentTitles = [], reCrawl = false) {
     RECRAWL = reCrawl;
+    RECENT_TITLES = recentTitles;
     await wrapper_module(movie_url, page_count, search_title, RECRAWL);
 
 
@@ -31,7 +33,7 @@ async function search_title(link, i) {
             let poster = get_poster($2);
             let trailers = getTrailers($2);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, trailers, mode);
+                await save(title_array, page_link, save_link, persian_summary, poster, trailers, mode, RECENT_TITLES, RECRAWL);
             }
         }
     }

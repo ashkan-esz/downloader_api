@@ -186,7 +186,7 @@ async function handle_OMDB_ApiKeys(url) {
             '15ab15a5', '8471f363', '5ad67ef6', 'cb646df1', '56f21919', //70
             '7e1997fd', '57c7344d', '4d6afd7', '74960d2', '964dd637',
             '3b0cc1e8', 'cf3efbaf', '7385ce05', 'cca2bd4a'];
-        let apiKeyCounter = 10; //todo : =0
+        let apiKeyCounter = 0;
         let response;
         while (true) {
             try {
@@ -215,14 +215,18 @@ async function handle_OMDB_ApiKeys(url) {
 }
 
 export function fixEpisodesZeroDuration(episodes, duration) {
-    duration = duration === 'N/A' ? '0 min' : duration;
+    let badCases = ['', 'N/A', '0 min'];
+    duration = badCases.includes(duration) ? '0 min' : duration;
     for (let i = 0; i < episodes.length; i++) {
-        if (episodes[i].duration === '0 min' || episodes[i].duration === 'N/A') {
+        if (!badCases.includes(episodes[i].duration) && !isNaN(episodes[i].duration)) {
+            episodes[i].duration = episodes[i].duration + ' min';
+            continue;
+        }
+        if (badCases.includes(episodes[i].duration)) {
             let fixed = false;
             let prevEpisodesIndex = i;
             while (prevEpisodesIndex >= 0) {
-                if (episodes[prevEpisodesIndex].duration !== '0 min' &&
-                    episodes[prevEpisodesIndex].duration !== 'N/A') {
+                if (!badCases.includes(episodes[prevEpisodesIndex].duration)) {
                     episodes[i].duration = episodes[prevEpisodesIndex].duration;
                     fixed = true;
                     break;
@@ -232,8 +236,7 @@ export function fixEpisodesZeroDuration(episodes, duration) {
             if (!fixed) {
                 let nextEpisodesIndex = i;
                 while (nextEpisodesIndex < episodes.length) {
-                    if (episodes[nextEpisodesIndex].duration !== '0 min' &&
-                        episodes[nextEpisodesIndex].duration !== 'N/A') {
+                    if (!badCases.includes(episodes[nextEpisodesIndex].duration)) {
                         episodes[i].duration = episodes[nextEpisodesIndex].duration;
                         fixed = true;
                         break;

@@ -6,9 +6,8 @@ const {handleSeasonEpisodeUpdate} = require("./SeasonEpisodeUpdateHandler");
 const {handleLatestDataUpdate, getLatestData} = require("./latestDataUpdateHandler");
 const {saveError} = require("../saveError");
 
-let omdb_filter = []; //todo : filter recent titles to stop omdb_api waste
 
-module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, reCrawl = false) {
+module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, recentTitles = [], reCrawl = false) {
     try {
         let year = (mode === 'movie') ? getYear(page_link, site_links) : '';
         let title = title_array.join(' ').trim();
@@ -17,18 +16,18 @@ module.exports = async function save(title_array, page_link, site_links, persian
         let {collection, db_data} = await searchOnCollection(title, year, mode);
 
         if (db_data === null) {//new title
-            let newResult = await fillNewTitleFields(result,site_links, mode);
+            let newResult = await fillNewTitleFields(result, site_links, mode);
             // await collection.insertOne(newResult); //todo : active
             return;
         }
 
         let subUpdates = handle_subUpdates(db_data, poster, trailers, result, mode);
-        let isEnd = await handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, reCrawl);
+        let isEnd = await handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, recentTitles, reCrawl);
         if (isEnd) {
             return;
         }
         //new source
-        await handle_update(collection, db_data, false, persian_summary, subUpdates, mode, site_links, result, reCrawl);
+        await handle_update(collection, db_data, false, persian_summary, subUpdates, mode, site_links, result, recentTitles, reCrawl);
 
     } catch (error) {
         saveError(error);
@@ -48,8 +47,8 @@ function getSaveObj(title, page_link, mode, site_links, year, poster, persian_su
         dislike: 0,
         insert_date: new Date(),
         update_date: 0,
-        seasons : [],
-        episodes : [],
+        seasons: [],
+        episodes: [],
         poster: [poster],
         summary: {persian: persian_summary},
         trailers: trailers,
@@ -105,12 +104,12 @@ async function fillNewTitleFields(result, site_links, mode) {
         get_OMDB_Api_Fields(omdb_data, result.summary, mode);
     result = {...result, ...apiFields};
     if (mode === 'serial') {
-        await handleSeasonEpisodeUpdate(result, apiFields.totalSeasons, site_links,false);
+        await handleSeasonEpisodeUpdate(result, apiFields.totalSeasons, site_links, false);
     }
     return result;
 }
 
-async function handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, reCrawl) {
+async function handleNewLinkChange(collection, db_data, page_link, persian_summary, mode, site_links, subUpdates, recentTitles, reCrawl) {
     for (let j = 0; j < db_data.sources.length; j++) {//check source exist
         if (checkSources(db_data.sources[j].url, page_link)) { // this source exist
             let update = false;
@@ -127,7 +126,7 @@ async function handleNewLinkChange(collection, db_data, page_link, persian_summa
             }
             update = handleUrlChange(db_data, db_data.sources[j], page_link) || update;
             if (update || subUpdates.hasChangedField) {
-                await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, site_links, null, reCrawl);
+                await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, site_links, null, recentTitles, reCrawl);
             }
             return true;
         }
@@ -135,7 +134,7 @@ async function handleNewLinkChange(collection, db_data, page_link, persian_summa
     return false;
 }
 
-async function handle_update(collection, db_data, update, site_persian_summary, subUpdates, mode, site_links, result, reCrawl) {
+async function handle_update(collection, db_data, update, site_persian_summary, subUpdates, mode, site_links, result, recentTitles, reCrawl) {
     try {
         let updateFields = {};
 
@@ -170,13 +169,17 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
             }
         }
 
-        let seasonEpisodesUpdate = await handleSeasonEpisodeUpdate(db_data, updateFields.totalSeasons, site_links,true);
-        if (seasonEpisodesUpdate.seasonsUpdate){
-            updateFields.seasons = db_data.seasons;
+        if (mode === 'serial' && !recentTitles.includes(db_data.title)) {
+            let seasonEpisodesUpdate = await handleSeasonEpisodeUpdate(db_data, updateFields.totalSeasons, site_links, true);
+            if (seasonEpisodesUpdate.seasonsUpdate) {
+                updateFields.seasons = db_data.seasons;
+            }
+            if (seasonEpisodesUpdate.episodesUpdate) {
+                updateFields.episodes = db_data.episodes;
+            }
+            recentTitles.push(db_data.title);
         }
-        if (seasonEpisodesUpdate.episodesUpdate){
-            updateFields.episodes = db_data.episodes;
-        }
+
 
         // await collection.findOneAndUpdate({_id: db_data._id}, { //todo : active
         //     $set: updateFields

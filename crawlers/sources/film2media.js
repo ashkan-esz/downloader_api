@@ -7,9 +7,11 @@ const {saveError} = require("../../saveError");
 let collection = '';
 let save_title = '';
 let RECRAWL;
+let RECENT_TITLES;
 
-module.exports = async function film2media({movie_url, page_count}, reCrawl = false) {
+module.exports = async function film2media({movie_url, page_count}, recentTitles = [], reCrawl = false) {
     RECRAWL = reCrawl;
+    RECENT_TITLES = recentTitles;
     await wrapper_module(movie_url, page_count, search_title, RECRAWL);
 
 
@@ -34,7 +36,7 @@ async function search_title(link, i) {
             let persian_summary = get_persian_summary($2);
             let poster = get_poster($2);
             if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, [], mode, RECRAWL);
+                await save(title_array, page_link, save_link, persian_summary, poster, [], mode, RECENT_TITLES, RECRAWL);
             }
         }
     }
