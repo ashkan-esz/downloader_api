@@ -6,7 +6,6 @@ const {handleSeasonEpisodeUpdate} = require("./SeasonEpisodeUpdateHandler");
 const {handleLatestDataUpdate, getLatestData} = require("./latestDataUpdateHandler");
 const {saveError} = require("../saveError");
 
-
 module.exports = async function save(title_array, page_link, site_links, persian_summary, poster, trailers, mode, recentTitles = [], reCrawl = false) {
     try {
         let year = (mode === 'movie') ? getYear(page_link, site_links) : '';
@@ -16,8 +15,8 @@ module.exports = async function save(title_array, page_link, site_links, persian
         let {collection, db_data} = await searchOnCollection(title, year, mode);
 
         if (db_data === null) {//new title
-            let newResult = await fillNewTitleFields(result, site_links, mode);
-            // await collection.insertOne(newResult); //todo : active
+            let newTitleFields = await fillNewTitleFields(result, site_links, year, mode, recentTitles);
+            await collection.insertOne(newTitleFields);
             return;
         }
 
@@ -42,7 +41,6 @@ function getSaveObj(title, page_link, mode, site_links, year, poster, persian_su
             url: page_link,
             links: mode === 'movie' ? site_links : sort_Serial_links(site_links)
         }],
-        year: year,
         like: 0,
         dislike: 0,
         insert_date: new Date(),
@@ -59,7 +57,15 @@ function getSaveObj(title, page_link, mode, site_links, year, poster, persian_su
             quality: quality,
             hardSub: hardSub,
             dubbed: dubbed
-        }
+        },
+        tvmazeID: 0,
+        isAnimation: false,
+        status: 'ended',
+        releaseDay: '',
+        premiered: year,
+        officialSite: '',
+        nextEpisode: null,
+        totalDuration: ''
     };
 }
 
@@ -70,41 +76,67 @@ async function searchOnCollection(title, year, mode) {
     let lowDataConfig = {
         title: 1,
         rawTitle: 1,
-        year: 1,
+        imdbID: 1,
         sources: 1,
         summary: 1,
         poster: 1,
         trailers: 1,
-        latestData: 1,
+        genres: 1,
         duration: 1,
         totalSeasons: 1,
         seasons: 1,
-        episodes: 1
-    }
+        episodes: 1,
+        latestData: 1,
+        nextEpisode: 1,
+        premiered: 1
+    };
     if (mode === 'serial') {
         db_data = await collection.findOne({title: title}, {projection: lowDataConfig});
     } else {
         let YEAR = Number(year);
         let cases = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        db_data = await collection.findOne({title: title, year: cases[0]}, {projection: lowDataConfig});
+        db_data = await collection.findOne({title: title, premiered: cases[0]}, {projection: lowDataConfig});
         if (db_data === null) {
-            db_data = await collection.findOne({title: title, year: cases[1]}, {projection: lowDataConfig});
+            db_data = await collection.findOne({title: title, premiered: cases[1]}, {projection: lowDataConfig});
         }
         if (db_data === null) {
-            db_data = await collection.findOne({title: title, year: cases[2]}, {projection: lowDataConfig});
+            db_data = await collection.findOne({title: title, premiered: cases[2]}, {projection: lowDataConfig});
         }
     }
     return {collection, db_data};
 }
 
-async function fillNewTitleFields(result, site_links, mode) {
-    let omdb_data = await get_OMDB_Api_Data(result.title, result.year, mode);
+async function fillNewTitleFields(result, site_links, year, mode, recentTitles) {
+    let omdb_data = await get_OMDB_Api_Data(result.title, result.premiered, mode);
     let apiFields = (omdb_data === null) ?
         get_OMDB_Api_nullFields(result.summary, mode) :
         get_OMDB_Api_Fields(omdb_data, result.summary, mode);
     result = {...result, ...apiFields};
+    if (mode === 'movie' && !result.premiered) {
+        result.premiered = year;
+    }
     if (mode === 'serial') {
-        await handleSeasonEpisodeUpdate(result, apiFields.totalSeasons, site_links, false);
+        let {tvmazeApi_data} = await handleSeasonEpisodeUpdate(result, apiFields.totalSeasons, site_links, recentTitles, false);
+        if (omdb_data === null) {
+            //title doesnt exist in omdb api
+            result.genres = tvmazeApi_data ? tvmazeApi_data.genres : [];
+            result.duration = tvmazeApi_data ? tvmazeApi_data.duration : '0 min';
+        } else if (tvmazeApi_data && tvmazeApi_data.isAnime) {
+            result.genres.push('anime');
+        }
+        result.tvmazeID = tvmazeApi_data ? tvmazeApi_data.tvmazeID : 0;
+        result.isAnimation = tvmazeApi_data ? tvmazeApi_data.isAnimation : false;
+        result.status = tvmazeApi_data ? tvmazeApi_data.status : 'unknown';
+        result.premiered = tvmazeApi_data ? tvmazeApi_data.premiered : '';
+        result.officialSite = tvmazeApi_data ? tvmazeApi_data.officialSite : '';
+        result.releaseDay = tvmazeApi_data ? tvmazeApi_data.releaseDay : '';
+        if (!result.imdbID) {
+            result.imdbID = tvmazeApi_data ? tvmazeApi_data.imdbID : '';
+        }
+        if (!result.summary.english) {
+            result.summary.english = tvmazeApi_data ? tvmazeApi_data.summary : '';
+        }
+        result.totalDuration = getTotalDuration(result.episodes, result.latestData);
     }
     return result;
 }
@@ -161,29 +193,50 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
             updateFields.update_date = new Date();
         }
 
-        if ((update || result !== null) && !reCrawl) {
-            let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.year, mode);
+        if (!recentTitles.includes(db_data.title) && !reCrawl) {
+            let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.premiered, mode);
             if (omdb_data !== null) {
                 let apiFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, mode);
                 updateFields = {...updateFields, ...apiFields};
             }
+            if (mode === 'movie') {
+                recentTitles.push(db_data.title);
+            }
         }
 
-        if (mode === 'serial' && !recentTitles.includes(db_data.title)) {
-            let seasonEpisodesUpdate = await handleSeasonEpisodeUpdate(db_data, updateFields.totalSeasons, site_links, true);
-            if (seasonEpisodesUpdate.seasonsUpdate) {
+        if (mode === 'serial' && !reCrawl) {
+            let {
+                tvmazeApi_data,
+                seasonsUpdate,
+                episodesUpdate,
+                nextEpisodeUpdate
+            } = await handleSeasonEpisodeUpdate(db_data, updateFields.totalSeasons, site_links, recentTitles, true);
+            if (seasonsUpdate) {
                 updateFields.seasons = db_data.seasons;
             }
-            if (seasonEpisodesUpdate.episodesUpdate) {
+            if (episodesUpdate) {
                 updateFields.episodes = db_data.episodes;
+                updateFields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
             }
-            recentTitles.push(db_data.title);
+            if (nextEpisodeUpdate) {
+                updateFields.nextEpisode = db_data.nextEpisode;
+            }
+            if (tvmazeApi_data) {
+                if (updateFields.genres && !updateFields.genres.includes('anime')) {
+                    updateFields.genres.push('anime');
+                }
+                updateFields.tvmazeID = tvmazeApi_data.tvmazeID;
+                updateFields.isAnimation = tvmazeApi_data.isAnimation;
+                updateFields.status = tvmazeApi_data.status;
+                updateFields.premiered = tvmazeApi_data.premiered;
+                updateFields.officialSite = tvmazeApi_data.officialSite;
+                updateFields.releaseDay = tvmazeApi_data.releaseDay;
+            }
         }
 
-
-        // await collection.findOneAndUpdate({_id: db_data._id}, { //todo : active
-        //     $set: updateFields
-        // });
+        await collection.findOneAndUpdate({_id: db_data._id}, {
+            $set: updateFields
+        });
 
     } catch (error) {
         saveError(error);
@@ -287,4 +340,19 @@ function handleUrlChange(db_data, thiaSource, page_link) {
         return true;
     }
     return false;
+}
+
+function getTotalDuration(episodes, latestData) {
+    let totalDuration = 0;
+    for (let i = 0; i < episodes.length; i++) {
+        if (episodes[i].season < latestData.season ||
+            (episodes[i].season === latestData.season &&
+                episodes[i].episode <= latestData.episode)) {
+            totalDuration += Number(episodes[i].duration.replace('min', ''));
+        }
+    }
+    let hours = Math.floor(totalDuration / 60);
+    let minutes = totalDuration % 60;
+    totalDuration = hours + ':' + minutes;
+    return totalDuration;
 }

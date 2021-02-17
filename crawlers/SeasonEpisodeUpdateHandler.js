@@ -1,68 +1,118 @@
 const {getSeasonEpisode} = require("./utils");
 const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./omdb_api");
+const {get_tvmazeApi_Alldata} = require("./tvmaze_api");
 
-export async function handleSeasonEpisodeUpdate(db_data, totalSeasons, site_links, lastSeasonsOnly = true) {
+export async function handleSeasonEpisodeUpdate(db_data, totalSeasons, site_links, recentTitles, titleExist = true) {
     let links_seasons = getSeasonsFromLinks(site_links);
-    let seasonsUpdate = handleSeasonUpdate(links_seasons, db_data.seasons);
-    let omdb_result = await get_OMDB_seasonEpisode_info(db_data.title, db_data.rawTitle, totalSeasons, db_data.duration, lastSeasonsOnly);
-    let seasons = omdb_result === null ? null : omdb_result.seasons;
-    let episodes = omdb_result === null ? null : omdb_result.episodes;
-    seasonsUpdate = handleSeasonUpdate(seasons, db_data.seasons) || seasonsUpdate;
-    let episodesUpdate = handleEpisodesUpdate(db_data.episodes, episodes, db_data.duration);
-    episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, lastSeasonsOnly) || episodesUpdate;
+    let seasonsUpdate = handleSeasonUpdate(db_data.seasons, links_seasons);
+    let episodesUpdate = false;
+    let tvmazeApi_data = null;
+    let nextEpisodeUpdate = false;
+    if (!recentTitles.includes(db_data.title)) {
+        recentTitles.push(db_data.title);
+        //omdb api
+        let omdb_result = await get_OMDB_seasonEpisode_info(db_data.title, db_data.rawTitle, totalSeasons, db_data.duration, titleExist);
+        if (omdb_result) {
+            seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdb_result.seasons) || seasonsUpdate;
+            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration) || episodesUpdate;
+        }
+        //tvmaze api
+        tvmazeApi_data = await get_tvmazeApi_Alldata(db_data.title, db_data.rawTitle, db_data.imdbID || '');
+        if (tvmazeApi_data) {
+            nextEpisodeUpdate = handleNextEpisodeUpdate(db_data, tvmazeApi_data.nextEpisode);
+            let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApi_data.episodes);
+            seasonsUpdate = handleSeasonUpdate(db_data.seasons, tvmaze_seasons) || seasonsUpdate;
+            episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApi_data.episodes, db_data.duration) || episodesUpdate;
+        }
+    }
+    episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, titleExist) || episodesUpdate;
     return {
+        tvmazeApi_data,
         seasonsUpdate,
-        episodesUpdate
+        episodesUpdate,
+        nextEpisodeUpdate,
     };
 }
 
-function handleSeasonUpdate(compareSeasons, omdb_seasons) {
+function handleNextEpisodeUpdate(db_data, tvmaze_nextEpisode) {
+    if (tvmaze_nextEpisode === null) {
+        return false;
+    }
+    db_data.nextEpisode = tvmaze_nextEpisode;
+    return true;
+}
+
+function handleSeasonUpdate(db_seasons, compareSeasons) {
     let seasonsUpdated = false;
     for (let j = 0; j < compareSeasons.length; j++) {
         let seasonExist = false;
-        for (let l = 0; l < omdb_seasons.length; l++) {
-            if (omdb_seasons[l].season === compareSeasons[j].season) {
+        for (let l = 0; l < db_seasons.length; l++) {
+            if (db_seasons[l].season === compareSeasons[j].season) {
                 seasonExist = true;
-                if (omdb_seasons[l].episodes < compareSeasons[j].episodes) {
-                    omdb_seasons[l].episodes = compareSeasons[j].episodes;
+                if (db_seasons[l].episodes < compareSeasons[j].episodes) {
+                    db_seasons[l].episodes = compareSeasons[j].episodes;
                     seasonsUpdated = true;
                 }
             }
         }
         if (!seasonExist) {
-            omdb_seasons.push(compareSeasons[j]);
-            omdb_seasons = omdb_seasons.sort((a, b) => (a.season - b.season));
+            db_seasons.push(compareSeasons[j]);
+            db_seasons = db_seasons.sort((a, b) => (a.season - b.season));
             seasonsUpdated = true;
         }
     }
     return seasonsUpdated;
 }
 
-function handleEpisodesUpdate(db_episodes, omdb_episodes) {
+function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration) {
     let episodeUpdated = false;
-    for (let i = 0; i < omdb_episodes.length; i++) {
+    for (let i = 0; i < compareEpisodes.length; i++) {
         let episodeExist = false;
         for (let j = 0; j < db_episodes.length; j++) {
-            if (omdb_episodes[i].season === db_episodes[j].season &&
-                omdb_episodes[i].episode === db_episodes[j].episode) {
+            if (compareEpisodes[i].season === db_episodes[j].season &&
+                compareEpisodes[i].episode === db_episodes[j].episode) {
                 episodeExist = true;
-                if (db_episodes[j].title !== omdb_episodes[i].title ||
-                    db_episodes[j].duration !== omdb_episodes[i].duration ||
-                    db_episodes[j].released !== omdb_episodes[i].released) {
+
+                if (db_episodes[j].title !== compareEpisodes[i].title && compareEpisodes[i].title) {
+                    db_episodes[j].title = compareEpisodes[i].title;
                     episodeUpdated = true;
                 }
-                db_episodes[j] = omdb_episodes[i];
-                break;
+                if (db_episodes[j].duration === '0 min' && compareEpisodes[i].duration !== '0 min') {
+                    db_episodes[j].duration = compareEpisodes[i].duration;
+                    episodeUpdated = true;
+                }
+                if (db_episodes[j].released !== compareEpisodes[i].released && compareEpisodes[i].released) {
+                    db_episodes[j].released = compareEpisodes[i].released;
+                    episodeUpdated = true;
+                }
+                if (db_episodes[j].releaseStamp !== compareEpisodes[i].releaseStamp && compareEpisodes[i].releaseStamp) {
+                    db_episodes[j].releaseStamp = compareEpisodes[i].releaseStamp;
+                    episodeUpdated = true;
+                }
+                if (db_episodes[j].imdbRating !== compareEpisodes[i].imdbRating && compareEpisodes[i].imdbRating) {
+                    db_episodes[j].imdbRating = compareEpisodes[i].imdbRating;
+                    episodeUpdated = true;
+                }
+                if (db_episodes[j].imdbID !== compareEpisodes[i].imdbID && compareEpisodes[i].imdbID) {
+                    db_episodes[j].imdbID = compareEpisodes[i].imdbID;
+                    episodeUpdated = true;
+                }
+                if (episodeUpdated) {
+                    break;
+                }
             }
         }
 
         if (!episodeExist) {
-            db_episodes.push(omdb_episodes[i]);
+            db_episodes.push(compareEpisodes[i]);
             episodeUpdated = true;
             db_episodes = db_episodes.sort((a, b) => {
                 return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
             });
         }
+    }
+    if (episodeUpdated) {
+        fixEpisodesZeroDuration(db_episodes, db_duration);
     }
     return episodeUpdated;
 }
@@ -85,6 +135,7 @@ function handleMissedEpisode(db_seasons, db_episodes, db_duration, lastSeasonsOn
                 let episodeInfo = {
                     title: 'unknown',
                     released: 'unknown',
+                    releaseStamp: '',
                     duration: '0 min',
                     season: seasonNumber,
                     episode: l,
@@ -105,17 +156,39 @@ function handleMissedEpisode(db_seasons, db_episodes, db_duration, lastSeasonsOn
     return missedEpisode;
 }
 
-export function getSeasonsFromLinks(site_links) {
+function getSeasonsFromLinks(site_links) {
     let seasonsArray = [];
     for (let l = 0; l < site_links.length; l++) {
         let {season, episode} = getSeasonEpisode(site_links[l].link);
         let seasonExist = false;
         for (let m = 0; m < seasonsArray.length; m++) {
-            let thisSeason = seasonsArray[m];
-            if (thisSeason.season === season) {
+            if (seasonsArray[m].season === season) {
                 seasonExist = true;
-                if (thisSeason.episodes < episode) {
-                    thisSeason.episodes = episode;
+                if (seasonsArray[m].episodes < episode) {
+                    seasonsArray[m].episodes = episode;
+                }
+            }
+        }
+        if (!seasonExist) {
+            seasonsArray.push({
+                season: season,
+                episodes: episode
+            });
+        }
+    }
+    return seasonsArray;
+}
+
+function getSeasonsFromTvMazeApi(episodes) {
+    let seasonsArray = [];
+    for (let l = 0; l < episodes.length; l++) {
+        let {season, episode} = episodes[l];
+        let seasonExist = false;
+        for (let m = 0; m < seasonsArray.length; m++) {
+            if (seasonsArray[m].season === season) {
+                seasonExist = true;
+                if (seasonsArray[m].episodes < episode) {
+                    seasonsArray[m].episodes = episode;
                 }
             }
         }

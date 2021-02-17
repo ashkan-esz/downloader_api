@@ -10,8 +10,9 @@ axiosRetry(axios, {
     }
 });
 
-export async function get_OMDB_Api_Data(title, thisYear, mode) {
+export async function get_OMDB_Api_Data(title, premiered, mode) {
     try {
+        let titleYear = premiered.split('-')[0];
         let type = (mode === 'movie') ? 'movie' : 'series';
         let url = `http://www.omdbapi.com/?t=${title}&type=${type}`;
         let data = await handle_OMDB_ApiKeys(url)
@@ -21,7 +22,7 @@ export async function get_OMDB_Api_Data(title, thisYear, mode) {
 
         let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
         let apiYear = data.Year.split(/[-–]/g)[0];
-        let equalYear = (mode === 'movie') ? Math.abs(Number(thisYear) - Number(apiYear)) <= 1 : true;
+        let equalYear = (mode === 'movie') ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
         let titlesMatched = true;
         let splitTitle = title.split(' ');
         let splitApiTitle = apiTitle.split(' ');
@@ -45,7 +46,6 @@ export async function get_OMDB_Api_Data(title, thisYear, mode) {
 
 export function get_OMDB_Api_Fields(data, summary, mode) {
     summary.english = (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '';
-    let year = data.Year.split(/[-–]/g)[0];
     let collectedData = {
         totalSeasons: (mode === 'movie') ? '' : data.totalSeasons,
         boxOffice: (mode === 'movie') ? data.BoxOffice : '',
@@ -57,17 +57,15 @@ export function get_OMDB_Api_Fields(data, summary, mode) {
         country: data.Country.toLowerCase(),
         genres: data.Genre.toLowerCase().split(',').map(value => value.trim()),
         rating: data.Ratings,
-        status: (mode === 'movie') ? 'ended' :
-            (data.Year.split(/[-–]/g).length === 2) ? 'running' : 'ended',
-        duration: data.Runtime,
+        duration: data.Runtime || '0 min',
         director: data.Director.toLowerCase(),
         writer: data.Writer.toLowerCase(),
         cast: data.Actors.toLowerCase().split(',').map(value => value.trim()),
         awards: data.Awards
     };
 
-    if (mode === 'serial') {
-        collectedData.year = year;
+    if (mode === 'movie') {
+        collectedData.premiered = data.Year.split(/[-–]/g)[0];
     }
     return collectedData;
 }
@@ -85,15 +83,14 @@ export function get_OMDB_Api_nullFields(summary, mode) {
         country: "",
         genres: [],
         rating: [],
-        status: "",
         duration: "",
         director: "",
         writer: "",
         cast: [],
         awards: "",
     };
-    if (mode === 'serial') {
-        collectedData.year = "";
+    if (mode === 'movie') {
+        collectedData.premiered = '';
     }
     return collectedData;
 }
@@ -143,6 +140,7 @@ export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons,
                     let episodeInfo = {
                         title: (episodeResult === '404') ? 'unknown' : episodeResult.Title,
                         released: releaseDate,
+                        releaseStamp: '',
                         duration: (episodeResult === '404') ? lastEpisodeDuration : episodeResult.Runtime,
                         season: j,
                         episode: k,
@@ -215,10 +213,10 @@ async function handle_OMDB_ApiKeys(url) {
 }
 
 export function fixEpisodesZeroDuration(episodes, duration) {
-    let badCases = ['', 'N/A', '0 min'];
+    let badCases = [null, 'null min', '', 'N/A', 'N/A min', '0 min'];
     duration = badCases.includes(duration) ? '0 min' : duration;
     for (let i = 0; i < episodes.length; i++) {
-        if (!badCases.includes(episodes[i].duration) && !isNaN(episodes[i].duration)) {
+        if (!badCases.includes(episodes[i].duration) && episodes[i].duration && !isNaN(episodes[i].duration)) {
             episodes[i].duration = episodes[i].duration + ' min';
             continue;
         }

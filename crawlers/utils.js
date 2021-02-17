@@ -43,7 +43,9 @@ export function replaceSpecialCharacters(input) {
         .replace(/[ıí]/g, 'i')
         .replace(' iii', ' 3')
         .replace(' ii', ' 2')
-        .replace('…', '');
+        .replace('…', '')
+        .replace('marvels', '')
+        .trim();
 }
 
 export function replacePersianNumbers(input) {

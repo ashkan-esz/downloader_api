@@ -30,7 +30,7 @@ async function start_crawling() {
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();
-            Sentry.captureMessage(crawling_time.toString());
+            Sentry.captureMessage(`crawling done in : ${crawling_time}s`);
             resolve();
         } catch (error) {
             saveError(error);
