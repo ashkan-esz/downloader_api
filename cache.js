@@ -2,6 +2,7 @@ const getCollection = require("./mongoDB");
 const {dataConfig} = require("./routes/configs");
 const axios = require('axios').default;
 const {replaceSpecialCharacters} = require("./crawlers/utils");
+const {saveError} = require("./saveError");
 
 let news_movies = []; //36
 let news_serials = []; //36
@@ -32,34 +33,46 @@ export function resetCache_all() {
 }
 
 export async function setCache_all() {
-    await Promise.all([
-        setCache_news(),
-        setCache_updates(),
-        setCache_Tops_Likes(),
-        setCache_Trailers(),
-        setCache_tops_popularNames(),
-        setCache_tops_popularShows()
-    ]);
+    return new Promise(async (resolve, reject) => {
+        try {
+            await Promise.all([
+                setCache_news(),
+                setCache_updates(),
+                setCache_Tops_Likes(),
+                setCache_Trailers(),
+            ]);
+            await setCache_tops_popularNames();
+            await setCache_tops_popularShows();
+            resolve();
+        } catch (error) {
+            saveError(error);
+            reject();
+        }
+    });
 }
 
 //-------------------------------
 //-------------News--------------
 export async function setCache_news() {
-    let movieCollection = await getCollection('movies');
-    let serialCollection = await getCollection('serials');
-    let movieSearch = movieCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({premiered: -1, insert_date: -1})
-        .limit(36)
-        .toArray();
-    let serialSearch = serialCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({premiered: -1})
-        .limit(36)
-        .toArray();
-    let searchResults = await Promise.all([movieSearch, serialSearch]);
-    news_movies = searchResults[0];
-    news_serials = searchResults[1];
+    try {
+        let movieCollection = await getCollection('movies');
+        let serialCollection = await getCollection('serials');
+        let movieSearch = movieCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({premiered: -1, insert_date: -1})
+            .limit(36)
+            .toArray();
+        let serialSearch = serialCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({premiered: -1})
+            .limit(36)
+            .toArray();
+        let searchResults = await Promise.all([movieSearch, serialSearch]);
+        news_movies = searchResults[0];
+        news_serials = searchResults[1];
+    }catch (error) {
+        saveError(error);
+    }
 }
 
 export function getCache_news_all() {
@@ -83,21 +96,25 @@ export function getCache_news_singleType(type) {
 //-------------------------------
 //------------Updates------------
 export async function setCache_updates() {
-    let movieCollection = await getCollection('movies');
-    let serialCollection = await getCollection('serials');
-    let movieSearch = movieCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({update_date: -1})
-        .limit(36)
-        .toArray();
-    let serialSearch = serialCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({update_date: -1})
-        .limit(36)
-        .toArray();
-    let searchResults = await Promise.all([movieSearch, serialSearch]);
-    updates_movies = searchResults[0];
-    updates_serials = searchResults[1];
+    try {
+        let movieCollection = await getCollection('movies');
+        let serialCollection = await getCollection('serials');
+        let movieSearch = movieCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({update_date: -1})
+            .limit(36)
+            .toArray();
+        let serialSearch = serialCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({update_date: -1})
+            .limit(36)
+            .toArray();
+        let searchResults = await Promise.all([movieSearch, serialSearch]);
+        updates_movies = searchResults[0];
+        updates_serials = searchResults[1];
+    }catch (error){
+        saveError(error);
+    }
 }
 
 export function getCache_updates_all() {
@@ -121,21 +138,25 @@ export function getCache_updates_singleType(type) {
 //----------------------------------
 //------------Tops_Likes------------
 export async function setCache_Tops_Likes() {
-    let movieCollection = await getCollection('movies');
-    let serialCollection = await getCollection('serials');
-    let movieSearch = movieCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({like: -1})
-        .limit(36)
-        .toArray();
-    let serialSearch = serialCollection
-        .find({}, {projection: dataConfig["low"]})
-        .sort({like: -1})
-        .limit(36)
-        .toArray();
-    let searchResults = await Promise.all([movieSearch, serialSearch]);
-    tops_likes_movies = searchResults[0];
-    tops_likes_serials = searchResults[1];
+    try {
+        let movieCollection = await getCollection('movies');
+        let serialCollection = await getCollection('serials');
+        let movieSearch = movieCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({like: -1})
+            .limit(36)
+            .toArray();
+        let serialSearch = serialCollection
+            .find({}, {projection: dataConfig["low"]})
+            .sort({like: -1})
+            .limit(36)
+            .toArray();
+        let searchResults = await Promise.all([movieSearch, serialSearch]);
+        tops_likes_movies = searchResults[0];
+        tops_likes_serials = searchResults[1];
+    }catch (error){
+        saveError(error);
+    }
 }
 
 export function getCache_Tops_Likes_All() {
@@ -158,15 +179,19 @@ export function getCache_Tops_Likes_SingleType(type) {
 
 //----------------------------------
 //------------Tops_Popular------------
-async function setCache_tops_popularNames() {
-    const pagesCounts = 6; // 6 * 20 = 120
-    for (let i = 1; i <= pagesCounts; i++) {
-        let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
-        let data = response.data;
-        if (data) {
-            let showsNames = data.tv_shows.map(value => replaceSpecialCharacters(value.name.toLowerCase()));
-            tops_popularNames.push(...showsNames);
+export async function setCache_tops_popularNames() {
+    try {
+        const pagesCounts = 6; // 6 * 20 = 120
+        for (let i = 1; i <= pagesCounts; i++) {
+            let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
+            let data = response.data;
+            if (data) {
+                let showsNames = data.tv_shows.map(value => replaceSpecialCharacters(value.name.toLowerCase()));
+                tops_popularNames.push(...showsNames);
+            }
         }
+    }catch (error) {
+        saveError(error);
     }
 }
 
@@ -175,12 +200,18 @@ export function getCache_tops_popularNames() {
 }
 
 async function setCache_tops_popularShows() {
-    let serialCollection = await getCollection('serials');
-    let searchNames = tops_popularNames.slice(0, 24);
-    let serialSearch = await serialCollection
-        .find({title: {$in: searchNames}}, {projection: dataConfig["low"]})
-        .toArray();
-    tops_popularShows = serialSearch.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
+    try {
+        let serialCollection = await getCollection('serials');
+        let searchNames = tops_popularNames.slice(0, 24);
+        if (searchNames.length > 0){
+            let serialSearch = await serialCollection
+                .find({title: {$in: searchNames}}, {projection: dataConfig["low"]})
+                .toArray();
+            tops_popularShows = serialSearch.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
+        }
+    }catch (error){
+        saveError(error);
+    }
 }
 
 export function getCache_tops_popularShows() {
@@ -190,21 +221,25 @@ export function getCache_tops_popularShows() {
 //----------------------------------
 //-------------Trailers-------------
 export async function setCache_Trailers() {
-    let movieCollection = await getCollection('movies');
-    let serialCollection = await getCollection('serials');
-    let movieSearch = movieCollection
-        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
-        .sort({premiered: -1, insert_date: -1})
-        .limit(18)
-        .toArray();
-    let serialSearch = serialCollection
-        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
-        .sort({premiered: -1})
-        .limit(18)
-        .toArray();
-    let searchResults = await Promise.all([movieSearch, serialSearch]);
-    trailers_movies = searchResults[0];
-    trailers_serials = searchResults[1];
+    try {
+        let movieCollection = await getCollection('movies');
+        let serialCollection = await getCollection('serials');
+        let movieSearch = movieCollection
+            .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+            .sort({premiered: -1, insert_date: -1})
+            .limit(18)
+            .toArray();
+        let serialSearch = serialCollection
+            .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+            .sort({premiered: -1})
+            .limit(18)
+            .toArray();
+        let searchResults = await Promise.all([movieSearch, serialSearch]);
+        trailers_movies = searchResults[0];
+        trailers_serials = searchResults[1];
+    }catch (error){
+        saveError(error);
+    }
 }
 
 export function getCache_Trailers_All() {

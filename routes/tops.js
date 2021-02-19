@@ -3,7 +3,8 @@ const getCollection = require("../mongoDB");
 const {dataConfig} = require("./configs");
 const {
     getCache_Tops_Likes_All, getCache_Tops_Likes_SingleType,
-    getCache_tops_popularNames, getCache_tops_popularShows
+    getCache_tops_popularNames, getCache_tops_popularShows,
+    setCache_tops_popularNames
 } = require("../cache");
 
 //tops/byLikes/getAll/:dataLevel/:page
@@ -73,6 +74,10 @@ router.get('/popularShows/:dataLevel/:page', async (req, res) => {
     let dataLevel = req.params.dataLevel || 'low';
     let page = Number(req.params.page) || 1;
     let popularNames = getCache_tops_popularNames();
+    if (popularNames.length === 0) {
+        //retry to get popular show names
+        await setCache_tops_popularNames();
+    }
     if (popularNames.length === 0 || page > 10) {
         return res.sendStatus(404);
     }
@@ -84,7 +89,9 @@ router.get('/popularShows/:dataLevel/:page', async (req, res) => {
     //cache
     if (dataLevel === 'low' && page <= 2) {
         let cacheResult = getCache_tops_popularShows();
-        return res.json(cacheResult.slice(startIndex, startIndex + 12));
+        if (cacheResult.length > 0) {
+            return res.json(cacheResult.slice(startIndex, startIndex + 12));
+        }
     }
     //database
     let collection = await getCollection('serials');
