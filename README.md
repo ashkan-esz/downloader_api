@@ -1,5 +1,3 @@
-baseUrl = https://downloader-node-api.herokuapp.com
-
 //start/crawling/:password/:mode?
 
 //search/searchAll/:title/:dataLevel/:page
