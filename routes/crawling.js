@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const start_crawling = require("../crawlers/start_crawling");
+const {start_crawling} = require("../crawlers/start_crawling");
 const {resetCache_all, setCache_all} = require("../cache");
 
 let crawling_flag = false;

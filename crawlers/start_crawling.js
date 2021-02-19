@@ -10,7 +10,7 @@ const domainChangeHandler = require('./domainChangeHandler');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
-async function start_crawling(crawlMode = 0) {
+export async function start_crawling(crawlMode = 0) {
     return new Promise(async (resolve, reject) => {
         try {
             let time1 = new Date();
@@ -66,4 +66,3 @@ async function start_crawling(crawlMode = 0) {
     });
 }
 
-export default start_crawling;
