@@ -1,86 +1,69 @@
-const express = require('express');
-const router = express.Router();
-import getCollection from '../mongoDB';
+const router = require('express').Router();
+const getCollection = require("../mongoDB");
+const {dataConfig} = require("./configs");
+const {getCache_news_all, getCache_news_singleType} = require("../cache");
 
-let globalProjectionConfig = {
-    title: 1,
-    year: 1,
-    poster: 1,
-    type: 1,
-    rawTitle: 1,
-    rating: 1,
-    genres: 1,
-    like: 1,
-    dislike: 1
-};
-
-//news/getAll
-router.get('/getAll/:lowData/:olds/:count?', async (req, res) => {
-    let lowData = req.params.lowData;
-    let olds = req.params.olds;
-    let count = Number(req.params.count) || 25;
-
-    let projectionConfig = (lowData === 'true') ? globalProjectionConfig : null;
-    let movieSortConfig = (olds === 'true') ? {insert_date: -1} : {year: -1, insert_date: -1};
-
+//news/getAll/:dataLevel/:page
+router.get('/getAll/:dataLevel/:page', async (req, res) => {
+    let dataLevel = req.params.dataLevel || 'low';
+    let page = Number(req.params.page) || 1;
+    //cache
+    if (dataLevel === 'low' && page <= 3) {
+        let cacheResult = getCache_news_all();
+        if (cacheResult) {
+            let movie_startIndex = 8 * (page - 1);
+            let serial_startIndex = 4 * (page - 1);
+            let result = [
+                ...cacheResult.news_movies.slice(movie_startIndex, movie_startIndex + 8),
+                ...cacheResult.news_serials.slice(serial_startIndex, serial_startIndex + 4)
+            ];
+            return res.json(result);
+        }
+    }
     //database
     let movieCollection = await getCollection('movies');
     let serialCollection = await getCollection('serials');
-
     let movieSearch = movieCollection
-        .find({}, {projection: projectionConfig})
-        .sort(movieSortConfig)
-        .limit(count / 2)
+        .find({}, {projection: dataConfig[dataLevel]})
+        .sort({premiered: -1, insert_date: -1})
+        .skip(8 * (page - 1))
+        .limit(8)
         .toArray();
-
     let serialSearch = serialCollection
-        .find({}, {projection: projectionConfig})
-        .sort({insert_date: -1})
-        .limit(count / 2)
+        .find({}, {projection: dataConfig[dataLevel]})
+        .sort({premiered: -1})
+        .skip(4 * (page - 1))
+        .limit(4)
         .toArray();
-
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [...searchResults[0], ...searchResults[1]];
     return res.json(searchResults);
 });
 
-//news/getMovies
-router.get('/getMovies/:lowData/:olds/:count?', async (req, res) => {
-    let lowData = req.params.lowData;
-    let olds = req.params.olds;
-    let count = Number(req.params.count) || 25;
-
-    let projectionConfig = (lowData === 'true') ? globalProjectionConfig : null;
-    let movieSortConfig = (olds === 'true') ? {insert_date: -1} : {year: -1, insert_date: -1};
-
+//news/getSingleType/:type/:dataLevel/:page
+router.get('/getSingleType/:type/:dataLevel/:page', async (req, res) => {
+    let type = req.params.type;
+    let dataLevel = req.params.dataLevel || 'low';
+    let page = Number(req.params.page) || 1;
+    //cache
+    if (dataLevel === 'low' && page <= 3) {
+        let cacheResult = getCache_news_singleType(type);
+        if (cacheResult) {
+            let startIndex = 12 * (page - 1);
+            return res.json(cacheResult.slice(startIndex, startIndex + 12));
+        }
+    }
     //database
-    let movieCollection = await getCollection('movies');
-
-    let movieSearch = await movieCollection
-        .find({}, {projection: projectionConfig})
-        .sort(movieSortConfig)
-        .limit(count)
+    let collection = await getCollection(type + 's');
+    let sortConfig = (type === 'serial') ? {premiered: -1} : {premiered: -1, insert_date: -1};
+    let searchResults = await collection
+        .find({}, {projection: dataConfig[dataLevel]})
+        .sort(sortConfig)
+        .skip(12 * (page - 1))
+        .limit(12)
         .toArray();
-
-    return res.json(movieSearch);
+    return res.json(searchResults);
 });
 
-//news/getSerials
-router.get('/getSerials/:lowData/:count?', async (req, res) => {
-    let lowData = req.params.lowData;
-    let count = Number(req.params.count) || 25;
-    let projectionConfig = (lowData === 'true') ? globalProjectionConfig : null;
-
-    //database
-    let serialCollection = await getCollection('serials');
-
-    let serialSearch = await serialCollection
-        .find({}, {projection: projectionConfig})
-        .sort({insert_date: -1})
-        .limit(count)
-        .toArray();
-
-    return res.json(serialSearch);
-});
 
 export default router;

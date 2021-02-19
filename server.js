@@ -1,84 +1,69 @@
 require('dotenv').config({path: './.env'});
-import express from 'express';
+const Sentry = require('@sentry/node');
+const Tracing = require('@sentry/tracing');
+const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const jwt = require('express-jwt');
-const jwksRsa = require('jwks-rsa');
+// const jwt = require('express-jwt');
+// const jwksRsa = require('jwks-rsa');
 const port = process.env.PORT || 3000;
-import {set_cached_news, set_cached_updates} from "./cache";
-import {save_error} from "./save_logs";
+const {setCache_all} = require("./cache");
 //---------------Routes-----------------
 import crawling from './routes/crawling';
-import logs from './routes/logs';
-import likes from './routes/likes';
-import titles from './routes/titles';
-import updates from './routes/updates';
-
 import search from './routes/search';
-import update from './routes/update';
 import news from './routes/news';
-import like from './routes/like';
+import update from './routes/update';
+import tops from './routes/tops';
+import trailers from './routes/trailers';
 //--------------middleware--------------
+Sentry.init({
+    dsn: process.env.SENTRY_DNS,
+    integrations: [
+        new Sentry.Integrations.Http({tracing: true}),
+        new Tracing.Integrations.Express({app}),
+        new Tracing.Integrations.Mongo(),
+    ],
+    tracesSampleRate: 1.0,
+});
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.tracingHandler());
 app.use(helmet());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(compression());
 //--------------------------------------
 //--------------------------------------
 
-const checkJwt = jwt({
-    secret: jwksRsa.expressJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: 'https://ashkanaz2828.eu.auth0.com/.well-known/jwks.json'
-    }),
-
-    // Validate the audience and the issuer.
-    audience: 'https://downloader-auth-api',
-    issuer: 'https://ashkanaz2828.eu.auth0.com/',
-    algorithms: ['RS256']
-});
-
-// app.use(checkJwt);// todo
-
-//init data
-set_cached_news().then(()=>{});
-set_cached_updates().then(()=>{});
-
-
+setCache_all();
 
 app.use('/start/crawling', crawling);
-app.use('/logs', logs);
-app.use('/titles', titles);
-app.use('/likes', likes);
-app.use('/updates', updates);
-
 app.use('/search', search);
-app.use('/update', update);
 app.use('/news', news);
-app.use('/like', like);
+app.use('/updates', update);
+app.use('/tops', tops);
+app.use('/trailers', trailers);
 
 
-app.use(function(req, res) {
+app.use(Sentry.Handlers.errorHandler({
+    shouldHandleError(error) {
+        // Capture all 404 and 500 errors
+        return error.status === 404 || error.status === 500;
+    },
+}));
+
+app.use(function (req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})
 });
 
-app.use(async (err, req, res, next) => {
-
-    await save_error({
-        massage: "module: server.js >> Internal Server Error ",
-        time: new Date()
-    });
-
+app.use((err, req, res, next) => {
     res.status(500);
     res.send('Internal Server Error');
 });
 
 app.listen(port, () => {
     console.log(`http://localhost:${port}`)
-})
+});

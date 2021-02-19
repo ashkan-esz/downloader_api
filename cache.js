@@ -1,213 +1,226 @@
-const getCollection = require( "./mongoDB");
+const getCollection = require("./mongoDB");
+const {dataConfig} = require("./routes/configs");
+const axios = require('axios').default;
+const {replaceSpecialCharacters} = require("./crawlers/utils");
 
-let movie_titles = []; //500
-let serial_titles = [];//500
+let news_movies = []; //36
+let news_serials = []; //36
 
-let movie_news = [];//100 olds too
-let serial_news = [];//50
+let updates_movies = []; //36
+let updates_serials = []; //36
 
-let movie_updates = [];//100 olds too
-let serial_updates = [];//50
+let tops_likes_movies = []; //36
+let tops_likes_serials = []; //36
 
-let movie_likes = []; //50
-let serial_likes = [];//50
+let tops_popularNames = []; //6 * 20 = 120;
+let tops_popularShows = []; //24
 
+let trailers_movies = []; //18
+let trailers_serials = []; //18
 //-------------------------------
-//-------------TITLES------------
-function search_cached_titles(type, searching_title) {
-    let titles_array = (type === 'serial') ? serial_titles : movie_titles;
-    if (titles_array.length > 0) {
-        for (const thisTitle of titles_array) {
-            if (thisTitle.title === searching_title) {
-                return thisTitle;
-            }
-        }
-    }
+//-------------------------------
 
-    let cached_news = get_cached_news(type, 0);
-    if (cached_news !== null) {
-        for (const cachedNew of cached_news) {
-            if (cachedNew.title === searching_title) {
-                return cachedNew;
-            }
-        }
-    }
-
-    let cached_updates = get_cached_updates(type, 0);
-    if (cached_updates !== null) {
-        for (const cachedUpdate of cached_updates) {
-            if (cachedUpdate.title === searching_title) {
-                return cachedUpdate;
-            }
-        }
-    }
-
-    let cached_likes = get_cached_likes(type, 0);
-    if (cached_likes !== null) {
-        for (const cachedLike of cached_likes) {
-            if (cachedLike.title === searching_title) {
-                return cachedLike;
-            }
-        }
-    }
-
-    return null;
+export function resetCache_all() {
+    news_movies = [];
+    news_serials = [];
+    updates_movies = [];
+    updates_serials = [];
+    tops_likes_movies = [];
+    tops_likes_serials = [];
+    trailers_movies = [];
+    trailers_serials = [];
 }
 
-function add_cached_titles(type, title_doc) {
-    if (title_doc === null)
-        return;
-    let titles_array = (type === 'serial') ? serial_titles : movie_titles;
-    titles_array.unshift(title_doc[0]);
-    while (titles_array.length > 500) {
-        titles_array.pop();
-    }
-    if (type === 'serial') {
-        serial_titles = titles_array;
-    } else {
-        movie_titles = titles_array;
-    }
-}
-
-function update_cached_titles(type, title_doc) {
-    let titles_array = (type === 'serial') ? serial_titles : movie_titles;
-    for (let i = 0; i < titles_array.length; i++) {
-        if (titles_array[i].title === title_doc.title) {
-            titles_array[i] = title_doc;
-            break;
-        }
-    }
-    if (type === 'serial') {
-        serial_titles = titles_array;
-    } else {
-        movie_titles = titles_array;
-    }
+export async function setCache_all() {
+    await Promise.all([
+        setCache_news(),
+        setCache_updates(),
+        setCache_Tops_Likes(),
+        setCache_Trailers(),
+        setCache_tops_popularNames(),
+        setCache_tops_popularShows()
+    ]);
 }
 
 //-------------------------------
-//-------------NEWS--------------
-function get_cached_news(type, count) {
-    let news_array = (type === 'serial') ? serial_news : movie_news;
-    if (news_array.length === 0 || news_array.length < count) {
+//-------------News--------------
+export async function setCache_news() {
+    let movieCollection = await getCollection('movies');
+    let serialCollection = await getCollection('serials');
+    let movieSearch = movieCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({premiered: -1, insert_date: -1})
+        .limit(36)
+        .toArray();
+    let serialSearch = serialCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({premiered: -1})
+        .limit(36)
+        .toArray();
+    let searchResults = await Promise.all([movieSearch, serialSearch]);
+    news_movies = searchResults[0];
+    news_serials = searchResults[1];
+}
+
+export function getCache_news_all() {
+    if (news_movies.length === 0 || news_serials.length === 0) {
         return null;
     }
-    return news_array;
+    return {
+        news_movies,
+        news_serials
+    };
 }
 
-async function set_cached_news() {
-    serial_news = [];
-    movie_news = [];
-    let serials_collection = await getCollection('serials');
-    serial_news = await serials_collection.find({}).sort({insert_date: -1}).limit(50).toArray();
-    let movies_collection = await getCollection('movies');
-    movie_news = await movies_collection.find({}).sort({insert_date: -1}).limit(100).toArray();
-}
-
-function update_cached_news(type, news_doc) {
-    if (type === 'serial') {
-        for (let i = 0; i < serial_news.length; i++) {
-            if (serial_news[i].title === news_doc.title) {
-                serial_news[i] = news_doc;
-                break;
-            }
-        }
-    } else {
-        for (let i = 0; i < movie_news.length; i++) {
-            if (movie_news[i].title === news_doc.title) {
-                movie_news[i] = news_doc;
-                break;
-            }
-        }
+export function getCache_news_singleType(type) {
+    let array = type === 'movie' ? news_movies : news_serials;
+    if (array.length === 0) {
+        return null;
     }
+    return array;
 }
 
 //-------------------------------
-//------------UPDATES------------
-function get_cached_updates(type, count) {
-    let updates_array = (type === 'serial') ? serial_updates : movie_updates;
-    if (updates_array.length === 0 || updates_array.length < count) {
+//------------Updates------------
+export async function setCache_updates() {
+    let movieCollection = await getCollection('movies');
+    let serialCollection = await getCollection('serials');
+    let movieSearch = movieCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({update_date: -1})
+        .limit(36)
+        .toArray();
+    let serialSearch = serialCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({update_date: -1})
+        .limit(36)
+        .toArray();
+    let searchResults = await Promise.all([movieSearch, serialSearch]);
+    updates_movies = searchResults[0];
+    updates_serials = searchResults[1];
+}
+
+export function getCache_updates_all() {
+    if (updates_movies.length === 0 || updates_serials.length === 0) {
         return null;
     }
-    return updates_array;
+    return {
+        updates_movies,
+        updates_serials
+    };
 }
 
-async function set_cached_updates() {
-    serial_updates = [];
-    movie_updates = [];
-    let serials_collection = await getCollection('serials');
-    serial_updates = await serials_collection.find({}).sort({update_date: -1}).limit(50).toArray();
-    let movies_collection = await getCollection('movies');
-    movie_updates = await movies_collection.find({}).sort({update_date: -1}).limit(100).toArray();
-}
-
-function update_cached_updates(type, news_doc) {
-    if (type === 'serial') {
-        for (let i = 0; i < serial_updates.length; i++) {
-            if (serial_updates[i].title === news_doc.title) {
-                serial_updates[i] = news_doc;
-                break;
-            }
-        }
-    } else {
-        for (let i = 0; i < movie_updates.length; i++) {
-            if (movie_updates[i].title === news_doc.title) {
-                movie_updates[i] = news_doc;
-                break;
-            }
-        }
-    }
-}
-
-//-------------------------------
-//-------------LIKES-------------
-function get_cached_likes(type, count) {
-    let likes_array = (type === 'serial') ? serial_likes : movie_likes;
-    if (likes_array.length === 0 || likes_array.length < count) {
+export function getCache_updates_singleType(type) {
+    let array = type === 'movie' ? updates_movies : updates_serials;
+    if (array.length === 0) {
         return null;
     }
-    return likes_array;
+    return array;
 }
 
-function update_cached_likes(type, like_docs) {
-    let likes_array = (type === 'serial') ? serial_likes : movie_likes;
+//----------------------------------
+//------------Tops_Likes------------
+export async function setCache_Tops_Likes() {
+    let movieCollection = await getCollection('movies');
+    let serialCollection = await getCollection('serials');
+    let movieSearch = movieCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({like: -1})
+        .limit(36)
+        .toArray();
+    let serialSearch = serialCollection
+        .find({}, {projection: dataConfig["low"]})
+        .sort({like: -1})
+        .limit(36)
+        .toArray();
+    let searchResults = await Promise.all([movieSearch, serialSearch]);
+    tops_likes_movies = searchResults[0];
+    tops_likes_serials = searchResults[1];
+}
 
-    for (let k = 0; k < like_docs.length; k++) {
-        let exist = false;
-        for (let i = 0; i < likes_array.length; i++) {
-            if (likes_array[i].title === like_docs[k].title) {
-                exist = true;
-                likes_array[i] = like_docs[k];
-                break;
-            }
-        }
-
-        if (!exist) {
-            likes_array.unshift(like_docs[k]);
-        }
+export function getCache_Tops_Likes_All() {
+    if (tops_likes_movies.length === 0 || tops_likes_serials.length === 0) {
+        return null;
     }
+    return {
+        tops_likes_movies,
+        tops_likes_serials
+    };
+}
 
-    likes_array = likes_array.sort((a, b) => b.like - a.like);
-
-    while (likes_array.length > 50) {
-        likes_array.pop();
+export function getCache_Tops_Likes_SingleType(type) {
+    let array = type === 'movie' ? tops_likes_movies : tops_likes_serials;
+    if (array.length === 0) {
+        return null;
     }
+    return array;
+}
 
-    if (type === 'serial') {
-        serial_likes = likes_array;
-    } else {
-        movie_likes = likes_array;
+//----------------------------------
+//------------Tops_Popular------------
+async function setCache_tops_popularNames() {
+    const pagesCounts = 6; // 6 * 20 = 120
+    for (let i = 1; i <= pagesCounts; i++) {
+        let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
+        let data = response.data;
+        if (data) {
+            let showsNames = data.tv_shows.map(value => replaceSpecialCharacters(value.name.toLowerCase()));
+            tops_popularNames.push(...showsNames);
+        }
     }
 }
 
-//---------------------------------------------------------
-module.exports.search_cached_titles = search_cached_titles;
-module.exports.add_cached_titles = add_cached_titles ;
-module.exports.update_cached_titles = update_cached_titles;
-module.exports.get_cached_news = get_cached_news;
-module.exports.set_cached_news = set_cached_news;
-module.exports.update_cached_news = update_cached_news;
-module.exports.get_cached_updates = get_cached_updates;
-module.exports.set_cached_updates = set_cached_updates;
-module.exports.update_cached_updates = update_cached_updates;
-module.exports.get_cached_likes = get_cached_likes;
-module.exports.update_cashed_likes = update_cached_likes;
+export function getCache_tops_popularNames() {
+    return tops_popularNames;
+}
+
+async function setCache_tops_popularShows() {
+    let serialCollection = await getCollection('serials');
+    let searchNames = tops_popularNames.slice(0, 24);
+    let serialSearch = await serialCollection
+        .find({title: {$in: searchNames}}, {projection: dataConfig["low"]})
+        .toArray();
+    tops_popularShows = serialSearch.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
+}
+
+export function getCache_tops_popularShows() {
+    return tops_popularShows;
+}
+
+//----------------------------------
+//-------------Trailers-------------
+export async function setCache_Trailers() {
+    let movieCollection = await getCollection('movies');
+    let serialCollection = await getCollection('serials');
+    let movieSearch = movieCollection
+        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+        .sort({premiered: -1, insert_date: -1})
+        .limit(18)
+        .toArray();
+    let serialSearch = serialCollection
+        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+        .sort({premiered: -1})
+        .limit(18)
+        .toArray();
+    let searchResults = await Promise.all([movieSearch, serialSearch]);
+    trailers_movies = searchResults[0];
+    trailers_serials = searchResults[1];
+}
+
+export function getCache_Trailers_All() {
+    if (trailers_movies.length === 0 || trailers_serials.length === 0) {
+        return null;
+    }
+    return {
+        trailers_movies,
+        trailers_serials
+    };
+}
+
+export function getCache_Trailers_SingleType(type) {
+    let array = type === 'movie' ? trailers_movies : trailers_serials;
+    if (array.length === 0) {
+        return null;
+    }
+    return array;
+}

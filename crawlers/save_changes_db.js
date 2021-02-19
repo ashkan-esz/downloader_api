@@ -312,6 +312,10 @@ function handlePosterUpdate(db_data, poster) {
 
 function handleTrailerUpdate(db_data, site_trailers) {
     let trailersChanged = false;
+    if (db_data.trailers === null && site_trailers.length > 0) {
+        db_data.trailers = site_trailers;
+        return true;
+    }
     for (let i = 0; i < site_trailers.length; i++) {
         let trailer_exist = false;
         for (let j = 0; j < db_data.trailers.length; j++) {

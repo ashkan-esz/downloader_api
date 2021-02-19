@@ -25,6 +25,7 @@ export async function get_tvmazeApi_Alldata(title, rawTitle, imdbID) {
                 officialSite: data.officialSite,
                 releaseDay: day ? day.toLowerCase() : '',
                 imdbID: data.externals.imdb || '',
+                rating: data.rating.average,
                 summary: data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim()
             };
         } catch (error) {

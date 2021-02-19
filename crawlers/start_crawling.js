@@ -10,7 +10,7 @@ const domainChangeHandler = require('./domainChangeHandler');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
-async function start_crawling() {
+async function start_crawling(crawlMode = 0) {
     return new Promise(async (resolve, reject) => {
         try {
             let time1 = new Date();
@@ -18,13 +18,40 @@ async function start_crawling() {
             let collection = await getCollection('sources');
             let sources = await collection.findOne({title: 'sources'});
             let recentTitles = [];
-            await digimovies(sources.digimovies, recentTitles);
-            await film2media(sources.film2media, recentTitles);
-            await film2movie(sources.film2movie, recentTitles);
-            await mrmovie(sources.mrmovie, recentTitles);
-            await salamdl(sources.salamdl, recentTitles);
-            await topmovies(sources.topmovies, recentTitles);
-            await valamovie(sources.valamovie, recentTitles);
+            if (crawlMode === 0) {
+                await digimovies(sources.digimovies, recentTitles);
+                await film2media(sources.film2media, recentTitles);
+                await film2movie(sources.film2movie, recentTitles);
+                await salamdl(sources.salamdl, recentTitles);
+                await valamovie(sources.valamovie, recentTitles);
+                // await mrmovie(sources.mrmovie, recentTitles);
+                // await topmovies(sources.topmovies, recentTitles);
+            } else {
+                let reCrawl = crawlMode === 2;
+                await digimovies({
+                        ...sources.digimovies,
+                        page_count: crawlMode === 1 ? 40 : 310,
+                        serial_page_count: crawlMode === 1 ? 10 : 50
+                    },
+                    recentTitles, reCrawl);
+                await film2media({
+                    ...sources.film2media,
+                    page_count: crawlMode === 1 ? 70 : 380,
+                }, recentTitles, reCrawl);
+                await film2movie({
+                    ...sources.film2movie,
+                    page_count: crawlMode === 1 ? 70 : 1345,
+                }, recentTitles, reCrawl);
+                await salamdl({
+                    ...sources.salamdl,
+                    page_count: crawlMode === 1 ? 70 : 1155,
+                }, recentTitles, reCrawl);
+                await valamovie({
+                    ...sources.valamovie,
+                    page_count: crawlMode === 1 ? 40 : 870,
+                    serial_page_count: crawlMode === 1 ? 10 : 55
+                }, recentTitles, reCrawl);
+            }
 
             await domainChangeHandler(sources);
 

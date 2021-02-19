@@ -85,7 +85,7 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
         if (domain.includes('digimovie')) {
             await digimovies({
                 ...sourcesObject.digimovies,
-                page_count: 330,
+                page_count: 310,
                 serial_page_count: 50
             }, [], true);
         } else if (domain.includes('film2media')) {
@@ -94,17 +94,17 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
                 page_count: 380,
             }, [], true);
         } else if (domain.includes('mrmovie')) {
-            await mrmovie({
-                ...sourcesObject.mrmovie,
-                page_count: 300,
-                serial_page_count: 55
-            }, [], true);
+            // await mrmovie({
+            //     ...sourcesObject.mrmovie,
+            //     page_count: 300,
+            //     serial_page_count: 55
+            // }, [], true);
         } else if (domain.includes('topmovie')) {
-            await topmovies({
-                ...sourcesObject.topmovies,
-                page_count: 345,
-                serial_page_count: 45
-            }, [], true);
+            // await topmovies({
+            //     ...sourcesObject.topmovies,
+            //     page_count: 345,
+            //     serial_page_count: 45
+            // }, [], true);
         }
     }
 }

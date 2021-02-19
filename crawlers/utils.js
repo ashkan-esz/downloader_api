@@ -45,6 +45,7 @@ export function replaceSpecialCharacters(input) {
         .replace(' ii', ' 2')
         .replace('…', '')
         .replace('marvels', '')
+        .replace('boku no', 'my')
         .trim();
 }
 
