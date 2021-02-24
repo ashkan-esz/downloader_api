@@ -30,26 +30,26 @@ export async function start_crawling(crawlMode = 0) {
                 let reCrawl = crawlMode === 2;
                 await digimovies({
                         ...sources.digimovies,
-                        page_count: crawlMode === 1 ? 40 : 310,
-                        serial_page_count: crawlMode === 1 ? 10 : 50
+                        page_count: crawlMode === 1 ? 20 : 310,
+                        serial_page_count: crawlMode === 1 ? 5 : 50
                     },
                     recentTitles, reCrawl);
                 await film2media({
                     ...sources.film2media,
-                    page_count: crawlMode === 1 ? 70 : 380,
+                    page_count: crawlMode === 1 ? 40 : 380,
                 }, recentTitles, reCrawl);
                 await film2movie({
                     ...sources.film2movie,
-                    page_count: crawlMode === 1 ? 70 : 1345,
+                    page_count: crawlMode === 1 ? 40 : 1345,
                 }, recentTitles, reCrawl);
                 await salamdl({
                     ...sources.salamdl,
-                    page_count: crawlMode === 1 ? 70 : 1155,
+                    page_count: crawlMode === 1 ? 40 : 1155,
                 }, recentTitles, reCrawl);
                 await valamovie({
                     ...sources.valamovie,
-                    page_count: crawlMode === 1 ? 40 : 870,
-                    serial_page_count: crawlMode === 1 ? 10 : 55
+                    page_count: crawlMode === 1 ? 20 : 870,
+                    serial_page_count: crawlMode === 1 ? 5 : 55
                 }, recentTitles, reCrawl);
             }
 
