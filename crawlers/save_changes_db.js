@@ -1,7 +1,6 @@
-const {sort_Serial_links, checkSources, getYear} = require('./utils');
+const {sort_Serial_links, checkSources, getNewURl, getYear} = require('./utils');
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdb_api');
 const getCollection = require('../mongoDB');
-const {getNewURl} = require("./utils");
 const {handleSeasonEpisodeUpdate} = require("./SeasonEpisodeUpdateHandler");
 const {handleLatestDataUpdate, getLatestData} = require("./latestDataUpdateHandler");
 const {saveError} = require("../saveError");

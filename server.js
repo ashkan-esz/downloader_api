@@ -18,6 +18,7 @@ import news from './routes/news';
 import update from './routes/update';
 import tops from './routes/tops';
 import trailers from './routes/trailers';
+import timeLine from './routes/timeLine';
 //--------------middleware--------------
 Sentry.init({
     dsn: process.env.SENTRY_DNS,
@@ -46,6 +47,7 @@ app.use('/news', news);
 app.use('/updates', update);
 app.use('/tops', tops);
 app.use('/trailers', trailers);
+app.use('/timeLine', timeLine);
 
 
 app.use(Sentry.Handlers.errorHandler({

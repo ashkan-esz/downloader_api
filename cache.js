@@ -4,20 +4,25 @@ const axios = require('axios').default;
 const {replaceSpecialCharacters} = require("./crawlers/utils");
 const {saveError} = require("./saveError");
 
-let news_movies = []; //36
-let news_serials = []; //36
+let news_movies = []; //3 * 12 = 36
+let news_serials = []; //3 * 12 = 36
 
-let updates_movies = []; //36
-let updates_serials = []; //36
+let updates_movies = []; //3 * 12 = 36
+let updates_serials = []; //3 * 12 = 36
 
-let tops_likes_movies = []; //36
-let tops_likes_serials = []; //36
+let tops_likes_movies = []; //3 * 12 = 36
+let tops_likes_serials = []; //3 * 12 = 36
 
 let tops_popularNames = []; //6 * 20 = 120;
-let tops_popularShows = []; //24
+let tops_popularShows = []; //2 * 12 = 24
 
-let trailers_movies = []; //18
-let trailers_serials = []; //18
+let trailers_movies = []; //3 * 6 = 18
+let trailers_serials = []; //3 * 6 = 18
+
+let seriesOfDay = []; // 3 * 12 = 36
+let seriesOfWeek0 = null; // 1 * ~100
+let seriesOfWeek1 = null; // 1 * ~100
+
 //-------------------------------
 //-------------------------------
 
@@ -40,6 +45,10 @@ export async function setCache_all() {
                 setCache_updates(),
                 setCache_Tops_Likes(),
                 setCache_Trailers(),
+            ]);
+            await Promise.all([
+                setCache_SeriesOfDay(),
+                setCache_seriesOfWeek(),
             ]);
             await setCache_tops_popularNames();
             await setCache_tops_popularShows();
@@ -70,7 +79,7 @@ export async function setCache_news() {
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         news_movies = searchResults[0];
         news_serials = searchResults[1];
-    }catch (error) {
+    } catch (error) {
         saveError(error);
     }
 }
@@ -112,7 +121,7 @@ export async function setCache_updates() {
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         updates_movies = searchResults[0];
         updates_serials = searchResults[1];
-    }catch (error){
+    } catch (error) {
         saveError(error);
     }
 }
@@ -154,7 +163,7 @@ export async function setCache_Tops_Likes() {
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         tops_likes_movies = searchResults[0];
         tops_likes_serials = searchResults[1];
-    }catch (error){
+    } catch (error) {
         saveError(error);
     }
 }
@@ -181,6 +190,7 @@ export function getCache_Tops_Likes_SingleType(type) {
 //------------Tops_Popular------------
 export async function setCache_tops_popularNames() {
     try {
+        tops_popularNames = [];
         const pagesCounts = 6; // 6 * 20 = 120
         for (let i = 1; i <= pagesCounts; i++) {
             let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
@@ -190,7 +200,7 @@ export async function setCache_tops_popularNames() {
                 tops_popularNames.push(...showsNames);
             }
         }
-    }catch (error) {
+    } catch (error) {
         saveError(error);
     }
 }
@@ -201,15 +211,16 @@ export function getCache_tops_popularNames() {
 
 async function setCache_tops_popularShows() {
     try {
+        tops_popularShows = [];
         let serialCollection = await getCollection('serials');
         let searchNames = tops_popularNames.slice(0, 24);
-        if (searchNames.length > 0){
+        if (searchNames.length > 0) {
             let serialSearch = await serialCollection
                 .find({title: {$in: searchNames}}, {projection: dataConfig["low"]})
                 .toArray();
             tops_popularShows = serialSearch.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
         }
-    }catch (error){
+    } catch (error) {
         saveError(error);
     }
 }
@@ -237,7 +248,7 @@ export async function setCache_Trailers() {
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         trailers_movies = searchResults[0];
         trailers_serials = searchResults[1];
-    }catch (error){
+    } catch (error) {
         saveError(error);
     }
 }
@@ -258,4 +269,86 @@ export function getCache_Trailers_SingleType(type) {
         return null;
     }
     return array;
+}
+
+//----------------------------------
+//-----------Series of Day----------
+export async function setCache_SeriesOfDay() {
+    try {
+        seriesOfDay = [];
+        let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        let date = new Date();
+        let dayNumber = date.getDay();
+        date.setDate(date.getDate() + 8);
+        let collection = await getCollection('serials');
+        let result = await collection
+            .find({
+                releaseDay: daysOfWeek[dayNumber],
+                nextEpisode: {$ne: null},
+                'nextEpisode.releaseStamp': {$lte: date.toISOString()}
+            }, {projection: dataConfig['medium']})
+            .sort({premiered: -1})
+            .limit(36)
+            .toArray();
+        if (result) {
+            seriesOfDay = result;
+        }
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+export function getCache_SeriesOfDay() {
+    if (seriesOfDay.length === 0) {
+        return null;
+    }
+    return seriesOfDay;
+}
+
+//----------------------------------
+//-----------Series of Week----------
+export async function setCache_seriesOfWeek() {
+    seriesOfWeek0 = null;
+    seriesOfWeek1 = null;
+    let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    for (let weekCounter = 0; weekCounter < 2; weekCounter++) {
+        let date = new Date();
+        let dayNumber = date.getDay();
+        date.setDate(date.getDate() - dayNumber + 7 * weekCounter + 8); // first day of week
+        let daysInfo = [];
+        for (let i = 0; i < 7; i++) {
+            date.setDate(date.getDate() + 1);
+            daysInfo.push({
+                releaseDay: daysOfWeek[i],
+                nextEpisode: {$ne: null},
+                'nextEpisode.releaseStamp': {$lte: date.toISOString()}
+            });
+        }
+        let collection = await getCollection('serials');
+        let searchResults = await collection
+            .find({
+                $or: daysInfo
+            }, {projection: dataConfig['medium']})
+            .sort({releaseDay: -1})
+            .toArray();
+        if (searchResults.length > 0) {
+            let groupSearchResult = searchResults.reduce((r, a) => {
+                r[a.releaseDay] = [...r[a.releaseDay] || [], a];
+                return r;
+            }, {});
+            if (weekCounter === 0) {
+                seriesOfWeek0 = groupSearchResult;
+            } else {
+                seriesOfWeek1 = groupSearchResult;
+            }
+        }
+    }
+}
+
+export function getCache_seriesOfWeek(weekNumber) {
+    if (weekNumber === 0) {
+        return seriesOfWeek0;
+    } else {
+        return seriesOfWeek1;
+    }
 }

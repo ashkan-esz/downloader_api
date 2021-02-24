@@ -1,23 +1,28 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {dataConfig} = require("./configs");
+const {dataConfig, extraInfo} = require("./configs");
 const {getCache_updates_all, getCache_updates_singleType} = require("../cache");
 
-//updates/getAll/:dataLevel/:page
-router.get('/getAll/:dataLevel/:page', async (req, res) => {
+//updates/getAll/:dataLevel/:page/:count?
+router.get('/getAll/:dataLevel/:page/:count?', async (req, res) => {
     let dataLevel = req.params.dataLevel || 'low';
-    let page = Number(req.params.page) || 1;
+    let page = Number(req.params.page);
+    let count = Number(req.params.count) || 1;
+
+    let movieSkip = (page === 0) ? 0 : 8 * (page - 1);
+    let movieLimit = (page === 0) ? Math.round(count / 2) : 8;
+    let serialSkip = (page === 0) ? 0 : 4 * (page - 1);
+    let serialLimit = (page === 0) ? count / 2 : 4;
+
     //cache
     if (dataLevel === 'low' && page <= 3) {
         let cacheResult = getCache_updates_all();
         if (cacheResult) {
-            let movie_startIndex = 8 * (page - 1);
-            let serial_startIndex = 4 * (page - 1);
             let result = [
-                ...cacheResult.updates_movies.slice(movie_startIndex, movie_startIndex + 8),
-                ...cacheResult.updates_serials.slice(serial_startIndex, serial_startIndex + 4)
+                ...cacheResult.updates_movies.slice(movieSkip, movieSkip + movieLimit),
+                ...cacheResult.updates_serials.slice(serialSkip, serialSkip + serialLimit)
             ];
-            return res.json(result);
+            return res.json({data: result, extraInfo});
         }
     }
     //database
@@ -26,31 +31,35 @@ router.get('/getAll/:dataLevel/:page', async (req, res) => {
     let movieSearch = movieCollection
         .find({}, {projection: dataConfig[dataLevel]})
         .sort({update_date: -1})
-        .skip(8 * (page - 1))
-        .limit(8)
+        .skip(movieSkip)
+        .limit(movieLimit)
         .toArray();
     let serialSearch = serialCollection
         .find({}, {projection: dataConfig[dataLevel]})
         .sort({update_date: -1})
-        .skip(4 * (page - 1))
-        .limit(4)
+        .skip(serialSkip)
+        .limit(serialLimit)
         .toArray();
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [...searchResults[0], ...searchResults[1]];
-    return res.json(searchResults);
+    return res.json({data: searchResults, extraInfo});
 });
 
-//updates/getSingleType/:type/:dataLevel/:page
-router.get('/getSingleType/:type/:dataLevel/:page', async (req, res) => {
+//updates/getSingleType/:type/:dataLevel/:page:/:count?
+router.get('/getSingleType/:type/:dataLevel/:page/:count?', async (req, res) => {
     let type = req.params.type;
     let dataLevel = req.params.dataLevel || 'low';
-    let page = Number(req.params.page) || 1;
+    let page = Number(req.params.page);
+    let count = Number(req.params.count) || 1;
+
+    let skip = (page === 0) ? 0 : 12 * (page - 1);
+    let limit = (page === 0) ? count : 12;
+
     //cache
     if (dataLevel === 'low' && page <= 3) {
         let cacheResult = getCache_updates_singleType(type);
         if (cacheResult) {
-            let startIndex = 12 * (page - 1);
-            return res.json(cacheResult.slice(startIndex, startIndex + 12));
+            return res.json({data: cacheResult.slice(skip, skip + limit), extraInfo});
         }
     }
     //database
@@ -58,10 +67,10 @@ router.get('/getSingleType/:type/:dataLevel/:page', async (req, res) => {
     let searchResults = await collection
         .find({}, {projection: dataConfig[dataLevel]})
         .sort({update_date: -1})
-        .skip(12 * (page - 1))
-        .limit(12)
+        .skip(skip)
+        .limit(limit)
         .toArray();
-    return res.json(searchResults);
+    return res.json({data: searchResults, extraInfo});
 });
 
 

@@ -132,8 +132,8 @@ export function getSeasonEpisode(input) {
         }
         let season;
         let episode;
-        let case1 = input.toLowerCase().match(/s\d\de\d\d/g);
-        let case2 = input.toLowerCase().match(/s\de\d\d|s\de\d/g);
+        let case1 = input.toLowerCase().match(/s\d\de\d\d|s\d\de\d/g); //s01e02 | s01e2
+        let case2 = input.toLowerCase().match(/s\de\d\d|s\de\d/g); //s1e02 | s1e2
         if (case1) {
             let seasonEpisode = case1.pop();
             season = Number(seasonEpisode.slice(1, 3));

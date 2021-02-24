@@ -132,8 +132,8 @@ function get_file_size_serial($, link) {
             .replace('کیفیت', '')
             .trim().replace(/\s/g, '.');
         quality = sortQualityInfo(quality);
-        dubbed = (text_array[3].includes('زبان : فارسی')) ? 'dubbed' : '';
-        size = (text_array[3].includes('زبان : فارسی')) ? text_array[4] : text_array[3];
+        dubbed = (text_array[3].includes('زبان : فارسی') || text_array[3].includes('زبان: دوبله فارسی')) ? 'dubbed' : '';
+        size = dubbed ? text_array[4] : text_array[3];
     }
     let info = [quality, dubbed].filter(value => value !== '').join('.');
     let MB_GB = size.includes('مگابایت') ? 'MB' : size.includes('گیگابایت') ? 'GB' : '';
@@ -189,14 +189,21 @@ function get_serial_text_len1(text_array) {
 
 function sortQualityInfo(quality) {
     let spited_quality = quality.split('.');
-    if (spited_quality.length > 1 && spited_quality[1].match(/\d\d\d\dp|\d\d\dp/g)) {
-        quality = [spited_quality[1], spited_quality[0], ...spited_quality.slice(2)].filter(value => value).join('.');
-    } else if (spited_quality.length > 2 && spited_quality[2].match(/\d\d\d\dp|\d\d\dp/g) && spited_quality[1] === 'x265') {
-        quality = [spited_quality[2], spited_quality[1], spited_quality[0], ...spited_quality.slice(3)].filter(value => value).join('.');
-    } else if (spited_quality.length > 2 &&
-        (spited_quality[1].includes('WEB-DL') || spited_quality[1].includes('BluRay')) &&
-        spited_quality[2] === 'x265') {
-        quality = [spited_quality[0], spited_quality[2], spited_quality[1], ...spited_quality.slice(3)].filter(value => value).join('.');
+    if (spited_quality.length > 1 && !spited_quality[1].includes('x265') && spited_quality[1].match(/\d\d\d\dp|\d\d\dp/g)) {
+        if (spited_quality.length > 2 && spited_quality[2].includes('x265')) {
+            quality = [spited_quality[1], spited_quality[2], spited_quality[0], ...spited_quality.slice(3)].filter(value => value).join('.');
+        } else {
+            quality = [spited_quality[1], spited_quality[0], ...spited_quality.slice(2)].filter(value => value).join('.');
+        }
+    } else if (spited_quality.length > 2) {
+        if (spited_quality[2].match(/\d\d\d\dp|\d\d\dp/g) && spited_quality[1] === 'x265') {
+            quality = [spited_quality[2], spited_quality[1], spited_quality[0], ...spited_quality.slice(3)].filter(value => value).join('.');
+        } else if (
+            (spited_quality[1].includes('WEB-DL') ||
+                spited_quality[1].includes('BluRay') ||
+                spited_quality[1].includes('HDTV')) && spited_quality[2] === 'x265') {
+            quality = [spited_quality[0], spited_quality[2], spited_quality[1], ...spited_quality.slice(3)].filter(value => value).join('.');
+        }
     } else if (spited_quality.length > 3 && spited_quality[1].includes('10bit') && spited_quality[3] === 'x265') {
         quality = [spited_quality[0], spited_quality[3], spited_quality[1], spited_quality[0], ...spited_quality.slice(4)].filter(value => value).join('.');
     }

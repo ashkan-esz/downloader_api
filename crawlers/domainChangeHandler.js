@@ -17,6 +17,8 @@ axiosRetry(axios, {
 
 module.exports = async function domainChangeHandler(sourcesObject) {
     try {
+        delete sourcesObject._id;
+        delete sourcesObject.title;
         let sources_url = Object.keys(sourcesObject).map(value => sourcesObject[value].movie_url);
         let domains = sources_url.map(value => value.replace(/www.|https:\/\/|\/page\/|\//g, ''));
         let changedDomains = [];
@@ -51,7 +53,9 @@ module.exports = async function domainChangeHandler(sourcesObject) {
             await update_Poster_Trailers(sources_url, domains, changedDomains, 'serials');
 
             let collection = await getCollection('sources');
-            await collection.findOneAndReplace({title: 'sources'}, sourcesObject);
+            await collection.findOneAndUpdate({title: 'sources'}, {
+                $set: sourcesObject
+            });
             Sentry.captureMessage('source domain changed');
         }
     } catch (error) {

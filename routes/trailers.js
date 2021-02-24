@@ -1,25 +1,27 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {dataConfig} = require("./configs");
+const {dataConfig, extraInfo} = require("./configs");
 const {getCache_Trailers_All, getCache_Trailers_SingleType} = require("../cache");
 
-//trailers/getAll/:page
-router.get('/getAll/:page', async (req, res) => {
-    let page = Number(req.params.page) || 1;
+//trailers/getAll/:page/:count?
+router.get('/getAll/:page/:count?', async (req, res) => {
+    let page = Number(req.params.page);
+    let count = Number(req.params.count) || 1;
+
+    let movieSkip = (page === 0) ? 0 : 4 * (page - 1);
+    let movieLimit = (page === 0) ? Math.round(count / 2) : 4;
+    let serialSkip = (page === 0) ? 0 : 2 * (page - 1);
+    let serialLimit = (page === 0) ? count / 2 : 2;
+
     //cache
     if (page <= 3) {
         let cacheResult = getCache_Trailers_All();
         if (cacheResult) {
-            let movie_startIndex = 4 * (page - 1);
-            let serial_startIndex = 2 * (page - 1);
             let result = [
-                ...cacheResult.trailers_movies.slice(movie_startIndex, movie_startIndex + 4),
-                ...cacheResult.trailers_serials.slice(serial_startIndex, serial_startIndex + 2)
+                ...cacheResult.trailers_movies.slice(movieSkip, movieSkip + movieLimit),
+                ...cacheResult.trailers_serials.slice(serialSkip, serialSkip + serialLimit)
             ];
-            if (result.length > 0) {
-                return res.json(result);
-            }
-            return res.sendStatus(404);
+            return res.json({data: result, extraInfo});
         }
     }
     //database
@@ -28,37 +30,38 @@ router.get('/getAll/:page', async (req, res) => {
     let movieSearch = movieCollection
         .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
         .sort({premiered: -1, insert_date: -1})
-        .skip(4 * (page - 1))
-        .limit(4)
+        .skip(movieSkip)
+        .limit(movieLimit)
         .toArray();
     let serialSearch = serialCollection
         .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
         .sort({premiered: -1})
-        .skip(2 * (page - 1))
-        .limit(2)
+        .skip(serialSkip)
+        .limit(serialLimit)
         .toArray();
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [...searchResults[0], ...searchResults[1]];
     if (searchResults.length > 0) {
-        return res.json(searchResults);
+        return res.json({data: searchResults, extraInfo});
     }
     return res.sendStatus(404);
 });
 
-//trailers/getSingleType/:type/:page
-router.get('/getSingleType/:type/:page', async (req, res) => {
+//trailers/getSingleType/:type/:page/:count?
+router.get('/getSingleType/:type/:page/:count?', async (req, res) => {
     let type = req.params.type;
-    let page = Number(req.params.page) || 1;
+    let page = Number(req.params.page);
+    let count = Number(req.params.count) || 1;
+
+    let skip = (page === 0) ? 0 : 6 * (page - 1);
+    let limit = (page === 0) ? count : 6;
+
     //cache
     if (page <= 3) {
         let cacheResult = getCache_Trailers_SingleType(type);
         if (cacheResult) {
-            let startIndex = 6 * (page - 1);
-            let result = cacheResult.slice(startIndex, startIndex + 6);
-            if (result.length > 0) {
-                return res.json(result);
-            }
-            return res.sendStatus(404);
+            let result = cacheResult.slice(skip, skip + limit);
+            return res.json({data: result, extraInfo});
         }
     }
     //database
@@ -67,11 +70,11 @@ router.get('/getSingleType/:type/:page', async (req, res) => {
     let searchResults = await collection
         .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
         .sort(sortConfig)
-        .skip(6 * (page - 1))
-        .limit(6)
+        .skip(skip)
+        .limit(limit)
         .toArray();
     if (searchResults.length > 0) {
-        return res.json(searchResults);
+        return res.json({data: searchResults, extraInfo});
     }
     return res.sendStatus(404);
 });

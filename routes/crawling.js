@@ -11,9 +11,8 @@ router.post('/:password/:mode?', async (req, res) => {
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
-            await start_crawling(mode);
-            //handle cache
             await resetCache_all();
+            await start_crawling(mode);
             await setCache_all();
             crawling_flag = false;
             console.log('crawling api ended!');
