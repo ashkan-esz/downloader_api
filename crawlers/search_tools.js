@@ -35,7 +35,7 @@ export async function wrapper_module(url, page_count, searchCB, RECRAWL = false)
 
 export async function search_in_title_page(title_array, page_link, mode, get_file_size) {
     try {
-        let response = await axios.get(page_link);
+        let response = await axios.get(page_link, {timeout: 500});
         let $ = cheerio.load(response.data);
         let links = $('a');
         let matchCases = getMatchCases(title_array, mode);

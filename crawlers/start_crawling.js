@@ -20,10 +20,12 @@ export async function start_crawling(crawlMode = 0) {
             let recentTitles = [];
             if (crawlMode === 0) {
                 await digimovies(sources.digimovies, recentTitles);
+                Sentry.captureMessage('source crawling done! (digimovies)');
                 await film2media(sources.film2media, recentTitles);
                 await film2movie(sources.film2movie, recentTitles);
                 await salamdl(sources.salamdl, recentTitles);
                 await valamovie(sources.valamovie, recentTitles);
+                Sentry.captureMessage('source crawling done! (valamovie)');
                 // await mrmovie(sources.mrmovie, recentTitles);
                 // await topmovies(sources.topmovies, recentTitles);
             } else {
@@ -34,6 +36,7 @@ export async function start_crawling(crawlMode = 0) {
                         serial_page_count: crawlMode === 1 ? 5 : 50
                     },
                     recentTitles, reCrawl);
+                Sentry.captureMessage('source crawling done! (digimovies)');
                 await film2media({
                     ...sources.film2media,
                     page_count: crawlMode === 1 ? 40 : 380,
@@ -51,6 +54,7 @@ export async function start_crawling(crawlMode = 0) {
                     page_count: crawlMode === 1 ? 20 : 870,
                     serial_page_count: crawlMode === 1 ? 5 : 55
                 }, recentTitles, reCrawl);
+                Sentry.captureMessage('source crawling done! (valamovie)');
             }
 
             await domainChangeHandler(sources);
