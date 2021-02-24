@@ -55,7 +55,7 @@ export async function search_in_title_page(title_array, page_link, mode, get_fil
         return {save_link: save_link, $2: $};
     } catch (error) {
         saveError(error);
-        return {save_link: [], persian_plot: '', $2: null};
+        return null;
     }
 }
 

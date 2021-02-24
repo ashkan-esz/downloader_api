@@ -30,11 +30,14 @@ async function search_title_serial(link, i) {
         }
         let title_array = remove_persian_words(title.toLowerCase(), 'serial');
         if (title_array.length > 0) {
-            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
-            let persian_summary = get_persian_summary($2);
-            let poster = get_poster($2);
-            if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial', RECENT_TITLES, RECRAWL);
+            let pageSearchResult = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
+            if (pageSearchResult) {
+                let {save_link, $2} = pageSearchResult;
+                let persian_summary = get_persian_summary($2);
+                let poster = get_poster($2);
+                if (save_link.length > 0) {
+                    await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial', RECENT_TITLES, RECRAWL);
+                }
             }
         }
     }
@@ -49,12 +52,15 @@ async function search_title_movie(link, i) {
         }
         let title_array = remove_persian_words(title.toLowerCase(), 'movie');
         if (title_array.length > 0) {
-            let {save_link, $2} = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
-            let persian_summary = get_persian_summary($2);
-            let poster = get_poster($2);
-            save_link = remove_duplicate(save_link);
-            if (save_link.length > 0) {
-                await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie', RECENT_TITLES, RECRAWL);
+            let pageSearchResult = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
+            if (pageSearchResult) {
+                let {save_link, $2} = pageSearchResult;
+                let persian_summary = get_persian_summary($2);
+                let poster = get_poster($2);
+                save_link = remove_duplicate(save_link);
+                if (save_link.length > 0) {
+                    await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie', RECENT_TITLES, RECRAWL);
+                }
             }
         }
     }
