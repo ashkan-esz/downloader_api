@@ -41,7 +41,7 @@ app.use(compression());
 
 setCache_all();
 
-app.use('/start/crawling', crawling);
+app.use('/crawler', crawling);
 app.use('/search', search);
 app.use('/news', news);
 app.use('/updates', update);

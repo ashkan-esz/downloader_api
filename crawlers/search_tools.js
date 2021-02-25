@@ -10,7 +10,7 @@ axiosRetry(axios, {
 });
 
 export async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
-    let forceWaitNumber = RECRAWL ? 50 : 30;
+    let forceWaitNumber = RECRAWL ? 40 : 20;
     for (let i = 1; i <= page_count; i++) {
         try {
             let response = await axios.get(url + `${i}/`);

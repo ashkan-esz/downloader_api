@@ -155,7 +155,7 @@ async function handleNewLinkChange(collection, db_data, page_link, persian_summa
                     db_data.sources[j].links = sort_Serial_links(site_links);
                 }
             }
-            update = handleUrlChange(db_data, db_data.sources[j], page_link) || update;
+            update = handleUrlChange(db_data.sources[j], page_link) || update;
             if (update || subUpdates.hasChangedField) {
                 await handle_update(collection, db_data, update, persian_summary, subUpdates, mode, site_links, null, recentTitles, reCrawl);
             }
@@ -335,11 +335,11 @@ function handleTrailerUpdate(db_data, site_trailers) {
     return trailersChanged;
 }
 
-function handleUrlChange(db_data, thiaSource, page_link) {
-    let newDomain = page_link.replace(/www.|https:\/\/|\/page\/|\//g, '');
+function handleUrlChange(thiaSource, page_link) {
+    let newDomain = page_link.replace(/www.|https:\/\/|\/page\//g, '');
     let newUrl = getNewURl(thiaSource.url, newDomain);
     if (thiaSource.url !== newUrl) {
-        thiaSource.url = newUrl;
+        thiaSource.url = page_link;
         return true;
     }
     return false;

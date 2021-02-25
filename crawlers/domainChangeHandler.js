@@ -15,7 +15,7 @@ axiosRetry(axios, {
     }
 });
 
-module.exports = async function domainChangeHandler(sourcesObject) {
+export async function domainChangeHandler(sourcesObject) {
     try {
         delete sourcesObject._id;
         delete sourcesObject.title;
@@ -47,11 +47,13 @@ module.exports = async function domainChangeHandler(sourcesObject) {
         }
 
         if (isChanged) {
-            await Sentry.captureMessage('start domain chnage handler');
+            await Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObject, sources_url, domains);
-            await updateDownloadLinks(sourcesObject, changedDomains);
+            await Sentry.captureMessage('start domain change handler (poster/trailer)');
             await update_Poster_Trailers(sources_url, domains, changedDomains, 'movies');
             await update_Poster_Trailers(sources_url, domains, changedDomains, 'serials');
+            await Sentry.captureMessage('start domain change handler (download links)');
+            await updateDownloadLinks(sourcesObject, changedDomains);
 
             let collection = await getCollection('sources');
             await collection.findOneAndUpdate({title: 'sources'}, {
@@ -88,28 +90,20 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i];
         if (domain.includes('digimovie')) {
+            await Sentry.captureMessage('start domain change handler (digimovies reCrawl start)');
             await digimovies({
                 ...sourcesObject.digimovies,
                 page_count: 310,
                 serial_page_count: 50
             }, [], true);
+            await Sentry.captureMessage('start domain change handler (digimovies reCrawl ended)');
         } else if (domain.includes('film2media')) {
+            await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
             await film2media({
                 ...sourcesObject.film2media,
                 page_count: 380,
             }, [], true);
-        } else if (domain.includes('mrmovie')) {
-            // await mrmovie({
-            //     ...sourcesObject.mrmovie,
-            //     page_count: 300,
-            //     serial_page_count: 55
-            // }, [], true);
-        } else if (domain.includes('topmovie')) {
-            // await topmovies({
-            //     ...sourcesObject.topmovies,
-            //     page_count: 345,
-            //     serial_page_count: 45
-            // }, [], true);
+            await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
         }
     }
 }
