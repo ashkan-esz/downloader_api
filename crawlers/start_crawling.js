@@ -45,7 +45,7 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
                     await digimovies({
                         ...sources.digimovies,
                         page_count: crawlMode === 1 ? 20 : 310,
-                        serial_page_count: crawlMode === 1 ? 5 : 50
+                        serial_page_count: crawlMode === 1 ? 5 : 45
                     }, recentTitles, reCrawl);
                     await film2media({
                         ...sources.film2media,
@@ -69,7 +69,7 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
                     await digimovies({
                         ...sources.digimovies,
                         page_count: crawlMode === 1 ? 20 : 310,
-                        serial_page_count: crawlMode === 1 ? 5 : 50
+                        serial_page_count: crawlMode === 1 ? 5 : 45
                     }, recentTitles, reCrawl);
                 } else if (sourceNumber === 1) {
                     await film2media({

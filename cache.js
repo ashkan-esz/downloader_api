@@ -110,7 +110,7 @@ export async function setCache_updates() {
         let serialCollection = await getCollection('serials');
         let movieSearch = movieCollection
             .find({}, {projection: dataConfig["low"]})
-            .sort({update_date: -1})
+            .sort({update_date: -1 , premiered: -1})
             .limit(36)
             .toArray();
         let serialSearch = serialCollection

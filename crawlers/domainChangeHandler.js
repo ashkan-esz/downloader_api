@@ -94,7 +94,7 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
             await digimovies({
                 ...sourcesObject.digimovies,
                 page_count: 310,
-                serial_page_count: 50
+                serial_page_count: 45
             }, [], true);
             await Sentry.captureMessage('start domain change handler (digimovies reCrawl ended)');
         } else if (domain.includes('film2media')) {

@@ -30,7 +30,7 @@ router.get('/getAll/:dataLevel/:page/:count?', async (req, res) => {
     let serialCollection = await getCollection('serials');
     let movieSearch = movieCollection
         .find({}, {projection: dataConfig[dataLevel]})
-        .sort({update_date: -1})
+        .sort({update_date: -1, premiered: -1})
         .skip(movieSkip)
         .limit(movieLimit)
         .toArray();
@@ -64,9 +64,10 @@ router.get('/getSingleType/:type/:dataLevel/:page/:count?', async (req, res) => 
     }
     //database
     let collection = await getCollection(type + 's');
+    let sortConfig = (type === 'serial') ? {update_date: -1} : {update_date: -1, premiered: -1};
     let searchResults = await collection
         .find({}, {projection: dataConfig[dataLevel]})
-        .sort({update_date: -1})
+        .sort(sortConfig)
         .skip(skip)
         .limit(limit)
         .toArray();
