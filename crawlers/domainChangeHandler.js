@@ -64,7 +64,7 @@ export async function domainChangeHandler(sourcesObject) {
     } catch (error) {
         saveError(error);
     }
-};
+}
 
 function updateSourceFields(sourcesObject, sources, domains) {
     sourcesObject.digimovies.movie_url = sources[0];
@@ -117,29 +117,33 @@ async function update_Poster_Trailers(sources, domains, changedDomains, collecti
     for (let i = 0; i < docs_array.length; i++) {
         let posterChanged = false;
         let trailerChanged = false;
-        let posters = docs_array[i].poster;
-        let trailers = docs_array[i].trailers;
+        let posters = docs_array[i].poster || [];
+        let trailers = docs_array[i].trailers || [];
 
-        for (let j = 0; j < posters.length; j++) {
-            for (let k = 0; k < changedSourcesName.length; k++) {
-                if (posters[j].includes(changedSourcesName[k])) {
-                    posterChanged = true;
-                    let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                    posters[j] = getNewURl(posters[j], newDomain);
-                    break;
+        try {
+            for (let j = 0; j < posters.length; j++) {
+                for (let k = 0; k < changedSourcesName.length; k++) {
+                    if (posters[j].includes(changedSourcesName[k])) {
+                        posterChanged = true;
+                        let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
+                        posters[j] = getNewURl(posters[j], newDomain);
+                        break;
+                    }
                 }
             }
-        }
 
-        for (let t = 0; t < trailers.length; t++) {
-            for (let k = 0; k < changedSourcesName.length; k++) {
-                if (trailers[t].includes(changedSourcesName[k])) {
-                    trailerChanged = true;
-                    let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                    trailers[t] = getNewURl(trailers[t], newDomain);
-                    break;
+            for (let t = 0; t < trailers.length; t++) {
+                for (let k = 0; k < changedSourcesName.length; k++) {
+                    if (trailers[t].includes(changedSourcesName[k])) {
+                        trailerChanged = true;
+                        let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
+                        trailers[t] = getNewURl(trailers[t], newDomain);
+                        break;
+                    }
                 }
             }
+        } catch (error) {
+            saveError(error);
         }
 
         let updateObj = {};
