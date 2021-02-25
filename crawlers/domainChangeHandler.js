@@ -47,6 +47,7 @@ module.exports = async function domainChangeHandler(sourcesObject) {
         }
 
         if (isChanged) {
+            await Sentry.captureMessage('start domain chnage handler');
             updateSourceFields(sourcesObject, sources_url, domains);
             await updateDownloadLinks(sourcesObject, changedDomains);
             await update_Poster_Trailers(sources_url, domains, changedDomains, 'movies');
