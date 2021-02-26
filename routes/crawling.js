@@ -15,11 +15,10 @@ router.post('/crawlAll/:password/:mode?', async (req, res) => {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
             await resetCache_all();
-            await start_crawling('all',mode);
+            await start_crawling('all', mode);
             await setCache_all();
             crawling_flag = false;
-            console.log('crawling api ended!');
-            return res.json('crawling ended (all sources)');
+            return res.json('crawling ended! (all sources)');
         } else {
             return res.json('wrong password!');
         }
@@ -38,11 +37,10 @@ router.post('/crawlSingleSource/:sourceNumber/:password/:mode?', async (req, res
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
             await resetCache_all();
-            await start_crawling(sourceNumber,mode);
+            await start_crawling(sourceNumber, mode);
             await setCache_all();
             crawling_flag = false;
-            console.log(`crawling api ended! (source : ${sourceNumber})`);
-            return res.json('crawling ended');
+            return res.json(`crawling ended! (source : ${sourceNumber})`);
         } else {
             return res.json('wrong password!');
         }
@@ -62,7 +60,6 @@ router.post('/domainChange/:password', async (req, res) => {
             await domainChangeHandler(sources);
             await setCache_all();
             crawling_flag = false;
-            console.log('domainChangeHandler api ended!');
             return res.json('domainChangeHandler api ended!');
         } else {
             return res.json('wrong password!');

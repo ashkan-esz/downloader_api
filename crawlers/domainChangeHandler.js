@@ -31,7 +31,9 @@ export async function domainChangeHandler(sourcesObject) {
                 try {
                     response = await axios.get('https://www.' + domains[i]);
                 } catch (error2) {
-                    saveError(error2);
+                    if (!domains[i].includes('mrmovie')) {
+                        saveError(error2);
+                    }
                     continue;
                 }
             }
@@ -50,8 +52,8 @@ export async function domainChangeHandler(sourcesObject) {
             await Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObject, sources_url, domains);
             await Sentry.captureMessage('start domain change handler (poster/trailer)');
-            await update_Poster_Trailers(sources_url, domains, changedDomains, 'movies');
-            await update_Poster_Trailers(sources_url, domains, changedDomains, 'serials');
+            await update_Poster_Trailers(domains, changedDomains, 'movies');
+            await update_Poster_Trailers(domains, changedDomains, 'serials');
             await Sentry.captureMessage('start domain change handler (download links)');
             await updateDownloadLinks(sourcesObject, changedDomains);
 
@@ -103,12 +105,12 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
                 ...sourcesObject.film2media,
                 page_count: 380,
             }, [], true);
-            await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
+            await Sentry.captureMessage('start domain change handler (film2media reCrawl ended)');
         }
     }
 }
 
-async function update_Poster_Trailers(sources, domains, changedDomains, collectionName) {
+export async function update_Poster_Trailers(domains, changedDomains, collectionName) {
     let collection = await getCollection(collectionName);
     let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
     let sourcesNames = domains.map(value => value.replace(/\d/g, '').split('.')[0]);
@@ -134,10 +136,10 @@ async function update_Poster_Trailers(sources, domains, changedDomains, collecti
 
             for (let t = 0; t < trailers.length; t++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
-                    if (trailers[t].includes(changedSourcesName[k])) {
+                    if (trailers[t].link.includes(changedSourcesName[k])) {
                         trailerChanged = true;
                         let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                        trailers[t] = getNewURl(trailers[t], newDomain);
+                        trailers[t].link = getNewURl(trailers[t].link, newDomain);
                         break;
                     }
                 }
@@ -159,7 +161,7 @@ async function update_Poster_Trailers(sources, domains, changedDomains, collecti
             });
             promiseArray.push(resultPromise);
         }
-        if (i % 50 === 0) {
+        if (i % 100 === 0) {
             await Promise.all(promiseArray);
             promiseArray = [];
         }

@@ -99,7 +99,7 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();
-            Sentry.captureMessage(`crawling done in : ${crawling_time}s`);
+            await Sentry.captureMessage(`crawling done in : ${crawling_time}s`);
             resolve();
         } catch (error) {
             saveError(error);
