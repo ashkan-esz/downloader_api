@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {dataConfig, extraInfo} = require("./configs");
+const {dataConfig} = require("./configs");
 const {
     getCache_Tops_Likes_All, getCache_Tops_Likes_SingleType,
     getCache_tops_popularNames, getCache_tops_popularShows,
@@ -27,7 +27,7 @@ router.get('/byLikes/getAll/:dataLevel/:page/:count?', async (req, res) => {
                 ...cacheResult.tops_likes_serials.slice(serialSkip, serialSkip + serialLimit)
             ];
             result = result.sort((a, b) => b.like - a.like);
-            return res.json({data: result, extraInfo});
+            return res.json(result);
         }
     }
     //database
@@ -47,7 +47,7 @@ router.get('/byLikes/getAll/:dataLevel/:page/:count?', async (req, res) => {
         .toArray();
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [...searchResults[0], ...searchResults[1]].sort((a, b) => b.like - a.like);
-    return res.json({data: searchResults, extraInfo});
+    return res.json(searchResults);
 });
 
 //tops/byLikes/getSingleType/:type/:dataLevel/:page/:count?
@@ -64,7 +64,7 @@ router.get('/byLikes/getSingleType/:type/:dataLevel/:page/:count?', async (req, 
     if (dataLevel === 'low' && page <= 3) {
         let cacheResult = getCache_Tops_Likes_SingleType(type);
         if (cacheResult) {
-            return res.json({data: cacheResult.slice(skip, skip + limit), extraInfo});
+            return res.json(cacheResult.slice(skip, skip + limit));
         }
     }
     //database
@@ -75,7 +75,7 @@ router.get('/byLikes/getSingleType/:type/:dataLevel/:page/:count?', async (req, 
         .skip(skip)
         .limit(limit)
         .toArray();
-    return res.json({data: searchResults, extraInfo});
+    return res.json(searchResults);
 });
 
 //tops/popularShows/:dataLevel/:page/:count?
@@ -103,7 +103,7 @@ router.get('/popularShows/:dataLevel/:page/:count?', async (req, res) => {
     if (dataLevel === 'low' && page <= 2) {
         let cacheResult = getCache_tops_popularShows();
         if (cacheResult.length > 0) {
-            return res.json({data: cacheResult.slice(skip, skip + limit), extraInfo});
+            return res.json(cacheResult.slice(skip, skip + limit));
         }
     }
     //database
@@ -112,7 +112,7 @@ router.get('/popularShows/:dataLevel/:page/:count?', async (req, res) => {
         .find({title: {$in: searchNames}}, {projection: dataConfig[dataLevel]})
         .toArray();
     searchResults = searchResults.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
-    return res.json({data: searchResults, extraInfo});
+    return res.json(searchResults);
 });
 
 

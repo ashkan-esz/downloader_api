@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {dataConfig, extraInfo} = require("./configs");
+const {dataConfig} = require("./configs");
 const {getCache_Trailers_All, getCache_Trailers_SingleType} = require("../cache");
 
 //trailers/getAll/:page/:count?
@@ -21,7 +21,7 @@ router.get('/getAll/:page/:count?', async (req, res) => {
                 ...cacheResult.trailers_movies.slice(movieSkip, movieSkip + movieLimit),
                 ...cacheResult.trailers_serials.slice(serialSkip, serialSkip + serialLimit)
             ];
-            return res.json({data: result, extraInfo});
+            return res.json(result);
         }
     }
     //database
@@ -42,7 +42,7 @@ router.get('/getAll/:page/:count?', async (req, res) => {
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [...searchResults[0], ...searchResults[1]];
     if (searchResults.length > 0) {
-        return res.json({data: searchResults, extraInfo});
+        return res.json(searchResults);
     }
     return res.sendStatus(404);
 });
@@ -61,7 +61,7 @@ router.get('/getSingleType/:type/:page/:count?', async (req, res) => {
         let cacheResult = getCache_Trailers_SingleType(type);
         if (cacheResult) {
             let result = cacheResult.slice(skip, skip + limit);
-            return res.json({data: result, extraInfo});
+            return res.json(result);
         }
     }
     //database
@@ -74,7 +74,7 @@ router.get('/getSingleType/:type/:page/:count?', async (req, res) => {
         .limit(limit)
         .toArray();
     if (searchResults.length > 0) {
-        return res.json({data: searchResults, extraInfo});
+        return res.json(searchResults);
     }
     return res.sendStatus(404);
 });

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {dataConfig, extraInfo} = require("./configs");
+const {dataConfig} = require("./configs");
 const {getCache_SeriesOfDay, getCache_seriesOfWeek} = require("../cache");
 
 //timeLine/today/:page/:count?
@@ -15,7 +15,7 @@ router.get('/today/:page/:count?', async (req, res) => {
     if (page <= 3) {
         let cacheResult = getCache_SeriesOfDay();
         if (cacheResult) {
-            return res.json({data: cacheResult.slice(skip, skip + limit), extraInfo});
+            return res.json(cacheResult.slice(skip, skip + limit));
         }
     }
     //database
@@ -35,7 +35,7 @@ router.get('/today/:page/:count?', async (req, res) => {
         .limit(limit)
         .toArray();
     if (searchResults.length > 0) {
-        return res.json({data: searchResults, extraInfo});
+        return res.json(searchResults);
     }
     return res.sendStatus(404);
 });
@@ -48,7 +48,7 @@ router.get('/week/:weekCounter', async (req, res) => {
     if (weekCounter <= 1) {
         let cacheResult = getCache_seriesOfWeek(weekCounter);
         if (cacheResult) {
-            return res.json({data: cacheResult, extraInfo});
+            return res.json(cacheResult);
         }
     }
     //database
@@ -77,7 +77,7 @@ router.get('/week/:weekCounter', async (req, res) => {
             r[a.releaseDay] = [...r[a.releaseDay] || [], a];
             return r;
         }, {});
-        return res.json({data: groupSearchResult, extraInfo});
+        return res.json(groupSearchResult);
     }
     return res.sendStatus(404);
 });

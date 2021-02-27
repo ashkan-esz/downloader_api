@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const getCollection = require("../mongoDB");
-const {dataConfig, extraInfo} = require("./configs");
+const {dataConfig} = require("./configs");
 const {ObjectId} = require("mongodb");
 
 //search/searchAll/:title/:dataLevel/:page/:count?
@@ -33,7 +33,7 @@ router.get('/searchAll/:title/:dataLevel/:page/:count?', async (req, res) => {
     let searchResults = await Promise.all([movieSearch, serialSearch]);
     searchResults = [].concat.apply([], searchResults);
     if (searchResults.length > 0) {
-        return res.json({data: searchResults, extraInfo});
+        return res.json(searchResults);
     }
     return res.sendStatus(404);
 });
@@ -57,7 +57,7 @@ router.get('/searchSingleType/:type/:title/:dataLevel/:page/:count?', async (req
         .limit(limit)
         .toArray();
     if (searchResults.length > 0) {
-        return res.json({data: searchResults, extraInfo});
+        return res.json(searchResults);
     }
     return res.sendStatus(404);
 });
@@ -70,7 +70,7 @@ router.get('/searchByID/:type/:id/:dataLevel', async (req, res) => {
         {_id: new ObjectId(id)},
         {projection: dataConfig[dataLevel],});
     if (searchResult) {
-        return res.json({data: searchResult, extraInfo});
+        return res.json(searchResult);
     }
     return res.sendStatus(404);
 });
