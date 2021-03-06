@@ -13,10 +13,6 @@ module.exports = async function film2media({movie_url, page_count}, recentTitles
     RECRAWL = reCrawl;
     RECENT_TITLES = recentTitles;
     await wrapper_module(movie_url, page_count, search_title, RECRAWL);
-
-
-    // for local test
-    // await wrapper_module('https://www.film2media.website/page/', 10, search_title);
 }
 
 async function search_title(link, i) {

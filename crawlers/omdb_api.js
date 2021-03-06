@@ -15,7 +15,7 @@ export async function get_OMDB_Api_Data(title, premiered, mode) {
         let titleYear = premiered.split('-')[0];
         let type = (mode === 'movie') ? 'movie' : 'series';
         let url = `http://www.omdbapi.com/?t=${title}&type=${type}`;
-        let data = await handle_OMDB_ApiKeys(url)
+        let data = await handle_OMDB_ApiKeys(url);
         if (data === null || data === '404') {
             return null;
         }

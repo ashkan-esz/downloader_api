@@ -2,10 +2,7 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
-const digimovies = require('./sources/digimovies');
 const film2media = require('./sources/film2media');
-const mrmovie = require('./sources/mrmovie');
-const topmovies = require('./sources/topmovies');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
@@ -31,9 +28,7 @@ export async function domainChangeHandler(sourcesObject) {
                 try {
                     response = await axios.get('https://www.' + domains[i]);
                 } catch (error2) {
-                    if (!domains[i].includes('mrmovie')) {
                         saveError(error2);
-                    }
                     continue;
                 }
             }
@@ -69,37 +64,20 @@ export async function domainChangeHandler(sourcesObject) {
 }
 
 function updateSourceFields(sourcesObject, sources, domains) {
-    sourcesObject.digimovies.movie_url = sources[0];
-    sourcesObject.digimovies.serial_url = getNewURl(sourcesObject.digimovies.serial_url, domains[0]);
+    sourcesObject.film2media.movie_url = sources[0];
+    sourcesObject.film2movie.movie_url = sources[1];
 
-    sourcesObject.film2media.movie_url = sources[1];
-    sourcesObject.film2movie.movie_url = sources[2];
+    sourcesObject.salamdl.movie_url = sources[2];
 
-    sourcesObject.mrmovie.movie_url = sources[3];
-    sourcesObject.mrmovie.serial_url = getNewURl(sourcesObject.mrmovie.serial_url, domains[3]);
-
-    sourcesObject.salamdl.movie_url = sources[4];
-
-    sourcesObject.topmovies.movie_url = sources[5];
-    sourcesObject.topmovies.serial_url = getNewURl(sourcesObject.topmovies.serial_url, domains[5]);
-
-    sourcesObject.valamovie.movie_url = sources[6];
-    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.topmovies.serial_url, domains[6]);
+    sourcesObject.valamovie.movie_url = sources[3];
+    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.valamovie.serial_url, domains[3]);
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // digimovies film2media mrmovie topmovies
+    // film2media
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i];
-        if (domain.includes('digimovie')) {
-            await Sentry.captureMessage('start domain change handler (digimovies reCrawl start)');
-            await digimovies({
-                ...sourcesObject.digimovies,
-                page_count: 310,
-                serial_page_count: 45
-            }, [], true);
-            await Sentry.captureMessage('start domain change handler (digimovies reCrawl ended)');
-        } else if (domain.includes('film2media')) {
+        if (domain.includes('film2media')) {
             await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
             await film2media({
                 ...sourcesObject.film2media,

@@ -1,9 +1,6 @@
 const film2media = require('./sources/film2media');
-const digimovies = require('./sources/digimovies');
 const salamdl = require('./sources/salamdl');
 const film2movie = require('./sources/film2movie');
-const mrmovie = require('./sources/mrmovie');
-const topmovies = require('./sources/topmovies');
 const valamovie = require('./sources/valamovie');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
@@ -20,14 +17,10 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
             let recentTitles = [];
             if (crawlMode === 0) {
                 if (sourceNumber === 'all') {
-                    await digimovies(sources.digimovies, recentTitles);
                     await film2media(sources.film2media, recentTitles);
                     await film2movie(sources.film2movie, recentTitles);
                     await salamdl(sources.salamdl, recentTitles);
                     await valamovie(sources.valamovie, recentTitles);
-                    await Sentry.captureMessage('source crawling done! (valamovie)');
-                } else if (sourceNumber === 0) {
-                    await digimovies(sources.digimovies, recentTitles);
                 } else if (sourceNumber === 1) {
                     await film2media(sources.film2media, recentTitles);
                 } else if (sourceNumber === 2) {
@@ -37,16 +30,9 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
                 } else if (sourceNumber === 4) {
                     await valamovie(sources.valamovie, recentTitles);
                 }
-                // await mrmovie(sources.mrmovie, recentTitles);
-                // await topmovies(sources.topmovies, recentTitles);
             } else {
                 if (sourceNumber === 'all') {
                     let reCrawl = crawlMode === 2;
-                    await digimovies({
-                        ...sources.digimovies,
-                        page_count: crawlMode === 1 ? 20 : 310,
-                        serial_page_count: crawlMode === 1 ? 5 : 45
-                    }, recentTitles, reCrawl);
                     await film2media({
                         ...sources.film2media,
                         page_count: crawlMode === 1 ? 30 : 380,
@@ -63,13 +49,6 @@ export async function start_crawling(sourceNumber, crawlMode = 0) {
                         ...sources.valamovie,
                         page_count: crawlMode === 1 ? 20 : 870,
                         serial_page_count: crawlMode === 1 ? 5 : 55
-                    }, recentTitles, reCrawl);
-                    await Sentry.captureMessage('source crawling done! (valamovie)');
-                } else if (sourceNumber === 0) {
-                    await digimovies({
-                        ...sources.digimovies,
-                        page_count: crawlMode === 1 ? 20 : 310,
-                        serial_page_count: crawlMode === 1 ? 5 : 45
                     }, recentTitles, reCrawl);
                 } else if (sourceNumber === 1) {
                     await film2media({

@@ -10,7 +10,7 @@ axiosRetry(axios, {
 });
 
 export async function wrapper_module(url, page_count, searchCB, RECRAWL = false) {
-    let forceWaitNumber = RECRAWL ? 100 : 30;
+    let forceWaitNumber = RECRAWL ? 100 : 35;
     for (let i = 1; i <= page_count; i++) {
         try {
             let response = await axios.get(url + `${i}/`);
@@ -35,7 +35,7 @@ export async function wrapper_module(url, page_count, searchCB, RECRAWL = false)
 
 export async function search_in_title_page(title_array, page_link, mode, get_file_size) {
     try {
-        let response = await axios.get(page_link, {timeout: 500});
+        let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
         let links = $('a');
         let matchCases = getMatchCases(title_array, mode);

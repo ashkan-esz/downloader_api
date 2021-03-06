@@ -14,11 +14,6 @@ module.exports = async function valamovie({movie_url, serial_url, page_count, se
         wrapper_module(serial_url, serial_page_count, search_title_serial, RECRAWL),
         wrapper_module(movie_url, page_count, search_title_movie, RECRAWL)
     ]);
-
-
-    // for local test
-    // await wrapper_module('https://valamovie.xyz/series/page/', 10, search_title_serial);
-    // await wrapper_module('https://valamovie.xyz/page/', 10, search_title_movie);
 }
 
 async function search_title_serial(link, i) {

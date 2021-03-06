@@ -48,7 +48,7 @@ function getSaveObj(title, page_link, mode, site_links, year, poster, persian_su
         episodes: [],
         poster: [poster],
         summary: {persian: persian_summary},
-        trailers: trailers,
+        trailers: trailers.length > 0 ? trailers : null,
         type: mode,
         latestData: {
             season: mode === 'movie' ? 0 : season,
