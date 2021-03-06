@@ -110,7 +110,7 @@ export async function setCache_updates() {
         let serialCollection = await getCollection('serials');
         let movieSearch = movieCollection
             .find({}, {projection: dataConfig["low"]})
-            .sort({update_date: -1 , premiered: -1})
+            .sort({update_date: -1, premiered: -1})
             .limit(36)
             .toArray();
         let serialSearch = serialCollection
@@ -236,12 +236,12 @@ export async function setCache_Trailers() {
         let movieCollection = await getCollection('movies');
         let serialCollection = await getCollection('serials');
         let movieSearch = movieCollection
-            .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+            .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
             .sort({premiered: -1, insert_date: -1})
             .limit(18)
             .toArray();
         let serialSearch = serialCollection
-            .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+            .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
             .sort({premiered: -1})
             .limit(18)
             .toArray();

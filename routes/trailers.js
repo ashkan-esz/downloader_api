@@ -28,13 +28,13 @@ router.get('/getAll/:page/:count?', async (req, res) => {
     let movieCollection = await getCollection('movies');
     let serialCollection = await getCollection('serials');
     let movieSearch = movieCollection
-        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+        .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
         .sort({premiered: -1, insert_date: -1})
         .skip(movieSkip)
         .limit(movieLimit)
         .toArray();
     let serialSearch = serialCollection
-        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+        .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
         .sort({premiered: -1})
         .skip(serialSkip)
         .limit(serialLimit)
@@ -68,7 +68,7 @@ router.get('/getSingleType/:type/:page/:count?', async (req, res) => {
     let collection = await getCollection(type + 's');
     let sortConfig = (type === 'serial') ? {premiered: -1} : {premiered: -1, insert_date: -1};
     let searchResults = await collection
-        .find({trailers: {$ne: null}}, {projection: {...dataConfig['low'], trailers: 1}})
+        .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
         .sort(sortConfig)
         .skip(skip)
         .limit(limit)
