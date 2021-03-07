@@ -287,7 +287,7 @@ export async function setCache_SeriesOfDay() {
                 nextEpisode: {$ne: null},
                 'nextEpisode.releaseStamp': {$lte: date.toISOString()}
             }, {projection: dataConfig['medium']})
-            .sort({premiered: -1})
+            .sort({'rating.0.Value': -1})
             .limit(36)
             .toArray();
         if (result) {
@@ -331,6 +331,14 @@ export async function setCache_seriesOfWeek() {
             }, {projection: dataConfig['medium']})
             .sort({releaseDay: -1})
             .toArray();
+
+        searchResults = searchResults.sort((a, b) => {
+            return (
+                Number(a.rating.length > 0 ? a.rating[0].Value : 0) -
+                Number(b.rating.length > 0 ? b.rating[0].Value : 0)
+            );
+        });
+
         if (searchResults.length > 0) {
             let groupSearchResult = searchResults.reduce((r, a) => {
                 r[a.releaseDay] = [...r[a.releaseDay] || [], a];

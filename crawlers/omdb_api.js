@@ -56,7 +56,10 @@ export function get_OMDB_Api_Fields(data, summary, mode) {
         movieLang: data.Language.toLowerCase(),
         country: data.Country.toLowerCase(),
         genres: data.Genre.toLowerCase().split(',').map(value => value.trim()),
-        rating: data.Ratings,
+        rating: data.Ratings ? data.Ratings.map((value) => {
+            value.Value = value.Value.split('/')[0];
+            return value;
+        }) : [],
         duration: data.Runtime || '0 min',
         director: data.Director.toLowerCase(),
         writer: data.Writer.toLowerCase(),

@@ -30,7 +30,7 @@ router.get('/today/:page/:count?', async (req, res) => {
             nextEpisode: {$ne: null},
             'nextEpisode.releaseStamp': {$lte: date.toISOString()}
         }, {projection: dataConfig['medium']})
-        .sort({premiered: -1})
+        .sort({'rating.0.Value': -1})
         .skip(skip)
         .limit(limit)
         .toArray();
@@ -72,6 +72,14 @@ router.get('/week/:weekCounter', async (req, res) => {
         }, {projection: dataConfig['medium']})
         .sort({releaseDay: -1})
         .toArray();
+
+    searchResults = searchResults.sort((a, b) => {
+        return (
+            Number(b.rating.length > 0 ? b.rating[0].Value : 0) -
+            Number(a.rating.length > 0 ? a.rating[0].Value : 0)
+        );
+    });
+
     if (searchResults.length > 0) {
         let groupSearchResult = searchResults.reduce((r, a) => {
             r[a.releaseDay] = [...r[a.releaseDay] || [], a];
