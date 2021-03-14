@@ -22,6 +22,7 @@ export const dataConfig = {
         latestData: 1,
         nextEpisode: 1,
         releaseDay: 1,
+        status: 1,
     },
     high: {}
 }
