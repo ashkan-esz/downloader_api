@@ -18,7 +18,7 @@ export async function get_tvmazeApi_Alldata(title, rawTitle, imdbID) {
                 tvmazeID: Number(data.id) || 0,
                 isAnimation: (data.type.toLowerCase() === 'animation'),
                 isAnime: (data.genres.includes('Anime')),
-                genres: data.genres || [],
+                genres: data.genres.map(value => value.toLowerCase()) || [],
                 status: data.status.toLowerCase(),
                 duration: data.runtime + ' min',
                 premiered: data.premiered || "",

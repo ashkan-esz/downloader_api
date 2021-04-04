@@ -221,7 +221,7 @@ async function handle_update(collection, db_data, update, site_persian_summary, 
                 updateFields.nextEpisode = db_data.nextEpisode;
             }
             if (tvmazeApi_data) {
-                if (updateFields.genres && !updateFields.genres.includes('anime')) {
+                if (updateFields.genres && !updateFields.genres.includes('anime') && tvmazeApi_data.isAnime) {
                     updateFields.genres.push('anime');
                 }
                 updateFields.tvmazeID = tvmazeApi_data.tvmazeID;
