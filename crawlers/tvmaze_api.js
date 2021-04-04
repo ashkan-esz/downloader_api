@@ -9,11 +9,13 @@ export async function get_tvmazeApi_Alldata(title, rawTitle, imdbID) {
         try {
             let response = await axios.get(`http://api.tvmaze.com/singlesearch/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
-            let foundTitle = checkTitle(data, title, rawTitle, imdbID);
-            let day = foundTitle ? data.schedule.days[0] : '';
+            if (!checkTitle(data, title, rawTitle, imdbID)) {
+                return null;
+            }
+            let day = data.schedule.days ? data.schedule.days[0] : '';
             return {
-                nextEpisode: foundTitle ? getNextEpisode(data) : null,
-                episodes: foundTitle ? getEpisodes(data) : [],
+                nextEpisode: getNextEpisode(data),
+                episodes: getEpisodes(data),
                 //todo : add cast
                 tvmazeID: Number(data.id) || 0,
                 isAnimation: (data.type.toLowerCase() === 'animation'),

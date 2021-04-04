@@ -283,6 +283,7 @@ export async function setCache_SeriesOfDay() {
         let collection = await getCollection('serials');
         let result = await collection
             .find({
+                status: 'running',
                 releaseDay: daysOfWeek[dayNumber],
                 nextEpisode: {$ne: null},
                 'nextEpisode.releaseStamp': {$lte: date.toISOString()}
@@ -319,6 +320,7 @@ export async function setCache_seriesOfWeek() {
         for (let i = 0; i < 7; i++) {
             date.setDate(date.getDate() + 1);
             daysInfo.push({
+                status: 'running',
                 releaseDay: daysOfWeek[i],
                 nextEpisode: {$ne: null},
                 'nextEpisode.releaseStamp': {$lte: date.toISOString()}

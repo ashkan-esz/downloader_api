@@ -26,6 +26,7 @@ router.get('/today/:page/:count?', async (req, res) => {
     let collection = await getCollection('serials');
     let searchResults = await collection
         .find({
+            status: 'running',
             releaseDay: daysOfWeek[dayNumber],
             nextEpisode: {$ne: null},
             'nextEpisode.releaseStamp': {$lte: date.toISOString()}
@@ -60,6 +61,7 @@ router.get('/week/:weekCounter', async (req, res) => {
     for (let i = 0; i < 7; i++) {
         date.setDate(date.getDate() + 1);
         daysInfo.push({
+            status: 'running',
             releaseDay: daysOfWeek[i],
             nextEpisode: {$ne: null},
             'nextEpisode.releaseStamp': {$lte: date.toISOString()}

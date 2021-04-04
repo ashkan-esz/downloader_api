@@ -35,9 +35,6 @@ export async function handleSeasonEpisodeUpdate(db_data, totalSeasons, site_link
 }
 
 function handleNextEpisodeUpdate(db_data, tvmaze_nextEpisode) {
-    if (tvmaze_nextEpisode === null) {
-        return false;
-    }
     db_data.nextEpisode = tvmaze_nextEpisode;
     return true;
 }
