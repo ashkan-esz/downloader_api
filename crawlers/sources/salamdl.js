@@ -149,6 +149,7 @@ function get_file_size($, link, mode) {
 function get_file_size_serial($, link) {
     let prevNodeChildren = $(link).parent().parent().parent().prev().children();
     let text_array = $(prevNodeChildren[3]).text().replace('Web-DL', 'WEB-DL').split(' ');
+    let bit10 = $(link).attr('href').toLowerCase().includes('10bit') ? '10bit' : '';
     let size = $(prevNodeChildren[5]).text().replace(' مگابایت', 'MB');
     let filtered_text_array = text_array.filter(value => value && !persianRex.hasLetter.test(value));
     if (filtered_text_array.length === 0) {
@@ -178,8 +179,7 @@ function get_file_size_serial($, link) {
             }
         }
     }
-
-    let info = [text_array[1], ...text_array.slice(2), text_array[0]].filter(value => value).join('.');
+    let info = [text_array[1], ...text_array.slice(2), bit10, text_array[0]].filter(value => value).join('.');
     return [info, size].filter(value => value !== '').join(' - ');
 }
 
