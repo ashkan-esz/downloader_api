@@ -89,7 +89,8 @@ function getTrailers($) {
             let href = $(a[i]).attr('href');
             if (href && href.toLowerCase().includes('trailer')) {
                 if (href.includes('.mp4') || href.includes('.mkv')) {
-                    let quality = href.includes('360p') ? '360p' : '720p';
+                    let quality = href.includes('1080p') ? '1080p'
+                        : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
                     result.push({
                         link: href,
                         info: 'film2movie-' + quality
@@ -97,7 +98,21 @@ function getTrailers($) {
                 }
             }
         }
-        return result;
+
+        let unique = [];
+        for (let i = 0; i < result.length; i++) {
+            let exist = false;
+            for (let j = 0; j < unique.length; j++) {
+                if (result[i].link === unique[j].link) {
+                    exist = true;
+                    break;
+                }
+            }
+            if (!exist) {
+                unique.push(result[i]);
+            }
+        }
+        return unique;
     } catch (error) {
         saveError(error);
         return [];

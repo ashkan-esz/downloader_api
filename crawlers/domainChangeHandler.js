@@ -12,6 +12,8 @@ axiosRetry(axios, {
     }
 });
 
+//todo : add digimovie source object
+
 export async function domainChangeHandler(sourcesObject) {
     try {
         delete sourcesObject._id;
@@ -28,7 +30,7 @@ export async function domainChangeHandler(sourcesObject) {
                 try {
                     response = await axios.get('https://www.' + domains[i]);
                 } catch (error2) {
-                        saveError(error2);
+                    saveError(error2);
                     continue;
                 }
             }
@@ -115,10 +117,13 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
             for (let t = 0; t < trailers.length; t++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (trailers[t].link.includes(changedSourcesName[k])) {
-                        trailerChanged = true;
-                        let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                        trailers[t].link = getNewURl(trailers[t].link, newDomain);
-                        break;
+                        //todo : better domain updater for valamovie/digimovie
+                        if (!trailers[k].link.includes('play.mylionstrailer')) {
+                            trailerChanged = true;
+                            let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
+                            trailers[t].link = getNewURl(trailers[t].link, newDomain);
+                            break;
+                        }
                     }
                 }
             }
