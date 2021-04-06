@@ -4,22 +4,22 @@ const axios = require('axios').default;
 const {replaceSpecialCharacters} = require("./crawlers/utils");
 const {saveError} = require("./saveError");
 
-let news_movies = []; //3 * 12 = 36
-let news_serials = []; //3 * 12 = 36
+let news_movies = []; //5 * 12 = 60
+let news_serials = []; //5 * 12 = 60
 
-let updates_movies = []; //3 * 12 = 36
-let updates_serials = []; //3 * 12 = 36
+let updates_movies = []; //5 * 12 = 60
+let updates_serials = []; //5 * 12 = 60
 
-let tops_likes_movies = []; //3 * 12 = 36
-let tops_likes_serials = []; //3 * 12 = 36
+let tops_likes_movies = []; //5 * 12 = 60
+let tops_likes_serials = []; //5 * 12 = 60
 
-let tops_popularNames = []; //6 * 20 = 120;
-let tops_popularShows = []; //2 * 12 = 24
+let tops_popularNames = []; //5 * 20 = 100;
+let tops_popularShows = []; //4 * 12 = 48
 
-let trailers_movies = []; //3 * 6 = 18
-let trailers_serials = []; //3 * 6 = 18
+let trailers_movies = []; //5 * 6 = 30
+let trailers_serials = []; //5 * 6 = 30
 
-let seriesOfDay = []; // 3 * 12 = 36
+let seriesOfDay = [[], [], []]; //3 * 4 * 12 = 3 * 48
 let seriesOfWeek0 = null; // 1 * ~100
 let seriesOfWeek1 = null; // 1 * ~100
 
@@ -69,12 +69,12 @@ export async function setCache_news() {
         let movieSearch = movieCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({premiered: -1, insert_date: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let serialSearch = serialCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({premiered: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         news_movies = searchResults[0];
@@ -111,12 +111,12 @@ export async function setCache_updates() {
         let movieSearch = movieCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({update_date: -1, premiered: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let serialSearch = serialCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({update_date: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         updates_movies = searchResults[0];
@@ -153,12 +153,12 @@ export async function setCache_Tops_Likes() {
         let movieSearch = movieCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({like: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let serialSearch = serialCollection
             .find({}, {projection: dataConfig["low"]})
             .sort({like: -1})
-            .limit(36)
+            .limit(60)
             .toArray();
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         tops_likes_movies = searchResults[0];
@@ -187,11 +187,11 @@ export function getCache_Tops_Likes_SingleType(type) {
 }
 
 //----------------------------------
-//------------Tops_Popular------------
+//------------Tops_Popular----------
 export async function setCache_tops_popularNames() {
     try {
         tops_popularNames = [];
-        const pagesCounts = 6; // 6 * 20 = 120
+        const pagesCounts = 5; // 5 * 20 = 100
         for (let i = 1; i <= pagesCounts; i++) {
             let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
             let data = response.data;
@@ -213,7 +213,7 @@ async function setCache_tops_popularShows() {
     try {
         tops_popularShows = [];
         let serialCollection = await getCollection('serials');
-        let searchNames = tops_popularNames.slice(0, 24);
+        let searchNames = tops_popularNames.slice(0, 48);
         if (searchNames.length > 0) {
             let serialSearch = await serialCollection
                 .find({title: {$in: searchNames}}, {projection: dataConfig["low"]})
@@ -238,12 +238,12 @@ export async function setCache_Trailers() {
         let movieSearch = movieCollection
             .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
             .sort({premiered: -1, insert_date: -1})
-            .limit(18)
+            .limit(30)
             .toArray();
         let serialSearch = serialCollection
             .find({trailers: {$ne: null}}, {projection: dataConfig['medium']})
             .sort({premiered: -1})
-            .limit(18)
+            .limit(30)
             .toArray();
         let searchResults = await Promise.all([movieSearch, serialSearch]);
         trailers_movies = searchResults[0];
@@ -275,35 +275,40 @@ export function getCache_Trailers_SingleType(type) {
 //-----------Series of Day----------
 export async function setCache_SeriesOfDay() {
     try {
-        seriesOfDay = [];
+        seriesOfDay = [[], [], []];
+        let dayCounter = -1;
         let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        let date = new Date();
-        let dayNumber = date.getDay();
-        date.setDate(date.getDate() + 8);
-        let collection = await getCollection('serials');
-        let result = await collection
-            .find({
-                status: 'running',
-                releaseDay: daysOfWeek[dayNumber],
-                nextEpisode: {$ne: null},
-                'nextEpisode.releaseStamp': {$lte: date.toISOString()}
-            }, {projection: dataConfig['medium']})
-            .sort({'rating.0.Value': -1})
-            .limit(36)
-            .toArray();
-        if (result) {
-            seriesOfDay = result;
+        while (dayCounter < 2) {
+            let date = new Date();
+            date.setDate(date.getDate() + dayCounter);
+            let dayNumber = date.getDay();
+            date.setDate(date.getDate() + 8);
+            let collection = await getCollection('serials');
+            let result = await collection
+                .find({
+                    status: 'running',
+                    releaseDay: daysOfWeek[dayNumber],
+                    nextEpisode: {$ne: null},
+                    'nextEpisode.releaseStamp': {$lte: date.toISOString()}
+                }, {projection: dataConfig['medium']})
+                .sort({'rating.0.Value': -1})
+                .limit(48)
+                .toArray();
+            if (result) {
+                seriesOfDay[dayCounter + 1] = result;
+            }
+            dayCounter++;
         }
     } catch (error) {
         saveError(error);
     }
 }
 
-export function getCache_SeriesOfDay() {
-    if (seriesOfDay.length === 0) {
+export function getCache_SeriesOfDay(spacing) {
+    if (seriesOfDay[spacing + 1].length === 0) {
         return null;
     }
-    return seriesOfDay;
+    return seriesOfDay[spacing + 1];
 }
 
 //----------------------------------

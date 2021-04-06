@@ -19,7 +19,7 @@ router.get('/byLikes/getAll/:dataLevel/:page/:count?', async (req, res) => {
     let serialLimit = (page === 0) ? count / 2 : 4;
 
     //cache
-    if (dataLevel === 'low' && page <= 3) {
+    if (dataLevel === 'low' && page <= 5) {
         let cacheResult = getCache_Tops_Likes_All();
         if (cacheResult) {
             let result = [
@@ -61,7 +61,7 @@ router.get('/byLikes/getSingleType/:type/:dataLevel/:page/:count?', async (req, 
     let limit = (page === 0) ? count : 12;
 
     //cache
-    if (dataLevel === 'low' && page <= 3) {
+    if (dataLevel === 'low' && page <= 5) {
         let cacheResult = getCache_Tops_Likes_SingleType(type);
         if (cacheResult) {
             return res.json(cacheResult.slice(skip, skip + limit));
@@ -100,7 +100,7 @@ router.get('/popularShows/:dataLevel/:page/:count?', async (req, res) => {
         return res.sendStatus(404);
     }
     //cache
-    if (dataLevel === 'low' && page <= 2) {
+    if (dataLevel === 'low' && page <= 4) {
         let cacheResult = getCache_tops_popularShows();
         if (cacheResult.length > 0) {
             return res.json(cacheResult.slice(skip, skip + limit));

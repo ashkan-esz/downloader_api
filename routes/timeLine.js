@@ -3,8 +3,9 @@ const getCollection = require("../mongoDB");
 const {dataConfig} = require("./configs");
 const {getCache_SeriesOfDay, getCache_seriesOfWeek} = require("../cache");
 
-//timeLine/today/:page/:count?
-router.get('/today/:page/:count?', async (req, res) => {
+//timeLine/day/:spacing/:page/:count?
+router.get('/day/:spacing/:page/:count?', async (req, res) => {
+    let spacing = Number(req.params.spacing);
     let page = Number(req.params.page);
     let count = Number(req.params.count) || 1;
 
@@ -12,8 +13,8 @@ router.get('/today/:page/:count?', async (req, res) => {
     let limit = (page === 0) ? count : 12;
 
     //cache
-    if (page <= 3) {
-        let cacheResult = getCache_SeriesOfDay();
+    if (spacing >= -1 && spacing <= 1 && page <= 4) {
+        let cacheResult = getCache_SeriesOfDay(spacing);
         if (cacheResult) {
             return res.json(cacheResult.slice(skip, skip + limit));
         }
@@ -21,6 +22,7 @@ router.get('/today/:page/:count?', async (req, res) => {
     //database
     let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     let date = new Date();
+    date.setDate(date.getDate() + spacing);
     let dayNumber = date.getDay();
     date.setDate(date.getDate() + 8);
     let collection = await getCollection('serials');
@@ -44,9 +46,9 @@ router.get('/today/:page/:count?', async (req, res) => {
 //timeLine/week/:weekCounter
 router.get('/week/:weekCounter', async (req, res) => {
     let weekCounter = Number(req.params.weekCounter);
-    weekCounter = weekCounter < 0 ? 0 : weekCounter;
+
     //cache
-    if (weekCounter <= 1) {
+    if (weekCounter >= 0 && weekCounter <= 1) {
         let cacheResult = getCache_seriesOfWeek(weekCounter);
         if (cacheResult) {
             return res.json(cacheResult);

@@ -57,5 +57,5 @@ if page = 0 then return based on count value
 //trailers/getAll/:page/:count?
 //trailers/getSingleType/:type/:page/:count?
 
-//timeLine/today/:page/:count?
+//timeLine/day/:spacing/:page/:count?
 //timeLine/week/:weekCounter

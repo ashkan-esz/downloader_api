@@ -14,7 +14,7 @@ router.get('/getAll/:page/:count?', async (req, res) => {
     let serialLimit = (page === 0) ? count / 2 : 2;
 
     //cache
-    if (page <= 3) {
+    if (page <= 5) {
         let cacheResult = getCache_Trailers_All();
         if (cacheResult) {
             let result = [
@@ -57,7 +57,7 @@ router.get('/getSingleType/:type/:page/:count?', async (req, res) => {
     let limit = (page === 0) ? count : 6;
 
     //cache
-    if (page <= 3) {
+    if (page <= 5) {
         let cacheResult = getCache_Trailers_SingleType(type);
         if (cacheResult) {
             let result = cacheResult.slice(skip, skip + limit);

@@ -15,7 +15,7 @@ router.get('/getAll/:dataLevel/:page/:count?', async (req, res) => {
     let serialLimit = (page === 0) ? count / 2 : 4;
 
     //cache
-    if (dataLevel === 'low' && page <= 3) {
+    if (dataLevel === 'low' && page <= 5) {
         let cacheResult = getCache_news_all();
         if (cacheResult) {
             let result = [
@@ -56,7 +56,7 @@ router.get('/getSingleType/:type/:dataLevel/:page/:count?', async (req, res) => 
     let limit = (page === 0) ? count : 12;
 
     //cache
-    if (dataLevel === 'low' && page <= 3) {
+    if (dataLevel === 'low' && page <= 5) {
         let cacheResult = getCache_news_singleType(type);
         if (cacheResult) {
             return res.json(cacheResult.slice(skip, skip + limit));
