@@ -23,6 +23,9 @@ export async function addApiData(result, site_links, recentTitles) {
         result.isAnimation = tvmazeApi_data ? tvmazeApi_data.isAnimation : false;
         result.status = tvmazeApi_data ? tvmazeApi_data.status : 'unknown';
         result.premiered = tvmazeApi_data ? tvmazeApi_data.premiered : '';
+        if (tvmazeApi_data) {
+            result.year = tvmazeApi_data.premiered.split('-')[0];
+        }
         result.officialSite = tvmazeApi_data ? tvmazeApi_data.officialSite : '';
         result.releaseDay = tvmazeApi_data ? tvmazeApi_data.releaseDay : '';
         if (!result.imdbID) {
@@ -75,6 +78,7 @@ export async function apiDataUpdate(db_data, site_links, recentTitles, reCrawl) 
             updateFields.tvmazeID = tvmazeApi_data.tvmazeID;
             updateFields.isAnimation = tvmazeApi_data.isAnimation;
             updateFields.status = tvmazeApi_data.status;
+            updateFields.year = tvmazeApi_data.premiered.split('-')[0];
             updateFields.premiered = tvmazeApi_data.premiered;
             updateFields.officialSite = tvmazeApi_data.officialSite;
             updateFields.releaseDay = tvmazeApi_data.releaseDay;

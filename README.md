@@ -40,22 +40,17 @@ if page = 0 then return based on count value
 //crawler/crawlSingleSource/:sourceNumber/:password/:mode?
 //crawler/domainChange/:password
 
-//search/searchAll/:title/:dataLevel/:page/:count?
-//search/searchSingleType/:type/:title/:dataLevel/:page/:count?
-//search/searchByID/:type/:id/:dataLevel
+//search/searchByTitle/:title/:types/:dataLevel/:page/:count?
+//search/searchByID/:id/:dataLevel
 
-//news/getAll/:dataLevel/:page/:count?
-//news/getSingleType/:type/:dataLevel/:page/:count?
+//news/:types/:dataLevel/:page/:count?
 
-//updates/getAll/:dataLevel/:page/:count?
-//updates/getSingleType/:type/:dataLevel/:page:/:count?
+//updates/:types/:dataLevel/:page:/:count?
 
-//tops/byLikes/getAll/:dataLevel/:page/:count?
-//tops/byLikes/getSingleType/:type/:dataLevel/:page/:count?
-//tops/popularShows/:dataLevel/:page/:count?
+//tops/byLikes/:types/:dataLevel/:page/:count?
+//tops/IMDBShows/:dataLevel/:page/:count?
 
-//trailers/getAll/:page/:count?
-//trailers/getSingleType/:type/:page/:count?
+//trailers/:types/:page/:count?
 
 //timeLine/day/:spacing/:page/:count?
 //timeLine/week/:weekCounter

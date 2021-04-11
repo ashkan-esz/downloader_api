@@ -16,7 +16,7 @@ export async function wrapper_module(url, page_count, searchCB, RECRAWL = false)
             let response = await axios.get(url + `${i}/`);
             let $ = cheerio.load(response.data);
             let links = $('a');
-            for (let j = 0; j < links.length; j++) {
+            for (let j = links.length - 1; j >= 0; j--) {
                 if (process.env.NODE_ENV === 'dev') {
                     await searchCB($(links[j]), i, $);
                 } else {

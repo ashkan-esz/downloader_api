@@ -1,6 +1,7 @@
 export const dataConfig = {
     low: {
         title: 1,
+        year: 1,
         premiered: 1,
         poster: 1,
         type: 1,
@@ -10,6 +11,7 @@ export const dataConfig = {
     },
     medium: {
         title: 1,
+        year: 1,
         premiered: 1,
         poster: 1,
         type: 1,

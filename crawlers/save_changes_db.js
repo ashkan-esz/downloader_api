@@ -69,6 +69,7 @@ function getSaveObj(title, page_link, type, site_links, year, poster, persianSum
         isAnimation: false,
         status: 'ended',
         releaseDay: '',
+        year: year,
         premiered: year,
         officialSite: '',
         nextEpisode: null,
