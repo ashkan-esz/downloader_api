@@ -1,7 +1,7 @@
 const persianRex = require('persian-rex');
 const {saveError} = require("../saveError");
 
-export function remove_persian_words(title, mode) {
+export function remove_persian_words(title, type) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
@@ -15,7 +15,7 @@ export function remove_persian_words(title, mode) {
         }
     }
 
-    if (mode === 'serial' && titleIncludesSeason && title_array.length > 1) {
+    if (type === 'serial' && titleIncludesSeason && title_array.length > 1) {
         let season = title_array[title_array.length - 1];
         if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 10) {
             title_array.pop();
@@ -58,32 +58,7 @@ export function replacePersianNumbers(input) {
     return input;
 }
 
-export function sort_Serial_links(save_link) { //sort links based on season
-    let season_numbers = [];
-    for (let i = 0; i < save_link.length; i++) { //extract seasons
-        let season_episode = save_link[i].link.toLowerCase().match(/s\d\de\d\d/g)[0];
-        let season = season_episode.slice(1, 3);
-        if (!season_numbers.includes(Number(season)))
-            season_numbers.push(Number(season))
-    }
-    season_numbers = season_numbers.sort((a, b) => a - b)
-
-    let result = [];
-    for (let k = 0; k < season_numbers.length; k++) {
-        let season_array = [];
-        for (let i = 0; i < save_link.length; i++) {
-            let season_episode = save_link[i].link.toLowerCase().match(/s\d\de\d\d/g)[0];
-            let season = season_episode.slice(1, 3);
-            if (Number(season) === season_numbers[k]) {
-                season_array.push({link: save_link[i].link, info: save_link[i].info})
-            }
-        }
-        result.push(season_array); // group links by season
-    }
-    return result;
-}
-
-export function getMode(title) {
+export function getType(title) {
     return ((title.includes('فیلم') || title.includes('انیمیشن')) &&
         !title.includes('سریال'))
         ? 'movie' : 'serial';
@@ -156,7 +131,16 @@ export function getSeasonEpisode(input) {
     }
 }
 
-export function checkSources(case1, case2) {
+export function checkSourceExist(db_sources, pageLink) {
+    for (let i = 0; i < db_sources.length; i++) {
+        if (checkSource(db_sources[i].url, pageLink)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function checkSource(case1, case2) {
     let source_name = case1
         .replace('https://', '')
         .replace('www.', '')

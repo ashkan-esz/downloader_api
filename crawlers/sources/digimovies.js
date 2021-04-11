@@ -1,23 +1,21 @@
-const {search_in_title_page, wrapper_module} = require('../../search_tools');
-const {remove_persian_words} = require('../../utils');
-const save = require('../../save_changes_db');
+const {search_in_title_page, wrapper_module} = require('../searchTools');
+const {remove_persian_words} = require('../utils');
+const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
-const {saveError} = require("../../../saveError");
+const {saveError} = require("../../saveError");
 
 let RECRAWL;
 let RECENT_TITLES;
+
+//todo : add watch online
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}, recentTitles = [], reCrawl = false) {
     RECRAWL = reCrawl;
     RECENT_TITLES = recentTitles;
     await Promise.all([
         wrapper_module(serial_url, serial_page_count, search_title_serial, RECRAWL),
-        wrapper_module(movie_url, page_count, search_title_movie, RECRAWL)
+        // wrapper_module(movie_url, page_count, search_title_movie, RECRAWL)
     ]);
-
-    // for local test
-    // await wrapper_module('https://digimoviez.com/serie/page/', 10, search_title_serial);
-    // await wrapper_module('https://digimoviez.com/page/', 10, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
@@ -35,9 +33,11 @@ async function search_title_serial(link, i) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
-                    if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial', RECENT_TITLES, RECRAWL);
-                    }
+                    let trailers = getTrailers($2);
+                    // if (save_link.length > 0) {
+                    //     await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial', RECENT_TITLES, RECRAWL);
+                    // }
+                    console.log(trailers)
                 }
             }
         }
@@ -62,10 +62,12 @@ async function search_title_movie(link, i, $) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
+                    let trailers = getTrailers($2);
                     save_link = remove_duplicate(save_link);
-                    if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie', RECENT_TITLES, RECRAWL);
-                    }
+                    // if (save_link.length > 0) {
+                    //     await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie', RECENT_TITLES, RECRAWL);
+                    // }
+                    console.log(trailers)
                 }
             }
         }
@@ -107,6 +109,45 @@ function get_poster($) {
     }
 }
 
+function getTrailers($) {
+    try {
+        let result = [];
+        let a = $('a');
+        for (let i = 0; i < a.length; i++) {
+            let title = $(a[i]).attr('title');
+            if (title && title.toLowerCase().includes('پخش تریلر')) {
+                let href = $(a[i]).attr('href');
+                if (href.includes('.mp4') || href.includes('.mkv')) {
+                    let quality = href.includes('1080p') ? '1080p'
+                        : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
+                    result.push({
+                        link: href,
+                        info: 'film2movie-' + quality
+                    });
+                }
+            }
+        }
+
+        let unique = [];
+        for (let i = 0; i < result.length; i++) {
+            let exist = false;
+            for (let j = 0; j < unique.length; j++) {
+                if (result[i].link === unique[j].link) {
+                    exist = true;
+                    break;
+                }
+            }
+            if (!exist) {
+                unique.push(result[i]);
+            }
+        }
+        return unique;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
 function isPersianMovies($, link) {
     try {
         let prevNodeChildren = $(link).parent().parent().parent().parent().parent().prev().children()[0];
@@ -116,11 +157,11 @@ function isPersianMovies($, link) {
     }
 }
 
-function get_file_size($, link, mode) {
+function get_file_size($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.BluRay.10bit.IMAX.SoftSub - 4.42GB'
     try {
-        if (mode === 'serial') {
+        if (type === 'serial') {
             return get_file_size_serial($, link);
         }
         return get_file_size_movie($, link);

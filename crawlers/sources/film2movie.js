@@ -1,5 +1,5 @@
-const {search_in_title_page, wrapper_module} = require('../search_tools');
-const {remove_persian_words, replacePersianNumbers, getMode} = require('../utils');
+const {search_in_title_page, wrapper_module} = require('../searchTools');
+const {remove_persian_words, replacePersianNumbers, getType} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -18,21 +18,21 @@ async function search_title(link, i) {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
             let title = link.text().toLowerCase();
-            let mode = getMode(title);
+            let type = getType(title);
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
-                console.log(`film2movie/${mode}/${i}/${title}  ========>  `);
+                console.log(`film2movie/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title, mode);
+            let title_array = remove_persian_words(title, type);
             if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, mode, get_file_size);
+                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, mode, RECENT_TITLES, RECRAWL);
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, type, RECENT_TITLES, RECRAWL);
                     }
                 }
             }
@@ -119,11 +119,11 @@ function getTrailers($) {
     }
 }
 
-function get_file_size($, link, mode) {
+function get_file_size($, link, type) {
     //'1080p.HardSub'  //'720p.BluRay.F2M.dubbed.Family'
     //'480p.BluRay.F2M.HardSub.Family'  //'720p.BluRay.F2M.Family'
     try {
-        if (mode === 'serial') {
+        if (type === 'serial') {
             return get_file_size_serial($, link);
         }
         return get_file_size_movie($, link)

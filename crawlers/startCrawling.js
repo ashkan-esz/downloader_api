@@ -7,7 +7,9 @@ const {domainChangeHandler} = require('./domainChangeHandler');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
-export async function start_crawling(sourceNumber, crawlMode = 0) {
+//todo : fix recrawl  and  page: mode * 10
+
+export async function startCrawling(sourceNumber, crawlMode = 0) {
     return new Promise(async (resolve, reject) => {
         try {
             let time1 = new Date();

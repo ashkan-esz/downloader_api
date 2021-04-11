@@ -1,5 +1,5 @@
-const {search_in_title_page, wrapper_module,} = require('../../search_tools');
-const {remove_persian_words, getMode} = require('../../utils');
+const {search_in_title_page, wrapper_module,} = require('../../searchTools');
+const {remove_persian_words, getType} = require('../../utils');
 const save = require('../../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../../saveError");
@@ -14,11 +14,6 @@ module.exports = async function topmovies({movie_url, serial_url, page_count, se
         wrapper_module(serial_url, serial_page_count, search_title, RECRAWL),
         wrapper_module(movie_url, page_count, search_title, RECRAWL)
     ]);
-
-
-    // for local test
-    // await wrapper_module('https://1topmoviez.pw/series/page/', 10, search_title);
-    // await wrapper_module('https://1topmoviez.pw/page/', 10, search_title);
 }
 
 async function search_title(link, i) {
@@ -27,7 +22,7 @@ async function search_title(link, i) {
         if (title && title.includes('دانلود') && link.children().length === 0 &&
             title.toLowerCase().replace(/\s/g, '') ===
             link.text().toLowerCase().replace(/\s/g, '')) {
-            let mode = getMode(title);
+            let mode = getType(title);
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`topmovie/${mode}/${i}/${title}  ========>  `);
@@ -85,7 +80,7 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, mode) {
+function get_file_size($, link, type) {
     //'480p.WEBRip.HardSub - 180MB'  //'720p.WEB-DL.dubbed - 911.9M'
     //'1080p.BluRay.YTS.HardSub - 1.65G' //'720p.WEB-DL.HardSub - 802.3M'
     try {
@@ -94,7 +89,7 @@ function get_file_size($, link, mode) {
         let dubbed = (link_href.includes('farsi.dub') ||
             link_href.includes('duble') ||
             link_href.includes('dubbed')) ? 'dubbed' : HardSub;
-        if (mode === 'serial') {
+        if (type === 'serial') {
             let prevNodeChildren = $(link).parent().parent().parent().parent().prev().children();
             let size = $($(prevNodeChildren[1]).children()[0]).text()
                 .replace(/\s/g, '')

@@ -1,4 +1,4 @@
-const {search_in_title_page, wrapper_module} = require('../search_tools');
+const {search_in_title_page, wrapper_module} = require('../searchTools');
 const {remove_persian_words} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
@@ -135,11 +135,11 @@ function getTrailers($) {
     }
 }
 
-function get_file_size($, link, mode) {
+function get_file_size($, link, type) {
     //'1080p.WEB-DL - 750MB' //'720p.x265.WEB-DL - 230MB'
     //'1080p.BluRay.dubbed - 1.77GB' //'1080p.x265.BluRay.RMTeam - 1.17GB'
     try {
-        if (mode === 'serial') {
+        if (type === 'serial') {
             return get_file_size_serial($, link);
         }
         return get_file_size_movie($, link)

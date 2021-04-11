@@ -62,7 +62,7 @@ export async function setCache_all() {
 
 //-------------------------------
 //-------------News--------------
-export async function setCache_news() {
+async function setCache_news() {
     try {
         let movieCollection = await getCollection('movies');
         let serialCollection = await getCollection('serials');
@@ -104,7 +104,7 @@ export function getCache_news_singleType(type) {
 
 //-------------------------------
 //------------Updates------------
-export async function setCache_updates() {
+async function setCache_updates() {
     try {
         let movieCollection = await getCollection('movies');
         let serialCollection = await getCollection('serials');
@@ -146,7 +146,7 @@ export function getCache_updates_singleType(type) {
 
 //----------------------------------
 //------------Tops_Likes------------
-export async function setCache_Tops_Likes() {
+async function setCache_Tops_Likes() {
     try {
         let movieCollection = await getCollection('movies');
         let serialCollection = await getCollection('serials');
@@ -231,7 +231,7 @@ export function getCache_tops_popularShows() {
 
 //----------------------------------
 //-------------Trailers-------------
-export async function setCache_Trailers() {
+async function setCache_Trailers() {
     try {
         let movieCollection = await getCollection('movies');
         let serialCollection = await getCollection('serials');
@@ -273,7 +273,7 @@ export function getCache_Trailers_SingleType(type) {
 
 //----------------------------------
 //-----------Series of Day----------
-export async function setCache_SeriesOfDay() {
+async function setCache_SeriesOfDay() {
     try {
         seriesOfDay = [[], [], []];
         let dayCounter = -1;
@@ -313,7 +313,7 @@ export function getCache_SeriesOfDay(spacing) {
 
 //----------------------------------
 //-----------Series of Week----------
-export async function setCache_seriesOfWeek() {
+async function setCache_seriesOfWeek() {
     seriesOfWeek0 = null;
     seriesOfWeek1 = null;
     let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

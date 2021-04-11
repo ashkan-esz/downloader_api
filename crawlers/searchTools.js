@@ -33,19 +33,19 @@ export async function wrapper_module(url, page_count, searchCB, RECRAWL = false)
     }
 }
 
-export async function search_in_title_page(title_array, page_link, mode, get_file_size) {
+export async function search_in_title_page(title_array, page_link, type, get_file_size) {
     try {
         let response = await axios.get(page_link);
         let $ = cheerio.load(response.data);
         let links = $('a');
-        let matchCases = getMatchCases(title_array, mode);
+        let matchCases = getMatchCases(title_array, type);
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
-            if (link && check_format(link, mode)) {
-                let result = check_download_link(link, matchCases, mode);
+            if (link && check_format(link, type)) {
+                let result = check_download_link(link, matchCases, type);
                 if (result) {
-                    let link_info = get_file_size($, links[j], mode);
+                    let link_info = get_file_size($, links[j], type);
                     if (link_info !== 'trailer' && link_info !== 'ignore') {
                         save_link.push({link: result, info: link_info});
                     }
@@ -59,13 +59,13 @@ export async function search_in_title_page(title_array, page_link, mode, get_fil
     }
 }
 
-function check_download_link(original_link, matchCases, mode) {
+function check_download_link(original_link, matchCases, type) {
     let link = original_link.toLowerCase().replace(/[_-]/g, '.');
     if (link.includes('trailer')) {
         return null;
     }
 
-    if (mode === 'movie') {
+    if (type === 'movie') {
         if (
             link.includes(matchCases.case1) ||
             link.includes(matchCases.case2) ||
@@ -109,8 +109,8 @@ function check_download_link(original_link, matchCases, mode) {
     }
 }
 
-function getMatchCases(title_array, mode) {
-    if (mode === 'movie') {
+function getMatchCases(title_array, type) {
+    if (type === 'movie') {
         let temp = title_array.map((text) => text.replace(/&/g, 'and').replace(/[’:]/g, ''));
         let case1 = temp.map((text) => text.split('.').filter((t) => t !== ''));
         case1 = [].concat.apply([], case1);
@@ -127,7 +127,7 @@ function getMatchCases(title_array, mode) {
     } else return null;
 }
 
-function check_format(link, mode) {
+function check_format(link, type) {
     link = link.toLowerCase();
     let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv', 'mp4'];
     let qualities = ['bluray', 'mobile', 'dvdrip', 'hdrip', 'brip', 'webrip', 'web-dl', 'web.dl',
@@ -159,7 +159,7 @@ function check_format(link, mode) {
             if (link.includes('dvdrip') || link.includes('hdcam') || link.includes('mobile')) {
                 return true;
             }
-            return (mode === 'serial' && link.match(/s\d\de\d\d/g));
+            return (type === 'serial' && link.match(/s\d\de\d\d/g));
         }
     }
     return false;

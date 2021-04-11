@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
-const {start_crawling} = require("../crawlers/start_crawling");
+const {startCrawling} = require("../crawlers/startCrawling");
 const {domainChangeHandler} = require('../crawlers/domainChangeHandler');
 const {resetCache_all, setCache_all} = require("../cache");
 
@@ -15,7 +15,7 @@ router.post('/crawlAll/:password/:mode?', async (req, res) => {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
             await resetCache_all();
-            await start_crawling('all', mode);
+            await startCrawling('all', mode);
             await setCache_all();
             crawling_flag = false;
             return res.json('crawling ended! (all sources)');
@@ -37,7 +37,7 @@ router.post('/crawlSingleSource/:sourceNumber/:password/:mode?', async (req, res
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
             await resetCache_all();
-            await start_crawling(sourceNumber, mode);
+            await startCrawling(sourceNumber, mode);
             await setCache_all();
             crawling_flag = false;
             return res.json(`crawling ended! (source : ${sourceNumber})`);

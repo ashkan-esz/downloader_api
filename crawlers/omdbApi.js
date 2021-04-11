@@ -10,10 +10,10 @@ axiosRetry(axios, {
     }
 });
 
-export async function get_OMDB_Api_Data(title, premiered, mode) {
+export async function get_OMDB_Api_Data(title, premiered, type) {
     try {
         let titleYear = premiered.split('-')[0];
-        let type = (mode === 'movie') ? 'movie' : 'series';
+        type = (type === 'movie') ? 'movie' : 'series';
         let url = `http://www.omdbapi.com/?t=${title}&type=${type}`;
         let data = await handle_OMDB_ApiKeys(url);
         if (data === null || data === '404') {
@@ -22,7 +22,7 @@ export async function get_OMDB_Api_Data(title, premiered, mode) {
 
         let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
         let apiYear = data.Year.split(/[-–]/g)[0];
-        let equalYear = (mode === 'movie') ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
+        let equalYear = (type === 'movie') ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
         let titlesMatched = true;
         let splitTitle = title.split(' ');
         let splitApiTitle = apiTitle.split(' ');
@@ -44,11 +44,11 @@ export async function get_OMDB_Api_Data(title, premiered, mode) {
     }
 }
 
-export function get_OMDB_Api_Fields(data, summary, mode) {
+export function get_OMDB_Api_Fields(data, summary, type) {
     summary.english = (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '';
     let collectedData = {
-        totalSeasons: (mode === 'movie') ? '' : data.totalSeasons,
-        boxOffice: (mode === 'movie') ? data.BoxOffice : '',
+        totalSeasons: (type === 'movie') ? '' : data.totalSeasons,
+        boxOffice: (type === 'movie') ? data.BoxOffice : '',
         summary: summary,
         rawTitle: data.Title.trim(),
         imdbID: data.imdbID,
@@ -67,13 +67,13 @@ export function get_OMDB_Api_Fields(data, summary, mode) {
         awards: data.Awards
     };
 
-    if (mode === 'movie') {
+    if (type === 'movie') {
         collectedData.premiered = data.Year.split(/[-–]/g)[0];
     }
     return collectedData;
 }
 
-export function get_OMDB_Api_nullFields(summary, mode) {
+export function get_OMDB_Api_nullFields(summary, type) {
     summary.english = '';
     let collectedData = {
         totalSeasons: '',
@@ -92,7 +92,7 @@ export function get_OMDB_Api_nullFields(summary, mode) {
         cast: [],
         awards: "",
     };
-    if (mode === 'movie') {
+    if (type === 'movie') {
         collectedData.premiered = '';
     }
     return collectedData;

@@ -1,12 +1,12 @@
 const {getSeasonEpisode, checkBetterQuality, getHardSub, getDubbed} = require("./utils");
 
-export function handleLatestDataUpdate(db_data, latestData, mode) {
+export function handleLatestDataUpdate(db_data, latestData, type) {
     let changed = false;
     let hardSubChange = false;
     let dubbedChange = false;
     let prevLatestData = db_data.latestData;
 
-    if (mode === 'serial') {
+    if (type === 'serial') {
         if ((latestData.season > prevLatestData.season) ||
             (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) ||
             (latestData.season === prevLatestData.season &&
@@ -20,7 +20,7 @@ export function handleLatestDataUpdate(db_data, latestData, mode) {
 
     if (prevLatestData.hardSub !== latestData.hardSub ||
         prevLatestData.dubbed !== latestData.dubbed) {
-        if (mode === 'serial') {
+        if (type === 'serial') {
             let prev = getSeasonEpisode(prevLatestData.hardSub);
             let current = getSeasonEpisode(latestData.hardSub);
             hardSubChange = (prev.season < current.season) ||
@@ -50,17 +50,17 @@ export function handleLatestDataUpdate(db_data, latestData, mode) {
     return changed || hardSubChange || dubbedChange;
 }
 
-export function getLatestData(site_links, mode) {
-    let latestSeason = mode === 'movie' ? 0 : 1;
-    let latestEpisode = mode === 'movie' ? 0 : 1;
+export function getLatestData(site_links, type) {
+    let latestSeason = type === 'movie' ? 0 : 1;
+    let latestEpisode = type === 'movie' ? 0 : 1;
     let latestQuality = site_links[0].info;
-    let hardSub = mode === 'movie' ? false : '';
-    let dubbed = mode === 'movie' ? false : '';
+    let hardSub = type === 'movie' ? false : '';
+    let dubbed = type === 'movie' ? false : '';
 
     for (let i = 0; i < site_links.length; i++) {
         let link = site_links[i].link;
         let info = site_links[i].info;
-        if (mode === 'serial') {
+        if (type === 'serial') {
             let {season, episode} = getSeasonEpisode(link);
             if (season > latestSeason) { //found new season
                 latestSeason = season;
@@ -80,7 +80,7 @@ export function getLatestData(site_links, mode) {
                     dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
                 }
             }
-        } else if (mode === 'movie') {
+        } else if (type === 'movie') {
             latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
             hardSub = getHardSub(info) || hardSub;
             dubbed = getDubbed(link, info) || dubbed;

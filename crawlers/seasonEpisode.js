@@ -1,31 +1,32 @@
 const {getSeasonEpisode} = require("./utils");
-const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./omdb_api");
-const {get_tvmazeApi_Alldata} = require("./tvmaze_api");
+const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./omdbApi");
+const {get_tvmazeApi_Alldata} = require("./tvmazeApi");
 
-export async function handleSeasonEpisodeUpdate(db_data, totalSeasons, site_links, recentTitles, titleExist = true) {
+export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, titleExist = true) {
     let links_seasons = getSeasonsFromLinks(site_links);
     let seasonsUpdate = handleSeasonUpdate(db_data.seasons, links_seasons);
     let episodesUpdate = false;
     let tvmazeApi_data = null;
     let nextEpisodeUpdate = false;
-    if (!recentTitles.includes(db_data.title)) {
-        recentTitles.push(db_data.title);
-        //omdb api
-        let omdb_result = await get_OMDB_seasonEpisode_info(db_data.title, db_data.rawTitle, totalSeasons, db_data.duration, titleExist);
-        if (omdb_result) {
-            seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdb_result.seasons) || seasonsUpdate;
-            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration) || episodesUpdate;
-        }
-        //tvmaze api
-        tvmazeApi_data = await get_tvmazeApi_Alldata(db_data.title, db_data.rawTitle, db_data.imdbID || '');
-        if (tvmazeApi_data) {
-            nextEpisodeUpdate = handleNextEpisodeUpdate(db_data, tvmazeApi_data.nextEpisode);
-            let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApi_data.episodes);
-            seasonsUpdate = handleSeasonUpdate(db_data.seasons, tvmaze_seasons) || seasonsUpdate;
-            episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApi_data.episodes, db_data.duration) || episodesUpdate;
-        }
+
+    //omdb api
+    let omdb_result = await get_OMDB_seasonEpisode_info(db_data.title, db_data.rawTitle, totalSeasons, db_data.duration, titleExist);
+    if (omdb_result) {
+        seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdb_result.seasons) || seasonsUpdate;
+        episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration);
     }
+
+    //tvmaze api
+    tvmazeApi_data = await get_tvmazeApi_Alldata(db_data.title, db_data.rawTitle, db_data.imdbID || '');
+    if (tvmazeApi_data) {
+        nextEpisodeUpdate = handleNextEpisodeUpdate(db_data, tvmazeApi_data.nextEpisode);
+        let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApi_data.episodes);
+        seasonsUpdate = handleSeasonUpdate(db_data.seasons, tvmaze_seasons) || seasonsUpdate;
+        episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApi_data.episodes, db_data.duration) || episodesUpdate;
+    }
+
     episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, titleExist) || episodesUpdate;
+
     return {
         tvmazeApi_data,
         seasonsUpdate,
@@ -34,9 +35,14 @@ export async function handleSeasonEpisodeUpdate(db_data, totalSeasons, site_link
     };
 }
 
-function handleNextEpisodeUpdate(db_data, tvmaze_nextEpisode) {
-    db_data.nextEpisode = tvmaze_nextEpisode;
-    return true;
+export function handleSiteSeasonEpisodeUpdate(db_data, site_links, titleExist) {
+    let links_seasons = getSeasonsFromLinks(site_links);
+    let seasonsUpdate = handleSeasonUpdate(db_data.seasons, links_seasons);
+    let episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, titleExist);
+    return {
+        seasonsUpdate,
+        episodesUpdate,
+    };
 }
 
 function handleSeasonUpdate(db_seasons, compareSeasons) {
@@ -59,6 +65,11 @@ function handleSeasonUpdate(db_seasons, compareSeasons) {
         }
     }
     return seasonsUpdated;
+}
+
+function handleNextEpisodeUpdate(db_data, tvmaze_nextEpisode) {
+    db_data.nextEpisode = tvmaze_nextEpisode;
+    return true;
 }
 
 function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration) {
@@ -197,4 +208,19 @@ function getSeasonsFromTvMazeApi(episodes) {
         }
     }
     return seasonsArray;
+}
+
+export function getTotalDuration(episodes, latestData) {
+    let totalDuration = 0;
+    for (let i = 0; i < episodes.length; i++) {
+        if (episodes[i].season < latestData.season ||
+            (episodes[i].season === latestData.season &&
+                episodes[i].episode <= latestData.episode)) {
+            totalDuration += Number(episodes[i].duration.replace('min', ''));
+        }
+    }
+    let hours = Math.floor(totalDuration / 60);
+    let minutes = totalDuration % 60;
+    totalDuration = hours + ':' + minutes;
+    return totalDuration;
 }

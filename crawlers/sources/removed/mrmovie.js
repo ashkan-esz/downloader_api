@@ -1,5 +1,5 @@
-const {search_in_title_page, wrapper_module} = require('../../search_tools');
-const {remove_persian_words, getMode} = require('../../utils');
+const {search_in_title_page, wrapper_module} = require('../../searchTools');
+const {remove_persian_words, getType} = require('../../utils');
 const save = require('../../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../../saveError");
@@ -14,18 +14,13 @@ module.exports = async function mrmovie({movie_url, serial_url, page_count, seri
         wrapper_module(serial_url, serial_page_count, search_title, RECRAWL),
         wrapper_module(movie_url, page_count, search_title, RECRAWL)
     ]);
-
-
-    // for local test
-    // await wrapper_module(serial_url, serial_page_count, search_title);
-    // await wrapper_module(movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
     try {
         if (link.hasClass('reade_more')) {
             let title = link.parent().parent().prev().prev().text().toLowerCase();
-            let mode = getMode(title);
+            let mode = getType(title);
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`mrmovie/${mode}/${i}/${title}  ========>  `);
@@ -87,7 +82,7 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, mode) {
+function get_file_size($, link, type) {
     //'480p.WEB-DL.RMT - 80MB'  //'720p.x265.WEB-DL.RMT - 129MB'
     //'1080p.x265.WEB-DL.10bit.RARBG - 1.43GB' //'1080p.WEB-DL.RARBG - 1.76GB'
     try {
@@ -96,7 +91,7 @@ function get_file_size($, link, mode) {
         if (parent[0].name !== 'p') {
             parent = $(parent).parent();
         }
-        if (mode === 'serial') {
+        if (type === 'serial') {
             text_array = get_serial_textArray($, link, parent);
             if (text_array === 'ignore') {
                 return text_array;
