@@ -4,15 +4,11 @@ const save = require('../../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../../saveError");
 
-let RECRAWL;
-let RECENT_TITLES;
 
-module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}, recentTitles = [], reCrawl = false) {
-    RECRAWL = reCrawl;
-    RECENT_TITLES = recentTitles;
+module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title, RECRAWL),
-        wrapper_module(movie_url, page_count, search_title, RECRAWL)
+        wrapper_module(serial_url, serial_page_count, search_title),
+        wrapper_module(movie_url, page_count, search_title)
     ]);
 }
 
@@ -20,25 +16,25 @@ async function search_title(link, i) {
     try {
         if (link.hasClass('reade_more')) {
             let title = link.parent().parent().prev().prev().text().toLowerCase();
-            let mode = getType(title);
+            let type = getType(title);
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
-                console.log(`mrmovie/${mode}/${i}/${title}  ========>  `);
+                console.log(`mrmovie/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title, mode);
+            let title_array = remove_persian_words(title, type);
             if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, mode, get_file_size);
+                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     if (save_link.length > 0) {
-                        if (mode === "serial") {
-                            await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial', RECENT_TITLES, RECRAWL);
+                        if (type === "serial") {
+                            await save(title_array, page_link, save_link, persian_summary, poster, [], 'serial');
                         } else {
                             save_link = remove_duplicate(save_link);
                             if (save_link.length > 0) {
-                                await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie', RECENT_TITLES, RECRAWL);
+                                await save(title_array, page_link, save_link, persian_summary, poster, [], 'movie');
                             }
                         }
                     }

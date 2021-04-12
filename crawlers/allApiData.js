@@ -1,8 +1,8 @@
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdbApi');
 const {handleSeasonEpisodeUpdate, getTotalDuration} = require('./seasonEpisode');
 
-export async function addApiData(result, site_links, recentTitles) {
-    recentTitles.push(result.title);
+export async function addApiData(result, site_links) {
+    result.apiUpdateDate = new Date();
 
     let omdb_data = await get_OMDB_Api_Data(result.title, result.premiered, result.type);
     let updateFields = (omdb_data === null) ?
@@ -40,13 +40,16 @@ export async function addApiData(result, site_links, recentTitles) {
     return result;
 }
 
-export async function apiDataUpdate(db_data, site_links, recentTitles, reCrawl) {
-    if (recentTitles.includes(db_data.title) || reCrawl) {
+export async function apiDataUpdate(db_data, site_links) {
+    let now = new Date();
+    let apiUpdateDate = new Date(db_data.apiUpdateDate);
+    let hoursBetween = (now.getTime() - apiUpdateDate.getTime()) / (3600 * 1000);
+    if (hoursBetween < 4) {
         return null;
     }
-    recentTitles.push(db_data.title);
 
     let updateFields = {};
+    updateFields.apiUpdateDate = now;
 
     let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.premiered, db_data.type);
     if (omdb_data !== null) {

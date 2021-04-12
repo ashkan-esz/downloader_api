@@ -7,7 +7,7 @@ const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {saveError} = require("../saveError");
 
 
-module.exports = async function save(title_array, page_link, site_links, persianSummary, poster, trailers, type, recentTitles = [], reCrawl = false) {
+module.exports = async function save(title_array, page_link, site_links, persianSummary, poster, trailers, type) {
     try {
         let year = (type === 'movie') ? getYear(page_link, site_links) : '';
         let title = title_array.join(' ').trim();
@@ -16,7 +16,7 @@ module.exports = async function save(title_array, page_link, site_links, persian
         let {collection, db_data} = await searchOnCollection(title, year, type);
 
         if (db_data === null) {//new title
-            result = await addApiData(result, site_links, recentTitles);
+            result = await addApiData(result, site_links);
             if (result.type === 'movie' && !result.premiered) {
                 result.premiered = year;
             }
@@ -25,7 +25,7 @@ module.exports = async function save(title_array, page_link, site_links, persian
         }
 
         let subUpdates = handleSubUpdates(db_data, poster, trailers, result, type);
-        let apiDataUpdateFields = await apiDataUpdate(db_data, site_links, recentTitles, reCrawl);
+        let apiDataUpdateFields = await apiDataUpdate(db_data, site_links);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleLinkUpdate(collection, db_data, page_link, persianSummary, type, site_links);
             await handleUpdate(collection, db_data, linkUpdate, null, persianSummary, subUpdates, site_links, type, apiDataUpdateFields);
@@ -84,6 +84,7 @@ async function searchOnCollection(title, year, type) {
         title: 1,
         type: 1,
         insert_date: 1,
+        apiUpdateDate: 1,
         rawTitle: 1,
         imdbID: 1,
         sources: 1,

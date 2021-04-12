@@ -4,15 +4,11 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
-let RECRAWL;
-let RECENT_TITLES;
 
-module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}, recentTitles = [], reCrawl = false) {
-    RECRAWL = reCrawl;
-    RECENT_TITLES = recentTitles;
+module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title_serial, RECRAWL),
-        wrapper_module(movie_url, page_count, search_title_movie, RECRAWL)
+        wrapper_module(serial_url, serial_page_count, search_title_serial),
+        wrapper_module(movie_url, page_count, search_title_movie)
     ]);
 }
 
@@ -33,7 +29,7 @@ async function search_title_serial(link, i) {
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial', RECENT_TITLES, RECRAWL);
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial');
                     }
                 }
             }
@@ -61,7 +57,7 @@ async function search_title_movie(link, i) {
                     let trailers = getTrailers($2);
                     save_link = remove_duplicate(save_link);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie', RECENT_TITLES, RECRAWL);
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie');
                     }
                 }
             }
