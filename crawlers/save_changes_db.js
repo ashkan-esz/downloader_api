@@ -83,7 +83,6 @@ async function searchOnCollection(title, year, type) {
     let dataConfig = {
         title: 1,
         type: 1,
-        insert_date: 1,
         apiUpdateDate: 1,
         rawTitle: 1,
         imdbID: 1,
@@ -146,6 +145,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
                 db_data.sources.push(result.sources[0]);
                 updateFields.sources = db_data.sources;
             }
+            updateFields.update_date = new Date();
         }
 
         if (db_data.summary.persian === '') {
@@ -161,13 +161,9 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         }
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
-            let now = new Date();
-            let insertDate = new Date(db_data.insert_date)
-            let hoursBetween = (now.getTime() - insertDate.getTime()) / (3600 * 1000);
-            if (hoursBetween >= 2) {
-                updateFields.update_date = now;
-            }
+            updateFields.update_date = new Date();
         }
+
 
         if (Object.keys(updateFields).length > 0) {
             await collection.findOneAndUpdate({_id: db_data._id}, {

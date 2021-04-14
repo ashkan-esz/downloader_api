@@ -44,7 +44,7 @@ export async function apiDataUpdate(db_data, site_links) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     let hoursBetween = (now.getTime() - apiUpdateDate.getTime()) / (3600 * 1000);
-    if (hoursBetween < 4) {
+    if (hoursBetween <= 4) {
         return null;
     }
 
@@ -53,7 +53,8 @@ export async function apiDataUpdate(db_data, site_links) {
 
     let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.premiered, db_data.type);
     if (omdb_data !== null) {
-        updateFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, db_data.type);
+        let omdbFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, db_data.type);
+        updateFields = {...updateFields, ...omdbFields};
     }
 
     if (db_data.type === 'serial') {

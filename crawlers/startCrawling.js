@@ -19,40 +19,40 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
             if (sourceNumber === 'all') {
                 await film2media({
                     ...sources.film2media,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 380,
+                    page_count: crawlMode === 0 ? 3 : crawlMode === 1 ? 30 : 380,
                 });
                 await film2movie({
                     ...sources.film2movie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1345,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1345,
                 });
                 await salamdl({
                     ...sources.salamdl,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1155,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1155,
                 });
                 await valamovie({
                     ...sources.valamovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 870,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 20 : 870,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 5,
                 });
             } else if (sourceNumber === 1) {
                 await film2media({
                     ...sources.film2media,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 380,
+                    page_count: crawlMode === 0 ? 3 : crawlMode === 1 ? 30 : 380,
                 });
             } else if (sourceNumber === 2) {
                 await film2movie({
                     ...sources.film2movie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1345,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1345,
                 });
             } else if (sourceNumber === 3) {
                 await salamdl({
                     ...sources.salamdl,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1155,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1155,
                 });
             } else if (sourceNumber === 4) {
                 await valamovie({
                     ...sources.valamovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 870,
+                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 20 : 870,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 5,
                 });
             }
