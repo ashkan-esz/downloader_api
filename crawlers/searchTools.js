@@ -23,7 +23,13 @@ export async function wrapper_module(url, page_count, searchCB) {
 
     if (headLessBrowser) {
         if (!page || !browser) {
-            browser = await puppeteer.launch();
+            browser = await puppeteer.launch({
+                args: [
+                    "--no-sandbox",
+                    "--single-process",
+                    "--no-zygote"
+                ]
+            });
             page = await browser.newPage();
         }
     }
