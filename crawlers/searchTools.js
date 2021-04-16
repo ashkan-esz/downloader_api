@@ -31,6 +31,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                 ]
             });
             page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
         }
     }
 
@@ -68,6 +69,9 @@ export async function wrapper_module(url, page_count, searchCB) {
 export async function search_in_title_page(title_array, page_link, type, get_file_size) {
     try {
         let {$, links} = await getLinks(page_link);
+        if ($ === null) {
+            return null;
+        }
         let matchCases = getMatchCases(title_array, type);
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
