@@ -6,10 +6,8 @@ const {saveError} = require("../../saveError");
 
 
 module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title_serial),
-        wrapper_module(movie_url, page_count, search_title_movie)
-    ]);
+    await wrapper_module(serial_url, serial_page_count, search_title_serial);
+    await wrapper_module(movie_url, page_count, search_title_movie);
 }
 
 async function search_title_serial(link, i) {

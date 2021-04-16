@@ -2,6 +2,7 @@ const axios = require('axios').default;
 const cheerio = require('cheerio');
 const axiosRetry = require("axios-retry");
 const {saveError} = require("../saveError");
+const {firefox} = require('playwright');
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -9,13 +10,28 @@ axiosRetry(axios, {
     }
 });
 
+let headLessBrowser = false;
+let browser = null;
+let page = null;
+
 export async function wrapper_module(url, page_count, searchCB) {
+    headLessBrowser = (
+        url.includes('valamovie') ||
+        url.includes('digimovie') ||
+        url.includes('film2movie')
+    );
+
+    if (headLessBrowser) {
+        if (!page || !browser) {
+            browser = await firefox.launch();
+            page = await browser.newPage();
+        }
+    }
+
     let forceWaitNumber = 35;
     for (let i = 1; i <= page_count; i++) {
         try {
-            let response = await axios.get(url + `${i}/`);
-            let $ = cheerio.load(response.data);
-            let links = $('a');
+            let {$, links} = await getLinks(url + `${i}/`);
             for (let j = 0; j < links.length; j++) {
                 if (process.env.NODE_ENV === 'dev') {
                     await searchCB($(links[j]), i, $);
@@ -28,16 +44,20 @@ export async function wrapper_module(url, page_count, searchCB) {
                 }
             }
         } catch (error) {
+            if (headLessBrowser) {
+                await killHeadlessBrowser();
+            }
             saveError(error);
         }
+    }
+    if (headLessBrowser) {
+        await killHeadlessBrowser();
     }
 }
 
 export async function search_in_title_page(title_array, page_link, type, get_file_size) {
     try {
-        let response = await axios.get(page_link);
-        let $ = cheerio.load(response.data);
-        let links = $('a');
+        let {$, links} = await getLinks(page_link);
         let matchCases = getMatchCases(title_array, type);
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
@@ -59,6 +79,36 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
     }
 }
 
+async function killHeadlessBrowser() {
+    try {
+        await browser.close();
+        await page.close();
+        browser = null;
+        page = null;
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+async function getLinks(url) {
+    try {
+        let $, links;
+        if (headLessBrowser) {
+            await page.goto(url);
+            $ = cheerio.load(await page.content());
+            links = $('a');
+        } else {
+            let response = await axios.get(url);
+            $ = cheerio.load(response.data);
+            links = $('a');
+        }
+        return {$, links};
+    } catch (error) {
+        saveError(error);
+        return {$: null, links: []};
+    }
+}
+
 function check_download_link(original_link, matchCases, type) {
     let link = original_link.toLowerCase().replace(/[_-]/g, '.');
     if (link.includes('trailer')) {
@@ -71,7 +121,10 @@ function check_download_link(original_link, matchCases, type) {
             link.includes(matchCases.case2) ||
             link.includes(matchCases.case3) ||
             link.includes(matchCases.case4) ||
+            link.includes(matchCases.case1.replace('.iii', '.3')) ||
+            link.includes(matchCases.case1.replace('.3', '.iii')) ||
             link.includes(matchCases.case1.replace('.ii', '.2')) ||
+            link.includes(matchCases.case1.replace('.2', '.ii')) ||
             link.includes(matchCases.case1.replace('el', 'the'))
         ) {
             return original_link;
@@ -135,7 +188,7 @@ function check_format(link, type) {
     let encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
         'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
 
-    let link_array = link.split('.');
+    let link_array = link.replace(/\?\d+/g, '').split('.');
     let link_format = link_array.pop();
     for (let i = 0, l = formats.length; i < l; i++) {
         if (link_format === formats[i]) {

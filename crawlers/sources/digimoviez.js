@@ -5,12 +5,11 @@ const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
 //todo : add watch online
+//todo : add quality sample
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
-    await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title_serial),
-        // wrapper_module(movie_url, page_count, search_title_movie)
-    ]);
+    await wrapper_module(serial_url, serial_page_count, search_title_serial);
+    await wrapper_module(movie_url, page_count, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
@@ -29,10 +28,9 @@ async function search_title_serial(link, i) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    // if (save_link.length > 0) {
-                    //     await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial');
-                    // }
-                    console.log(trailers)
+                    if (save_link.length > 0) {
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial');
+                    }
                 }
             }
         }
@@ -59,10 +57,9 @@ async function search_title_movie(link, i, $) {
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     save_link = remove_duplicate(save_link);
-                    // if (save_link.length > 0) {
-                    //     await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie');
-                    // }
-                    console.log(trailers)
+                    if (save_link.length > 0) {
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie');
+                    }
                 }
             }
         }
@@ -112,14 +109,10 @@ function getTrailers($) {
             let title = $(a[i]).attr('title');
             if (title && title.toLowerCase().includes('پخش تریلر')) {
                 let href = $(a[i]).attr('href');
-                if (href.includes('.mp4') || href.includes('.mkv')) {
-                    let quality = href.includes('1080p') ? '1080p'
-                        : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
-                    result.push({
-                        link: href,
-                        info: 'film2movie-' + quality
-                    });
-                }
+                result.push({
+                    link: href,
+                    info: 'film2movie-720p'
+                });
             }
         }
 

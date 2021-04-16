@@ -1,3 +1,4 @@
+const digimoviez = require('./sources/digimoviez');
 const film2media = require('./sources/film2media');
 const salamdl = require('./sources/salamdl');
 const film2movie = require('./sources/film2movie');
@@ -17,43 +18,54 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
             let sources = await collection.findOne({title: 'sources'});
 
             if (sourceNumber === 'all') {
+                await digimoviez({
+                    ...sources.digimoviez,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 327,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 48,
+                });
                 await film2media({
                     ...sources.film2media,
-                    page_count: crawlMode === 0 ? 3 : crawlMode === 1 ? 30 : 380,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 380,
                 });
                 await film2movie({
                     ...sources.film2movie,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1345,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1345,
                 });
                 await salamdl({
                     ...sources.salamdl,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1155,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1155,
                 });
                 await valamovie({
                     ...sources.valamovie,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 20 : 870,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 5,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 870,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 55,
+                });
+            } else if (sourceNumber === 0) {
+                await digimoviez({
+                    ...sources.digimoviez,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 327,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 48,
                 });
             } else if (sourceNumber === 1) {
                 await film2media({
                     ...sources.film2media,
-                    page_count: crawlMode === 0 ? 3 : crawlMode === 1 ? 30 : 380,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 380,
                 });
             } else if (sourceNumber === 2) {
                 await film2movie({
                     ...sources.film2movie,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1345,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1345,
                 });
             } else if (sourceNumber === 3) {
                 await salamdl({
                     ...sources.salamdl,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 30 : 1155,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 1155,
                 });
             } else if (sourceNumber === 4) {
                 await valamovie({
                     ...sources.valamovie,
-                    page_count: crawlMode === 0 ? 2 : crawlMode === 1 ? 20 : 870,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 5,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 870,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 55,
                 });
             }
 

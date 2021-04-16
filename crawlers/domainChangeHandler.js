@@ -2,6 +2,7 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
+const digimoviez = require('./sources/digimoviez');
 const film2media = require('./sources/film2media');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
@@ -12,7 +13,7 @@ axiosRetry(axios, {
     }
 });
 
-//todo : add digimovie source object
+//todo : add digimovie domain change handler --> source link is fixed , download links change
 
 export async function domainChangeHandler(sourcesObject) {
     try {
@@ -66,26 +67,44 @@ export async function domainChangeHandler(sourcesObject) {
 }
 
 function updateSourceFields(sourcesObject, sources, domains) {
-    sourcesObject.film2media.movie_url = sources[0];
-    sourcesObject.film2movie.movie_url = sources[1];
+    sourcesObject.digimoviez.movie_url = sources[0];
+    sourcesObject.digimoviez.serial_url = getNewURl(sourcesObject.digimoviez.serial_url, domains[0]);
 
-    sourcesObject.salamdl.movie_url = sources[2];
+    sourcesObject.film2media.movie_url = sources[1];
 
-    sourcesObject.valamovie.movie_url = sources[3];
-    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.valamovie.serial_url, domains[3]);
+    sourcesObject.film2movie.movie_url = sources[2];
+
+    sourcesObject.salamdl.movie_url = sources[3];
+
+    sourcesObject.valamovie.movie_url = sources[4];
+    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.valamovie.serial_url, domains[4]);
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
     // film2media
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i];
-        if (domain.includes('film2media')) {
+        if (domain.includes('digimoviez')) {
+            let startTime = new Date();
+            await Sentry.captureMessage('start domain change handler (digimoviez reCrawl start)');
+            await digimoviez({
+                ...sourcesObject.digimoviez,
+                page_count: 327,
+                serial_page_count: 48
+            });
+            let endTime = new Date();
+            let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
+            await Sentry.captureMessage(`start domain change handler (digimoviez reCrawl ended) in ${crawlingDuration} s`);
+        } else if (domain.includes('film2media')) {
+            let startTime = new Date();
             await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
             await film2media({
                 ...sourcesObject.film2media,
                 page_count: 380,
-            }, [], true);
-            await Sentry.captureMessage('start domain change handler (film2media reCrawl ended)');
+            });
+            let endTime = new Date();
+            let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
+            await Sentry.captureMessage(`start domain change handler (film2media reCrawl ended) in ${crawlingDuration} s`);
         }
     }
 }
@@ -117,7 +136,7 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
             for (let t = 0; t < trailers.length; t++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (trailers[t].link.includes(changedSourcesName[k])) {
-                        //todo : better domain updater for valamovie/digimovie
+                        //todo : better trailer updater for valamovie/digimovie
                         if (!trailers[k].link.includes('play.mylionstrailer')) {
                             trailerChanged = true;
                             let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
