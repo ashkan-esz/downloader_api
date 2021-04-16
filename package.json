@@ -30,7 +30,7 @@
     "mongodb": "^3.6.3",
     "node-cron": "^2.0.3",
     "persian-rex": "^2.3.3",
-    "playwright": "^1.10.0"
+    "puppeteer": "^8.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.6"

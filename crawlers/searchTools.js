@@ -2,7 +2,7 @@ const axios = require('axios').default;
 const cheerio = require('cheerio');
 const axiosRetry = require("axios-retry");
 const {saveError} = require("../saveError");
-const {firefox} = require('playwright');
+const puppeteer = require('puppeteer');
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -23,7 +23,7 @@ export async function wrapper_module(url, page_count, searchCB) {
 
     if (headLessBrowser) {
         if (!page || !browser) {
-            browser = await firefox.launch();
+            browser = await puppeteer.launch();
             page = await browser.newPage();
         }
     }
@@ -45,13 +45,17 @@ export async function wrapper_module(url, page_count, searchCB) {
             }
         } catch (error) {
             if (headLessBrowser) {
-                await killHeadlessBrowser();
+                await browser.close();
+                browser = null;
+                page = null;
             }
             saveError(error);
         }
     }
     if (headLessBrowser) {
-        await killHeadlessBrowser();
+        await browser.close();
+        browser = null;
+        page = null;
     }
 }
 
@@ -76,17 +80,6 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
     } catch (error) {
         saveError(error);
         return null;
-    }
-}
-
-async function killHeadlessBrowser() {
-    try {
-        await browser.close();
-        await page.close();
-        browser = null;
-        page = null;
-    } catch (error) {
-        saveError(error);
     }
 }
 
