@@ -23,18 +23,23 @@ export async function wrapper_module(url, page_count, searchCB) {
         );
 
         if (headLessBrowser) {
-            if (!page || !browser) {
+            if (!page || !browser || !browser.isConnected()) {
                 browser = await puppeteer.launch({
                     headless: true,
                     args: [
                         "--no-sandbox",
-                        // "--single-process",
-                        // "--no-zygote"
+                        "--single-process",
+                        "--no-zygote"
                     ]
                 });
                 page = await browser.newPage();
                 await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-                await page.setViewport({ width: 1280, height: 800 });
+                await page.setViewport({width: 1280, height: 800});
+            }
+            if (page && page.isClosed()) {
+                page = await browser.newPage();
+                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+                await page.setViewport({width: 1280, height: 800});
             }
         }
 
@@ -55,26 +60,16 @@ export async function wrapper_module(url, page_count, searchCB) {
                 }
             } catch (error) {
                 if (headLessBrowser) {
-                    await page.close();
-                    await browser.close();
-                    browser = null;
-                    page = null;
+                    await closeBrowser();
                 }
                 saveError(error);
             }
         }
-        if (headLessBrowser && browser) {
-            await page.close();
-            await browser.close();
-            browser = null;
-            page = null;
+        if (headLessBrowser) {
+            await closeBrowser();
         }
     } catch (error) {
-        if (browser) {
-            await browser.close();
-            browser = null;
-            page = null;
-        }
+        await closeBrowser();
         saveError(error);
     }
 }
@@ -103,6 +98,21 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
     } catch (error) {
         saveError(error);
         return null;
+    }
+}
+
+async function closeBrowser() {
+    try {
+        if (page && !page.isClosed()) {
+            await page.close();
+        }
+        page = null;
+        if (browser && browser.isConnected()) {
+            await browser.close();
+        }
+        browser = null;
+    } catch (error) {
+        saveError(error);
     }
 }
 
