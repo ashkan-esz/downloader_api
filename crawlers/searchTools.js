@@ -15,54 +15,67 @@ let browser = null;
 let page = null;
 
 export async function wrapper_module(url, page_count, searchCB) {
-    headLessBrowser = (
-        url.includes('valamovie') ||
-        url.includes('digimovie') ||
-        url.includes('film2movie')
-    );
+    try {
+        headLessBrowser = (
+            url.includes('valamovie') ||
+            url.includes('digimovie') ||
+            url.includes('film2movie')
+        );
 
-    if (headLessBrowser) {
-        if (!page || !browser) {
-            browser = await puppeteer.launch({
-                args: [
-                    "--no-sandbox",
-                    "--single-process",
-                    "--no-zygote"
-                ]
-            });
-            page = await browser.newPage();
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+        if (headLessBrowser) {
+            if (!page || !browser) {
+                browser = await puppeteer.launch({
+                    headless: true,
+                    args: [
+                        "--no-sandbox",
+                        "--single-process",
+                        "--no-zygote"
+                    ]
+                });
+                page = await browser.newPage();
+                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+                await page.setViewport({ width: 1280, height: 800 });
+            }
         }
-    }
 
-    let forceWaitNumber = 35;
-    for (let i = 1; i <= page_count; i++) {
-        try {
-            let {$, links} = await getLinks(url + `${i}/`);
-            for (let j = 0; j < links.length; j++) {
-                if (process.env.NODE_ENV === 'dev') {
-                    await searchCB($(links[j]), i, $);
-                } else {
-                    if (j % forceWaitNumber === 0) {
+        let forceWaitNumber = 35;
+        for (let i = 1; i <= page_count; i++) {
+            try {
+                let {$, links} = await getLinks(url + `${i}/`);
+                for (let j = 0; j < links.length; j++) {
+                    if (process.env.NODE_ENV === 'dev') {
                         await searchCB($(links[j]), i, $);
                     } else {
-                        searchCB($(links[j]), i, $);
+                        if (j % forceWaitNumber === 0) {
+                            await searchCB($(links[j]), i, $);
+                        } else {
+                            searchCB($(links[j]), i, $);
+                        }
                     }
                 }
+            } catch (error) {
+                if (headLessBrowser) {
+                    await page.close();
+                    await browser.close();
+                    browser = null;
+                    page = null;
+                }
+                saveError(error);
             }
-        } catch (error) {
-            if (headLessBrowser) {
-                await browser.close();
-                browser = null;
-                page = null;
-            }
-            saveError(error);
         }
-    }
-    if (headLessBrowser) {
-        await browser.close();
-        browser = null;
-        page = null;
+        if (headLessBrowser) {
+            await page.close();
+            await browser.close();
+            browser = null;
+            page = null;
+        }
+    } catch (error) {
+        if (browser) {
+            await browser.close();
+            browser = null;
+            page = null;
+        }
+        saveError(error);
     }
 }
 
@@ -98,7 +111,8 @@ async function getLinks(url) {
         let $, links;
         if (headLessBrowser) {
             await page.goto(url);
-            $ = cheerio.load(await page.content());
+            let pageContent = await page.content();
+            $ = cheerio.load(pageContent);
             links = $('a');
         } else {
             let response = await axios.get(url);
