@@ -2,6 +2,7 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
+const puppeteer = require('puppeteer');
 const digimoviez = require('./sources/digimoviez');
 const film2media = require('./sources/film2media');
 const {getNewURl} = require("./utils");
@@ -22,29 +23,8 @@ export async function domainChangeHandler(sourcesObject) {
         let sources_url = Object.keys(sourcesObject).map(value => sourcesObject[value].movie_url);
         let domains = sources_url.map(value => value.replace(/www.|https:\/\/|\/page\/|\//g, ''));
         let changedDomains = [];
-        let isChanged = false;
-        for (let i = 0; i < domains.length; i++) {
-            let response;
-            try {
-                response = await axios.get('https://' + domains[i]);
-            } catch (error) {
-                try {
-                    response = await axios.get('https://www.' + domains[i]);
-                } catch (error2) {
-                    saveError(error2);
-                    continue;
-                }
-            }
-            let responseDomain = response.request.res.responseUrl.replace(/www.|https:\/\/|\/page\/|\//g, '');
-            if (domains[i] !== responseDomain) {//changed
-                isChanged = true;
-                sources_url[i] = sources_url[i]
-                    .replace(domains[i].split('.')[0], responseDomain.split('.')[0])
-                    .replace(domains[i].split('.')[1], responseDomain.split('.')[1]);
-                domains[i] = responseDomain;
-                changedDomains.push(responseDomain);
-            }
-        }
+
+        let isChanged = await checkDomainsUrl(sources_url, domains, changedDomains);
 
         if (isChanged) {
             await Sentry.captureMessage('start domain change handler');
@@ -64,6 +44,62 @@ export async function domainChangeHandler(sourcesObject) {
     } catch (error) {
         saveError(error);
     }
+}
+
+async function checkDomainsUrl(sources_url, domains, changedDomains) {
+    let isChanged = false;
+    let browser = await puppeteer.launch({
+        args: [
+            "--no-sandbox",
+            "--single-process",
+            "--no-zygote"
+        ]
+    });
+    let page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+
+    for (let i = 0; i < domains.length; i++) {
+        let headLessBrowser = (
+            domains[i].includes('valamovie') ||
+            domains[i].includes('digimovie') ||
+            domains[i].includes('film2movie')
+        );
+
+        let response;
+        try {
+            if (headLessBrowser) {
+                await page.goto('https://' + domains[i]);
+            } else {
+                response = await axios.get('https://' + domains[i]);
+            }
+        } catch (error) {
+            try {
+                if (headLessBrowser) {
+                    await page.goto('https://www.' + domains[i]);
+                } else {
+                    response = await axios.get('https://www.' + domains[i]);
+                }
+            } catch (error2) {
+                saveError(error2);
+                continue;
+            }
+        }
+
+        let responseDomain = headLessBrowser
+            ? page.url().replace(/www.|https:\/\/|\/page\/|\//g, '')
+            : response.request.res.responseUrl.replace(/www.|https:\/\/|\/page\/|\//g, '');
+
+        if (domains[i] !== responseDomain) {//changed
+            isChanged = true;
+            sources_url[i] = sources_url[i]
+                .replace(domains[i].split('.')[0], responseDomain.split('.')[0])
+                .replace(domains[i].split('.')[1], responseDomain.split('.')[1]);
+            domains[i] = responseDomain;
+            changedDomains.push(responseDomain);
+        }
+    }
+    await browser.close();
+    return isChanged;
 }
 
 function updateSourceFields(sourcesObject, sources, domains) {

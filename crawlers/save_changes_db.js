@@ -144,7 +144,6 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
             } else {
                 db_data.sources.push(result.sources[0]);
                 updateFields.sources = db_data.sources;
-                updateFields.update_date = new Date();
             }
         }
 
