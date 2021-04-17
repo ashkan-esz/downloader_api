@@ -28,8 +28,8 @@ export async function wrapper_module(url, page_count, searchCB) {
                     headless: true,
                     args: [
                         "--no-sandbox",
-                        "--single-process",
-                        "--no-zygote"
+                        // "--single-process",
+                        // "--no-zygote"
                     ]
                 });
                 page = await browser.newPage();
@@ -63,7 +63,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
-        if (headLessBrowser) {
+        if (headLessBrowser && browser) {
             await page.close();
             await browser.close();
             browser = null;
