@@ -111,7 +111,7 @@ function getTrailers($) {
                 let href = $(a[i]).attr('href');
                 result.push({
                     link: href,
-                    info: 'film2movie-720p'
+                    info: 'digimoviez-720p'
                 });
             }
         }

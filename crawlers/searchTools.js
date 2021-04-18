@@ -128,17 +128,40 @@ async function getLinks(url, mode) {
             $ = cheerio.load(response.data);
             links = $('a');
         } else if (headLessBrowser && mode === 1 && url.includes('digimovie')) {
-            let encodeUrl = encodeURIComponent(url);
-            let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
-            let response = await axios.get(cacheUrl + encodeUrl);
-            $ = cheerio.load(response.data);
-            links = $('a');
+            let cacheResult = await getFromGoogleCache(url);
+            $ = cacheResult.$;
+            links = cacheResult.links;
         } else {
-            await page.goto(url);
-            let pageContent = await page.content();
-            $ = cheerio.load(pageContent);
-            links = $('a');
+            try {
+                await page.goto(url);
+                let pageContent = await page.content();
+                $ = cheerio.load(pageContent);
+                links = $('a');
+            } catch (error) {
+                let cacheResult = await getFromGoogleCache(url);
+                $ = cacheResult.$;
+                links = cacheResult.links;
+            }
         }
+        if (links.length === 0) {
+            let cacheResult = await getFromGoogleCache(url);
+            $ = cacheResult.$;
+            links = cacheResult.links;
+        }
+        return {$, links};
+    } catch (error) {
+        saveError(error);
+        return {$: null, links: []};
+    }
+}
+
+async function getFromGoogleCache(url) {
+    try {
+        let encodeUrl = encodeURIComponent(url);
+        let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
+        let response = await axios.get(cacheUrl + encodeUrl);
+        let $ = cheerio.load(response.data);
+        let links = $('a');
         return {$, links};
     } catch (error) {
         saveError(error);
