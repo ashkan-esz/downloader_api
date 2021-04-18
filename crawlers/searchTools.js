@@ -123,8 +123,14 @@ async function closeBrowser() {
 async function getLinks(url, mode) {
     try {
         let $, links;
-        if (!headLessBrowser || (mode === 1 && url.includes('digimovie'))) {
+        if (!headLessBrowser) {
             let response = await axios.get(url);
+            $ = cheerio.load(response.data);
+            links = $('a');
+        } else if (headLessBrowser && mode === 1 && url.includes('digimovie')) {
+            let encodeUrl = encodeURIComponent(url);
+            let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
+            let response = await axios.get(cacheUrl + encodeUrl);
             $ = cheerio.load(response.data);
             links = $('a');
         } else {
