@@ -170,6 +170,9 @@ function get_file_size_movie($, link) {
         let index = link_href_array.indexOf(quality);
         return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1], dubbed, HardSub].filter(value => value).join('.');
     } else if (text_array.length === 2) {
+        if (text_array[1].match(/\d\d\d\dp|\d\d\dp/g)) {
+            return [text_array[1], text_array[0], dubbed, HardSub].filter(value => value).join('.');
+        }
         return [...text_array, dubbed, HardSub].filter(value => value).join('.');
     }
     if (text_array[2].match(/\d\d\d\dp|\d\d\dp/g) && text_array[0] === 'x265') {
