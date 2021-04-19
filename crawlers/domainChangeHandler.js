@@ -39,7 +39,7 @@ export async function domainChangeHandler(sourcesObject) {
             await collection.findOneAndUpdate({title: 'sources'}, {
                 $set: sourcesObject
             });
-            Sentry.captureMessage('source domain changed');
+            await Sentry.captureMessage('source domain changed');
         }
     } catch (error) {
         saveError(error);
@@ -173,6 +173,7 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (trailers[t].link.includes(changedSourcesName[k])) {
                         //todo : better trailer updater for valamovie/digimovie
+                        //todo : recrawl for valamovie
                         if (!trailers[k].link.includes('play.mylionstrailer')) {
                             trailerChanged = true;
                             let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];

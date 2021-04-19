@@ -159,9 +159,11 @@ async function getFromGoogleCache(url) {
     try {
         let encodeUrl = encodeURIComponent(url);
         let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
-        let response = await axios.get(cacheUrl + encodeUrl);
+        let webCacheUrl = cacheUrl + encodeUrl;
+        let response = await axios.get(webCacheUrl);
         let $ = cheerio.load(response.data);
         let links = $('a');
+        await new Promise((resolve => setTimeout(resolve, 500)));
         return {$, links};
     } catch (error) {
         saveError(error);

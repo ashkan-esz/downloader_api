@@ -14,10 +14,13 @@ router.post('/crawlAll/:password/:mode?', async (req, res) => {
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
+            let startTime = new Date();
             await startCrawling('all', mode);
             await setCache_all();
             crawling_flag = false;
-            return res.json('crawling ended! (all sources)');
+            let endTime = new Date();
+            let crawLingTime = endTime.getTime() - startTime.getTime();
+            return res.json(`crawling ended! (all sources) in ${crawLingTime} s`);
         } else {
             return res.json('wrong password!');
         }
@@ -35,10 +38,13 @@ router.post('/crawlSingleSource/:sourceNumber/:password/:mode?', async (req, res
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
+            let startTime = new Date();
             await startCrawling(sourceNumber, mode);
             await setCache_all();
             crawling_flag = false;
-            return res.json(`crawling ended! (source : ${sourceNumber})`);
+            let endTime = new Date();
+            let crawLingTime = endTime.getTime() - startTime.getTime();
+            return res.json(`crawling ended! (source : ${sourceNumber}) in ${crawLingTime} s`);
         } else {
             return res.json('wrong password!');
         }
@@ -54,10 +60,13 @@ router.post('/domainChange/:password', async (req, res) => {
             let collection = await getCollection('sources');
             let sources = await collection.findOne({title: 'sources'});
             crawling_flag = true;
+            let startTime = new Date();
             await domainChangeHandler(sources);
             await setCache_all();
             crawling_flag = false;
-            return res.json('domainChangeHandler api ended!');
+            let endTime = new Date();
+            let crawLingTime = endTime.getTime() - startTime.getTime();
+            return res.json(`domainChangeHandler api ended in ${crawLingTime} s`);
         } else {
             return res.json('wrong password!');
         }
