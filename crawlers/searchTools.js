@@ -22,37 +22,12 @@ export async function wrapper_module(url, page_count, searchCB) {
             url.includes('film2movie')
         );
 
-        if (headLessBrowser) {
-            if (!page || !browser || !browser.isConnected()) {
-                browser = await puppeteer.launch({
-                    headless: true,
-                    args: [
-                        "--no-sandbox",
-                        "--single-process",
-                        "--no-zygote"
-                    ]
-                });
-                page = await browser.newPage();
-                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-                await page.setViewport({width: 1280, height: 800});
-                await page.setDefaultTimeout(60000);
-                await page.setDefaultNavigationTimeout(60000);
-            }
-            if (page && page.isClosed()) {
-                page = await browser.newPage();
-                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-                await page.setViewport({width: 1280, height: 800});
-                await page.setDefaultTimeout(60000);
-                await page.setDefaultNavigationTimeout(60000);
-            }
-        }
-
         let forceWaitNumber = 35;
         for (let i = 1; i <= page_count; i++) {
             try {
                 let {$, links} = await getLinks(url + `${i}/`, 0);
                 for (let j = 0; j < links.length; j++) {
-                    if (process.env.NODE_ENV === 'dev') {
+                    if (process.env.NODE_ENV === 'dev' || headLessBrowser) {
                         await searchCB($(links[j]), i, $);
                     } else {
                         if (j % forceWaitNumber === 0) {
@@ -105,6 +80,33 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
     }
 }
 
+async function openBrowser() {
+    if (headLessBrowser) {
+        if (!page || !browser || !browser.isConnected()) {
+            browser = await puppeteer.launch({
+                headless: true,
+                args: [
+                    "--no-sandbox",
+                    "--single-process",
+                    "--no-zygote"
+                ]
+            });
+            page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+            await page.setViewport({width: 1280, height: 800});
+            await page.setDefaultTimeout(60000);
+            await page.setDefaultNavigationTimeout(60000);
+        }
+        if (page && page.isClosed()) {
+            page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+            await page.setViewport({width: 1280, height: 800});
+            await page.setDefaultTimeout(60000);
+            await page.setDefaultNavigationTimeout(60000);
+        }
+    }
+}
+
 async function closeBrowser() {
     try {
         if (page && !page.isClosed()) {
@@ -124,15 +126,22 @@ async function getLinks(url, mode) {
     try {
         let $, links;
         if (!headLessBrowser) {
-            let response = await axios.get(url);
-            $ = cheerio.load(response.data);
-            links = $('a');
+            try {
+                let response = await axios.get(url);
+                $ = cheerio.load(response.data);
+                links = $('a');
+            } catch (e) {
+                let cacheResult = await getFromGoogleCache(url);
+                $ = cacheResult.$;
+                links = cacheResult.links;
+            }
         } else if (headLessBrowser && mode === 1 && url.includes('digimovie')) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;
         } else {
             try {
+                await openBrowser();
                 await page.goto(url);
                 let pageContent = await page.content();
                 $ = cheerio.load(pageContent);
