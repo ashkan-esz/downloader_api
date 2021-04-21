@@ -125,6 +125,7 @@ async function closeBrowser() {
 async function getLinks(url, mode) {
     try {
         let $, links;
+        let triedGoogleCache = false;
         if (!headLessBrowser) {
             try {
                 let response = await axios.get(url);
@@ -134,11 +135,13 @@ async function getLinks(url, mode) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
+                triedGoogleCache = true;
             }
         } else if (headLessBrowser && mode === 1 && url.includes('digimovie')) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;
+            triedGoogleCache = true;
         } else {
             try {
                 await openBrowser();
@@ -150,9 +153,10 @@ async function getLinks(url, mode) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
+                triedGoogleCache = true;
             }
         }
-        if (links.length === 0) {
+        if (links.length === 0 && !triedGoogleCache) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;
@@ -172,7 +176,7 @@ async function getFromGoogleCache(url) {
         let response = await axios.get(webCacheUrl);
         let $ = cheerio.load(response.data);
         let links = $('a');
-        await new Promise((resolve => setTimeout(resolve, 500)));
+        await new Promise((resolve => setTimeout(resolve, 100)));
         return {$, links};
     } catch (error) {
         saveError(error);

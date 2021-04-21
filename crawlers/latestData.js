@@ -1,4 +1,4 @@
-const {getSeasonEpisode, checkBetterQuality, getHardSub, getDubbed} = require("./utils");
+const {getSeasonEpisode, checkBetterQuality, checkHardSub, checkDubbed} = require("./utils");
 
 export function handleLatestDataUpdate(db_data, latestData, type) {
     let changed = false;
@@ -66,24 +66,24 @@ export function getLatestData(site_links, type) {
                 latestSeason = season;
                 latestEpisode = episode;
                 latestQuality = info;
-                hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+                hardSub = checkHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
             } else if (season === latestSeason) {
                 if (episode > latestEpisode) {
                     latestEpisode = episode;
                     latestQuality = info;
-                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+                    hardSub = checkHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                    dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
                 } else if (episode === latestEpisode) {
                     latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
-                    hardSub = getHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
-                    dubbed = getDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
+                    hardSub = checkHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
+                    dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
                 }
             }
         } else if (type === 'movie') {
             latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
-            hardSub = getHardSub(info) || hardSub;
-            dubbed = getDubbed(link, info) || dubbed;
+            hardSub = checkHardSub(info) || hardSub;
+            dubbed = checkDubbed(link, info) || dubbed;
         }
     }
     return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};

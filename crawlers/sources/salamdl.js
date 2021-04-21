@@ -110,7 +110,7 @@ function getTrailers($) {
 function get_file_size($, link, type) {
     //'720p.x265.WEB-DL - 200MB'    //'480p.WEB-DL - 150MB'
     //'720p.WEB-DL.YTS - 848.85MB'  //'1080p.x265.10bit.WEB-DL.PSA - 1.98GB'
-    let text_array;
+    let text_array = [];
     try {
         if (type === 'serial') {
             return get_file_size_serial($, link);

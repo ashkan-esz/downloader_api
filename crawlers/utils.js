@@ -64,15 +64,21 @@ export function getType(title) {
         ? 'movie' : 'serial';
 }
 
-export function getDubbed(link, info) {
+export function checkDubbed(link, info) {
     link = link.toLowerCase();
     info = info.toLowerCase();
-    return (link.includes('farsi') || link.includes('dub') || info.includes('dubbed'));
+    return (
+        link.includes('farsi') ||
+        link.includes('dub') ||
+        info.includes('farsi') ||
+        info.includes('dubbed') ||
+        info.includes('دوبله فارسی')
+    );
 }
 
-export function getHardSub(info) {
-    info = info.toLowerCase();
-    return (info.includes('softsub') || info.includes('hardsub'));
+export function checkHardSub(input) {
+    input = input.toLowerCase();
+    return (input.includes('softsub') || input.includes('hardsub'));
 }
 
 export function getYear(page_link, save_link) {

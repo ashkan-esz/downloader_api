@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words} = require('../utils');
+const {remove_persian_words, checkDubbed} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -130,7 +130,7 @@ function getTrailers($) {
 }
 
 function get_file_size($, link, type) {
-    //'1080p.WEB-DL - 750MB' //'720p.x265.WEB-DL - 230MB'
+    //'1080p.WEB-DL.SoftSub - 750MB' //'720p.x265.WEB-DL - 230MB'
     //'1080p.BluRay.dubbed - 1.77GB' //'1080p.x265.BluRay.RMTeam - 1.17GB'
     try {
         if (type === 'serial') {
@@ -147,6 +147,9 @@ function get_file_size_serial($, link) {
     let text_array = $(link).parent().parent().parent().parent().prev().text().trim().split('/');
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let quality, dubbed, size, link_quality;
+    let sub = $(link).attr('href').toLowerCase().includes('softsub')
+        ? 'SoftSub'
+        : $(link).attr('href').toLowerCase().includes('HardSub') ? 'HardSub' : '';
     if (text_array.length === 1) {
         quality = $(link).text().split(/[\s-]/g).filter((text) => !persianRex.hasLetter.test(text) && text !== '' && isNaN(text));
         if (quality[0] === 'X265') {
@@ -170,7 +173,7 @@ function get_file_size_serial($, link) {
         dubbed = result.dubbed;
         size = result.size;
     }
-    let info = [link_quality, quality[1], ...quality.slice(2), bit10, quality[0], dubbed].filter(value => value).join('.');
+    let info = [link_quality, quality[1], ...quality.slice(2), bit10, quality[0], dubbed, sub].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -204,9 +207,9 @@ function get_file_size_movie($, link) {
             .replace('گیگابایت', 'GB')
             .replace(/\s/g, '');
     }
-    let info = (quality[2] === '10bit') ?
-        [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.') :
-        [quality[1], ...quality.slice(2), quality[0], bit10, encoder, dubbed].filter(value => value).join('.')
+    let info = (quality[2] === '10bit')
+        ? [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.')
+        : [quality[1], ...quality.slice(2), quality[0], bit10, encoder, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value !== '').join(' - ');
 }
 
@@ -214,9 +217,8 @@ function serial_text_length_2(text_array, $, link, bit10) {
     let quality = text_array[1].replace('کیفیت :', '').trim().split(' ');
     let link_href = $(link).attr('href').toLowerCase();
     let x265 = (link_href.includes('x265')) ? 'x265' : '';
-    let case1 = link_href.match(/\d\d\d\dp/g);
-    let case2 = link_href.match(/\d\d\dp/g);
-    let link_quality = case1 ? case1[0] : (case2 ? case2[0] : 'DVDrip');
+    let case1 = link_href.match(/\d\d\d\dp|\d\d\dp/g);
+    let link_quality = case1 ? case1[0] : 'DVDrip';
     if (quality.length === 2) {
         if (quality.includes('فارسی')) {
             quality.pop();
@@ -229,10 +231,15 @@ function serial_text_length_2(text_array, $, link, bit10) {
 function serial_text_length_3(text_array, $, link, qualityIndex, dubbedIndex) {
     let quality = text_array[qualityIndex].replace('کیفیت :', '').trim().split(' ');
     let link_href = $(link).attr('href').toLowerCase();
-    let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') ||
-        link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
+    let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') || checkDubbed(link_href, '')) ? 'dubbed' : '';
     let temp = text_array[dubbedIndex].replace('میانگین حجم:', '').replace('مگابایت', 'MB');
     let size = (dubbed) ? '' : temp.replace(/\s/g, '');
+    if (quality.length === 2 && quality[0].match(/\d\d\d\dp|\d\d\dp/g)) {
+        quality = quality.reverse();
+    }
+    if (!quality.includes('x265') && link_href.includes('x265')) {
+        quality.push('x265');
+    }
     return {quality, dubbed, size};
 }
 

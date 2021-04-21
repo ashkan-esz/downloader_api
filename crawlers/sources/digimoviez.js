@@ -167,7 +167,7 @@ function get_file_size_serial($, link) {
         return [info, size].filter(value => value).join(' - ');
     } else if (text_array.length === 3) {
         dubbed = (text_array[2].includes('زبان : فارسی')) ? 'dubbed' : '';
-        let temp = text_array[2].replace(/:/g, '').split(' ')
+        let temp = text_array[2].replace(/:/g, '').split(' ');
         size = temp.filter((text) => !persianRex.hasLetter.test(text) && !isNaN(text)).pop() + 'MB';
         quality = temp.filter((text) => !persianRex.hasLetter.test(text) && isNaN(text)).join('.');
     } else {
@@ -224,7 +224,7 @@ function get_serial_text_len1(text_array) {
     if (size !== '') {
         size = text_array.pop() + MB_GB;
     }
-    let info = (text_array.length === 2 && text_array[1].match(/\d\d\dp/g))
+    let info = (text_array.length === 2 && text_array[1].match(/|\d\d\d\dp\d\d\dp/g))
         ? [text_array[1], text_array[0]].join('.')
         : text_array.join('.').trim();
     return {info, size};
@@ -256,9 +256,8 @@ function sortQualityInfo(quality) {
 function get_movie_quality($, link) {
     let link_href = $(link).attr('href').toLowerCase();
     let link_href_array = link_href.split(/[._]/g);
-    let case1 = link_href.match(/\d\d\d\dp/g);
-    let case2 = link_href.match(/\d\d\dp/g);
-    let link_quality = case1 ? case1.pop() : (case2 ? case2.pop() : '');
+    let case1 = link_href.match(/\d\d\d\dp|\d\d\dp/g);
+    let link_quality = case1 ? case1.pop() : '';
     let index = link_href_array.indexOf(link_quality);
     return link_href_array.slice(index, index + 2).join('.');
 }
