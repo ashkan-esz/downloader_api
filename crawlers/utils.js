@@ -162,13 +162,14 @@ export function checkSource(case1, case2) {
     return source_name === new_source_name;
 }
 
-export function getNewURl(url, newDomain) {
+export function getNewURl(url, currentUrl) {
     let domain = url
         .replace(/www.|https:\/\/|\/page\//g, '')
-        .replace(/[\/_-]/g, '.');
-    return url
-        .replace(domain.split('.')[0], newDomain.split('.')[0])
-        .replace(domain.split('.')[1], newDomain.split('.')[1]);
+        .split('/')[0];
+    let currentDomain = currentUrl
+        .replace(/www.|https:\/\/|\/page\//g, '')
+        .split('/')[0];
+    return url.replace(domain, currentDomain);
 }
 
 export function checkBetterQuality(quality, prevQuality) {

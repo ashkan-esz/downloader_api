@@ -16,22 +16,25 @@ axiosRetry(axios, {
 
 //todo : add digimovie domain change handler --> source link is fixed , download links change
 
-export async function domainChangeHandler(sourcesObject) {
+export async function domainChangeHandler(sourcesObject, newValaMovieTrailerUrl) {
     try {
         delete sourcesObject._id;
         delete sourcesObject.title;
-        let sources_url = Object.keys(sourcesObject).map(value => sourcesObject[value].movie_url);
-        let domains = sources_url.map(value => value.replace(/www.|https:\/\/|\/page\/|\//g, ''));
+        let sourcesUrls = Object.keys(sourcesObject).map(value => sourcesObject[value].movie_url);
         let changedDomains = [];
 
-        let isChanged = await checkDomainsUrl(sources_url, domains, changedDomains);
+        let isChanged = await checkSourcesUrl(sourcesUrls, changedDomains);
+
+        let valaMovieTrailerUrls = [sourcesObject.valamovie.trailer_url, newValaMovieTrailerUrl];
+        if (newValaMovieTrailerUrl) {
+            sourcesObject.valamovie.trailer_url = newValaMovieTrailerUrl;
+        }
 
         if (isChanged) {
             await Sentry.captureMessage('start domain change handler');
-            updateSourceFields(sourcesObject, sources_url, domains);
+            updateSourceFields(sourcesObject, sourcesUrls);
             await Sentry.captureMessage('start domain change handler (poster/trailer)');
-            await update_Poster_Trailers(domains, changedDomains, 'movies');
-            await update_Poster_Trailers(domains, changedDomains, 'serials');
+            await update_Poster_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls);
             await Sentry.captureMessage('start domain change handler (download links)');
             await updateDownloadLinks(sourcesObject, changedDomains);
 
@@ -40,93 +43,95 @@ export async function domainChangeHandler(sourcesObject) {
                 $set: sourcesObject
             });
             await Sentry.captureMessage('source domain changed');
+        } else if (valaMovieTrailerUrls[0] !== valaMovieTrailerUrls[1] && valaMovieTrailerUrls[1]) {
+            await Sentry.captureMessage('start domain change handler for valamovie trailers');
+            await updateValaMovieTrailers(valaMovieTrailerUrls);
+            let collection = await getCollection('sources');
+            await collection.findOneAndUpdate({title: 'sources'}, {
+                $set: sourcesObject
+            });
+            await Sentry.captureMessage('domain change handler for valamovie trailers --end');
         }
     } catch (error) {
-        saveError(error);
+        await saveError(error);
     }
 }
 
-async function checkDomainsUrl(sources_url, domains, changedDomains) {
+async function checkSourcesUrl(sourcesUrls, changedDomains) {
     let isChanged = false;
-    let browser = await puppeteer.launch({
-        args: [
-            "--no-sandbox",
-            "--single-process",
-            "--no-zygote"
-        ]
-    });
-    let page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+    try {
+        let browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                "--no-sandbox",
+                "--single-process",
+                "--no-zygote"
+            ]
+        });
+        let page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
 
-    for (let i = 0; i < domains.length; i++) {
-        let headLessBrowser = (
-            domains[i].includes('valamovie') ||
-            domains[i].includes('digimovie') ||
-            domains[i].includes('film2movie')
-        );
+        for (let i = 0; i < sourcesUrls.length; i++) {
+            let headLessBrowser = (
+                sourcesUrls[i].includes('valamovie') ||
+                sourcesUrls[i].includes('digimovie') ||
+                sourcesUrls[i].includes('film2movie')
+            );
 
-        let response;
-        try {
-            if (headLessBrowser) {
-                await page.goto('https://' + domains[i]);
-            } else {
-                response = await axios.get('https://' + domains[i]);
-            }
-        } catch (error) {
+            let response;
             try {
                 if (headLessBrowser) {
-                    await page.goto('https://www.' + domains[i]);
+                    await page.goto(sourcesUrls[i].replace('/page/', ''));
                 } else {
-                    response = await axios.get('https://www.' + domains[i]);
+                    response = await axios.get(sourcesUrls[i].replace('/page/', ''));
                 }
-            } catch (error2) {
-                saveError(error2);
+            } catch (error) {
+                await saveError(error);
                 continue;
             }
-        }
 
-        let responseDomain = headLessBrowser
-            ? page.url().replace(/www.|https:\/\/|\/page\/|\//g, '')
-            : response.request.res.responseUrl.replace(/www.|https:\/\/|\/page\/|\//g, '');
+            let responseUrl = headLessBrowser ? page.url() : response.request.res.responseUrl;
+            let newUrl = getNewURl(sourcesUrls[i], responseUrl);
 
-        if (domains[i] !== responseDomain) {//changed
-            isChanged = true;
-            sources_url[i] = sources_url[i]
-                .replace(domains[i].split('.')[0], responseDomain.split('.')[0])
-                .replace(domains[i].split('.')[1], responseDomain.split('.')[1]);
-            domains[i] = responseDomain;
-            changedDomains.push(responseDomain);
+            if (sourcesUrls[i] !== newUrl) {//changed
+                isChanged = true;
+                sourcesUrls[i] = newUrl;
+                changedDomains.push(responseUrl);
+            }
         }
+        await browser.close();
+        return isChanged;
+    } catch (error) {
+        await saveError(error);
+        return isChanged;
     }
-    await browser.close();
-    return isChanged;
 }
 
-function updateSourceFields(sourcesObject, sources, domains) {
-    sourcesObject.digimoviez.movie_url = sources[0];
-    sourcesObject.digimoviez.serial_url = getNewURl(sourcesObject.digimoviez.serial_url, domains[0]);
+function updateSourceFields(sourcesObject, sourcesUrls) {
+    sourcesObject.digimoviez.movie_url = sourcesUrls[0];
+    sourcesObject.digimoviez.serial_url = getNewURl(sourcesObject.digimoviez.serial_url, sourcesUrls[0]);
 
-    sourcesObject.film2media.movie_url = sources[1];
+    sourcesObject.film2media.movie_url = sourcesUrls[1];
 
-    sourcesObject.film2movie.movie_url = sources[2];
+    sourcesObject.film2movie.movie_url = sourcesUrls[2];
 
-    sourcesObject.salamdl.movie_url = sources[3];
+    sourcesObject.salamdl.movie_url = sourcesUrls[3];
 
-    sourcesObject.valamovie.movie_url = sources[4];
-    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.valamovie.serial_url, domains[4]);
+    sourcesObject.valamovie.movie_url = sourcesUrls[4];
+    sourcesObject.valamovie.serial_url = getNewURl(sourcesObject.valamovie.serial_url, sourcesUrls[4]);
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // film2media
+    // digimoviez - film2media
     for (let i = 0; i < changedDomains.length; i++) {
-        let domain = changedDomains[i];
+        let domain = changedDomains[i].replace(/\d/g, '');
         if (domain.includes('digimoviez')) {
             let startTime = new Date();
             await Sentry.captureMessage('start domain change handler (digimoviez reCrawl start)');
             await digimoviez({
                 ...sourcesObject.digimoviez,
-                page_count: 327,
-                serial_page_count: 48
+                page_count: 330,
+                serial_page_count: 50
             });
             let endTime = new Date();
             let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
@@ -136,7 +141,7 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
             await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
             await film2media({
                 ...sourcesObject.film2media,
-                page_count: 380,
+                page_count: 390,
             });
             let endTime = new Date();
             let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
@@ -145,12 +150,13 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
     }
 }
 
-export async function update_Poster_Trailers(domains, changedDomains, collectionName) {
-    let collection = await getCollection(collectionName);
+export async function update_Poster_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls) {
+    let collection = await getCollection('movies');
     let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
-    let sourcesNames = domains.map(value => value.replace(/\d/g, '').split('.')[0]);
-    let changedSourcesName = changedDomains.map(value => value.replace(/\d/g, '').split('.')[0]);
+    let sourcesNames = sourcesUrls.map(value => value.replace(/www.|https:\/\/|\/page\//g, '').split(/[\/.]/g)[0]);
+    let changedSourcesName = changedDomains.map(value => value.replace(/www.|https:\/\/|\/page\//g, '').split(/[\/.]/g)[0]);
     let promiseArray = [];
+
     for (let i = 0; i < docs_array.length; i++) {
         let posterChanged = false;
         let trailerChanged = false;
@@ -162,8 +168,8 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (posters[j].includes(changedSourcesName[k])) {
                         posterChanged = true;
-                        let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                        posters[j] = getNewURl(posters[j], newDomain);
+                        let currentUrl = sourcesUrls[sourcesNames.indexOf(changedSourcesName[k])];
+                        posters[j] = getNewURl(posters[j], currentUrl);
                         break;
                     }
                 }
@@ -171,13 +177,21 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
 
             for (let t = 0; t < trailers.length; t++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
-                    if (trailers[t].link.includes(changedSourcesName[k])) {
-                        //todo : better trailer updater for valamovie/digimovie
-                        //todo : recrawl for valamovie
-                        if (!trailers[k].link.includes('play.mylionstrailer')) {
+                    if (trailers[t].link.includes(changedSourcesName[k]) ||
+                        trailers[t].info.includes(changedSourcesName[k])) {
+                        //todo : better trailer updater for digimoviez
+                        if (trailers[t].info.includes('valamovie')) {
+                            //valamovie
+                            if (valaMovieTrailerUrls[1]) {
+                                trailerChanged = true;
+                                trailers[t].link = getNewURl(trailers[t].link, valaMovieTrailerUrls[1]);
+                            }
+                            break;
+                        } else {
+                            //others
                             trailerChanged = true;
-                            let newDomain = domains[sourcesNames.indexOf(changedSourcesName[k])];
-                            trailers[t].link = getNewURl(trailers[t].link, newDomain);
+                            let currentUrl = sourcesUrls[sourcesNames.indexOf(changedSourcesName[k])];
+                            trailers[t].link = getNewURl(trailers[t].link, currentUrl);
                             break;
                         }
                     }
@@ -200,7 +214,43 @@ export async function update_Poster_Trailers(domains, changedDomains, collection
             });
             promiseArray.push(resultPromise);
         }
-        if (i % 100 === 0) {
+        if (promiseArray.length === 100) {
+            await Promise.all(promiseArray);
+            promiseArray = [];
+        }
+    }
+}
+
+async function updateValaMovieTrailers(valaMovieTrailerUrls) {
+    let collection = await getCollection('movies');
+    let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
+    let promiseArray = [];
+
+    for (let i = 0; i < docs_array.length; i++) {
+        let trailerChanged = false;
+        let trailers = docs_array[i].trailers || [];
+        try {
+            for (let t = 0; t < trailers.length; t++) {
+                if (trailers[t].info.includes('valamovie')) {
+                    //valamovie
+                    trailerChanged = true;
+                    trailers[t].link = getNewURl(trailers[t].link, valaMovieTrailerUrls[1]);
+                }
+            }
+        } catch (error) {
+            await saveError(error);
+        }
+
+        if (trailerChanged) {
+            let resultPromise = collection.findOneAndUpdate({_id: docs_array[i]._id}, {
+                $set: {
+                    trailers: trailers
+                }
+            });
+            promiseArray.push(resultPromise);
+        }
+
+        if (promiseArray.length === 100) {
             await Promise.all(promiseArray);
             promiseArray = [];
         }

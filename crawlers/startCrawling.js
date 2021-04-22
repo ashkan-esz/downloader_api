@@ -16,6 +16,7 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
 
             let collection = await getCollection('sources');
             let sources = await collection.findOne({title: 'sources'});
+            let valaMovieTrailerUrl = "";
 
             if (sourceNumber === 'all') {
                 await digimoviez({
@@ -35,7 +36,7 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                     ...sources.salamdl,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 100,
                 });
-                await valamovie({
+                valaMovieTrailerUrl = await valamovie({
                     ...sources.valamovie,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 895,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 57,
@@ -62,7 +63,7 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 100,
                 });
             } else if (sourceNumber === 4) {
-                await valamovie({
+                valaMovieTrailerUrl = await valamovie({
                     ...sources.valamovie,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 895,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 57,
@@ -70,14 +71,14 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
             }
 
 
-            await domainChangeHandler(sources);
+            await domainChangeHandler(sources, valaMovieTrailerUrl);
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();
             await Sentry.captureMessage(`crawling done in : ${crawling_time}ms`);
             resolve();
         } catch (error) {
-            saveError(error);
+            await saveError(error);
             reject();
         }
     });

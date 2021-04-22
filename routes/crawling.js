@@ -61,7 +61,7 @@ router.post('/domainChange/:password', async (req, res) => {
             let sources = await collection.findOne({title: 'sources'});
             crawling_flag = true;
             let startTime = new Date();
-            await domainChangeHandler(sources);
+            await domainChangeHandler(sources, '');
             await setCache_all();
             crawling_flag = false;
             let endTime = new Date();

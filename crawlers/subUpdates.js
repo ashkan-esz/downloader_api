@@ -1,5 +1,5 @@
-const {checkSource, getNewURl} = require('./utils');
 const {handleLatestDataUpdate} = require("./latestData");
+const {checkSource} = require('./utils');
 
 export function handleSubUpdates(db_data, poster, trailers, result, type) {
     let posterChange = handlePosterUpdate(db_data, poster);
@@ -61,11 +61,10 @@ function handleTrailerUpdate(db_data, site_trailers) {
 }
 
 export function handleUrlUpdate(thiaSource, page_link) {
-    let newDomain = page_link
-        .replace(/www.|https:\/\/|\/page\//g, '')
-        .replace(/[\/_-]/g, '.');
-    let newUrl = getNewURl(thiaSource.url, newDomain);
-    if (thiaSource.url !== newUrl) {
+    if (page_link.includes('webcache')) {
+        return false;
+    }
+    if (thiaSource.url !== page_link) {
         thiaSource.url = page_link;
         return true;
     }
