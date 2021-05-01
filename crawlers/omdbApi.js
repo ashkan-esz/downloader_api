@@ -73,31 +73,6 @@ export function get_OMDB_Api_Fields(data, summary, type) {
     return collectedData;
 }
 
-export function get_OMDB_Api_nullFields(summary, type) {
-    summary.english = '';
-    let collectedData = {
-        totalSeasons: '',
-        boxOffice: '',
-        summary: summary,
-        rawTitle: "",
-        imdbID: "",
-        rated: "",
-        movieLang: "",
-        country: "",
-        genres: [],
-        rating: [],
-        duration: "",
-        director: "",
-        writer: "",
-        cast: [],
-        awards: "",
-    };
-    if (type === 'movie') {
-        collectedData.premiered = '';
-    }
-    return collectedData;
-}
-
 export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons, duration, lastSeasonsOnly = false) {
     try {
         let seasons = [];

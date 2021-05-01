@@ -1,43 +1,43 @@
-const {get_OMDB_Api_Data, get_OMDB_Api_Fields, get_OMDB_Api_nullFields} = require('./omdbApi');
+const {get_OMDB_Api_Data, get_OMDB_Api_Fields} = require('./omdbApi');
 const {handleSeasonEpisodeUpdate, getTotalDuration} = require('./seasonEpisode');
 
-export async function addApiData(result, site_links) {
-    result.apiUpdateDate = new Date();
+export async function addApiData(titleModel, site_links) {
+    titleModel.apiUpdateDate = new Date();
 
-    let omdb_data = await get_OMDB_Api_Data(result.title, result.premiered, result.type);
-    let updateFields = (omdb_data === null) ?
-        get_OMDB_Api_nullFields(result.summary, result.type) :
-        get_OMDB_Api_Fields(omdb_data, result.summary, result.type);
-    result = {...result, ...updateFields};
-
-    if (result.type === 'serial') {
-        let {tvmazeApi_data} = await handleSeasonEpisodeUpdate(result, site_links, updateFields.totalSeasons, false);
-        if (omdb_data === null) {
-            //title doesnt exist in omdb api
-            result.genres = tvmazeApi_data ? tvmazeApi_data.genres : [];
-            result.duration = tvmazeApi_data ? tvmazeApi_data.duration : '0 min';
-        } else if (tvmazeApi_data && tvmazeApi_data.isAnime) {
-            result.genres.push('anime');
-        }
-        result.tvmazeID = tvmazeApi_data ? tvmazeApi_data.tvmazeID : 0;
-        result.isAnimation = tvmazeApi_data ? tvmazeApi_data.isAnimation : false;
-        result.status = tvmazeApi_data ? tvmazeApi_data.status : 'unknown';
-        result.premiered = tvmazeApi_data ? tvmazeApi_data.premiered : '';
-        if (tvmazeApi_data) {
-            result.year = tvmazeApi_data.premiered.split('-')[0];
-        }
-        result.officialSite = tvmazeApi_data ? tvmazeApi_data.officialSite : '';
-        result.releaseDay = tvmazeApi_data ? tvmazeApi_data.releaseDay : '';
-        if (!result.imdbID) {
-            result.imdbID = tvmazeApi_data ? tvmazeApi_data.imdbID : '';
-        }
-        if (!result.summary.english) {
-            result.summary.english = tvmazeApi_data ? tvmazeApi_data.summary : '';
-        }
-        result.totalDuration = getTotalDuration(result.episodes, result.latestData);
+    let omdb_data = await get_OMDB_Api_Data(titleModel.title, titleModel.premiered, titleModel.type);
+    if (omdb_data !== null) {
+        let updateFields = get_OMDB_Api_Fields(omdb_data, titleModel.summary, titleModel.type);
+        titleModel = {...titleModel, ...updateFields};
     }
 
-    return result;
+    if (titleModel.type === 'serial') {
+        let {tvmazeApi_data} = await handleSeasonEpisodeUpdate(titleModel, site_links, titleModel.totalSeasons, false);
+        if (omdb_data === null) {
+            //title doesnt exist in omdb api
+            titleModel.genres = tvmazeApi_data ? tvmazeApi_data.genres : [];
+            titleModel.duration = tvmazeApi_data ? tvmazeApi_data.duration : '0 min';
+        } else if (tvmazeApi_data && tvmazeApi_data.isAnime) {
+            titleModel.genres.push('anime');
+        }
+        titleModel.tvmazeID = tvmazeApi_data ? tvmazeApi_data.tvmazeID : 0;
+        titleModel.isAnimation = tvmazeApi_data ? tvmazeApi_data.isAnimation : false;
+        titleModel.status = tvmazeApi_data ? tvmazeApi_data.status : 'unknown';
+        titleModel.premiered = tvmazeApi_data ? tvmazeApi_data.premiered : '';
+        if (tvmazeApi_data) {
+            titleModel.year = tvmazeApi_data.premiered.split('-')[0];
+        }
+        titleModel.officialSite = tvmazeApi_data ? tvmazeApi_data.officialSite : '';
+        titleModel.releaseDay = tvmazeApi_data ? tvmazeApi_data.releaseDay : '';
+        if (!titleModel.imdbID) {
+            titleModel.imdbID = tvmazeApi_data ? tvmazeApi_data.imdbID : '';
+        }
+        if (!titleModel.summary.english) {
+            titleModel.summary.english = tvmazeApi_data ? tvmazeApi_data.summary : '';
+        }
+        titleModel.totalDuration = getTotalDuration(titleModel.episodes, titleModel.latestData);
+    }
+
+    return titleModel;
 }
 
 export async function apiDataUpdate(db_data, site_links) {

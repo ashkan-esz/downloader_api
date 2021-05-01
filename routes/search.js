@@ -3,6 +3,7 @@ const getCollection = require("../mongoDB");
 const {dataConfig} = require("./configs");
 const {ObjectId} = require("mongodb");
 
+//todo : improve search by using search index
 
 //search/searchByTitle/:title/:types/:dataLevel/:page/:count?
 router.get('/searchByTitle/:title/:types/:dataLevel/:page/:count?', async (req, res) => {

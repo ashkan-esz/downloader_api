@@ -5,12 +5,11 @@ export function handleSubUpdates(db_data, poster, trailers, result, type) {
     let posterChange = handlePosterUpdate(db_data, poster);
     let trailerChange = handleTrailerUpdate(db_data, trailers);
     let latestDataChange = handleLatestDataUpdate(db_data, result.latestData, type);
-    let hasChangedField = posterChange || trailerChange || latestDataChange;
+
     return {
         posterChange,
         trailerChange,
         latestDataChange,
-        hasChangedField
     };
 }
 
@@ -19,10 +18,10 @@ function handlePosterUpdate(db_data, poster) {
         return false;
     }
 
-    for (let i = 0; i < db_data.poster.length; i++) {
-        if (checkSource(db_data.poster[i], poster)) {//this poster exist
-            if (db_data.poster[i] !== poster) { //replace link
-                db_data.poster[i] = poster;
+    for (let i = 0; i < db_data.posters.length; i++) {
+        if (checkSource(db_data.posters[i], poster)) {//this poster exist
+            if (db_data.posters[i] !== poster) { //replace link
+                db_data.posters[i] = poster;
                 return true;
             } else {
                 return false;
@@ -30,7 +29,7 @@ function handlePosterUpdate(db_data, poster) {
         }
     }
 
-    db_data.poster.push(poster); //new poster
+    db_data.posters.push(poster); //new poster
     return true;
 }
 

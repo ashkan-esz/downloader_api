@@ -25,7 +25,7 @@ export async function wrapper_module(url, page_count, searchCB) {
         let forceWaitNumber = 35;
         for (let i = 1; i <= page_count; i++) {
             try {
-                let {$, links} = await getLinks(url + `${i}/`, 0);
+                let {$, links} = await getLinks(url + `${i}/`);
                 for (let j = 0; j < links.length; j++) {
                     if (process.env.NODE_ENV === 'dev' || headLessBrowser) {
                         await searchCB($(links[j]), i, $);
@@ -55,7 +55,7 @@ export async function wrapper_module(url, page_count, searchCB) {
 
 export async function search_in_title_page(title_array, page_link, type, get_file_size) {
     try {
-        let {$, links} = await getLinks(page_link, 1);
+        let {$, links} = await getLinks(page_link);
         if ($ === null) {
             return null;
         }
@@ -122,7 +122,7 @@ async function closeBrowser() {
     }
 }
 
-async function getLinks(url, mode) {
+async function getLinks(url) {
     try {
         let $, links;
         let triedGoogleCache = false;
@@ -131,17 +131,12 @@ async function getLinks(url, mode) {
                 let response = await axios.get(url);
                 $ = cheerio.load(response.data);
                 links = $('a');
-            } catch (e) {
+            } catch (error) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
                 triedGoogleCache = true;
             }
-        } else if (headLessBrowser && mode === 1 && url.includes('digimovie')) {
-            let cacheResult = await getFromGoogleCache(url);
-            $ = cacheResult.$;
-            links = cacheResult.links;
-            triedGoogleCache = true;
         } else {
             try {
                 await openBrowser();
@@ -163,7 +158,7 @@ async function getLinks(url, mode) {
         }
         return {$, links};
     } catch (error) {
-        saveError(error);
+        await saveError(error);
         return {$: null, links: []};
     }
 }

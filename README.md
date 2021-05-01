@@ -2,7 +2,7 @@ dataConfig = {
     low: {
         title: 1,
         premiered: 1,
-        poster: 1,
+        posters: 1,
         type: 1,
         rawTitle: 1,
         rating: 1,
@@ -11,7 +11,7 @@ dataConfig = {
     medium: {
         title: 1,
         premiered: 1,
-        poster: 1,
+        posters: 1,
         type: 1,
         rawTitle: 1,
         rating: 1,
@@ -27,8 +27,8 @@ dataConfig = {
 
 extraInfo = {
     onlineStreamingSources: ['film2movie', 'salamdl', 'film2media'],
-    highQualityPoster: ['salamdl', 'valamovie', 'film2media'],
-    lowQualityPoster: ['digimovies', 'topmovie', 'film2movies'],
+    highQualityPosters: ['salamdl', 'valamovie', 'film2media'],
+    lowQualityPosters: ['digimovies', 'topmovie', 'film2movies'],
 }
 
 

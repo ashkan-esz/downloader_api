@@ -3,7 +3,7 @@ export const dataConfig = {
         title: 1,
         year: 1,
         premiered: 1,
-        poster: 1,
+        posters: 1,
         type: 1,
         rawTitle: 1,
         rating: 1,
@@ -13,7 +13,7 @@ export const dataConfig = {
         title: 1,
         year: 1,
         premiered: 1,
-        poster: 1,
+        posters: 1,
         type: 1,
         rawTitle: 1,
         rating: 1,
@@ -31,5 +31,5 @@ export const dataConfig = {
 
 export const extraInfo = {
     onlineStreamingSources: ['film2movie', 'salamdl', 'film2media'],
-    sortPoster: ['salamdl', 'valamovie', 'film2media', 'film2movies'],
+    sortPosters: ['salamdl', 'valamovie', 'film2media', 'film2movies'],
 }

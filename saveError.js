@@ -2,7 +2,7 @@ const Sentry = require('@sentry/node');
 
 export async function saveError(error) {
     if (process.env.NODE_ENV === 'production') {
-        Sentry.captureException(error);
+        await Sentry.captureException(error);
     } else {
         console.log(error);
         console.log();

@@ -15,6 +15,7 @@ axiosRetry(axios, {
 });
 
 //todo : add digimovie domain change handler --> source link is fixed , download links change
+//todo : better trailer updater for digimoviez
 
 export async function domainChangeHandler(sourcesObject, newValaMovieTrailerUrl) {
     try {
@@ -33,8 +34,8 @@ export async function domainChangeHandler(sourcesObject, newValaMovieTrailerUrl)
         if (isChanged) {
             await Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObject, sourcesUrls);
-            await Sentry.captureMessage('start domain change handler (poster/trailer)');
-            await update_Poster_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls);
+            await Sentry.captureMessage('start domain change handler (posters/trailers)');
+            await update_Posters_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls);
             await Sentry.captureMessage('start domain change handler (download links)');
             await updateDownloadLinks(sourcesObject, changedDomains);
 
@@ -150,24 +151,24 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
     }
 }
 
-export async function update_Poster_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls) {
+export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaMovieTrailerUrls) {
     let collection = await getCollection('movies');
-    let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
+    let docs_array = await collection.find({}, {projection: {posters: 1, trailers: 1}}).toArray();
     let sourcesNames = sourcesUrls.map(value => value.replace(/www.|https:\/\/|\/page\//g, '').split(/[\/.]/g)[0]);
     let changedSourcesName = changedDomains.map(value => value.replace(/www.|https:\/\/|\/page\//g, '').split(/[\/.]/g)[0]);
     let promiseArray = [];
 
     for (let i = 0; i < docs_array.length; i++) {
-        let posterChanged = false;
+        let postersChanged = false;
         let trailerChanged = false;
-        let posters = docs_array[i].poster || [];
+        let posters = docs_array[i].posters || [];
         let trailers = docs_array[i].trailers || [];
 
         try {
             for (let j = 0; j < posters.length; j++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (posters[j].includes(changedSourcesName[k])) {
-                        posterChanged = true;
+                        postersChanged = true;
                         let currentUrl = sourcesUrls[sourcesNames.indexOf(changedSourcesName[k])];
                         posters[j] = getNewURl(posters[j], currentUrl);
                         break;
@@ -202,13 +203,13 @@ export async function update_Poster_Trailers(sourcesUrls, changedDomains, valaMo
         }
 
         let updateObj = {};
-        if (posterChanged) {
-            updateObj.poster = posters;
+        if (postersChanged) {
+            updateObj.posters = posters;
         }
         if (trailerChanged) {
             updateObj.trailers = trailers;
         }
-        if (posterChanged || trailerChanged) {
+        if (postersChanged || trailerChanged) {
             let resultPromise = collection.findOneAndUpdate({_id: docs_array[i]._id}, {
                 $set: updateObj
             });
@@ -223,7 +224,7 @@ export async function update_Poster_Trailers(sourcesUrls, changedDomains, valaMo
 
 async function updateValaMovieTrailers(valaMovieTrailerUrls) {
     let collection = await getCollection('movies');
-    let docs_array = await collection.find({}, {projection: {poster: 1, trailers: 1}}).toArray();
+    let docs_array = await collection.find({}, {projection: {posters: 1, trailers: 1}}).toArray();
     let promiseArray = [];
 
     for (let i = 0; i < docs_array.length; i++) {
