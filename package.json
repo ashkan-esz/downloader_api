@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@sentry/node": "^5.29.2",
-    "@sentry/tracing": "^5.29.2",
+    "@sentry/tracing": "^5.30.0",
     "autocannon": "^7.0.0",
     "axios": "^0.21.0",
     "axios-retry": "^3.1.9",

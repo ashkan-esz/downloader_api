@@ -3,7 +3,6 @@ const getCollection = require("../mongoDB");
 const {dataConfig} = require("./configs");
 const {ObjectId} = require("mongodb");
 
-//todo : improve search by using search index
 
 //search/searchByTitle/:title/:types/:dataLevel/:page/:count?
 router.get('/searchByTitle/:title/:types/:dataLevel/:page/:count?', async (req, res) => {
@@ -17,15 +16,30 @@ router.get('/searchByTitle/:title/:types/:dataLevel/:page/:count?', async (req, 
     let limit = (page === 0) ? count : 12;
 
     let collection = await getCollection('movies');
-    let searchResults = await collection.find(
-        {
-            title: new RegExp(title),
-            type: {$in: types}
+    let searchResults = await collection.aggregate([
+        {$search: {
+                index: 'default',
+                text: {
+                    query: title,
+                    path: 'title'
+                }
+            }
         },
-        {projection: dataConfig[dataLevel],})
-        .skip(skip)
-        .limit(limit)
-        .toArray();
+        {$match: {
+                type: {$in: types},
+            }
+        },
+        {
+            $project: dataConfig[dataLevel],
+        },
+        {
+            $skip: skip,
+        },
+        {
+            $limit: limit,
+        }
+    ]).toArray();
+
     if (searchResults.length > 0) {
         return res.json(searchResults);
     }
