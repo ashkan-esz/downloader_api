@@ -4,7 +4,6 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
-//todo : add watch online
 //todo : add quality sample
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
@@ -28,8 +27,9 @@ async function search_title_serial(link, i) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
+                    let watchOnlineLinks = getWatchOnlineLinks($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial');
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, 'serial');
                     }
                 }
             }
@@ -56,9 +56,10 @@ async function search_title_movie(link, i, $) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
+                    let watchOnlineLinks = getWatchOnlineLinks($2);
                     save_link = remove_duplicate(save_link);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie');
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, 'movie');
                     }
                 }
             }
@@ -116,20 +117,33 @@ function getTrailers($) {
             }
         }
 
-        let unique = [];
-        for (let i = 0; i < result.length; i++) {
-            let exist = false;
-            for (let j = 0; j < unique.length; j++) {
-                if (result[i].link === unique[j].link) {
-                    exist = true;
-                    break;
-                }
-            }
-            if (!exist) {
-                unique.push(result[i]);
+        result = remove_duplicate(result);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+function getWatchOnlineLinks($) {
+    try {
+        let result = [];
+        let a = $('a');
+        for (let i = 0; i < a.length; i++) {
+            let title = $(a[i]).attr('title');
+            if (title && title.toLowerCase().includes('پخش آنلاین')) {
+                let href = $(a[i]).attr('href');
+                let info = $(a[i]).parent().parent().prev().text();
+                let quality = info.includes('1080') ? '1080p' : info.includes('720') ? '720p' : '480p';
+                result.push({
+                    link: href,
+                    info: 'digimoviez-' + quality,
+                });
             }
         }
-        return unique;
+
+        result = remove_duplicate(result);
+        return result;
     } catch (error) {
         saveError(error);
         return [];

@@ -1,6 +1,6 @@
 const {getLatestData} = require("../latestData");
 
-export function getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers) {
+export function getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks) {
     let {season, episode, quality, hardSub, dubbed} = getLatestData(siteDownloadLinks, type);
     return {
         title: title,
@@ -21,6 +21,7 @@ export function getTitleModel(title, page_link, type, siteDownloadLinks, year, p
             english: '',
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'link,info'}]
+        watchOnlineLinks: watchOnlineLinks,
         latestData: {
             season: type === 'movie' ? 0 : season,
             episode: type === 'movie' ? 0 : episode,

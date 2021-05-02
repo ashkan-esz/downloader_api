@@ -34,7 +34,7 @@ async function search_title_serial(link, i) {
                     }
 
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'serial');
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
                     }
                 }
             }
@@ -67,7 +67,7 @@ async function search_title_movie(link, i) {
 
                     save_link = remove_duplicate(save_link);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, 'movie');
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
                     }
                 }
             }

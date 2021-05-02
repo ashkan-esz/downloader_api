@@ -31,7 +31,7 @@ async function search_title(link, i) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, [], type);
+                        await save(title_array, page_link, save_link, persian_summary, poster, [], [], type);
                     }
                 }
             }

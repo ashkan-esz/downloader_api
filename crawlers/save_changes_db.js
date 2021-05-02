@@ -7,11 +7,11 @@ const {getTitleModel} = require("./models/title");
 const {saveError} = require("../saveError");
 
 
-module.exports = async function save(title_array, page_link, siteDownloadLinks, persianSummary, poster, trailers, type) {
+module.exports = async function save(title_array, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
     try {
         let year = (type === 'movie') ? getYear(page_link, siteDownloadLinks) : '';
         let title = title_array.join(' ').trim();
-        let titleModel = getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers);
+        let titleModel = getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
         let {collection, db_data} = await searchOnCollection(title, year, type);
 
@@ -21,7 +21,7 @@ module.exports = async function save(title_array, page_link, siteDownloadLinks, 
             return;
         }
 
-        let subUpdates = handleSubUpdates(db_data, poster, trailers, titleModel, type);
+        let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         let apiDataUpdateFields = await apiDataUpdate(db_data, siteDownloadLinks);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(collection, db_data, page_link, persianSummary, type, siteDownloadLinks);
@@ -49,6 +49,7 @@ async function searchOnCollection(title, year, type) {
         summary: 1,
         posters: 1,
         trailers: 1,
+        watchOnlineLinks: 1,
         genres: 1,
         duration: 1,
         totalSeasons: 1,
@@ -112,6 +113,10 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         if (subUpdates.trailerChange) {
             updateFields.trailers = db_data.trailers;
         }
+        if (subUpdates.watchOnlineLinksChange){
+            updateFields.watchOnlineLinks = db_data.watchOnlineLinks;
+        }
+
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
             updateFields.update_date = new Date();

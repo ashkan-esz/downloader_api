@@ -28,7 +28,7 @@ async function search_title(link, i) {
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, type);
+                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], type);
                     }
                 }
             }

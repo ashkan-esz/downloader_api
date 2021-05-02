@@ -14,7 +14,7 @@ axiosRetry(axios, {
     }
 });
 
-//todo : add digimovie domain change handler --> source link is fixed , download links change
+//todo : add digimovie domain change handler --> source link is fixed , downloadLinks/trailer/onlineLinks/qualitySample change
 //todo : better trailer updater for digimoviez
 
 export async function domainChangeHandler(sourcesObject, newValaMovieTrailerUrl) {
@@ -220,6 +220,7 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
             promiseArray = [];
         }
     }
+    await Promise.all(promiseArray);
 }
 
 async function updateValaMovieTrailers(valaMovieTrailerUrls) {
@@ -256,4 +257,5 @@ async function updateValaMovieTrailers(valaMovieTrailerUrls) {
             promiseArray = [];
         }
     }
+    await Promise.all(promiseArray);
 }
