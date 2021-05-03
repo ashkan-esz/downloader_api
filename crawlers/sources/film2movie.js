@@ -116,8 +116,8 @@ function getTrailers($) {
 }
 
 function get_file_size($, link, type) {
-    //'1080p.HardSub'  //'720p.BluRay.F2M.dubbed.Family'
-    //'480p.BluRay.F2M.HardSub.Family'  //'720p.BluRay.F2M.Family'
+    //'1080p.HardSub'  //'720p.BluRay.F2M.dubbed.Censored'
+    //'480p.BluRay.F2M.HardSub.Censored'  //'720p.BluRay.F2M.Censored'
     try {
         if (type === 'serial') {
             return get_file_size_serial($, link);
@@ -151,7 +151,7 @@ function get_file_size_movie($, link) {
     let link_href = $(link).attr('href').toLowerCase();
     let HardSub = (link_href.includes('subfa')) ? 'HardSub' : '';
     let dubbed = (link_href.includes('farsi.dub') || link_href.includes('dubbed')) ? 'dubbed' : '';
-    let family = $(link).next().text().toLowerCase().includes('family') ? 'family' : '';
+    let Censored = ($(link).next().text().toLowerCase().includes('family') || dubbed || HardSub) ? 'Censored' : '';
     let text_array = text.replace(/[()]/g, '').split(' ')
         .filter((text) => text && !persianRex.hasLetter.test(text));
     if (text_array.length === 1) {
@@ -168,18 +168,18 @@ function get_file_size_movie($, link) {
         }
         let link_href_array = link_href.split('.');
         let index = link_href_array.indexOf(quality);
-        return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1], dubbed, HardSub].filter(value => value).join('.');
+        return [link_href_array[index], link_href_array[index + 2], link_href_array[index + 1], dubbed, HardSub, Censored].filter(value => value).join('.');
     } else if (text_array.length === 2) {
         if (text_array[1].match(/\d\d\d\dp|\d\d\dp/g)) {
-            return [text_array[1], text_array[0], dubbed, HardSub].filter(value => value).join('.');
+            return [text_array[1], text_array[0], dubbed, HardSub, Censored].filter(value => value).join('.');
         }
-        return [...text_array, dubbed, HardSub].filter(value => value).join('.');
+        return [...text_array, dubbed, HardSub, Censored].filter(value => value).join('.');
     }
     if (text_array[2].match(/\d\d\d\dp|\d\d\dp/g) && text_array[0] === 'x265') {
-        return [text_array[2], text_array[0], text_array[1], ...text_array.slice(3), HardSub, dubbed, family].filter(value => value !== '').join('.');
+        return [text_array[2], text_array[0], text_array[1], ...text_array.slice(3), HardSub, dubbed, Censored].filter(value => value !== '').join('.');
     }
     if (text_array[0].match(/\d\d\d\dp|\d\d\dp/g) || text_array[0].toLowerCase() === 'mobile') {
-        return [text_array[0], text_array[1], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');
+        return [text_array[0], text_array[1], ...text_array.slice(2), HardSub, dubbed, Censored].filter(value => value !== '').join('.');
     }
-    return [text_array[1], text_array[0], ...text_array.slice(2), HardSub, dubbed, family].filter(value => value !== '').join('.');
+    return [text_array[1], text_array[0], ...text_array.slice(2), HardSub, dubbed, Censored].filter(value => value !== '').join('.');
 }

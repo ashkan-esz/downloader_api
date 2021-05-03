@@ -1,8 +1,9 @@
 const axios = require('axios').default;
-const cheerio = require('cheerio');
 const axiosRetry = require("axios-retry");
-const {saveError} = require("../saveError");
+const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+const {saveError} = require("../saveError");
+const {wordsToNumbers} = require('words-to-numbers');
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -195,32 +196,23 @@ function check_download_link(original_link, matchCases, type) {
             link.includes(matchCases.case1.replace('.3', '.iii')) ||
             link.includes(matchCases.case1.replace('.ii', '.2')) ||
             link.includes(matchCases.case1.replace('.2', '.ii')) ||
-            link.includes(matchCases.case1.replace('el', 'the'))
+            link.includes(matchCases.case1.replace('el', 'the')) ||
+            link.includes(matchCases.case1.replace('.and', '')) ||
+            link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).replace(/\s/g, '.'))
         ) {
             return original_link;
         }
 
         let splitted_matchCase = matchCases.case1.split('.');
-
         if (splitted_matchCase.length > 6) {
             let newMatchCase = splitted_matchCase.slice(3).join('.');
-            if (link.includes(newMatchCase)) {
-                return original_link;
-            } else {
-                let replacedAnd_MatchCase = matchCases.case1.replace('.and', '');
-                return (link.includes(replacedAnd_MatchCase)) ? original_link : null;
-            }
+            return link.includes(newMatchCase) ? original_link : null;
         }
-
         if (splitted_matchCase.length > 3) {
             let newMatchCase = splitted_matchCase.slice(0, 3).join('.');
-            if (link.includes(newMatchCase)) {
-                return original_link;
-            } else {
-                let replacedAnd_MatchCase = matchCases.case1.replace('.and', '');
-                return (link.includes(replacedAnd_MatchCase)) ? original_link : null;
-            }
+            return link.includes(newMatchCase) ? original_link : null;
         }
+
         return null;
     } else {
         let result = link.match(/(s\d\de\d\d)/g);
