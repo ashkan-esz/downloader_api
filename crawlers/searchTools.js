@@ -18,13 +18,13 @@ let page = null;
 export async function wrapper_module(url, page_count, searchCB) {
     try {
         headLessBrowser = (
-            url.includes('valamovie') ||
             url.includes('digimovie') ||
+            url.includes('valamovie') ||
             url.includes('film2movie')
         );
 
         let forceWaitNumber = 35;
-        for (let i = 1; i <= page_count; i++) {
+        for (let i = 1; i <= page_count; i++) { //todo : i=1
             try {
                 let {$, links} = await getLinks(url + `${i}/`);
                 for (let j = 0; j < links.length; j++) {
@@ -152,7 +152,7 @@ async function getLinks(url) {
                 triedGoogleCache = true;
             }
         }
-        if (links.length === 0 && !triedGoogleCache) {
+        if (links.length < 5 && !triedGoogleCache) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;
@@ -186,18 +186,23 @@ function check_download_link(original_link, matchCases, type) {
         return null;
     }
 
+    // console.log(link) //todo : remove
+    // console.log(matchCases)
+
     if (type === 'movie') {
         if (
             link.includes(matchCases.case1) ||
             link.includes(matchCases.case2) ||
             link.includes(matchCases.case3) ||
             link.includes(matchCases.case4) ||
+            decodeURIComponent(link).includes(matchCases.case1.replace(/\./g, ' ')) ||
             link.includes(matchCases.case1.replace('.iii', '.3')) ||
             link.includes(matchCases.case1.replace('.3', '.iii')) ||
             link.includes(matchCases.case1.replace('.ii', '.2')) ||
             link.includes(matchCases.case1.replace('.2', '.ii')) ||
             link.includes(matchCases.case1.replace('el', 'the')) ||
             link.includes(matchCases.case1.replace('.and', '')) ||
+            link.replace('.and', '').includes(matchCases.case1) ||
             link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).replace(/\s/g, '.'))
         ) {
             return original_link;
@@ -246,7 +251,7 @@ function check_format(link, type) {
     link = link.toLowerCase();
     let formats = ['mkv', 'avi', 'mov', 'flv', 'wmv', 'mp4'];
     let qualities = ['bluray', 'mobile', 'dvdrip', 'hdrip', 'brip', 'webrip', 'web-dl', 'web.dl',
-        'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '1080p', 'farsi.dubbed'];
+        'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '720p', '1080p', 'farsi.dubbed'];
     let encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
         'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
 

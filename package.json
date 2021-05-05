@@ -11,7 +11,6 @@
   "dependencies": {
     "@sentry/node": "^5.29.2",
     "@sentry/tracing": "^5.30.0",
-    "autocannon": "^7.0.0",
     "axios": "^0.21.0",
     "axios-retry": "^3.1.9",
     "body-parser": "^1.19.0",
@@ -28,7 +27,6 @@
     "http-errors": "~1.6.3",
     "jwks-rsa": "^1.11.0",
     "mongodb": "^3.6.3",
-    "node-cron": "^2.0.3",
     "persian-rex": "^2.3.3",
     "puppeteer": "^8.0.0",
     "tesseract.js": "^2.1.4",

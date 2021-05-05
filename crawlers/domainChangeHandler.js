@@ -3,8 +3,9 @@ const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
 const puppeteer = require('puppeteer');
-const digimoviez = require('./sources/digimoviez');
-const film2media = require('./sources/film2media');
+const digimoviez = require('./sources/1digimoviez');
+const film2media = require('./sources/2film2media');
+const zarmovie = require('./sources/6zarmovie');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
@@ -14,7 +15,7 @@ axiosRetry(axios, {
     }
 });
 
-//todo : add digimovie domain change handler --> source link is fixed , downloadLinks/trailer/onlineLinks/qualitySample change
+//todo : add digimovie/ domain change handler --> source link is fixed , downloadLinks/trailer/onlineLinks/qualitySample change
 //todo : better trailer updater for digimoviez
 
 export async function domainChangeHandler(sourcesObject, newValaMovieTrailerUrl) {
@@ -123,31 +124,37 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // digimoviez - film2media
+    // digimoviez - film2media - zarmovie
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i].replace(/\d/g, '');
-        if (domain.includes('digimoviez')) {
-            let startTime = new Date();
-            await Sentry.captureMessage('start domain change handler (digimoviez reCrawl start)');
-            await digimoviez({
-                ...sourcesObject.digimoviez,
-                page_count: 330,
-                serial_page_count: 50
-            });
-            let endTime = new Date();
-            let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
-            await Sentry.captureMessage(`start domain change handler (digimoviez reCrawl ended) in ${crawlingDuration} s`);
-        } else if (domain.includes('film2media')) {
-            let startTime = new Date();
-            await Sentry.captureMessage('start domain change handler (film2media reCrawl start)');
-            await film2media({
-                ...sourcesObject.film2media,
-                page_count: 390,
-            });
-            let endTime = new Date();
-            let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
-            await Sentry.captureMessage(`start domain change handler (film2media reCrawl ended) in ${crawlingDuration} s`);
-        }
+        let sourceName = changedDomains[i].replace(/www.|https:\/\/|\/page\//g, '').split('/')[0];
+        let startTime = new Date();
+        await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
+        await reCrawlSource(sourcesObject, domain);
+        let endTime = new Date();
+        let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
+        await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl ended) in ${crawlingDuration} s`);
+    }
+}
+
+async function reCrawlSource(sourcesObject, domain) {
+    if (domain.includes('digimoviez')) {
+        await digimoviez({
+            ...sourcesObject.digimoviez,
+            page_count: 330,
+            serial_page_count: 50
+        });
+    } else if (domain.includes('film2media')) {
+        await film2media({
+            ...sourcesObject.film2media,
+            page_count: 390,
+        });
+    } else if (domain.includes('zarmovie')) {
+        await zarmovie({
+            ...sourcesObject.zarmovie,
+            page_count: 845,
+            serial_page_count: 50
+        });
     }
 }
 
@@ -180,7 +187,6 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (trailers[t].link.includes(changedSourcesName[k]) ||
                         trailers[t].info.includes(changedSourcesName[k])) {
-                        //todo : better trailer updater for digimoviez
                         if (trailers[t].info.includes('valamovie')) {
                             //valamovie
                             if (valaMovieTrailerUrls[1]) {
@@ -188,7 +194,9 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
                                 trailers[t].link = getNewURl(trailers[t].link, valaMovieTrailerUrls[1]);
                             }
                             break;
-                        } else {
+                        } else if (
+                            !trailers[t].info.includes('digimoviez') &&
+                            !trailers[t].info.includes('zarmovie')) {
                             //others
                             trailerChanged = true;
                             let currentUrl = sourcesUrls[sourcesNames.indexOf(changedSourcesName[k])];
