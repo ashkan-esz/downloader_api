@@ -79,7 +79,7 @@ function handleWatchOnlineLinksUpdate(db_data, siteWatchOnlineLinks) {
             }
         }
         if (!linkExist) { //new onlineLink
-            db_data.trailers.push(siteWatchOnlineLinks[i]);
+            db_data.watchOnlineLinks.push(siteWatchOnlineLinks[i]);
             onlineLinkChanged = true;
         }
     }
