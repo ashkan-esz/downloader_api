@@ -59,7 +59,7 @@ export function replacePersianNumbers(input) {
 }
 
 export function getType(title) {
-    return ((title.includes('فیلم') || title.includes('انیمیشن')) &&
+    return ((title.includes('فیلم') || title.includes('انیمیشن') || title.includes('استندآپ')) &&
         !title.includes('سریال'))
         ? 'movie' : 'serial';
 }
@@ -78,7 +78,7 @@ export function checkDubbed(link, info) {
 
 export function checkHardSub(input) {
     input = input.toLowerCase();
-    return (input.includes('softsub') || input.includes('hardsub'));
+    return (input.includes('softsub') || input.includes('hardsub') || input.includes('sub'));
 }
 
 export function getYear(page_link, save_link) {
@@ -164,10 +164,10 @@ export function checkSource(case1, case2) {
 
 export function getNewURl(url, currentUrl) {
     let domain = url
-        .replace(/www.|https:\/\/|\/page\//g, '')
+        .replace(/www.|https:\/\/|http:\/\/|\/page\//g, '')
         .split('/')[0];
     let currentDomain = currentUrl
-        .replace(/www.|https:\/\/|\/page\//g, '')
+        .replace(/www.|https:\/\/|http:\/\/|\/page\//g, '')
         .split('/')[0];
     return url.replace(domain, currentDomain);
 }
@@ -221,4 +221,21 @@ export function checkBetterQuality(quality, prevQuality) {
         isBetter = (qualityIndex > prevQualityIndex);
     }
     return isBetter;
+}
+
+export function removeDuplicateLinks(input) {
+    let result = [];
+    for (let i = 0; i < input.length; i++) {
+        let exist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (input[i].link === result[j].link) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            result.push(input[i]);
+        }
+    }
+    return result;
 }

@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, checkDubbed} = require('../utils');
+const {remove_persian_words, checkDubbed, removeDuplicateLinks} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -65,7 +65,7 @@ async function search_title_movie(link, i) {
                         valaMovieTrailerUrl = trailers[0].link.replace(/www.|https:\/\/|\/page\//g, '').split('/')[0];
                     }
 
-                    save_link = remove_duplicate(save_link);
+                    save_link = removeDuplicateLinks(save_link);
                     if (save_link.length > 0) {
                         await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
                     }
@@ -253,21 +253,4 @@ function serial_text_length_3(text_array, $, link, qualityIndex, dubbedIndex) {
         quality.push('x265');
     }
     return {quality, dubbed, size};
-}
-
-function remove_duplicate(input) {
-    let result = [];
-    for (let i = 0; i < input.length; i++) {
-        let exist = false;
-        for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            result.push(input[i]);
-        }
-    }
-    return result;
 }

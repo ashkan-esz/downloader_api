@@ -58,7 +58,9 @@ function handleTrailerUpdate(db_data, site_trailers) {
             trailersChanged = true;
         }
     }
-    db_data.trailers = removeDuplicateLinks(db_data.trailers);
+    if (db_data.trailers !== null) {
+        db_data.trailers = removeDuplicateLinks(db_data.trailers);
+    }
     return trailersChanged;
 }
 

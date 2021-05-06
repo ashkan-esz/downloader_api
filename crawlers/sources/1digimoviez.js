@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words} = require('../utils');
+const {remove_persian_words, removeDuplicateLinks} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -117,7 +117,7 @@ function getTrailers($) {
             }
         }
 
-        result = remove_duplicate(result);
+        result = removeDuplicateLinks(result);
         return result;
     } catch (error) {
         saveError(error);
@@ -142,7 +142,7 @@ function getWatchOnlineLinks($) {
             }
         }
 
-        result = remove_duplicate(result);
+        result = removeDuplicateLinks(result);
         return result;
     } catch (error) {
         saveError(error);
@@ -274,21 +274,4 @@ function get_movie_quality($, link) {
     let link_quality = case1 ? case1.pop() : '';
     let index = link_href_array.indexOf(link_quality);
     return link_href_array.slice(index, index + 2).join('.');
-}
-
-function remove_duplicate(input) {
-    let result = [];
-    for (let i = 0; i < input.length; i++) {
-        let exist = false;
-        for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            result.push(input[i]);
-        }
-    }
-    return result;
 }

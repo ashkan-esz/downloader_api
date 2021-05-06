@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType} = require('../utils');
+const {remove_persian_words, getType, removeDuplicateLinks} = require('../utils');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
@@ -7,8 +7,10 @@ const {saveError} = require("../../saveError");
 //todo : add subtitle link
 
 module.exports = async function zarmovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+    await Promise.all([
+        wrapper_module(serial_url, serial_page_count, search_title),
+        wrapper_module(movie_url, page_count, search_title),
+    ]);
 }
 
 async function search_title(link, i) {
@@ -89,7 +91,7 @@ function getTrailers($) {
             }
         }
 
-        result = remove_duplicate(result);
+        result = removeDuplicateLinks(result);
         return result;
     } catch (error) {
         saveError(error);
@@ -150,21 +152,4 @@ function get_file_size_movie($, link) {
     let encoder = $(infoNodeChildren[3]).text().replace('انکودر :', '').trim();
     let info = [quality, encoder, hardSub].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
-}
-
-function remove_duplicate(input) {
-    let result = [];
-    for (let i = 0; i < input.length; i++) {
-        let exist = false;
-        for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            result.push(input[i]);
-        }
-    }
-    return result;
 }

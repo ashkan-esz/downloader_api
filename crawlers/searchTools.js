@@ -129,6 +129,7 @@ async function getLinks(url) {
         let triedGoogleCache = false;
         if (!headLessBrowser) {
             try {
+                url = url.replace('/page/1/', '');
                 let response = await axios.get(url);
                 $ = cheerio.load(response.data);
                 links = $('a');
