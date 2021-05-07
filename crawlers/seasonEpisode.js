@@ -1,6 +1,6 @@
 const {getSeasonEpisode} = require("./utils");
-const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./omdbApi");
-const {get_tvmazeApi_Alldata} = require("./tvmazeApi");
+const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./3rdPartyApi/omdbApi");
+const {getTvMazeApiData} = require("./3rdPartyApi/tvmazeApi");
 
 export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, titleExist = true) {
     let links_seasons = getSeasonsFromLinks(site_links);
@@ -17,7 +17,7 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
     }
 
     //tvmaze api
-    tvmazeApi_data = await get_tvmazeApi_Alldata(db_data.title, db_data.rawTitle, db_data.imdbID || '');
+    tvmazeApi_data = await getTvMazeApiData(db_data.title, db_data.rawTitle, db_data.imdbID || '');
     if (tvmazeApi_data) {
         nextEpisodeUpdate = handleNextEpisodeUpdate(db_data, tvmazeApi_data.nextEpisode);
         let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApi_data.episodes);

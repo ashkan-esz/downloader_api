@@ -1,6 +1,6 @@
 const getCollection = require('../mongoDB');
 const {checkSourceExist, checkSource, getYear} = require('./utils');
-const {addApiData, apiDataUpdate} = require('./allApiData');
+const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {getTitleModel} = require("./models/title");

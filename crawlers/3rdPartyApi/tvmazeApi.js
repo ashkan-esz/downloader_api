@@ -1,9 +1,9 @@
 const axios = require('axios').default;
-const {replaceSpecialCharacters} = require("./utils");
-const {saveError} = require("../saveError");
+const {replaceSpecialCharacters} = require("../utils");
+const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
-export async function get_tvmazeApi_Alldata(title, rawTitle, imdbID) {
+export async function getTvMazeApiData(title, rawTitle, imdbID) {
     let waitCounter = 0;
     while (waitCounter < 10) {
         try {

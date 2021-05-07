@@ -5,6 +5,7 @@ const film2movie = require('./sources/3film2movie');
 const valamovie = require('./sources/5valamovie');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
+const mctv = require('./sources/8mctv');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const Sentry = require('@sentry/node');
@@ -53,6 +54,11 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 555,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 115,
                 });
+                await mctv({
+                    ...sources.mctv,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 110,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 19,
+                });
             } else if (sourceNumber === 1) {
                 await digimoviez({
                     ...sources.digimoviez,
@@ -91,6 +97,12 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                     ...sources.bia2hd,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 555,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 115,
+                });
+            } else if (sourceNumber === 8) {
+                await mctv({
+                    ...sources.mctv,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 110,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : 19,
                 });
             }
 

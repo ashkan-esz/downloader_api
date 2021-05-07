@@ -14,7 +14,6 @@ module.exports = async function bia2hd({movie_url, serial_url, page_count, seria
 async function search_title(link, i) {
     try {
         let title = link.attr('title');
-
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
             let page_link = link.attr('href');
             let type = getType(title);

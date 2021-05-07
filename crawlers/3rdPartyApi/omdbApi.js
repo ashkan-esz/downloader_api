@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
-const {replaceSpecialCharacters} = require("./utils");
-const {saveError} = require("../saveError");
+const {replaceSpecialCharacters} = require("../utils");
+const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
 axiosRetry(axios, {
@@ -171,7 +171,7 @@ async function handle_OMDB_ApiKeys(url) {
             } catch (error) {
                 apiKeyCounter++;
                 if (apiKeyCounter === apiKeyArray.length) {
-                    Sentry.captureMessage('more omdb api keys are needed');
+                    await Sentry.captureMessage('more omdb api keys are needed');
                     return null;
                 }
             }

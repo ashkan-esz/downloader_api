@@ -7,6 +7,7 @@ const digimoviez = require('./sources/1digimoviez');
 const film2media = require('./sources/2film2media');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
+const mctv = require('./sources/8mctv');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
@@ -128,10 +129,13 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 
     sourcesObject.bia2hd.movie_url = sourcesUrls[6];
     sourcesObject.bia2hd.serial_url = getNewURl(sourcesObject.bia2hd.serial_url, sourcesUrls[6]);
+
+    sourcesObject.mctv.movie_url = sourcesUrls[7];
+    sourcesObject.mctv.serial_url = getNewURl(sourcesObject.mctv.serial_url, sourcesUrls[7]);
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // digimoviez - film2media - zarmovie - bia2hd
+    // digimoviez - film2media - zarmovie - bia2hd - mctv
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i].replace(/\d/g, '');
         if (
@@ -139,7 +143,8 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
             domain.includes('filmmedia') ||
             domain.includes('zarmovie') ||
             domain.includes('biahd') ||
-            domain.includes('bahd')
+            domain.includes('bahd') ||
+            domain.includes('mctv')
         ) {
             let sourceName = changedDomains[i].replace(/www.|https:\/\/|http:\/\/|\/page\//g, '').split('/')[0];
             let startTime = new Date();
@@ -175,6 +180,12 @@ async function reCrawlSource(sourcesObject, domain) {
             ...sourcesObject.bia2hd,
             page_count: 555,
             serial_page_count: 115,
+        });
+    } else if (domain.includes('mctv')) {
+        await mctv({
+            ...sourcesObject.mctv,
+            page_count: 110,
+            serial_page_count: 19,
         });
     }
 }
@@ -218,7 +229,8 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
                         } else if (
                             !trailers[t].info.includes('digimoviez') &&
                             !trailers[t].info.includes('zarmovie') &&
-                            !trailers[t].info.includes('bia2hd')
+                            !trailers[t].info.includes('bia2hd') &&
+                            !trailers[t].info.includes('mctv')
                         ) {
                             //others
                             trailerChanged = true;

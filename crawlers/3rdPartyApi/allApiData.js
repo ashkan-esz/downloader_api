@@ -1,5 +1,5 @@
 const {get_OMDB_Api_Data, get_OMDB_Api_Fields} = require('./omdbApi');
-const {handleSeasonEpisodeUpdate, getTotalDuration} = require('./seasonEpisode');
+const {handleSeasonEpisodeUpdate, getTotalDuration} = require('../seasonEpisode');
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
