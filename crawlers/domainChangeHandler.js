@@ -8,6 +8,7 @@ const film2media = require('./sources/2film2media');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const mctv = require('./sources/8mctv');
+const golchindl = require('./sources/9golchindl');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
@@ -132,19 +133,23 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 
     sourcesObject.mctv.movie_url = sourcesUrls[7];
     sourcesObject.mctv.serial_url = getNewURl(sourcesObject.mctv.serial_url, sourcesUrls[7]);
+
+    sourcesObject.golchindl.movie_url = sourcesUrls[8];
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // digimoviez - film2media - zarmovie - bia2hd - mctv
+    // digimoviez - film2media - zarmovie - bia2hd - mctv - golchingdl
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i].replace(/\d/g, '');
         if (
             domain.includes('digimoviez') ||
             domain.includes('filmmedia') ||
             domain.includes('zarmovie') ||
+            domain.includes('zarfilm') ||
             domain.includes('biahd') ||
             domain.includes('bahd') ||
-            domain.includes('mctv')
+            domain.includes('mctv') ||
+            domain.includes('golchin')
         ) {
             let sourceName = changedDomains[i].replace(/www.|https:\/\/|http:\/\/|\/page\//g, '').split('/')[0];
             let startTime = new Date();
@@ -169,7 +174,7 @@ async function reCrawlSource(sourcesObject, domain) {
             ...sourcesObject.film2media,
             page_count: 390,
         });
-    } else if (domain.includes('zarmovie')) {
+    } else if (domain.includes('zarmovie') || domain.includes('zarfilm')) {
         await zarmovie({
             ...sourcesObject.zarmovie,
             page_count: 845,
@@ -186,6 +191,11 @@ async function reCrawlSource(sourcesObject, domain) {
             ...sourcesObject.mctv,
             page_count: 110,
             serial_page_count: 19,
+        });
+    } else if (domain.includes('golchin')) {
+        await golchindl({
+            ...sourcesObject.golchindl,
+            page_count: 305,
         });
     }
 }
@@ -215,6 +225,7 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
                 }
             }
 
+            //todo : recrawl all sources when domain change ---> no trailer link updater
             for (let t = 0; t < trailers.length; t++) {
                 for (let k = 0; k < changedSourcesName.length; k++) {
                     if (trailers[t].link.includes(changedSourcesName[k]) ||
@@ -229,8 +240,10 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
                         } else if (
                             !trailers[t].info.includes('digimoviez') &&
                             !trailers[t].info.includes('zarmovie') &&
+                            !trailers[t].info.includes('zarfilm') &&
                             !trailers[t].info.includes('bia2hd') &&
-                            !trailers[t].info.includes('mctv')
+                            !trailers[t].info.includes('mctv') &&
+                            !trailers[t].info.includes('golchin')
                         ) {
                             //others
                             trailerChanged = true;

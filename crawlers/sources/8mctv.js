@@ -12,7 +12,7 @@ module.exports = async function bia2hd({movie_url, serial_url, page_count, seria
     ]);
 }
 
-async function search_title_serial(link, i, $) {
+async function search_title_serial(link, i) {
     try {
         let title = link.attr('title');
         let page_link = link.attr('href');
@@ -20,7 +20,7 @@ async function search_title_serial(link, i, $) {
             title = link.parent().next().text();
             let type = getType(title);
             if (process.env.NODE_ENV === 'dev') {
-                console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
+                console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
             let title_array = remove_persian_words(title.toLowerCase(), type);
             if (title_array.length > 0) {
@@ -50,7 +50,7 @@ async function search_title_movie(link, i) {
             let page_link = link.attr('href');
             let type = getType(title);
             if (process.env.NODE_ENV === 'dev') {
-                console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
+                console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
             let title_array = remove_persian_words(title.toLowerCase(), type);
             if (title_array.length > 0) {
@@ -170,7 +170,7 @@ function get_file_size_serial($, link) {
 function get_file_size_movie($, link) {
     let infoNodeChildren = $(link).prev().children();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'duubed' : '';
+    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
     let qualityText = $(infoNodeChildren[0]).text().trim().replace('کیفیت :', '').split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
     quality = quality.replace('10bit.x265', 'x265.10bit');

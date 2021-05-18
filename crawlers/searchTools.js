@@ -124,6 +124,7 @@ async function closeBrowser() {
 }
 
 async function getLinks(url) {
+    //todo : dont use google cache when exceed page number
     try {
         let $, links;
         let triedGoogleCache = false;

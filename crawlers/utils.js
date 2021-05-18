@@ -149,17 +149,27 @@ export function checkSourceExist(db_sources, pageLink) {
 export function checkSource(case1, case2) {
     let source_name = case1
         .replace('https://', '')
+        .replace('http://', '')
         .replace('www.', '')
         .replace('image.', '')
         .replace(/\d/g, '')
         .split('.')[0];
     let new_source_name = case2
         .replace('https://', '')
+        .replace('http://', '')
         .replace('www.', '')
         .replace('image.', '')
         .replace(/\d/g, '')
         .split('.')[0];
-    return source_name === new_source_name;
+    let isZarmovie = checkSourceNameAlternative(case1, case2, 'zarmovie', 'zarfilms');
+    let isGolchindl = checkSourceNameAlternative(case1, case2, 'golchin', 'golchin');
+    return source_name === new_source_name || isZarmovie || isGolchindl;
+}
+
+function checkSourceNameAlternative(link1, link2, name1, name2) {
+    let case1Match = link1.includes(name1) || link1.includes(name2);
+    let case2Match = link2.includes(name1) || link2.includes(name2);
+    return case1Match && case2Match;
 }
 
 export function getNewURl(url, currentUrl) {

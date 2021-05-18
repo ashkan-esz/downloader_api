@@ -170,7 +170,7 @@ function get_file_size_serial($, link) {
 function get_file_size_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'duubed' : '';
+    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
     let quality = $(infoNodeChildren[0]).text().replace('#', '').replace('p', 'p.').replace('.x264', '').trim();
     let size = $(infoNodeChildren[1]).text()
         .replace('حجم :', '')
