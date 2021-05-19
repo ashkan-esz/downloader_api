@@ -1,5 +1,5 @@
 const {handleLatestDataUpdate} = require("./latestData");
-const {checkSource} = require('./utils');
+const {checkSource, removeDuplicateLinks, removeDuplicatePosterLinks} = require('./utils');
 
 export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type) {
     let posterChange = handlePosterUpdate(db_data, poster);
@@ -24,7 +24,7 @@ function handlePosterUpdate(db_data, poster) {
         if (checkSource(db_data.posters[i], poster)) {//this poster exist
             if (db_data.posters[i] !== poster) { //replace link
                 db_data.posters[i] = poster;
-                db_data.posters = removeDuplicateLinks(db_data.posters);
+                db_data.posters = removeDuplicatePosterLinks(db_data.posters);
                 return true;
             } else {
                 return false;
@@ -33,7 +33,7 @@ function handlePosterUpdate(db_data, poster) {
     }
 
     db_data.posters.push(poster); //new poster
-    db_data.posters = removeDuplicateLinks(db_data.posters);
+    db_data.posters = removeDuplicatePosterLinks(db_data.posters);
     return true;
 }
 
@@ -98,21 +98,4 @@ export function handleUrlUpdate(thiaSource, page_link) {
         return true;
     }
     return false;
-}
-
-function removeDuplicateLinks(input) {
-    let result = [];
-    for (let i = 0; i < input.length; i++) {
-        let exist = false;
-        for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            result.push(input[i]);
-        }
-    }
-    return result;
 }

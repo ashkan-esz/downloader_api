@@ -251,3 +251,54 @@ export function removeDuplicateLinks(input) {
     }
     return result;
 }
+
+export function removeDuplicatePosterLinks(input) {
+    let result = [];
+    for (let i = 0; i < input.length; i++) {
+        let exist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (input[i] === result[j]) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            result.push(input[i]);
+        }
+    }
+    return result;
+}
+
+export function purgeQualityText(qualityText) {
+    return qualityText
+        .replace('دانلود', '')
+        .replace('با', '')
+        .replace('کیفیت', '')
+        .replace('نسخه', '')
+        .replace('اختصاصی', '')
+        .replace('گلچین', '')
+        .replace('دوبله', '')
+        .replace('فارسی', '')
+        .replace('هاردساب', '')
+        .replace(/[)(:]/g, '')
+        .trim();
+}
+
+export function purgeSizeText(sizeText) {
+    return sizeText
+        .trim()
+        .replace('حجم', '')
+        .replace('فایل', '')
+        .replace('گیگابایت', 'GB')
+        .replace('مگابایت', 'MB')
+        .replace(/[\s:]/g, '');
+}
+
+export function purgeEncoderText(encoderText) {
+    return encoderText
+        .replace('انکودر', '')
+        .replace('انکودر', '')
+        .replace('انکدر', '')
+        .replace(':', '')
+        .trim()
+}

@@ -1,5 +1,14 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType, checkDubbed, checkHardSub} = require('../utils');
+const {
+    remove_persian_words,
+    getType,
+    checkDubbed,
+    checkHardSub,
+    purgeSizeText,
+    purgeQualityText,
+    purgeEncoderText
+} = require('../utils');
+const persianRex = require('persian-rex');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
@@ -88,21 +97,21 @@ function get_file_size_serial($, link) {
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
-    let splittedInfoText = infoText.split(' – ');
+    let splitInfoText = infoText.split(' – ');
     let quality, encoder;
-    if (splittedInfoText[0].includes('کیفیت')) {
-        let qualityText = splittedInfoText[0].split('کیفیت')[1].trim().split(' ');
+    if (splitInfoText[0].includes('کیفیت')) {
+        let qualityText = splitInfoText[0].split('کیفیت')[1].trim().split(' ');
         quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-        encoder = splittedInfoText.length > 1 ? splittedInfoText[1].replace('انکودر:', '').trim() : '';
-    } else if (splittedInfoText[0].includes('«')) {
-        quality = splittedInfoText[0]
+        encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
+    } else if (splitInfoText[0].includes('«')) {
+        quality = splitInfoText[0]
             .split('«')[1]
             .replace('لينک مستقيم', '')
             .replace('»:', '')
             .trim()
             .split(' ')
             .join('.');
-        encoder = splittedInfoText.length > 1 ? splittedInfoText[1].replace('انکودر:', '').trim() : '';
+        encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
     } else {
         let linkHref = $(link).attr('href').split('.');
         linkHref.pop();
@@ -110,26 +119,74 @@ function get_file_size_serial($, link) {
         quality = linkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
         encoder = '';
     }
-    return [quality, bit10, encoder, hardSub, dubbed].filter(value => value).join('.');
+    return [quality, bit10, encoder, hardSub, dubbed]
+        .filter(value => value)
+        .join('.')
+        .replace('.x265.Web-dl.10bit', '.x265.10bit.Web-dl');
 }
 
 function get_file_size_movie($, link) {
-    let infoNodeChildren = $($(link).parent().parent().prev().children()[0]).children()[0];
+    let parentName = $(link).parent()[0].name;
+    let infoNodeChildren = parentName !== 'p'
+        ? $($(link).parent().parent().prev().children()[0]).children()[0]
+        : $($(link).parent().prev().children()[0]).children()[0];
     let infoText = $(infoNodeChildren).text();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), infoText) ? 'dubbed' : '';
     let quality, encoder, size;
     if (infoText.includes('|')) {
-        let qualityText = infoText.split('|')[1].replace('کیفیت', '').trim().split(' ');
-        quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-        size = infoText.split('|')[2].replace('حجم', '').replace(':', '').trim();
-        encoder = $(infoNodeChildren[2]).text().replace('انکودر :', '').trim();
+        let splitInfoText = infoText.split('|');
+        if (splitInfoText.length === 3) {
+            if (splitInfoText[0].includes('کیفیت')) {
+                let qualityText = purgeQualityText(splitInfoText[0]).split(' ');
+                quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+                if (splitInfoText[1].includes('انکودر')) {
+                    encoder = purgeEncoderText(splitInfoText[1]);
+                    size = purgeSizeText(splitInfoText[2]);
+                } else {
+                    size = purgeSizeText(splitInfoText[1]);
+                    encoder = purgeEncoderText(splitInfoText[2]);
+                }
+            } else {
+                let qualityText = purgeQualityText(splitInfoText[1]).split(' ');
+                quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+                size = purgeSizeText(splitInfoText[2]);
+                encoder = '';
+            }
+        } else {
+            let qualityText = splitInfoText[0].trim()
+                .split(' ')
+                .filter((text) => text && !persianRex.hasLetter.test(text));
+            quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+            size = purgeSizeText(splitInfoText[1]);
+            encoder = '';
+        }
+    } else if (infoText.includes(' –') || infoText.includes(' -')) {
+        let splitInfoText = infoText.split(/\s[–-]/g);
+        if (splitInfoText.length === 3) {
+            let qualityText = purgeQualityText(splitInfoText[0]).split(' ');
+            quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+            if (splitInfoText[1].includes('انکودر')) {
+                encoder = purgeEncoderText(splitInfoText[1]);
+                size = purgeSizeText(splitInfoText[2]);
+            } else {
+                size = purgeSizeText(splitInfoText[1]);
+                encoder = purgeEncoderText(splitInfoText[2]);
+            }
+        } else {
+            let qualityText = purgeQualityText(splitInfoText[0]).split(' ');
+            quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+            size = purgeSizeText(splitInfoText[1]);
+            size = (size.toLowerCase().includes('mb') || size.toLowerCase().includes('gb')) ? size : '';
+            encoder = splitInfoText[1].includes('انکودر') ? purgeEncoderText(splitInfoText[1]) : ''; //todo : fix
+        }
     } else {
-        let qualityText = infoText.split(' –')[0].trim().split(' ');
+        let splitInfoText = infoText.split('حجم');
+        let qualityText = purgeQualityText(splitInfoText[0]).split(' ');
         quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-        size = infoText.split(' –').pop().trim();
-        encoder = $(infoNodeChildren[2]).text().replace('انکودر :', '').trim();
+        size = splitInfoText.length > 1 ? purgeSizeText(splitInfoText[1]) : '';
+        encoder = '';
     }
-    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
+    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.').replace('.دوبله فارسی', '');
     return [info, size].filter(value => value).join(' - ');
 }

@@ -36,7 +36,9 @@ export async function getTvMazeApiData(title, rawTitle, imdbID) {
                 await new Promise((resolve => setTimeout(resolve, 1200)));
                 waitCounter++;
             } else {
-                await saveError(error);
+                if (error.response && error.response.status !== 404) {
+                    await saveError(error);
+                }
                 return null;
             }
         }

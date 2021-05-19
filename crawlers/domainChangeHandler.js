@@ -210,6 +210,7 @@ export async function update_Posters_Trailers(sourcesUrls, changedDomains, valaM
     for (let i = 0; i < docs_array.length; i++) {
         let postersChanged = false;
         let trailerChanged = false;
+        //todo : add remove duplicate poster link
         let posters = docs_array[i].posters || [];
         let trailers = docs_array[i].trailers || [];
 
