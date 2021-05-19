@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const getCollection = require("../mongoDB");
 const {dataConfig} = require("./configs");
+const {getAggregationProjectionWithSkipLimits} = require("../utils/routesUtils");
 const {ObjectId} = require("mongodb");
 
 
@@ -17,7 +18,8 @@ router.get('/searchByTitle/:title/:types/:dataLevel/:page/:count?', async (req, 
 
     let collection = await getCollection('movies');
     let searchResults = await collection.aggregate([
-        {$search: {
+        {
+            $search: {
                 index: 'default',
                 text: {
                     query: title,
@@ -25,19 +27,13 @@ router.get('/searchByTitle/:title/:types/:dataLevel/:page/:count?', async (req, 
                 }
             }
         },
-        {$match: {
+        {
+            $match: {
                 type: {$in: types},
             }
         },
-        {
-            $project: dataConfig[dataLevel],
-        },
-        {
-            $skip: skip,
-        },
-        {
-            $limit: limit,
-        }
+        ...getAggregationProjectionWithSkipLimits(dataLevel, skip, limit),
+
     ]).toArray();
 
     if (searchResults.length > 0) {
