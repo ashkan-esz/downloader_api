@@ -13,6 +13,7 @@ export function getTitleModel(title, page_link, type, siteDownloadLinks, year, p
         dislike: 0,
         insert_date: new Date(),
         update_date: 0,
+        apiUpdateDate: new Date(),
         seasons: [],
         episodes: [],
         posters: [poster],

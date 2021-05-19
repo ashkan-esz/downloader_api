@@ -89,11 +89,12 @@ function get_file_size_serial($, link) {
     let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let splittedInfoText = infoText.split(' – ');
-    let quality;
+    let quality, encoder;
     if (splittedInfoText[0].includes('کیفیت')) {
         let qualityText = splittedInfoText[0].split('کیفیت')[1].trim().split(' ');
         quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-    } else {
+        encoder = splittedInfoText.length > 1 ? splittedInfoText[1].replace('انکودر:', '').trim() : '';
+    } else if (splittedInfoText[0].includes('«')) {
         quality = splittedInfoText[0]
             .split('«')[1]
             .replace('لينک مستقيم', '')
@@ -101,8 +102,14 @@ function get_file_size_serial($, link) {
             .trim()
             .split(' ')
             .join('.');
+        encoder = splittedInfoText.length > 1 ? splittedInfoText[1].replace('انکودر:', '').trim() : '';
+    } else {
+        let linkHref = $(link).attr('href').split('.');
+        linkHref.pop();
+        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/S\d\dE\d\d|S\dE\d\d/g)));
+        quality = linkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
+        encoder = '';
     }
-    let encoder = splittedInfoText.length > 1 ? splittedInfoText[1].replace('انکودر:', '').trim() : '';
     return [quality, bit10, encoder, hardSub, dubbed].filter(value => value).join('.');
 }
 
@@ -111,10 +118,18 @@ function get_file_size_movie($, link) {
     let infoText = $(infoNodeChildren).text();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), infoText) ? 'dubbed' : '';
-    let qualityText = infoText.split(' – ')[0].trim().split(' ');
-    let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-    let size = infoText.split(' – ')[1].trim();
-    let encoder = $(infoNodeChildren[2]).text().replace('انکودر :', '').trim();
+    let quality, encoder, size;
+    if (infoText.includes('|')) {
+        let qualityText = infoText.split('|')[1].replace('کیفیت', '').trim().split(' ');
+        quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+        size = infoText.split('|')[2].replace('حجم', '').replace(':', '').trim();
+        encoder = $(infoNodeChildren[2]).text().replace('انکودر :', '').trim();
+    } else {
+        let qualityText = infoText.split(' –')[0].trim().split(' ');
+        quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+        size = infoText.split(' –').pop().trim();
+        encoder = $(infoNodeChildren[2]).text().replace('انکودر :', '').trim();
+    }
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }

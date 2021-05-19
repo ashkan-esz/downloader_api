@@ -5,7 +5,7 @@ const Sentry = require('@sentry/node');
 
 export async function getTvMazeApiData(title, rawTitle, imdbID) {
     let waitCounter = 0;
-    while (waitCounter < 10) {
+    while (waitCounter < 12) {
         try {
             let response = await axios.get(`http://api.tvmaze.com/singlesearch/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
@@ -31,12 +31,13 @@ export async function getTvMazeApiData(title, rawTitle, imdbID) {
                 summary: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : ''
             };
         } catch (error) {
-            saveError(error);
-            if (error.response && error.response.status === 404) {
-                return null;
-            } else {
-                await new Promise((resolve => setTimeout(resolve, 600)));
+            if (error.response && error.response.status === 429) {
+                //too much request
+                await new Promise((resolve => setTimeout(resolve, 1200)));
                 waitCounter++;
+            } else {
+                await saveError(error);
+                return null;
             }
         }
     }

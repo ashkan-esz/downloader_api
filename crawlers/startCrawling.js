@@ -116,8 +116,8 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                 });
             }
 
-
-            await domainChangeHandler(sources, valaMovieTrailerUrl);
+            // todo : add flag to disable domain change handler
+            // await domainChangeHandler(sources, valaMovieTrailerUrl);
 
             let time2 = new Date();
             let crawling_time = time2.getTime() - time1.getTime();

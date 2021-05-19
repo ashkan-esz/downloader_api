@@ -24,6 +24,7 @@ function handlePosterUpdate(db_data, poster) {
         if (checkSource(db_data.posters[i], poster)) {//this poster exist
             if (db_data.posters[i] !== poster) { //replace link
                 db_data.posters[i] = poster;
+                db_data.posters = removeDuplicateLinks(db_data.posters);
                 return true;
             } else {
                 return false;
@@ -32,6 +33,7 @@ function handlePosterUpdate(db_data, poster) {
     }
 
     db_data.posters.push(poster); //new poster
+    db_data.posters = removeDuplicateLinks(db_data.posters);
     return true;
 }
 

@@ -153,6 +153,7 @@ export function checkSource(case1, case2) {
         .replace('www.', '')
         .replace('image.', '')
         .replace(/\d/g, '')
+        .replace(/s/g, '')
         .split('.')[0];
     let new_source_name = case2
         .replace('https://', '')
@@ -160,6 +161,7 @@ export function checkSource(case1, case2) {
         .replace('www.', '')
         .replace('image.', '')
         .replace(/\d/g, '')
+        .replace(/s/g, '')
         .split('.')[0];
     let isZarmovie = checkSourceNameAlternative(case1, case2, 'zarmovie', 'zarfilms');
     let isGolchindl = checkSourceNameAlternative(case1, case2, 'golchin', 'golchin');
