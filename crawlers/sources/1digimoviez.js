@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, removeDuplicateLinks} = require('../utils');
+const {remove_persian_words, removeDuplicateLinks, checkDubbed, purgeQualityText, purgeSizeText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -180,16 +180,14 @@ function get_file_size_serial($, link) {
         let {info, size} = get_serial_text_len1(text_array);
         return [info, size].filter(value => value).join(' - ');
     } else if (text_array.length === 3) {
-        dubbed = (text_array[2].includes('زبان : فارسی')) ? 'dubbed' : '';
+        dubbed = checkDubbed(text_array[2], '') ? 'dubbed' : '';
         let temp = text_array[2].replace(/:/g, '').split(' ');
         size = temp.filter((text) => !persianRex.hasLetter.test(text) && !isNaN(text)).pop() + 'MB';
         quality = temp.filter((text) => !persianRex.hasLetter.test(text) && isNaN(text)).join('.');
     } else {
-        quality = text_array[2].replace(/:/g, '')
-            .replace('کیفیت', '')
-            .trim().replace(/\s/g, '.');
+        quality = purgeQualityText(text_array[2]).replace(/\s/g, '.');
         quality = sortQualityInfo(quality);
-        dubbed = (text_array[3].includes('زبان : فارسی') || text_array[3].includes('زبان: دوبله فارسی')) ? 'dubbed' : '';
+        dubbed = checkDubbed(text_array[3], '') ? 'dubbed' : '';
         size = dubbed ? text_array[4] : text_array[3];
     }
     let info = [quality, dubbed].filter(value => value !== '').join('.');
@@ -204,22 +202,20 @@ function get_file_size_serial($, link) {
 
 function get_file_size_movie($, link) {
     let prevNodeChildren = $(link).parent().parent().prev().children();
-    let dubbed = ($(link).attr('href').toLowerCase().includes('farsi.dub')) ? 'dubbed' : '';
+    let dubbed = checkDubbed($(link).attr('href')) ? 'dubbed' : '';
     let quality_text = $(prevNodeChildren[0]).text();
     if (quality_text.includes('کیفیت')) {
-        let quality = quality_text.replace('کیفیت :', '').trim().replace(/\s/g, '.');
+        let quality = purgeQualityText(quality_text).replace(/\s/g, '.');
         quality = sortQualityInfo(quality);
         let info = [quality, dubbed].filter(value => value !== '').join('.');
         let size_text = $(prevNodeChildren[1]).text();
-        let size = (size_text.includes('حجم')) ?
-            size_text.replace('حجم :', '').replace(' ', '') : '';
+        let size = (size_text.includes('حجم')) ? purgeSizeText(size_text) : '';
         return [info, size].filter(value => value !== '').join(' - ');
     } else {
         let quality = get_movie_quality($, link);
         let info = [quality, dubbed].filter(value => value !== '').join('.');
         let size_text = $(prevNodeChildren[0]).text();
-        let size = (size_text.includes('حجم')) ?
-            size_text.replace('حجم :', '').replace(' ', '') : '';
+        let size = (size_text.includes('حجم')) ? purgeSizeText(size_text) : '';
         return [info, size].filter(value => value !== '').join(' - ');
     }
 }

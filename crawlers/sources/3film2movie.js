@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, replacePersianNumbers, getType} = require('../utils');
+const {remove_persian_words, replacePersianNumbers, getType, checkHardSub, checkDubbed} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -132,15 +132,13 @@ function get_file_size($, link, type) {
 function get_file_size_serial($, link) {
     let text = $(link).parent().text().replace(/[:_|]/g, '');
     text = replacePersianNumbers(text);
-    let family = (text.includes('Family')) ? 'Family' : '';
+    let family = (text.includes('Family')) ? 'Censored' : '';
     let text_array = text.split(' ').filter((text) =>
         !persianRex.hasLetter.test(text) && text !== '' && text !== 'Family');
     text_array.shift();
     let link_href = $(link).attr('href').toLowerCase();
-    let HardSub = (text.includes('هاردساب فارسی') || link_href.includes('subfa')) ? 'HardSub' : '';
-    let dubbed = (text.includes('دوبله فارسی') ||
-        link_href.includes('farsi.dub') ||
-        link_href.includes('dubbed')) ? 'dubbed' : '';
+    let HardSub = (checkHardSub(text) || checkHardSub(link_href)) ? 'HardSub' : '';
+    let dubbed = checkDubbed(text, link_href) ? 'dubbed' : '';
     return [...text_array, HardSub, dubbed, family].filter(value => value !== '').join('.');
 }
 
@@ -149,8 +147,8 @@ function get_file_size_movie($, link) {
     let text = $(parent).prev().text();
     text = replacePersianNumbers(text);
     let link_href = $(link).attr('href').toLowerCase();
-    let HardSub = (link_href.includes('subfa')) ? 'HardSub' : '';
-    let dubbed = (link_href.includes('farsi.dub') || link_href.includes('dubbed')) ? 'dubbed' : '';
+    let HardSub = checkHardSub(link_href) ? 'HardSub' : '';
+    let dubbed = checkDubbed(link_href, '') ? 'dubbed' : '';
     let Censored = ($(link).next().text().toLowerCase().includes('family') || dubbed || HardSub) ? 'Censored' : '';
     let text_array = text.replace(/[()]/g, '').split(' ')
         .filter((text) => text && !persianRex.hasLetter.test(text));

@@ -1,5 +1,12 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType, removeDuplicateLinks} = require('../utils');
+const {
+    remove_persian_words,
+    getType,
+    removeDuplicateLinks,
+    purgeQualityText,
+    purgeSizeText,
+    purgeEncoderText
+} = require('../utils');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
@@ -120,16 +127,10 @@ function get_file_size_serial($, link) {
         infoNodeChildren = infoNodeChildren.slice(1);
     }
     let qualityEncode = $(infoNodeChildren[0]).text().replace('WEB-DL - HDTV', 'WEB-DL').split(' - ');
-    let qualityText = qualityEncode[0].replace('کیفیت :', '').trim().split(' ');
+    let qualityText = purgeQualityText(qualityEncode[0]).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-    let encoder = qualityEncode.length > 1 ? qualityEncode[1].trim() : '';
-    let size = $(infoNodeChildren[2]).text()
-        .replace('حجم :', '')
-        .replace('میانگین حجم', '')
-        .replace('میانگین', '')
-        .replace('گیگابایت', 'GB')
-        .replace('مگابایت', 'MB')
-        .replace(/\s/g, '');
+    let encoder = qualityEncode.length > 1 ? purgeEncoderText(qualityEncode[1]) : '';
+    let size = purgeSizeText($(infoNodeChildren[2]).text());
     let info = [quality, encoder, hardSub].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
@@ -140,16 +141,10 @@ function get_file_size_movie($, link) {
     if (hardSub) {
         infoNodeChildren = infoNodeChildren.slice(1);
     }
-    let qualityText = $(infoNodeChildren[0]).text().replace('کیفیت :', '').trim().split(' ');
+    let qualityText = purgeQualityText($(infoNodeChildren[0]).text()).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
-    let size = $(infoNodeChildren[1]).text()
-        .replace('حجم :', '')
-        .replace('میانگین حجم', '')
-        .replace('میانگین', '')
-        .replace('گیگابایت', 'GB')
-        .replace('مگابایت', 'MB')
-        .replace(/\s/g, '');
-    let encoder = $(infoNodeChildren[3]).text().replace('انکودر :', '').trim();
+    let size = purgeSizeText($(infoNodeChildren[1]).text());
+    let encoder = purgeEncoderText($(infoNodeChildren[3]).text());
     let info = [quality, encoder, hardSub].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }

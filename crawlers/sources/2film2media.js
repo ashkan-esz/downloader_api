@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType} = require('../utils');
+const {remove_persian_words, getType, checkDubbed, purgeQualityText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -97,7 +97,7 @@ function get_file_size_serial($, link) {
     let href_array = $(link).attr('href').split('.');
     let release = href_array[href_array.indexOf(quality) + 1];
     let linkHref = $(link).attr('href').toLowerCase();
-    let dubbed = (linkHref.includes('farsi') || linkHref.includes('dubbed')) ? 'dubbed' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     return [quality, x265, release, dubbed]
         .filter(value => value !== '')
         .join('.')
@@ -113,7 +113,7 @@ function get_file_size_movie($, link) {
     }
 
     let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
-    let text = $(parent).prev().text().replace('Web-dl', 'WEB-DL').trim();
+    let text = purgeQualityText($(parent).prev().text());
 
     if (persianRex.hasLetter.test(text)) {
         text = remove_persian_from_info(text, $, parent);
@@ -147,10 +147,9 @@ function remove_persian_from_info(text, $, parent) {
 }
 
 function extract_info(link_href, text_array) {
-    let dubbed = (link_href.includes('farsi') || link_href.includes('dubbed')) ? 'dubbed' : '';
+    let dubbed = checkDubbed(link_href) ? 'dubbed' : '';
     let match_year = link_href.replace(/_/g, '.').match(/\.\d\d\d\d\./g);
-    let year = match_year ? match_year
-        .pop().replace(/\./g, '') : '';
+    let year = match_year ? match_year.pop().replace(/\./g, '') : '';
     let movie_title = (collection) ? save_title + "." + year : '';
     let quality_release_array = text_array[0].split(' ');
     let release = quality_release_array.shift();

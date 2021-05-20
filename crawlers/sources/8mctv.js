@@ -1,5 +1,14 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType, checkDubbed, checkHardSub, removeDuplicateLinks} = require('../utils');
+const {
+    remove_persian_words,
+    getType,
+    checkDubbed,
+    checkHardSub,
+    removeDuplicateLinks,
+    purgeQualityText,
+    purgeSizeText,
+    purgeEncoderText
+} = require('../utils');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
@@ -151,18 +160,11 @@ function get_file_size_serial($, link) {
     let qualityEncode = $(infoNodeChildren[0]).text().trim()
         .replace('WEB-DL - HDTV', 'WEB-DL')
         .split(' - ');
-    let qualityText = qualityEncode[0].replace('.', '').replace('کیفیت :', '').trim().split(' ');
+    let qualityText = purgeQualityText(qualityEncode[0].replace('.', '')).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
     quality = quality.replace('10bit.x265', 'x265.10bit');
     let encoder = qualityEncode.length > 1 ? qualityEncode[1].trim() : '';
-    let size = $(infoNodeChildren[2]).text()
-        .replace('حجم :', '')
-        .replace('میانگین حجم', '')
-        .replace('میانگین', '')
-        .replace('گیگابایت', 'GB')
-        .replace('مگابایت', 'MB')
-        .replace(/\s/g, '');
-
+    let size = purgeSizeText($(infoNodeChildren[2]).text());
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
@@ -171,17 +173,11 @@ function get_file_size_movie($, link) {
     let infoNodeChildren = $(link).prev().children();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
-    let qualityText = $(infoNodeChildren[0]).text().trim().replace('کیفیت :', '').split(' ');
+    let qualityText = purgeQualityText($(infoNodeChildren[0]).text()).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
     quality = quality.replace('10bit.x265', 'x265.10bit');
-    let size = $(infoNodeChildren[1]).text()
-        .replace('حجم :', '')
-        .replace('میانگین حجم', '')
-        .replace('میانگین', '')
-        .replace('گیگابایت', 'GB')
-        .replace('مگابایت', 'MB')
-        .replace(/\s/g, '');
-    let encoder = $(infoNodeChildren[2]).text().replace('انکود :', '').trim();
+    let size = purgeSizeText($(infoNodeChildren[1]).text());
+    let encoder = purgeEncoderText($(infoNodeChildren[2]).text());
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }

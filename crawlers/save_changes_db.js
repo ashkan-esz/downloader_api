@@ -151,7 +151,7 @@ function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
     if (siteDownloadLinks.length !== db_links.length) {
         return true;
     }
-
+    //todo : check link.info
     if (type === 'movie') {
         for (let i = 0; i < siteDownloadLinks.length; i++) {
             if (siteDownloadLinks[i].link !== db_links[i].link) {

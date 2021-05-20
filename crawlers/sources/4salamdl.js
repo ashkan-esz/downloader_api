@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType} = require('../utils');
+const {remove_persian_words, getType, purgeQualityText, purgeSizeText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -144,9 +144,9 @@ function get_file_size($, link, type) {
 
 function get_file_size_serial($, link) {
     let prevNodeChildren = $(link).parent().parent().parent().prev().children();
-    let text_array = $(prevNodeChildren[3]).text().replace('Web-DL', 'WEB-DL').split(' ');
+    let text_array = purgeQualityText($(prevNodeChildren[3]).text()).split(' ');
     let bit10 = $(link).attr('href').toLowerCase().includes('10bit') ? '10bit' : '';
-    let size = $(prevNodeChildren[5]).text().replace(' مگابایت', 'MB');
+    let size = purgeSizeText($(prevNodeChildren[5]).text());
     let filtered_text_array = text_array.filter(value => value && !persianRex.hasLetter.test(value));
     if (filtered_text_array.length === 0) {
         let link_href = $(link).attr('href').toLowerCase().replace(/[/_\s]/g, '.');
@@ -212,7 +212,7 @@ function get_movie_size_info(text_array, dubbed) {
     }
 
 
-    let quality = text_array[0].replace('کیفیت:', '').replace('دانلود با کیفیت ', '');
+    let quality = purgeQualityText(text_array[0]);
     if (quality.includes('دانلود نسخه سه بعد')) {
         let info = ['3D', dubbed].filter(value => value).join('.')
         return {info, size};

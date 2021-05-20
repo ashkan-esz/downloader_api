@@ -1,5 +1,12 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, checkDubbed, removeDuplicateLinks} = require('../utils');
+const {
+    remove_persian_words,
+    checkDubbed,
+    checkHardSub,
+    removeDuplicateLinks,
+    purgeQualityText,
+    purgeSizeText
+} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -159,9 +166,7 @@ function get_file_size_serial($, link) {
     let text_array = $(link).parent().parent().parent().parent().prev().text().trim().split('/');
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let quality, dubbed, size, link_quality;
-    let sub = $(link).attr('href').toLowerCase().includes('softsub')
-        ? 'SoftSub'
-        : $(link).attr('href').toLowerCase().includes('HardSub') ? 'HardSub' : '';
+    let sub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     if (text_array.length === 1) {
         quality = $(link).text().split(/[\s-]/g).filter((text) => !persianRex.hasLetter.test(text) && text !== '' && isNaN(text));
         if (quality[0] === 'X265') {
@@ -176,9 +181,8 @@ function get_file_size_serial($, link) {
         dubbed = result.dubbed;
         size = result.size;
         let link_href = $(link).attr('href').toLowerCase();
-        let case1 = link_href.match(/\d\d\d\dp/g);
-        let case2 = link_href.match(/\d\d\dp/g);
-        link_quality = case1 ? case1[0] : (case2 ? case2[0] : '');
+        let case1 = link_href.match(/\d\d\d\dp|\d\d\dp/g);
+        link_quality = case1 ? case1[0] : '';
     } else {
         let result = serial_text_length_3(text_array, $, link, 2, 3);
         quality = result.quality;
@@ -196,7 +200,7 @@ function get_file_size_movie($, link) {
         prevNode = $(prevNode).prev();
     }
     let link_href = $(link).attr('href').toLowerCase();
-    let dubbed = (link_href.includes('farsi.dub') || link_href.includes('farsi_dub')) ? 'dubbed' : '';
+    let dubbed = checkDubbed(link_href, '') ? 'dubbed' : '';
 
     let text = $(prevNode).text();
     let trash = $($(prevNode).children()).text().split(' ');
@@ -214,10 +218,7 @@ function get_file_size_movie($, link) {
         text_array[1].toLowerCase().includes('مگابایت') ||
         dubbed === 'dubbed') {
         encoder = '';
-        size = text_array[1]
-            .replace('مگابایت', 'MB')
-            .replace('گیگابایت', 'GB')
-            .replace(/\s/g, '');
+        size = purgeSizeText(text_array[1]);
     }
     let info = (quality[2] === '10bit')
         ? [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.')
@@ -226,7 +227,7 @@ function get_file_size_movie($, link) {
 }
 
 function serial_text_length_2(text_array, $, link, bit10) {
-    let quality = text_array[1].replace('کیفیت :', '').trim().split(' ');
+    let quality = purgeQualityText(text_array[1]).split(' ');
     let link_href = $(link).attr('href').toLowerCase();
     let x265 = (link_href.includes('x265')) ? 'x265' : '';
     let case1 = link_href.match(/\d\d\d\dp|\d\d\dp/g);
@@ -241,11 +242,10 @@ function serial_text_length_2(text_array, $, link, bit10) {
 }
 
 function serial_text_length_3(text_array, $, link, qualityIndex, dubbedIndex) {
-    let quality = text_array[qualityIndex].replace('کیفیت :', '').trim().split(' ');
+    let quality = purgeQualityText(text_array[qualityIndex]).split(' ');
     let link_href = $(link).attr('href').toLowerCase();
     let dubbed = (text_array[dubbedIndex].includes('دوبله فارسی') || checkDubbed(link_href, '')) ? 'dubbed' : '';
-    let temp = text_array[dubbedIndex].replace('میانگین حجم:', '').replace('مگابایت', 'MB');
-    let size = (dubbed) ? '' : temp.replace(/\s/g, '');
+    let size = (!dubbed) ? purgeSizeText(text_array[dubbedIndex]) : '';
     if (quality.length === 2 && quality[0].match(/\d\d\d\dp|\d\d\dp/g)) {
         quality = quality.reverse();
     }

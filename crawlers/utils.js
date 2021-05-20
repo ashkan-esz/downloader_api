@@ -64,21 +64,30 @@ export function getType(title) {
         ? 'movie' : 'serial';
 }
 
-export function checkDubbed(link, info) {
+export function checkDubbed(link, info = '') {
     link = link.toLowerCase();
     info = info.toLowerCase();
     return (
         link.includes('farsi') ||
         link.includes('dub') ||
+        link.includes('دوبله فارسی') ||
+        link.includes('زبان : فارسی') ||
         info.includes('farsi') ||
         info.includes('dubbed') ||
-        info.includes('دوبله فارسی')
+        info.includes('دوبله فارسی') ||
+        info.includes('زبان : فارسی')
     );
 }
 
 export function checkHardSub(input) {
     input = input.toLowerCase();
-    return (input.includes('softsub') || input.includes('hardsub') || input.includes('sub'));
+    return (
+        input.includes('softsub') ||
+        input.includes('hardsub') ||
+        input.includes('subfa') ||
+        input.includes('sub') ||
+        input.includes('هاردساب فارسی')
+    );
 }
 
 export function getYear(page_link, save_link) {
@@ -281,13 +290,17 @@ export function purgeQualityText(qualityText) {
         .replace('فارسی', '')
         .replace('هاردساب', '')
         .replace(/[)(:]/g, '')
+        .replace('Web-DL', 'WEB-DL')
+        .replace('web-dl', 'WEB-DL')
         .trim();
 }
 
 export function purgeSizeText(sizeText) {
     return sizeText
         .trim()
+        .replace('میانگین حجم', '')
         .replace('حجم', '')
+        .replace('میانگین', '')
         .replace('فایل', '')
         .replace('گیگابایت', 'GB')
         .replace('مگابایت', 'MB')
@@ -297,8 +310,8 @@ export function purgeSizeText(sizeText) {
 export function purgeEncoderText(encoderText) {
     return encoderText
         .replace('انکودر', '')
-        .replace('انکودر', '')
         .replace('انکدر', '')
+        .replace('انکود', '')
         .replace(':', '')
         .trim()
 }
