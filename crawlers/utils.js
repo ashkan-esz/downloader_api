@@ -1,10 +1,11 @@
 const persianRex = require('persian-rex');
 const {saveError} = require("../saveError");
 
-export function remove_persian_words(title, type) {
+export function purgeTitle(title, type) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
+    title = title.replace('شماره ۱', '').replace('فیلم 1', '');
     let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
     if (title_array.length > 1) {
         let year = title_array[title_array.length - 1];
@@ -21,6 +22,16 @@ export function remove_persian_words(title, type) {
             title_array.pop();
         }
     }
+
+    if (title_array.length > 2) {
+        let year = Number(title_array[title_array.length - 2]);
+        let number = Number(title_array[title_array.length - 1]);
+        if (year > 1900 && year < 2100 && number < 10) {
+            title_array.pop();
+            title_array.pop();
+        }
+    }
+
     return title_array;
 }
 

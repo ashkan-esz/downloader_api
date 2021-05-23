@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, removeDuplicateLinks, checkDubbed, purgeQualityText, purgeSizeText} = require('../utils');
+const {purgeTitle, removeDuplicateLinks, checkDubbed, purgeQualityText, purgeSizeText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -19,7 +19,7 @@ async function search_title_serial(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`digimovies/serial/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title.toLowerCase(), 'serial');
+            let title_array = purgeTitle(title.toLowerCase(), 'serial');
             if (title_array.length > 0) {
                 let pageSearchResult = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
                 if (pageSearchResult) {
@@ -48,7 +48,7 @@ async function search_title_movie(link, i, $) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`digimovies/movie/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title, 'movie');
+            let title_array = purgeTitle(title, 'movie');
             if (title_array.length > 0 && !isPersianMovies($, link)) {
                 let pageSearchResult = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
                 if (pageSearchResult) {

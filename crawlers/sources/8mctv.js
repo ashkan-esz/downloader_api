@@ -1,6 +1,6 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
 const {
-    remove_persian_words,
+    purgeTitle,
     getType,
     checkDubbed,
     checkHardSub,
@@ -31,7 +31,7 @@ async function search_title_serial(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title.toLowerCase(), type);
+            let title_array = purgeTitle(title.toLowerCase(), type);
             if (title_array.length > 0) {
                 let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
                 if (pageSearchResult) {
@@ -61,7 +61,7 @@ async function search_title_movie(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title.toLowerCase(), type);
+            let title_array = purgeTitle(title.toLowerCase(), type);
             if (title_array.length > 0) {
                 let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
                 if (pageSearchResult) {

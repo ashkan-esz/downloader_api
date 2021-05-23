@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {remove_persian_words, getType, checkDubbed, purgeQualityText} = require('../utils');
+const {purgeTitle, getType, checkDubbed, purgeQualityText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -21,7 +21,7 @@ async function search_title(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`film2media/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = remove_persian_words(title, type);
+            let title_array = purgeTitle(title, type);
             save_title = title_array.join('.');
             collection = (page_link.includes('collection')) ? 'collection' : '';
             if (title_array.length > 0) {
