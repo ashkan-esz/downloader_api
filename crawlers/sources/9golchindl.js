@@ -178,7 +178,7 @@ function get_file_size_movie($, link) {
             quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
             size = purgeSizeText(splitInfoText[1]);
             size = (size.toLowerCase().includes('mb') || size.toLowerCase().includes('gb')) ? size : '';
-            encoder = splitInfoText[1].includes('انکودر') ? purgeEncoderText(splitInfoText[1]) : ''; //todo : fix
+            encoder = splitInfoText[1].includes('انکودر') ? purgeEncoderText(splitInfoText[1]) : '';
         }
     } else {
         let splitInfoText = infoText.split('حجم');

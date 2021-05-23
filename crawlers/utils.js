@@ -86,7 +86,8 @@ export function checkDubbed(link, info = '') {
         info.includes('farsi') ||
         info.includes('dubbed') ||
         info.includes('دوبله فارسی') ||
-        info.includes('زبان : فارسی')
+        info.includes('زبان : فارسی') ||
+        info.includes('دوبله')
     );
 }
 
@@ -97,7 +98,8 @@ export function checkHardSub(input) {
         input.includes('hardsub') ||
         input.includes('subfa') ||
         input.includes('sub') ||
-        input.includes('هاردساب فارسی')
+        input.includes('هاردساب فارسی') ||
+        input.includes('زیرنویس')
     );
 }
 
@@ -294,6 +296,8 @@ export function purgeQualityText(qualityText) {
         .replace('دانلود', '')
         .replace('با', '')
         .replace('کیفیت', '')
+        .replace('انتخاب', '')
+        .replace('کیفیت', '')
         .replace('نسخه', '')
         .replace('اختصاصی', '')
         .replace('گلچین', '')
@@ -314,6 +318,7 @@ export function purgeSizeText(sizeText) {
         .replace('میانگین', '')
         .replace('فایل', '')
         .replace('گیگابایت', 'GB')
+        .replace('گیگا بایت', 'GB')
         .replace('مگابایت', 'MB')
         .replace(/[\s:]/g, '');
 }

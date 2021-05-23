@@ -3,6 +3,8 @@ const {
     purgeTitle,
     getType,
     removeDuplicateLinks,
+    checkHardSub,
+    checkDubbed,
     purgeQualityText,
     purgeSizeText,
     purgeEncoderText
@@ -122,8 +124,9 @@ function get_file_size($, link, type) {
 
 function get_file_size_serial($, link) {
     let infoNodeChildren = $(link).parent().parent().parent().parent().prev().children();
-    let hardSub = $(infoNodeChildren[0]).text().includes('زیرنویس') ? 'HardSub' : '';
-    if (hardSub) {
+    let hardSub = checkHardSub($(infoNodeChildren[0]).text()) ? 'HardSub' : '';
+    let dubbed = checkDubbed($(link).attr('href'), $(infoNodeChildren[0]).text()) ? 'dubbed' : '';
+    if (hardSub || dubbed) {
         infoNodeChildren = infoNodeChildren.slice(1);
     }
     let qualityEncode = $(infoNodeChildren[0]).text().replace('WEB-DL - HDTV', 'WEB-DL').split(' - ');
@@ -131,20 +134,29 @@ function get_file_size_serial($, link) {
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
     let encoder = qualityEncode.length > 1 ? purgeEncoderText(qualityEncode[1]) : '';
     let size = purgeSizeText($(infoNodeChildren[2]).text());
-    let info = [quality, encoder, hardSub].filter(value => value).join('.');
+    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
 
 function get_file_size_movie($, link) {
     let infoNodeChildren = $(link).parent().prev().children();
-    let hardSub = $(infoNodeChildren[0]).text().includes('زیرنویس') ? 'HardSub' : '';
-    if (hardSub) {
+    let hardSub = checkHardSub($(infoNodeChildren[0]).text()) ? 'HardSub' : '';
+    let dubbed = checkDubbed($(link).attr('href'), $(infoNodeChildren[0]).text()) ? 'dubbed' : '';
+    if (hardSub || dubbed) {
         infoNodeChildren = infoNodeChildren.slice(1);
     }
     let qualityText = purgeQualityText($(infoNodeChildren[0]).text()).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+    if (!quality) {
+        let linkHref = $(link).attr('href').split('.');
+        linkHref.pop();
+        linkHref.pop();
+        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/\d\d\d\dp|\d\d\dp/g)));
+        quality = linkHref.slice(seasonEpisodeIndex).join('.').replace('.HardSub', '');
+    }
     let size = purgeSizeText($(infoNodeChildren[1]).text());
     let encoder = purgeEncoderText($(infoNodeChildren[3]).text());
-    let info = [quality, encoder, hardSub].filter(value => value).join('.');
+    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.')
+        .replace('.MkvCage.MkvCage', '.MkvCage');
     return [info, size].filter(value => value).join(' - ');
 }
