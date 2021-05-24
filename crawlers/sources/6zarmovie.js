@@ -12,8 +12,6 @@ const {
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
-//todo : add quality sample
-//todo : add subtitle link
 
 module.exports = async function zarmovie({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([
@@ -33,7 +31,7 @@ async function search_title(link, i) {
             }
             let title_array = purgeTitle(title.toLowerCase(), type);
             if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size, getQualitySample);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
@@ -159,4 +157,22 @@ function get_file_size_movie($, link) {
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.')
         .replace('.MkvCage.MkvCage', '.MkvCage');
     return [info, size].filter(value => value).join(' - ');
+}
+
+function getQualitySample($, link, type) {
+    try {
+        if (type === 'serial') {
+            return '';
+        }
+
+        let nextNode = $(link).next()[0];
+        let sampleUrl = nextNode.attribs['data-imgqu'];
+        if (sampleUrl.includes('.jpg')) {
+            return sampleUrl;
+        }
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
+    }
 }

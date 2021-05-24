@@ -12,7 +12,6 @@ const {
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
-//todo : add subtitle link
 
 module.exports = async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
     await Promise.all([

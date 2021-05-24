@@ -54,7 +54,7 @@ export async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(title_array, page_link, type, get_file_size) {
+export async function search_in_title_page(title_array, page_link, type, get_file_size, getQualitySample = null) {
     try {
         let {$, links} = await getLinks(page_link);
         if ($ === null) {
@@ -68,8 +68,9 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
                 let result = check_download_link(link, matchCases, type);
                 if (result) {
                     let link_info = get_file_size($, links[j], type);
+                    let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                     if (link_info !== 'trailer' && link_info !== 'ignore') {
-                        save_link.push({link: result, info: link_info});
+                        save_link.push({link: result, info: link_info, qualitySample: qualitySample});
                     }
                 }
             }

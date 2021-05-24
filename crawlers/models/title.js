@@ -7,7 +7,7 @@ export function getTitleModel(title, page_link, type, siteDownloadLinks, year, p
         type: type,
         sources: [{
             url: page_link,
-            links: siteDownloadLinks //[{link,info}]
+            links: siteDownloadLinks //[{link,info,qualitySample}]
         }],
         like: 0,
         dislike: 0,

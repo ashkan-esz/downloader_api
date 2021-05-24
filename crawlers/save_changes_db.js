@@ -113,7 +113,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         if (subUpdates.trailerChange) {
             updateFields.trailers = db_data.trailers;
         }
-        if (subUpdates.watchOnlineLinksChange){
+        if (subUpdates.watchOnlineLinksChange) {
             updateFields.watchOnlineLinks = db_data.watchOnlineLinks;
         }
 
@@ -151,10 +151,10 @@ function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
     if (siteDownloadLinks.length !== db_links.length) {
         return true;
     }
-    //todo : check link.info
+
     if (type === 'movie') {
         for (let i = 0; i < siteDownloadLinks.length; i++) {
-            if (siteDownloadLinks[i].link !== db_links[i].link) {
+            if (!checkEqualLinks(siteDownloadLinks[i], db_links[i])) {
                 return true;
             }
         }
@@ -162,7 +162,7 @@ function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
         for (let i = 0; i < siteDownloadLinks.length; i++) {//check links exist
             let link_exist = false;
             for (let j = 0; j < db_links.length; j++) {
-                if (siteDownloadLinks[i].link === db_links[j].link) { //this link exist
+                if (checkEqualLinks(siteDownloadLinks[i], db_links[j])) { //this link exist
                     link_exist = true;
                 }
             }
@@ -173,4 +173,18 @@ function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
     }
 
     return false;
+}
+
+function checkEqualLinks(link1, link2) {
+    if (!link1.qualitySample) {
+        link1.qualitySample = '';
+    }
+    if (!link2.qualitySample) {
+        link2.qualitySample = '';
+    }
+    return (
+        link1.link === link2.link &&
+        link1.info === link2.info &&
+        link1.qualitySample === link2.qualitySample
+    );
 }
