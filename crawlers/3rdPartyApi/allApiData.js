@@ -1,12 +1,10 @@
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
-const {handleSeasonEpisodeUpdate, getTotalDuration} = require('../seasonEpisode');
+const {handleSeasonEpisodeUpdate, getTotalDuration,getEndYear} = require('../seasonEpisode');
 const {removeDuplicateElements} = require('../utils');
 
-
 //todo : set type in update
-//todo : multiple search on tvmaze/omdb api in anime
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
@@ -32,7 +30,7 @@ export async function addApiData(titleModel, site_links) {
                 //todo : do something when type isn't anime but tvmaze has isAnime=true
             }
         }
-        let seasonEpisodeFieldsUpdate = await handleSeasonEpisodeUpdate(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
+        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -85,7 +83,6 @@ export async function apiDataUpdate(db_data, site_links) {
         }
     }
 
-
     if (db_data.type.includes('serial')) {
         let tvmazeApiData = handle_OMDB_TvMaze_ApiCall(db_data, 'tvmaze');
         let tvmazeApiFields = null;
@@ -97,7 +94,7 @@ export async function apiDataUpdate(db_data, site_links) {
                 //todo : do something when type isn't anime but tvmaze has isAnime=true
             }
         }
-        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields);
+        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -188,13 +185,13 @@ function newGenresField(data, apiGenres, isAnime, isAnimation) {
     }
 }
 
-async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, tvmazeApiFields) {
+async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
     let fields = {};
     let {
         seasonsUpdate,
         episodesUpdate,
         nextEpisodeUpdate
-    } = await handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, tvmazeApiFields, true);
+    } = await handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
 
     if (seasonsUpdate) {
         fields.seasons = db_data.seasons;
@@ -202,6 +199,9 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, tvma
     if (episodesUpdate) {
         fields.episodes = db_data.episodes;
         fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
+        fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
+    } else if (db_data.episodes.length === 0) {
+        fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
     }
     if (nextEpisodeUpdate) {
         fields.nextEpisode = db_data.nextEpisode;

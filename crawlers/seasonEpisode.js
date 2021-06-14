@@ -1,13 +1,12 @@
-const {getSeasonEpisode} = require("./utils");
 const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./3rdPartyApi/omdbApi");
+const {getSeasonEpisode} = require("./utils");
+const {getEpisodeModel} = require("./models/episode");
 
 export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
     let links_seasons = getSeasonsFromLinks(site_links);
     let seasonsUpdate = handleSeasonUpdate(db_data.seasons, links_seasons);
     let episodesUpdate = false;
     let nextEpisodeUpdate = false;
-
-    //todo : check hole of this section
 
     //omdb api
     if (omdbApiFields) {
@@ -20,7 +19,8 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
 
     //tvmaze api
     if (tvmazeApiFields) {
-        nextEpisodeUpdate = handleNextEpisodeUpdate(db_data, tvmazeApiFields.nextEpisode);
+        db_data.nextEpisode = tvmazeApiFields.nextEpisode;
+        nextEpisodeUpdate = true;
         let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApiFields.episodes);
         seasonsUpdate = handleSeasonUpdate(db_data.seasons, tvmaze_seasons) || seasonsUpdate;
         episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApiFields.episodes, db_data.duration) || episodesUpdate;
@@ -65,11 +65,6 @@ function handleSeasonUpdate(db_seasons, compareSeasons) {
         }
     }
     return seasonsUpdated;
-}
-
-function handleNextEpisodeUpdate(db_data, tvmaze_nextEpisode) {
-    db_data.nextEpisode = tvmaze_nextEpisode;
-    return true;
 }
 
 function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration) {
@@ -140,17 +135,17 @@ function handleMissedEpisode(db_seasons, db_episodes, db_duration, lastSeasonsOn
                 }
             }
             if (!episodeExist) {
-                let episodeInfo = {
-                    title: 'unknown',
-                    released: 'unknown',
-                    releaseStamp: '',
-                    duration: '0 min',
-                    season: seasonNumber,
-                    episode: l,
-                    imdbRating: '0',
-                    imdbID: ''
-                };
-                db_episodes.push(episodeInfo);
+                let episodeModel = getEpisodeModel(
+                    'unknown',
+                    'unknown',
+                    '',
+                    '0 min',
+                    seasonNumber,
+                    l,
+                    '0',
+                    ''
+                );
+                db_episodes.push(episodeModel);
                 missedEpisode = true;
             }
         }
@@ -226,4 +221,18 @@ export function getTotalDuration(episodes, latestData) {
     let minutes = totalDuration % 60;
     totalDuration = hours + ':' + minutes;
     return totalDuration;
+}
+
+export function getEndYear(episodes, status, year) {
+    if (status === 'ended') {
+        if (episodes.length > 0) {
+            let lastEpisode = episodes[episodes.length - 1];
+            return lastEpisode.released.split('-')[0];
+        } else {
+            return year;
+        }
+    } else {
+        // running
+        return '';
+    }
 }

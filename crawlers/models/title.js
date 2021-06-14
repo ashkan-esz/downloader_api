@@ -37,7 +37,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         releaseDay: "",
         year: year,
         premiered: year,
-        endYear: '',
+        endYear: type.includes('movie') ? year : '',
         officialSite: "",
         webChannel: "",
         nextEpisode: null,

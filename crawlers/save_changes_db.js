@@ -7,7 +7,7 @@ const {getTitleModel} = require("./models/title");
 const {getJikanApiData} = require("./3rdPartyApi/jikanApi");
 const {saveError} = require("../saveError");
 
-//todo : add field endYear
+
 //todo : add doc for upcoming
 
 
