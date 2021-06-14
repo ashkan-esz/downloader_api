@@ -1,40 +1,63 @@
-const {get_OMDB_Api_Data, get_OMDB_Api_Fields} = require('./omdbApi');
+const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
+const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
+const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {handleSeasonEpisodeUpdate, getTotalDuration} = require('../seasonEpisode');
+const {removeDuplicateElements} = require('../utils');
+
+
+//todo : set type in update
+//todo : multiple search on tvmaze/omdb api in anime
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let omdb_data = await get_OMDB_Api_Data(titleModel.title, titleModel.premiered, titleModel.type);
-    if (omdb_data !== null) {
-        let updateFields = get_OMDB_Api_Fields(omdb_data, titleModel.summary, titleModel.type);
-        titleModel = {...titleModel, ...updateFields};
+    let omdbApiData = await handle_OMDB_TvMaze_ApiCall(titleModel, 'omdb');
+    let omdbApiFields = null;
+    if (omdbApiData !== null) {
+        omdbApiFields = getOMDBApiFields(omdbApiData, titleModel.type);
+        if (omdbApiFields) {
+            titleModel = {...titleModel, ...omdbApiFields.updateFields};
+            updateSpecificFields(titleModel, titleModel, omdbApiFields, 'omdb');
+        }
     }
 
-    if (titleModel.type === 'serial') {
-        let {tvmazeApi_data} = await handleSeasonEpisodeUpdate(titleModel, site_links, titleModel.totalSeasons, false);
-        if (omdb_data === null) {
-            //title doesnt exist in omdb api
-            titleModel.genres = tvmazeApi_data ? tvmazeApi_data.genres : [];
-            titleModel.duration = tvmazeApi_data ? tvmazeApi_data.duration : '0 min';
-        } else if (tvmazeApi_data && tvmazeApi_data.isAnime) {
-            titleModel.genres.push('anime');
+    if (titleModel.type.includes('serial')) {
+        let tvmazeApiData = await handle_OMDB_TvMaze_ApiCall(titleModel, 'tvmaze');
+        let tvmazeApiFields = null;
+        if (tvmazeApiData !== null) {
+            tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
+            if (tvmazeApiFields) {
+                titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
+                updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
+                //todo : do something when type isn't anime but tvmaze has isAnime=true
+            }
         }
-        titleModel.tvmazeID = tvmazeApi_data ? tvmazeApi_data.tvmazeID : 0;
-        titleModel.isAnimation = tvmazeApi_data ? tvmazeApi_data.isAnimation : false;
-        titleModel.status = tvmazeApi_data ? tvmazeApi_data.status : 'unknown';
-        titleModel.premiered = tvmazeApi_data ? tvmazeApi_data.premiered : '';
-        if (tvmazeApi_data) {
-            titleModel.year = tvmazeApi_data.premiered.split('-')[0];
+        let seasonEpisodeFieldsUpdate = await handleSeasonEpisodeUpdate(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
+        titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
+    }
+
+    //todo : set anime type when its anime
+    //todo : handle relatedTitles
+
+    if (titleModel.type.includes('anime')) {
+        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.type, true);
+        if (jikanApiData) {
+            let jikanApiFields = getJikanApiFields(jikanApiData);
+            if (jikanApiFields) {
+                titleModel = {...titleModel, ...jikanApiFields.updateFields};
+                if (!titleModel.movieLang) {
+                    titleModel.movieLang = 'japanese';
+                }
+                if (!titleModel.country) {
+                    titleModel.country = 'japan';
+                }
+                if (titleModel.status === 'unknown') {
+                    titleModel.status = jikanApiFields.status;
+                    titleModel.endYear = jikanApiFields.endYear;
+                }
+                updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
+            }
         }
-        titleModel.officialSite = tvmazeApi_data ? tvmazeApi_data.officialSite : '';
-        titleModel.releaseDay = tvmazeApi_data ? tvmazeApi_data.releaseDay : '';
-        if (!titleModel.imdbID) {
-            titleModel.imdbID = tvmazeApi_data ? tvmazeApi_data.imdbID : '';
-        }
-        if (!titleModel.summary.english) {
-            titleModel.summary.english = tvmazeApi_data ? tvmazeApi_data.summary : '';
-        }
-        titleModel.totalDuration = getTotalDuration(titleModel.episodes, titleModel.latestData);
     }
 
     return titleModel;
@@ -51,43 +74,137 @@ export async function apiDataUpdate(db_data, site_links) {
     let updateFields = {};
     updateFields.apiUpdateDate = now;
 
-    let omdb_data = await get_OMDB_Api_Data(db_data.title, db_data.premiered, db_data.type);
-    if (omdb_data !== null) {
-        let omdbFields = get_OMDB_Api_Fields(omdb_data, db_data.summary, db_data.type);
-        updateFields = {...updateFields, ...omdbFields};
+
+    let omdbApiData = handle_OMDB_TvMaze_ApiCall(db_data, 'omdb');
+    let omdbApiFields = null;
+    if (omdbApiData !== null) {
+        omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
+        if (omdbApiFields) {
+            updateFields = {...updateFields, ...omdbApiFields.updateFields};
+            updateSpecificFields(db_data, updateFields, omdbApiFields, 'omdb');
+        }
     }
 
-    if (db_data.type === 'serial') {
-        let {
-            tvmazeApi_data,
-            seasonsUpdate,
-            episodesUpdate,
-            nextEpisodeUpdate
-        } = await handleSeasonEpisodeUpdate(db_data, site_links, updateFields.totalSeasons, true);
 
-        if (seasonsUpdate) {
-            updateFields.seasons = db_data.seasons;
-        }
-        if (episodesUpdate) {
-            updateFields.episodes = db_data.episodes;
-            updateFields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
-        }
-        if (nextEpisodeUpdate) {
-            updateFields.nextEpisode = db_data.nextEpisode;
-        }
-        if (tvmazeApi_data) {
-            if (updateFields.genres && !updateFields.genres.includes('anime') && tvmazeApi_data.isAnime) {
-                updateFields.genres.push('anime');
+    if (db_data.type.includes('serial')) {
+        let tvmazeApiData = handle_OMDB_TvMaze_ApiCall(db_data, 'tvmaze');
+        let tvmazeApiFields = null;
+        if (tvmazeApiData !== null) {
+            tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
+            if (tvmazeApiFields) {
+                updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
+                updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
+                //todo : do something when type isn't anime but tvmaze has isAnime=true
             }
-            updateFields.tvmazeID = tvmazeApi_data.tvmazeID;
-            updateFields.isAnimation = tvmazeApi_data.isAnimation;
-            updateFields.status = tvmazeApi_data.status;
-            updateFields.year = tvmazeApi_data.premiered.split('-')[0];
-            updateFields.premiered = tvmazeApi_data.premiered;
-            updateFields.officialSite = tvmazeApi_data.officialSite;
-            updateFields.releaseDay = tvmazeApi_data.releaseDay;
+        }
+        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields);
+        updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
+    }
+
+    //todo : set anime type when its anime
+    //todo : handle relatedTitles
+    if (db_data.type.includes('anime')) {
+        let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.type, true);
+        if (jikanApiData) {
+            let jikanApiFields = getJikanApiFields(jikanApiData);
+            if (jikanApiFields) {
+                updateFields = {...updateFields, ...jikanApiFields.updateFields};
+                updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
+            }
         }
     }
 
     return updateFields;
+}
+
+async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
+    let searchTitle = (apiName === 'omdb') ? titleData.rawTitle || titleData.title : titleData.title;
+    let result = (apiName === 'omdb')
+        ? await getOMDBApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
+        : await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
+    if (result) {
+        return result;
+    } else {
+        for (let i = 0; i < titleData.alternateTitles.length - 1; i++) {
+            if (titleData.alternateTitles[i].toLowerCase() === titleData.rawTitle.toLowerCase()) {
+                continue;
+            }
+            let newAlternateTitles = [...titleData.alternateTitles, titleData.rawTitle];
+            result = (apiName === 'omdb')
+                ? await getOMDBApiData(titleData.alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
+                : await getTvMazeApiData(titleData.alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
+            if (result) {
+                return result;
+            }
+        }
+    }
+    return null;
+}
+
+function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
+    if (
+        (apiName === 'jikan' && apiFields.summary_en) ||
+        ((!oldData.summary.english || oldData.summary.english.length < apiFields.summary_en) && apiFields.summary_en)
+    ) {
+        oldData.summary.english = apiFields.summary_en;
+        updateFields.summary = oldData.summary;
+    }
+    //---------------------
+    let isAnime = (apiName === 'jikan' || (apiName === 'tvmaze' && apiFields.isAnime));
+    let isAnimation = (apiName === 'tvmaze' && apiFields.isAnimation);
+    let newGenres = newGenresField(oldData, apiFields.genres, isAnime, isAnimation);
+    if (newGenres) {
+        oldData.genres = newGenres;
+        updateFields.genres = newGenres;
+    }
+    //--------------------
+    if (apiName === 'jikan') {
+        if (!updateFields.status || (updateFields.status && updateFields.status === 'unknown')) {
+            updateFields.status = apiFields.status;
+            updateFields.endYear = apiFields.endYear;
+        }
+    }
+}
+
+function newGenresField(data, apiGenres, isAnime, isAnimation) {
+    let newGenres = [...data.genres, ...apiGenres];
+    if (isAnime || data.type.includes('anime')) {
+        newGenres.push('anime');
+    }
+    if (isAnimation && !isAnime) {
+        newGenres.push('animation');
+    }
+    newGenres = removeDuplicateElements(newGenres);
+    if (newGenres.length !== data.genres.length) {
+        return newGenres;
+    } else {
+        let oldGenres = data.genres;
+        for (let i = 0; i < newGenres.length; i++) {
+            if (newGenres[i] !== oldGenres[i]) {
+                return newGenres;
+            }
+        }
+        return null;
+    }
+}
+
+async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, tvmazeApiFields) {
+    let fields = {};
+    let {
+        seasonsUpdate,
+        episodesUpdate,
+        nextEpisodeUpdate
+    } = await handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, tvmazeApiFields, true);
+
+    if (seasonsUpdate) {
+        fields.seasons = db_data.seasons;
+    }
+    if (episodesUpdate) {
+        fields.episodes = db_data.episodes;
+        fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
+    }
+    if (nextEpisodeUpdate) {
+        fields.nextEpisode = db_data.nextEpisode;
+    }
+    return fields;
 }

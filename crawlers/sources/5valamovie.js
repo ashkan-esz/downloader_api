@@ -27,9 +27,9 @@ async function search_title_serial(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`valamovie/serial/${i}/${title}  ========>  `);
             }
-            let title_array = purgeTitle(title.toLowerCase(), 'serial');
-            if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, 'serial', get_file_size);
+            title = purgeTitle(title.toLowerCase(), 'serial');
+            if (title !== '') {
+                let pageSearchResult = await search_in_title_page(title, page_link, 'serial', get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
@@ -41,7 +41,7 @@ async function search_title_serial(link, i) {
                     }
 
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
+                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
                     }
                 }
             }
@@ -59,9 +59,9 @@ async function search_title_movie(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`valamovie/movie/${i}/${title}  ========>  `);
             }
-            let title_array = purgeTitle(title.toLowerCase(), 'movie');
-            if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, 'movie', get_file_size);
+            title = purgeTitle(title.toLowerCase(), 'movie');
+            if (title !== '') {
+                let pageSearchResult = await search_in_title_page(title, page_link, 'movie', get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
@@ -74,7 +74,7 @@ async function search_title_movie(link, i) {
 
                     save_link = removeDuplicateLinks(save_link);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
+                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
                     }
                 }
             }

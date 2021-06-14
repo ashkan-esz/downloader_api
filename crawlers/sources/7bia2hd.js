@@ -28,9 +28,9 @@ async function search_title(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = purgeTitle(title.toLowerCase(), type);
-            if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
+            title = purgeTitle(title.toLowerCase(), type);
+            if (title !== '') {
+                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
@@ -38,7 +38,7 @@ async function search_title(link, i) {
                     let trailers = getTrailers($2);
                     let watchOnlineLinks = getWatchOnlineLinks($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, type);
+                        await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, type);
                     }
                 }
             }
@@ -65,9 +65,9 @@ function get_persian_summary($) {
 
 function get_poster($) {
     try {
-        let imgs = $('img');
-        for (let i = 0; i < imgs.length; i++) {
-            let parent = imgs[i].parent;
+        let $img = $('img');
+        for (let i = 0; i < $img.length; i++) {
+            let parent = $img[i].parent;
             if (parent.name === 'a') {
                 let href = parent.attribs.href;
                 if (href.includes('uploads')) {

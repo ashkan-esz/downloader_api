@@ -30,16 +30,16 @@ async function search_title_serial(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = purgeTitle(title.toLowerCase(), type);
-            if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
+            title = purgeTitle(title.toLowerCase(), type);
+            if (title !== '') {
+                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], type);
+                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], type);
                     }
                 }
             }
@@ -60,16 +60,16 @@ async function search_title_movie(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`mctv/${type}/${i}/${title}  ========>  `);
             }
-            let title_array = purgeTitle(title.toLowerCase(), type);
-            if (title_array.length > 0) {
-                let pageSearchResult = await search_in_title_page(title_array, page_link, type, get_file_size);
+            title = purgeTitle(title.toLowerCase(), type);
+            if (title !== '') {
+                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     if (save_link.length > 0) {
-                        await save(title_array, page_link, save_link, persian_summary, poster, trailers, [], type);
+                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], type);
                     }
                 }
             }

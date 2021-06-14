@@ -1,6 +1,7 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
-const {replaceSpecialCharacters} = require("../utils");
+const {replaceSpecialCharacters, purgeObjFalsyValues} = require("../utils");
+const {getEpisodeModel} = require("../models/episode");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
@@ -10,78 +11,99 @@ axiosRetry(axios, {
     }
 });
 
-export async function get_OMDB_Api_Data(title, premiered, type) {
+export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {
+        title = title.toLowerCase().replace(/[∞△Ωω☆]|\(\)/g, '').trim();
         let titleYear = premiered.split('-')[0];
-        type = (type === 'movie') ? 'movie' : 'series';
-        let url = `http://www.omdbapi.com/?t=${title}&type=${type}`;
+        let searchType = (type.includes('movie')) ? 'movie' : 'series';
+        let url = `https://www.omdbapi.com/?t=${title}&type=${searchType}`;
         let data = await handle_OMDB_ApiKeys(url);
         if (data === null || data === '404') {
-            return null;
-        }
+            if (canRetry) {
+                let newTitle = title
+                    .replace(' the movie', '')
+                    .replace('summons', 'calls')
+                    .replace('dont', 'don\'t')
+                    .replace('wont', 'won\'t')
+                    .replace('heavens', 'heaven\'s')
+                    .replace('havent', 'haven\'t')
+                    .replace(' im ', ' i\'m ')
+                    .replace(' comedy', ' come')
+                    .replace(' renai ', ' ren\'ai ')
+                    .replace(' zunousen', ' zunô sen')
+                    .replace(' kusoge', ' kusogee');
 
-        let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
-        let apiYear = data.Year.split(/[-–]/g)[0];
-        let equalYear = (type === 'movie') ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
-        let titlesMatched = true;
-        let splitTitle = title.split(' ');
-        let splitApiTitle = apiTitle.split(' ');
-        for (let j = 0; j < splitTitle.length; j++) {
-            if (!splitApiTitle.includes(splitTitle[j])) {
-                titlesMatched = false;
-                break;
+                if (newTitle !== title) {
+                    return await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                }
             }
-        }
-
-        if ((title !== apiTitle && !titlesMatched) || !equalYear) {
             return null;
         }
 
-        return data;
+        if (
+            type.includes('anime') &&
+            !data.Country.toLowerCase().includes('japan') &&
+            !data.Language.toLowerCase().includes('Japanese')) {
+            return null;
+        }
+
+        return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) ? data : null;
     } catch (error) {
         await saveError(error);
         return null;
     }
 }
 
-export function get_OMDB_Api_Fields(data, summary, type) {
-    summary.english = (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '';
-    let collectedData = {
-        totalSeasons: (type === 'movie') ? '' : data.totalSeasons,
-        boxOffice: (type === 'movie') ? data.BoxOffice : '',
-        summary: summary,
-        rawTitle: data.Title.trim(),
-        imdbID: data.imdbID,
-        rated: data.Rated,
-        movieLang: data.Language.toLowerCase(),
-        country: data.Country.toLowerCase(),
-        genres: data.Genre.toLowerCase().split(',').map(value => value.trim()),
-        rating: data.Ratings ? data.Ratings.map((value) => {
-            value.Value = value.Value.split('/')[0];
-            return value;
-        }) : [],
-        duration: data.Runtime || '0 min',
-        director: data.Director.toLowerCase(),
-        writer: data.Writer.toLowerCase(),
-        cast: data.Actors.toLowerCase().split(',').map(value => value.trim()),
-        awards: data.Awards
-    };
-
-    if (type === 'movie') {
-        collectedData.premiered = data.Year.split(/[-–]/g)[0];
+export function getOMDBApiFields(data, type) {
+    try {
+        let apiFields = {
+            summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
+            genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()) : [],
+            omdbTitle: data.Title,
+            updateFields: {
+                imdbID: data.imdbID,
+                rawTitle: data.Title.trim(),
+                year: data.Year.split(/[-–]/g)[0],
+                duration: data.Runtime || '0 min',
+                totalSeasons: (type.includes('movie')) ? 0 : Number(data.totalSeasons),
+                rated: data.Rated,
+                movieLang: data.Language.toLowerCase(),
+                country: data.Country.toLowerCase(),
+                rating: data.Ratings ? data.Ratings.map((item) => {
+                    let sourceName = item.Source.toLowerCase();
+                    sourceName = sourceName === "internet movie database" ? 'imdb' : sourceName;
+                    return ({
+                        source: sourceName,
+                        value: item.Value
+                    });
+                }) : [],
+                boxOffice: (type.includes('movie')) ? data.BoxOffice : '',
+                awards: data.Awards || '',
+                director: data.Director.toLowerCase(),
+                writer: data.Writer.toLowerCase(),
+                cast: data.Actors.toLowerCase()
+                    .split(',')
+                    .map(value => value.trim())
+                    .filter(value => value && value.toLowerCase() !== 'n/a'),
+            },
+        };
+        apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
+        return apiFields;
+    } catch (error) {
+        saveError(error);
+        return null;
     }
-    return collectedData;
 }
 
-export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons, duration, lastSeasonsOnly = false) {
+export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type, duration, lastSeasonsOnly = false) {
     try {
         let seasons = [];
         let episodes = [];
-        totalSeasons = isNaN(totalSeasons) ? 0 : totalSeasons;
+        totalSeasons = isNaN(totalSeasons) ? 0 : Number(totalSeasons);
         let startSeasonNumber = (lastSeasonsOnly && totalSeasons > 1) ? totalSeasons - 1 : 1;
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
-            let seasonResult = await handle_OMDB_ApiKeys(`http://www.omdbapi.com/?t=${title}&Season=${j}&type=series`);
-            if (seasonResult === null || (seasonResult !== '404' && seasonResult.Title !== rawTitle)) {
+            let seasonResult = await handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`);
+            if (seasonResult === null || seasonResult === '404' || seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
                 return null;
             }
             if (seasonResult === '404') {
@@ -99,7 +121,7 @@ export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons,
             });
             let promiseArray = [];
             for (let k = 1; k <= seasonsEpisodeNumber; k++) {
-                let episodeResultPromise = handle_OMDB_ApiKeys(`http://www.omdbapi.com/?t=${title}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
+                let episodeResultPromise = handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
                     if (episodeResult === null) {
                         return null;
                     }
@@ -115,17 +137,10 @@ export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons,
                     }
 
                     let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
-                    let episodeInfo = {
-                        title: (episodeResult === '404') ? 'unknown' : episodeResult.Title,
-                        released: releaseDate,
-                        releaseStamp: '',
-                        duration: (episodeResult === '404') ? lastEpisodeDuration : episodeResult.Runtime,
-                        season: j,
-                        episode: k,
-                        imdbRating: (episodeResult === '404') ? '0' : episodeResult.imdbRating,
-                        imdbID: (episodeResult === '404') ? '' : episodeResult.imdbID
-                    };
-                    episodes.push(episodeInfo);
+                    let episodeModel = (episodeResult === '404')
+                        ? getEpisodeModel('unknown', releaseDate, '', lastEpisodeDuration, j, k, '0', '')
+                        : getEpisodeModel(episodeResult.Title, releaseDate, '', episodeResult.Runtime, j, k, episodeResult.imdbRating, episodeResult.imdbID);
+                    episodes.push(episodeModel);
                 });
                 promiseArray.push(episodeResultPromise);
             }
@@ -140,6 +155,40 @@ export async function get_OMDB_seasonEpisode_info(title, rawTitle, totalSeasons,
         await saveError(error);
         return null;
     }
+}
+
+function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) {
+    let originalTitle = title;
+    title = replaceSpecialCharacters(originalTitle);
+    alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
+    titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
+    let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
+    let apiYear = data.Year.split(/[-–]/g)[0];
+    let matchYear = (type.includes('movie')) ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
+    let splitTitle = title.split(' ');
+    let splitApiTitle = apiTitle.split(' ');
+    let titlesMatched = true;
+    for (let i = 0; i < splitTitle.length; i++) {
+        if (!splitApiTitle.includes(splitTitle[i])) {
+            titlesMatched = false;
+            break;
+        }
+    }
+
+    return (
+        matchYear &&
+        (
+            title === apiTitle ||
+            title === apiTitle.replace(' movie', '') ||
+            title.replace('uu', 'u') === apiTitle.replace('uu', 'u') ||
+            (originalTitle.includes('the movie:') && title.replace('the movie', '').replace(/\s\s/g, ' ') === apiTitle) ||
+            alternateTitles.includes(apiTitle.replace('uu', 'u')) ||
+            titleSynonyms.includes(apiTitle.replace('uu', 'u')) ||
+            (!type.includes('anime') && titlesMatched) ||
+            title.replace('summons', 'calls') === apiTitle.replace('summons', 'calls') ||
+            (splitTitle.length > 8 && apiTitle.includes(title))
+        )
+    );
 }
 
 async function handle_OMDB_ApiKeys(url) {
@@ -169,9 +218,14 @@ async function handle_OMDB_ApiKeys(url) {
                 response = await axios.get(url + `&apikey=${apiKeyArray[apiKeyCounter]}`);
                 break;
             } catch (error) {
-                apiKeyCounter++;
-                if (apiKeyCounter === apiKeyArray.length) {
-                    await Sentry.captureMessage('more omdb api keys are needed');
+                if (error.response && error.response.data.Error === 'Request limit reached!') {
+                    apiKeyCounter++;
+                    if (apiKeyCounter === apiKeyArray.length) {
+                        await Sentry.captureMessage('more omdb api keys are needed');
+                        return null;
+                    }
+                } else {
+                    saveError(error);
                     return null;
                 }
             }

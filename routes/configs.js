@@ -16,6 +16,7 @@ export const dataConfig = {
         posters: 1,
         type: 1,
         rawTitle: 1,
+        alternateTitles: 1,
         rating: 1,
         like: 1,
         genres: 1,

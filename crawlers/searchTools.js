@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
-const puppeteer = require('puppeteer');
+const {openBrowser, closeBrowser} = require('./puppetterBrowser');
 const {saveError} = require("../saveError");
 const {wordsToNumbers} = require('words-to-numbers');
 
@@ -12,8 +12,8 @@ axiosRetry(axios, {
 });
 
 let headLessBrowser = false;
-let browser = null;
-let page = null;
+
+//todo : fix valamovie redirect to google cache
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
@@ -54,13 +54,13 @@ export async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(title_array, page_link, type, get_file_size, getQualitySample = null) {
+export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null) {
     try {
         let {$, links} = await getLinks(page_link);
         if ($ === null) {
             return null;
         }
-        let matchCases = getMatchCases(title_array, type);
+        let matchCases = getMatchCases(title, type);
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
@@ -79,48 +79,6 @@ export async function search_in_title_page(title_array, page_link, type, get_fil
     } catch (error) {
         saveError(error);
         return null;
-    }
-}
-
-async function openBrowser() {
-    if (headLessBrowser) {
-        if (!page || !browser || !browser.isConnected()) {
-            browser = await puppeteer.launch({
-                headless: true,
-                args: [
-                    "--no-sandbox",
-                    "--single-process",
-                    "--no-zygote"
-                ]
-            });
-            page = await browser.newPage();
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-            await page.setViewport({width: 1280, height: 800});
-            await page.setDefaultTimeout(60000);
-            await page.setDefaultNavigationTimeout(60000);
-        }
-        if (page && page.isClosed()) {
-            page = await browser.newPage();
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-            await page.setViewport({width: 1280, height: 800});
-            await page.setDefaultTimeout(60000);
-            await page.setDefaultNavigationTimeout(60000);
-        }
-    }
-}
-
-async function closeBrowser() {
-    try {
-        if (page && !page.isClosed()) {
-            await page.close();
-        }
-        page = null;
-        if (browser && browser.isConnected()) {
-            await browser.close();
-        }
-        browser = null;
-    } catch (error) {
-        saveError(error);
     }
 }
 
@@ -143,7 +101,7 @@ async function getLinks(url) {
             }
         } else {
             try {
-                await openBrowser();
+                let page = await openBrowser();
                 await page.goto(url);
                 let pageContent = await page.content();
                 $ = cheerio.load(pageContent);
@@ -192,7 +150,7 @@ function check_download_link(original_link, matchCases, type) {
     // console.log(link) //todo : remove
     // console.log(matchCases)
 
-    if (type === 'movie') {
+    if (type.includes('movie')) {
         if (
             link.includes(matchCases.case1) ||
             link.includes(matchCases.case2) ||
@@ -206,7 +164,9 @@ function check_download_link(original_link, matchCases, type) {
             link.includes(matchCases.case1.replace('el', 'the')) ||
             link.includes(matchCases.case1.replace('.and', '')) ||
             link.replace('.and', '').includes(matchCases.case1) ||
-            link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).replace(/\s/g, '.'))
+            link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).replace(/\s/g, '.')) ||
+            link.includes(matchCases.case1.replace('demon.slayer', 'kimetsu.no.yaiba')) ||
+            link.includes(matchCases.case1.replace('demon.slayer', 'kimetsu.no.yaiba').replace('.the.movie', ''))
         ) {
             return original_link;
         }
@@ -223,17 +183,13 @@ function check_download_link(original_link, matchCases, type) {
 
         return null;
     } else {
-        let result = link.match(/(s\d\de\d\d)/g);
-        if (result) {
-            return original_link;
-        } else {
-            return null;
-        }
+        return checkSerialLinkMatch(link) ? original_link : null
     }
 }
 
-function getMatchCases(title_array, type) {
-    if (type === 'movie') {
+function getMatchCases(title, type) {
+    if (type.includes('movie')) {
+        let title_array = title.split(' ');
         let temp = title_array.map((text) => text.replace(/&/g, 'and').replace(/[’:]/g, ''));
         let case1 = temp.map((text) => text.split('.').filter((t) => t !== ''));
         case1 = [].concat.apply([], case1);
@@ -282,8 +238,15 @@ function check_format(link, type) {
             if (link.includes('dvdrip') || link.includes('hdcam') || link.includes('mobile')) {
                 return true;
             }
-            return (type === 'serial' && link.match(/s\d\de\d\d/g));
+            if (link.match(/(\d\d\d\d|\d\d\d)\.nineanime/g)) {
+                return true;
+            }
+            return (type.includes('serial') && checkSerialLinkMatch(link));
         }
     }
     return false;
+}
+
+function checkSerialLinkMatch(link) {
+    return decodeURIComponent(link).match(/s\d\de\d\d|e\d+|\d+\.nineanime|\[\d+]/g)
 }

@@ -8,6 +8,7 @@ const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
+const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
@@ -16,6 +17,8 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
     return new Promise(async (resolve, reject) => {
         try {
             let time1 = new Date();
+
+            resetJikanApiCache(time1);
 
             let collection = await getCollection('sources');
             let sources = await collection.findOne({title: 'sources'});

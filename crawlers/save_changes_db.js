@@ -1,23 +1,30 @@
 const getCollection = require('../mongoDB');
-const {checkSourceExist, checkSource, getYear} = require('./utils');
+const {checkSourceExist, checkSource, getYear, removeDuplicateElements} = require('./utils');
 const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {getTitleModel} = require("./models/title");
+const {getJikanApiData} = require("./3rdPartyApi/jikanApi");
 const {saveError} = require("../saveError");
 
+//todo : add field endYear
+//todo : add doc for upcoming
 
-module.exports = async function save(title_array, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
+
+module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
     try {
-        let year = (type === 'movie') ? getYear(page_link, siteDownloadLinks) : '';
-        let title = title_array.join(' ').trim();
-        let titleModel = getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
+        //todo : find anime from movie sources
+        let titleObj = await getTitleObj(title, type);
+        let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
+        let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
         let {collection, db_data} = await searchOnCollection(title, year, type);
 
         if (db_data === null) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
-            await collection.insertOne(titleModel);
+            console.log('---- new title')
+            // console.log(titleModel)
+            // await collection.insertOne(titleModel); //todo : active
             return;
         }
 
@@ -36,15 +43,44 @@ module.exports = async function save(title_array, page_link, siteDownloadLinks, 
     }
 }
 
+async function getTitleObj(title, type) {
+    let titleObj = {
+        title: title,
+        rawTitle: title,
+        alternateTitles: [],
+        titleSynonyms: [],
+    }
+
+    if (type.includes('anime')) {
+        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
+        if (jikanApiData) {
+            titleObj.title = jikanApiData.apiTitle_simple;
+            titleObj.rawTitle = jikanApiData.apiTitle;
+            titleObj.alternateTitles = removeDuplicateElements([jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese].filter(value => value));
+            titleObj.titleSynonyms = jikanApiData.titleSynonyms;
+        }
+    }
+    return titleObj;
+}
+
 async function searchOnCollection(title, year, type) {
+    return {collection: null, db_data: null}; //todo : remove
+    //todo : check title with alternateTitles to find anime title from movie download sources
     let collection = await getCollection('movies');
     let db_data;
     let dataConfig = {
         title: 1,
         type: 1,
-        apiUpdateDate: 1,
+        premiered: 1,
+        year: 1,
         rawTitle: 1,
+        titleSynonyms: 1,
+        alternateTitles: 1,
+        apiUpdateDate: 1,
+        status: 1,
         imdbID: 1,
+        tvmazeID: 1,
+        jikanID: 1,
         sources: 1,
         summary: 1,
         posters: 1,
@@ -57,21 +93,47 @@ async function searchOnCollection(title, year, type) {
         episodes: 1,
         latestData: 1,
         nextEpisode: 1,
-        premiered: 1
     };
-    if (type === 'serial') {
-        db_data = await collection.findOne({title: title, type: type}, {projection: dataConfig});
+
+    let searchTypes = [type];
+    if (type.includes('anime')) {
+        searchTypes.push(type.replace('anime_', ''));
+    } else {
+        searchTypes.push(('anime_' + type));
+    }
+
+    if (type.includes('serial')) {
+        db_data = await collection.find({
+            title: title,
+            type: {$in: searchTypes}
+        }, {projection: dataConfig}).toArray();
+
+        A: for (let i = 0; i < searchTypes.length; i++) {
+            for (let j = 0; j < db_data.length; j++) {
+                if (searchTypes[i] === db_data[j].type) {
+                    db_data = db_data[j];
+                    break A;
+                }
+            }
+        }
     } else {
         let YEAR = Number(year);
-        let searchYearCases = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        for (let i = 0; i < searchYearCases.length; i++) {
-            db_data = await collection.findOne({
-                title: title,
-                type: type,
-                premiered: searchYearCases[i]
-            }, {projection: dataConfig});
-            if (db_data !== null) {
-                break;
+        let searchYears = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
+        db_data = await collection.find({
+            title: title,
+            type: {$in: searchTypes},
+            premiered: {$in: searchYears}
+        }, {projection: dataConfig}).toArray();
+
+        A: for (let i = 0; i < searchYears.length; i++) {
+            for (let j = 0; j < searchTypes.length; j++) {
+                for (let k = 0; k < db_data.length; k++) {
+                    if (searchYears[i] === db_data[k].premiered &&
+                        searchTypes[j] === db_data[k].type) {
+                        db_data = db_data[k];
+                        break A;
+                    }
+                }
             }
         }
     }
@@ -80,9 +142,10 @@ async function searchOnCollection(title, year, type) {
 
 async function handleUpdate(collection, db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdate) {
     try {
+        //todo : set type in update
         let updateFields = apiDataUpdate !== null ? apiDataUpdate : {};
 
-        if (type === 'serial') {
+        if (type.includes('serial')) {
             let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, siteDownloadLinks, true);
             if (seasonsUpdate) {
                 updateFields.seasons = db_data.seasons;
@@ -103,8 +166,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         }
 
         if (db_data.summary.persian.length < 10) {
-            db_data.summary.persian = site_persianSummary;
-            updateFields.summary = db_data.summary;
+            updateFields.summary.persian = site_persianSummary;
         }
 
         if (subUpdates.posterChange) {
@@ -123,11 +185,14 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         }
 
 
-        if (Object.keys(updateFields).length > 0) {
-            await collection.findOneAndUpdate({_id: db_data._id}, {
-                $set: updateFields
-            });
-        }
+        console.log('---- title update')
+        console.log(updateFields)
+        // todo : active
+        // if (Object.keys(updateFields).length > 0) {
+        //     await collection.findOneAndUpdate({_id: db_data._id}, {
+        //         $set: updateFields
+        //     });
+        // }
 
     } catch (error) {
         saveError(error);
@@ -152,7 +217,7 @@ function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
         return true;
     }
 
-    if (type === 'movie') {
+    if (type.includes('movie')) {
         for (let i = 0; i < siteDownloadLinks.length; i++) {
             if (!checkEqualLinks(siteDownloadLinks[i], db_links[i])) {
                 return true;

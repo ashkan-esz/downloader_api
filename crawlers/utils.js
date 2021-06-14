@@ -5,8 +5,17 @@ export function purgeTitle(title, type) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
-    title = title.replace('شماره ۱', '').replace('فیلم 1', '');
+    let matchsinamaii = title.match(/سینمایی \d/g);
+    title = title.replace('شماره ۱', '').replace('فیلم 1', '').replace(/سینمایی \d/g, '');
     let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
+    if (title.includes('قسمت های ویژه') && !title.toLowerCase().includes('ova')) {
+        title_array.push('OVA');
+    }
+    if (matchsinamaii) {
+        let movieNumber = matchsinamaii[0].replace('سینمایی', '').trim();
+        movieNumber = Number(movieNumber);
+        title_array.push(movieNumber);
+    }
     if (title_array.length > 1) {
         let year = title_array[title_array.length - 1];
         if (!isNaN(year) && Number(year) > 1000) {
@@ -16,7 +25,7 @@ export function purgeTitle(title, type) {
         }
     }
 
-    if (type === 'serial' && titleIncludesSeason && title_array.length > 1) {
+    if (type.includes('serial') && titleIncludesSeason && title_array.length > 1) {
         let season = title_array[title_array.length - 1];
         if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 10) {
             title_array.pop();
@@ -31,32 +40,34 @@ export function purgeTitle(title, type) {
             title_array.pop();
         }
     }
-
-    return title_array;
+    return title_array.join(' ');
 }
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/["'’:?!+.#,()]/g, '')
+        .replace(/[.:\/☆]/g, ' ')
+        .replace(/["'’:;?!+#,()~♥△Ωω]/g, '')
         .replace(/[\/_–-]/g, ' ')
         .replace(/\s\s\s\s/g, ' ')
         .replace(/\s\s\s/g, ' ')
         .replace(/\s\s/g, ' ')
         .replace('twelve', '12')
-        .replace('&', 'and')
+        .replace(/&/g, 'and')
+        .replace('∞', '8')
         .replace(/[áåä]/g, 'a')
         .replace(/[éëè]/g, 'e')
         .replace('ß', 'b')
         .replace('ç', 'c')
         .replace('ş', 's')
         .replace(/[ôöøó]/g, 'o')
-        .replace(/[üú]/g, 'u')
+        .replace(/[üúû]/g, 'u')
         .replace(/[ıí]/g, 'i')
         .replace(' iii', ' 3')
         .replace(' ii', ' 2')
         .replace('…', '')
         .replace('marvels', '')
-        .replace('boku no', 'my')
+        .replace(/\s\drd season/g, '')
+        .replace(/\drd season/g, '')
         .trim();
 }
 
@@ -70,9 +81,22 @@ export function replacePersianNumbers(input) {
 }
 
 export function getType(title) {
-    return ((title.includes('فیلم') || title.includes('انیمیشن') || title.includes('استندآپ')) &&
-        !title.includes('سریال'))
-        ? 'movie' : 'serial';
+    if (title.includes('فیلم') || title.includes('استندآپ')) {
+        return 'movie';
+    }
+    if (title.includes('انیمیشن')) {
+        return title.includes('سریال') ? 'serial' : 'movie';
+    }
+    if (title.includes('انیمه')) {
+        if (title.includes('سینمایی')) {
+            return 'anime_movie';
+        }
+        return title.includes('سریال') ? 'anime_serial' : 'anime_movie';
+    }
+    if (title.includes('سینمایی')) {
+        return 'movie';
+    }
+    return 'serial';
 }
 
 export function checkDubbed(link, info = '') {
@@ -133,18 +157,13 @@ export function getSeasonEpisode(input) {
                 episode: 0
             }
         }
-        let season;
-        let episode;
-        let case1 = input.toLowerCase().match(/s\d\de\d\d|s\d\de\d/g); //s01e02 | s01e2
-        let case2 = input.toLowerCase().match(/s\de\d\d|s\de\d/g); //s1e02 | s1e2
+        let season = 0;
+        let episode = 0;
+        let case1 = input.toLowerCase().match(/s\d+e\d+/g);
         if (case1) {
             let seasonEpisode = case1.pop();
-            season = Number(seasonEpisode.slice(1, 3));
-            episode = Number(seasonEpisode.slice(4));
-        } else {
-            let seasonEpisode = case2.pop();
-            season = Number(seasonEpisode.slice(1, 2));
-            episode = Number(seasonEpisode.slice(3));
+            season = Number(seasonEpisode.split('e')[0].replace('s', ''));
+            episode = Number(seasonEpisode.split('e')[1]);
         }
         return {
             season: season,
@@ -274,7 +293,7 @@ export function removeDuplicateLinks(input) {
     return result;
 }
 
-export function removeDuplicatePosterLinks(input) {
+export function removeDuplicateElements(input) {
     let result = [];
     for (let i = 0; i < input.length; i++) {
         let exist = false;
@@ -319,6 +338,7 @@ export function purgeSizeText(sizeText) {
         .replace('فایل', '')
         .replace('گیگابایت', 'GB')
         .replace('گیگا بایت', 'GB')
+        .replace('گیگ', 'GB')
         .replace('مگابایت', 'MB')
         .replace(/[\s:]/g, '');
 }
@@ -330,4 +350,44 @@ export function purgeEncoderText(encoderText) {
         .replace('انکود', '')
         .replace(':', '')
         .trim()
+}
+
+export function persianWordToNumber(text) {
+    let persian = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم', 'ششم', 'هفتم', 'هشتم', 'نهم', 'دهم'];
+    return persian.findIndex(value => text.includes(value)) + 1;
+}
+
+export function convertHourToMinute(input) {
+    //1 hr 30 min
+    let split = input.toLowerCase().split('hr');
+    if (split.length > 1) {
+        let hour = Number(split[0]);
+        let min = Number(split[1].replace('min', ''));
+        return hour * 60 + min + ' min';
+    } else {
+        return input;
+    }
+}
+
+export function purgeObjFalsyValues(obj) {
+    try {
+        let newObj = {};
+        let keys = Object.keys(obj);
+        for (let i = 0; i < keys.length; i++) {
+            let fieldValue = obj[keys[i]];
+            if (
+                fieldValue &&
+                !(typeof fieldValue === 'string' && fieldValue.toLowerCase() === 'n/a') &&
+                !(typeof fieldValue === 'string' && fieldValue.toLowerCase() === 'unknown') &&
+                !(typeof fieldValue === 'string' && fieldValue.toLowerCase() === '0 min') &&
+                !(Array.isArray(fieldValue) && fieldValue.length === 0)
+            ) {
+                newObj[keys[i]] = fieldValue;
+            }
+        }
+        return newObj;
+    } catch (error) {
+        saveError(error);
+        return obj;
+    }
 }

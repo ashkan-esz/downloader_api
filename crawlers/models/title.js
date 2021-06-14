@@ -1,10 +1,13 @@
 const {getLatestData} = require("../latestData");
 
-export function getTitleModel(title, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks) {
+export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks) {
     let {season, episode, quality, hardSub, dubbed} = getLatestData(siteDownloadLinks, type);
     return {
-        title: title,
+        title: titleObj.title,
         type: type,
+        rawTitle: titleObj.rawTitle,
+        alternateTitles: titleObj.alternateTitles,
+        titleSynonyms: titleObj.titleSynonyms,
         sources: [{
             url: page_link,
             links: siteDownloadLinks //[{link,info,qualitySample}]
@@ -24,35 +27,39 @@ export function getTitleModel(title, page_link, type, siteDownloadLinks, year, p
         trailers: trailers.length > 0 ? trailers : null, // [{'link,info'}]
         watchOnlineLinks: watchOnlineLinks,
         latestData: {
-            season: type === 'movie' ? 0 : season,
-            episode: type === 'movie' ? 0 : episode,
+            season: type.includes('movie') ? 0 : season,
+            episode: type.includes('movie') ? 0 : episode,
             quality: quality,
             hardSub: hardSub,
             dubbed: dubbed
         },
-        tvmazeID: 0,
-        isAnimation: false,
-        status: 'ended',
+        status: type.includes('movie') ? 'ended' : 'unknown',
         releaseDay: "",
         year: year,
         premiered: year,
+        endYear: '',
         officialSite: "",
+        webChannel: "",
         nextEpisode: null,
         totalDuration: '',
         //3rd party api data
-        totalSeasons: "",
-        boxOffice: "",
-        rawTitle: "",
         imdbID: "",
+        tvmazeID: 0,
+        jikanID: 0,
+        totalSeasons: 0,
+        boxOffice: "",
         rated: "",
         movieLang: "",
         country: "",
         genres: [],
-        rating: [], //[{Value,Source}]
-        duration: "",
+        rating: [], //[{source,value}]
+        duration: "0 min",
         director: "",
         writer: "",
         cast: [],
         awards: "",
+        //jikan api data
+        animeSource : '',
+        relatedTitles: [],
     };
 }
