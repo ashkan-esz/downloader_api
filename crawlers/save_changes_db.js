@@ -22,9 +22,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
 
         if (db_data === null) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
-            console.log('---- new title')
-            // console.log(titleModel)
-            // await collection.insertOne(titleModel); //todo : active
+            await collection.insertOne(titleModel);
             return;
         }
 
@@ -195,14 +193,11 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         }
 
 
-        console.log('---- title update')
-        // console.log(updateFields)
-        // todo : active
-        // if (Object.keys(updateFields).length > 0) {
-        //     await collection.findOneAndUpdate({_id: db_data._id}, {
-        //         $set: updateFields
-        //     });
-        // }
+        if (Object.keys(updateFields).length > 0) {
+            await collection.findOneAndUpdate({_id: db_data._id}, {
+                $set: updateFields
+            });
+        }
 
     } catch (error) {
         saveError(error);

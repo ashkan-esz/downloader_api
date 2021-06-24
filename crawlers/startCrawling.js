@@ -6,6 +6,7 @@ const valamovie = require('./sources/5valamovie');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
+const nineanime = require('./sources/9nineanime');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
@@ -61,6 +62,10 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                     ...sources.golchindl,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 305,
                 });
+                await nineanime({
+                    ...sources.nineanime,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 55,
+                });
             } else if (sourceNumber === 1) {
                 await digimoviez({
                     ...sources.digimoviez,
@@ -104,6 +109,11 @@ export async function startCrawling(sourceNumber, crawlMode = 0) {
                 await golchindl({
                     ...sources.golchindl,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : 305,
+                });
+            } else if (sourceNumber === 9) {
+                await nineanime({
+                    ...sources.nineanime,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : 55,
                 });
             }
 

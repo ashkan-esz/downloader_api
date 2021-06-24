@@ -8,6 +8,7 @@ const film2media = require('./sources/2film2media');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
+const nineanime = require('./sources/9nineanime');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
@@ -131,10 +132,12 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     sourcesObject.bia2hd.serial_url = getNewURl(sourcesObject.bia2hd.serial_url, sourcesUrls[6]);
 
     sourcesObject.golchindl.movie_url = sourcesUrls[7];
+
+    sourcesObject.nineanime.movie_url = sourcesUrls[8];
 }
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
-    // digimoviez - film2media - zarmovie - bia2hd - golchingdl
+    // digimoviez - film2media - zarmovie - bia2hd - golchingdl - nineanime
     //todo : updateSourceFields for reCrawled source
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i].replace(/\d/g, '');
@@ -145,7 +148,8 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
             domain.includes('zarfilm') ||
             domain.includes('biahd') ||
             domain.includes('bahd') ||
-            domain.includes('golchin')
+            domain.includes('golchin') ||
+            domain.includes('nineanime')
         ) {
             let sourceName = changedDomains[i].replace(/www.|https:\/\/|http:\/\/|\/page\//g, '').split('/')[0];
             let startTime = new Date();
@@ -186,6 +190,11 @@ async function reCrawlSource(sourcesObject, domain) {
         await golchindl({
             ...sourcesObject.golchindl,
             page_count: 305,
+        });
+    } else if (domain.includes('nineanime')) {
+        await nineanime({
+            ...sourcesObject.nineanime,
+            page_count: 55,
         });
     }
 }
