@@ -1,10 +1,11 @@
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
-const {handleSeasonEpisodeUpdate, getTotalDuration,getEndYear} = require('../seasonEpisode');
+const getCollection = require('../../mongoDB');
+const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
 const {removeDuplicateElements} = require('../utils');
+const {dataConfig} = require("../../routes/configs");
 
-//todo : set type in update
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
@@ -27,15 +28,11 @@ export async function addApiData(titleModel, site_links) {
             if (tvmazeApiFields) {
                 titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
                 updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
-                //todo : do something when type isn't anime but tvmaze has isAnime=true
             }
         }
         let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
-
-    //todo : set anime type when its anime
-    //todo : handle relatedTitles
 
     if (titleModel.type.includes('anime')) {
         let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.type, true);
@@ -54,6 +51,7 @@ export async function addApiData(titleModel, site_links) {
                     titleModel.endYear = jikanApiFields.endYear;
                 }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
+                titleModel.relatedTitles = getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
             }
         }
     }
@@ -61,7 +59,7 @@ export async function addApiData(titleModel, site_links) {
     return titleModel;
 }
 
-export async function apiDataUpdate(db_data, site_links) {
+export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     let hoursBetween = (now.getTime() - apiUpdateDate.getTime()) / (3600 * 1000);
@@ -72,8 +70,11 @@ export async function apiDataUpdate(db_data, site_links) {
     let updateFields = {};
     updateFields.apiUpdateDate = now;
 
+    let titleUpdateResult = handleTitleUpdate(db_data, updateFields, titleObj, siteType);
+    db_data = titleUpdateResult.db_data;
+    updateFields = titleUpdateResult.updateFields;
 
-    let omdbApiData = handle_OMDB_TvMaze_ApiCall(db_data, 'omdb');
+    let omdbApiData = await handle_OMDB_TvMaze_ApiCall(db_data, 'omdb');
     let omdbApiFields = null;
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
@@ -84,22 +85,19 @@ export async function apiDataUpdate(db_data, site_links) {
     }
 
     if (db_data.type.includes('serial')) {
-        let tvmazeApiData = handle_OMDB_TvMaze_ApiCall(db_data, 'tvmaze');
+        let tvmazeApiData = await handle_OMDB_TvMaze_ApiCall(db_data, 'tvmaze');
         let tvmazeApiFields = null;
         if (tvmazeApiData !== null) {
             tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
             if (tvmazeApiFields) {
                 updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
-                //todo : do something when type isn't anime but tvmaze has isAnime=true
             }
         }
         let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
-    //todo : set anime type when its anime
-    //todo : handle relatedTitles
     if (db_data.type.includes('anime')) {
         let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.type, true);
         if (jikanApiData) {
@@ -107,11 +105,39 @@ export async function apiDataUpdate(db_data, site_links) {
             if (jikanApiFields) {
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
+                let newRelatedTitles = getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
+                db_data.relatedTitles = newRelatedTitles;
+                updateFields.relatedTitles = newRelatedTitles;
             }
         }
     }
 
     return updateFields;
+}
+
+function handleTitleUpdate(db_data, updateFields, titleObj, siteType) {
+    if (!db_data.type.includes('anime') &&
+        (siteType.includes('anime') || titleObj.jikanFound)) {
+        if (titleObj.jikanFound) {
+            delete titleObj.jikanFound;
+            db_data = {...db_data, ...titleObj};
+            updateFields = {...updateFields, ...titleObj};
+        }
+        let type = siteType.includes('anime') ? siteType : 'anime_' + siteType;
+        db_data.type = type;
+        updateFields.type = type;
+    } else if (
+        titleObj.jikanFound &&
+        (
+            db_data.rawTitle !== titleObj.rawTitle ||
+            db_data.alternateTitles.length < titleObj.alternateTitles.length
+        )
+    ) {
+        delete titleObj.jikanFound;
+        db_data = {...db_data, ...titleObj};
+        updateFields = {...updateFields, ...titleObj};
+    }
+    return {db_data, updateFields};
 }
 
 async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
@@ -149,21 +175,22 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
     //---------------------
     let isAnime = (apiName === 'jikan' || (apiName === 'tvmaze' && apiFields.isAnime));
     let isAnimation = (apiName === 'tvmaze' && apiFields.isAnimation);
-    let newGenres = newGenresField(oldData, apiFields.genres, isAnime, isAnimation);
+    let newGenres = getNewGenres(oldData, apiFields.genres, isAnime, isAnimation);
     if (newGenres) {
         oldData.genres = newGenres;
         updateFields.genres = newGenres;
     }
     //--------------------
     if (apiName === 'jikan') {
-        if (!updateFields.status || (updateFields.status && updateFields.status === 'unknown')) {
+        if ((!updateFields.status && oldData.status === 'unknown') ||
+            (updateFields.status && updateFields.status === 'unknown')) {
             updateFields.status = apiFields.status;
             updateFields.endYear = apiFields.endYear;
         }
     }
 }
 
-function newGenresField(data, apiGenres, isAnime, isAnimation) {
+function getNewGenres(data, apiGenres, isAnime, isAnimation) {
     let newGenres = [...data.genres, ...apiGenres];
     if (isAnime || data.type.includes('anime')) {
         newGenres.push('anime');
@@ -200,11 +227,25 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
         fields.episodes = db_data.episodes;
         fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
         fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
-    } else if (db_data.episodes.length === 0) {
-        fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
     }
     if (nextEpisodeUpdate) {
         fields.nextEpisode = db_data.nextEpisode;
     }
     return fields;
+}
+
+async function getAnimeRelatedTitles(titleData,jikanRelatedTitles) {
+    let collection = await getCollection('movies');
+    let newRelatedTitles = [];
+    for (let i = 0; i < jikanRelatedTitles.length; i++) {
+        let searchResult = await collection.findOne({
+            jikanID: jikanRelatedTitles[i].jikanID
+        }, {projection: dataConfig['medium']});
+        if (searchResult) {
+            newRelatedTitles.push(searchResult);
+        } else {
+            newRelatedTitles.push(jikanRelatedTitles[i]);
+        }
+    }
+    return newRelatedTitles;
 }

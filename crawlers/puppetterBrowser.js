@@ -5,6 +5,8 @@ const {saveError} = require("../saveError");
 let browser = null;
 let page = null;
 
+//todo : add multiple pages browsing
+
 export async function openBrowser() {
     if (!page || !browser || !browser.isConnected()) {
         browser = await puppeteer.launch({

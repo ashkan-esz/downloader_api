@@ -135,10 +135,11 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 
 async function updateDownloadLinks(sourcesObject, changedDomains) {
     // digimoviez - film2media - zarmovie - bia2hd - golchingdl
+    //todo : updateSourceFields for reCrawled source
     for (let i = 0; i < changedDomains.length; i++) {
         let domain = changedDomains[i].replace(/\d/g, '');
         if (
-            domain.includes('digimoviez') ||
+            domain.includes('digimovie') ||
             domain.includes('filmmedia') ||
             domain.includes('zarmovie') ||
             domain.includes('zarfilm') ||
@@ -158,7 +159,7 @@ async function updateDownloadLinks(sourcesObject, changedDomains) {
 }
 
 async function reCrawlSource(sourcesObject, domain) {
-    if (domain.includes('digimoviez')) {
+    if (domain.includes('digimovie')) {
         await digimoviez({
             ...sourcesObject.digimoviez,
             page_count: 330,

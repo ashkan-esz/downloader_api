@@ -4,29 +4,46 @@ const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
 
-let jikanApiCache = [];
 let jikanCacheStartDate = new Date();
+let jikanApiCache404 = [];
+let jikanApiCache = [];
 
 
 export function resetJikanApiCache(now) {
     let hoursBetween = (now.getTime() - jikanCacheStartDate.getTime()) / (3600 * 1000);
-    if (hoursBetween > 4) {
+    if (hoursBetween > 8) {
         jikanApiCache = [];
         jikanCacheStartDate = now;
     }
 }
 
+function getFromJikanApiCache404(title, rawTitle, type) {
+    let editedTitle = title.toLowerCase()
+        .replace(' the', '')
+        .replace('memories', 'memory')
+        .replace('tv', '')
+        .trim();
+    for (let i = 0; i < jikanApiCache404.length; i++) {
+        if (jikanApiCache404[i].type === type &&
+            jikanApiCache404[i].title.toLowerCase() === editedTitle) {
+            return '404';
+        }
+    }
+    return null;
+}
+
 function getFromJikanApiCache(title, rawTitle, type) {
+    title = title.toLowerCase();
+    rawTitle = rawTitle.toLowerCase();
     for (let i = 0; i < jikanApiCache.length; i++) {
         if (
-            jikanApiCache[i].type === type &&
+            jikanApiCache[i].type.replace('anime_', '') === type.replace('anime_', '') &&
             (
-                jikanApiCache[i].siteTitle === title ||
-                jikanApiCache[i].apiTitle === title ||
-                jikanApiCache[i].apiTitle === rawTitle ||
-                jikanApiCache[i].apiTitle_simple === title ||
-                jikanApiCache[i].apiTitleEnglish === title ||
-                jikanApiCache[i].apiTitleEnglish_simple === title ||
+                jikanApiCache[i].siteTitle.toLowerCase() === title ||
+                jikanApiCache[i].apiTitle.toLowerCase() === title ||
+                jikanApiCache[i].apiTitle.toLowerCase() === rawTitle ||
+                jikanApiCache[i].apiTitle_simple.toLowerCase() === title ||
+                jikanApiCache[i].apiTitleEnglish.toLowerCase() === title ||
                 jikanApiCache[i].titleSynonyms.includes(title) ||
                 jikanApiCache[i].titleSynonyms.includes(rawTitle)
             )
@@ -38,6 +55,10 @@ function getFromJikanApiCache(title, rawTitle, type) {
 }
 
 export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = false) {
+    let jikanCacheResult404 = getFromJikanApiCache404(title, rawTitle, type);
+    if (jikanCacheResult404 === '404'){
+        return null;
+    }
     let jikanCacheResult = getFromJikanApiCache(title, rawTitle, type);
     if (jikanCacheResult || fromCacheOnly) {
         return jikanCacheResult;
@@ -132,7 +153,10 @@ export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = fal
                     return apiData;
                 }
             }
-
+            jikanApiCache404.push({
+                title: title,
+                type: type,
+            });
             return null;
         } catch (error) {
             if (error.response && error.response.status === 429) {
@@ -157,7 +181,7 @@ export function getJikanApiFields(data) {
         //todo : add characters_staff
 
         let apiFields = {
-            relatedTitles: getRelatedTitles(data),
+            jikanRelatedTitles: getRelatedTitles(data),
             summary_en: data.synopsis || '',
             genres: data.genres.map(item => item.name.toLowerCase()) || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
@@ -201,9 +225,10 @@ function getRelatedTitles(data) {
     temp = temp.filter(item => item.type === 'anime');
     return temp.map(item => {
         return ({
+            _id: '',
             jikanID: item.mal_id,
-            id: '',
             title: replaceSpecialCharacters(item.name.toLowerCase()),
+            rawTitle: item.name,
         });
     });
 }
@@ -311,8 +336,8 @@ function checkTypeEpisodes(type, episodes, apiStartDate) {
     let startDate = new Date(apiStartDate);
     let daysBetween = (now.getTime() - startDate.getTime()) / (24 * 3600 * 1000);
     return (
-        ((type === 'anime_movie') && (episodes === 1)) ||
-        ((type === 'anime_serial') && (episodes > 1 || daysBetween < 10))
+        ((type.includes('movie')) && (episodes === 1)) ||
+        ((type.includes('serial')) && (episodes > 1 || daysBetween < 10))
     );
 }
 

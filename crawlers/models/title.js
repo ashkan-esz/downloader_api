@@ -2,6 +2,7 @@ const {getLatestData} = require("../latestData");
 
 export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks) {
     let {season, episode, quality, hardSub, dubbed} = getLatestData(siteDownloadLinks, type);
+    type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
     return {
         title: titleObj.title,
         type: type,
@@ -37,7 +38,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         releaseDay: "",
         year: year,
         premiered: year,
-        endYear: type.includes('movie') ? year : '',
+        endYear: year,
         officialSite: "",
         webChannel: "",
         nextEpisode: null,
@@ -59,7 +60,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         cast: [],
         awards: "",
         //jikan api data
-        animeSource : '',
+        animeSource: '',
         relatedTitles: [],
     };
 }

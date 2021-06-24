@@ -83,7 +83,7 @@ export function getOMDBApiFields(data, type) {
                 writer: data.Writer.toLowerCase(),
                 cast: data.Actors.toLowerCase()
                     .split(',')
-                    .map(value => value.trim())
+                    .map(value => replaceSpecialCharacters(value))
                     .filter(value => value && value.toLowerCase() !== 'n/a'),
             },
         };

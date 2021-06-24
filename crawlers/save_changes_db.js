@@ -9,16 +9,16 @@ const {saveError} = require("../saveError");
 
 
 //todo : add doc for upcoming
+//todo : handle insert_date - update_date for upcoming title
 
 
 module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
     try {
-        //todo : find anime from movie sources
-        let titleObj = await getTitleObj(title, type);
+        let titleObj = await getTitleObj(title, type); //get titles from jikan api
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
-        let {collection, db_data} = await searchOnCollection(title, year, type);
+        let {collection, db_data} = await searchOnCollection(titleObj, year, type);
 
         if (db_data === null) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
@@ -29,7 +29,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         }
 
         let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
-        let apiDataUpdateFields = await apiDataUpdate(db_data, siteDownloadLinks);
+        let apiDataUpdateFields = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(collection, db_data, page_link, persianSummary, type, siteDownloadLinks);
             await handleUpdate(collection, db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
@@ -49,33 +49,36 @@ async function getTitleObj(title, type) {
         rawTitle: title,
         alternateTitles: [],
         titleSynonyms: [],
+        jikanFound: false,
     }
 
-    if (type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
-        if (jikanApiData) {
-            titleObj.title = jikanApiData.apiTitle_simple;
-            titleObj.rawTitle = jikanApiData.apiTitle;
-            titleObj.alternateTitles = removeDuplicateElements([jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese].filter(value => value));
-            titleObj.titleSynonyms = jikanApiData.titleSynonyms;
-        }
+    let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
+    if (jikanApiData) {
+        titleObj.title = jikanApiData.apiTitle_simple;
+        titleObj.rawTitle = jikanApiData.apiTitle;
+        titleObj.alternateTitles = removeDuplicateElements(
+            [jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese]
+                .filter(value => value)
+                .map(value => value.toLowerCase())
+        );
+        titleObj.titleSynonyms = jikanApiData.titleSynonyms;
+        titleObj.jikanFound = true;
     }
+
     return titleObj;
 }
 
-async function searchOnCollection(title, year, type) {
-    return {collection: null, db_data: null}; //todo : remove
-    //todo : check title with alternateTitles to find anime title from movie download sources
+async function searchOnCollection(titleObj, year, type) {
     let collection = await getCollection('movies');
-    let db_data;
+    let db_data = null;
     let dataConfig = {
         title: 1,
         type: 1,
         premiered: 1,
         year: 1,
         rawTitle: 1,
-        titleSynonyms: 1,
         alternateTitles: 1,
+        titleSynonyms: 1,
         apiUpdateDate: 1,
         status: 1,
         imdbID: 1,
@@ -103,15 +106,19 @@ async function searchOnCollection(title, year, type) {
     }
 
     if (type.includes('serial')) {
-        db_data = await collection.find({
-            title: title,
+        let searchResults = await collection.find({
+            $or: [
+                {title: titleObj.title},
+                {title: {$in: titleObj.alternateTitles}},
+                {title: {$in: titleObj.titleSynonyms}}
+            ],
             type: {$in: searchTypes}
         }, {projection: dataConfig}).toArray();
 
         A: for (let i = 0; i < searchTypes.length; i++) {
-            for (let j = 0; j < db_data.length; j++) {
-                if (searchTypes[i] === db_data[j].type) {
-                    db_data = db_data[j];
+            for (let j = 0; j < searchResults.length; j++) {
+                if (searchTypes[i] === searchResults[j].type) {
+                    db_data = searchResults[j];
                     break A;
                 }
             }
@@ -119,18 +126,22 @@ async function searchOnCollection(title, year, type) {
     } else {
         let YEAR = Number(year);
         let searchYears = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        db_data = await collection.find({
-            title: title,
+        let searchResults = await collection.find({
+            $or: [
+                {title: titleObj.title},
+                {title: {$in: titleObj.alternateTitles}},
+                {title: {$in: titleObj.titleSynonyms}}
+            ],
             type: {$in: searchTypes},
             premiered: {$in: searchYears}
         }, {projection: dataConfig}).toArray();
 
         A: for (let i = 0; i < searchYears.length; i++) {
             for (let j = 0; j < searchTypes.length; j++) {
-                for (let k = 0; k < db_data.length; k++) {
-                    if (searchYears[i] === db_data[k].premiered &&
-                        searchTypes[j] === db_data[k].type) {
-                        db_data = db_data[k];
+                for (let k = 0; k < searchResults.length; k++) {
+                    if (searchYears[i] === searchResults[k].premiered &&
+                        searchTypes[j] === searchResults[k].type) {
+                        db_data = searchResults[k];
                         break A;
                     }
                 }
@@ -142,8 +153,7 @@ async function searchOnCollection(title, year, type) {
 
 async function handleUpdate(collection, db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdate) {
     try {
-        //todo : set type in update
-        let updateFields = apiDataUpdate !== null ? apiDataUpdate : {};
+        let updateFields = apiDataUpdate || {};
 
         if (type.includes('serial')) {
             let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, siteDownloadLinks, true);
@@ -186,7 +196,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
 
 
         console.log('---- title update')
-        console.log(updateFields)
+        // console.log(updateFields)
         // todo : active
         // if (Object.keys(updateFields).length > 0) {
         //     await collection.findOneAndUpdate({_id: db_data._id}, {
