@@ -1,6 +1,7 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
+const PQueue = require('p-queue');
 const {openBrowser, closeBrowser} = require('./puppetterBrowser');
 const {saveError} = require("../saveError");
 const {wordsToNumbers} = require('words-to-numbers');
@@ -13,7 +14,9 @@ axiosRetry(axios, {
 
 let headLessBrowser = false;
 
+//todo : handle links that are in another page
 //todo : fix valamovie redirect to google cache
+//todo : fix zarmovie redirect to google cache
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
@@ -23,19 +26,18 @@ export async function wrapper_module(url, page_count, searchCB) {
             url.includes('film2movie')
         );
 
-        let forceWaitNumber = 35;
-        for (let i = 1; i <= page_count; i++) { //todo : i=1
+        const promiseQueue = new PQueue({concurrency: 12});
+        for (let i = 2; i <= page_count; i++) { //todo : i=1
             try {
                 let {$, links} = await getLinks(url + `${i}/`);
                 for (let j = 0; j < links.length; j++) {
                     if (process.env.NODE_ENV === 'dev' || headLessBrowser) {
                         await searchCB($(links[j]), i, $);
                     } else {
-                        if (j % forceWaitNumber === 0) {
-                            await searchCB($(links[j]), i, $);
-                        } else {
-                            searchCB($(links[j]), i, $);
+                        while (promiseQueue.size > 40) {
+                            await new Promise((resolve => setTimeout(resolve, 5)));
                         }
+                        promiseQueue.add(() => searchCB($(links[j]), i, $));
                     }
                 }
             } catch (error) {
@@ -45,6 +47,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
+        await promiseQueue.onIdle();
         if (headLessBrowser) {
             await closeBrowser();
         }

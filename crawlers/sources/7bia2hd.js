@@ -13,10 +13,8 @@ const {saveError} = require("../../saveError");
 
 
 module.exports = async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
-    await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title),
-        wrapper_module(movie_url, page_count, search_title)
-    ]);
+    await wrapper_module(serial_url, serial_page_count, search_title);
+    await wrapper_module(movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {

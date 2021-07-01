@@ -12,6 +12,7 @@ let jikanApiCache = [];
 export function resetJikanApiCache(now) {
     let hoursBetween = (now.getTime() - jikanCacheStartDate.getTime()) / (3600 * 1000);
     if (hoursBetween > 8) {
+        jikanApiCache404 = [];
         jikanApiCache = [];
         jikanCacheStartDate = now;
     }
@@ -56,7 +57,7 @@ function getFromJikanApiCache(title, rawTitle, type) {
 
 export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = false) {
     let jikanCacheResult404 = getFromJikanApiCache404(title, rawTitle, type);
-    if (jikanCacheResult404 === '404'){
+    if (jikanCacheResult404 === '404') {
         return null;
     }
     let jikanCacheResult = getFromJikanApiCache(title, rawTitle, type);
@@ -64,115 +65,109 @@ export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = fal
         return jikanCacheResult;
     }
 
-    let waitCounter = 0;
-    while (waitCounter < 20) {
-        try {
-            let response = await axios.get(`https://api.jikan.moe/v3/search/anime?q=${title}&limit=8`);
-            let data = response.data;
-            for (let i = 0; i < data.results.length && i <= 6; i++) {
-                let fullData = await getJikanApiFullData(data.results[i].mal_id, '');
-                if (!fullData || (fullData.duration && fullData.duration === "1 min per ep")) {
-                    continue;
-                }
-                let jikanID = fullData.mal_id;
+    let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${title}&limit=7`;
+    let data = await handleApiCall(animeSearchUrl);
+    if (!data) {
+        return null;
+    }
 
-                let {
-                    apiTitle, apiTitle_simple,
-                    apiTitleEnglish, apiTitleEnglish_simple,
-                    apiTitleJapanese, titleSynonyms,
-                    splitTitle, splitApiTitle
-                } = getTitlesFromData(title, fullData);
+    for (let i = 0; i < data.results.length && i <= 6; i++) {
+        let animeUrl = `https://api.jikan.moe/v3/anime/${data.results[i].mal_id}`;
+        let fullData = await handleApiCall(animeUrl);
+        if (!fullData || (fullData.duration && fullData.duration === "1 min per ep")) {
+            continue;
+        }
+        let jikanID = fullData.mal_id;
 
-                title = title.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
-                apiTitle_simple = apiTitle_simple.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
-                apiTitle = apiTitle.replace('(TV)','');
-                apiTitleEnglish_simple = apiTitleEnglish_simple.replace(' the', '').replace('memories', 'memory');
+        let allTitles = getTitlesFromData(title, fullData);
 
-                let typeAndEpisodes = checkTypeEpisodes(type, fullData.episodes, fullData.aired.from);
-                let title_movieNumber = title.match(/\d/g);
-                title_movieNumber = title_movieNumber && title_movieNumber[0];
-                let apiTitle_simple_movieNumber = apiTitle_simple.match(/\d/g);
-                apiTitle_simple_movieNumber = apiTitle_simple_movieNumber && apiTitle_simple_movieNumber[0];
+        title = title.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
+        allTitles.apiTitle_simple = allTitles.apiTitle_simple.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
+        allTitles.apiTitle = allTitles.apiTitle.replace('(TV)', '');
+        allTitles.apiTitleEnglish_simple = allTitles.apiTitleEnglish_simple.replace(' the', '').replace('memories', 'memory');
 
-                // console.log(title); //todo : remove
-                // console.log(apiTitle_simple)
-                // console.log(title_movieNumber,' | ',apiTitle_simple_movieNumber)
-                // console.log(title_movieNumber === apiTitle_simple_movieNumber)
-                // console.log(apiTitle)
-                // console.log(apiTitleEnglish_simple)
-                // console.log(apiTitleEnglish)
-                // console.log()
-
-                if (
-                    title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '') ||
-                    title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '').replace('uu', 'u').replace(/[^\d]$/g, '') ||
-                    title === apiTitle_simple ||
-                    title === apiTitleEnglish_simple ||
-                    title === apiTitleJapanese ||
-                    checkEqualTitleWithEdit(title, apiTitle_simple) ||
-                    titleSynonyms.includes(title) ||
-
-                    (
-                        splitTitle.length !== 2 &&
-                        typeAndEpisodes &&
-                        title.includes('movie') === apiTitle_simple.includes('movie') &&
-                        !title.includes('season') && !apiTitle_simple.includes('season') &&
-                        title_movieNumber === apiTitle_simple_movieNumber &&
-                        apiTitle_simple.includes(title)
-                    ) ||
-
-                    (
-                        splitTitle.length > 6 &&
-                        typeAndEpisodes &&
-                        (
-                            (splitTitle.length > splitApiTitle.length && title.includes(apiTitle_simple)) ||
-                            title === apiTitleEnglish_simple.replace(/\s\d/g, '') ||
-                            title === apiTitleEnglish_simple.replace(' i ', ' ')
-                        )
-                    ) ||
-
-                    (
-                        splitTitle.length > 4 &&
-                        typeAndEpisodes &&
-                        (
-                            apiTitle_simple.includes(title.replace(/\sova/g, '')) ||
-                            apiTitleEnglish_simple.includes(title.replace(/\sova/g, '')) ||
-                            title.replace(/\sova \d+/g, '') === apiTitleEnglish_simple ||
-                            title.replace(/\sova \d+|.$/g, '') === apiTitleEnglish_simple
-                        )
-                    ) ||
-
-                    (
-                        splitTitle.length > 3 &&
-                        !apiTitle_simple.includes(title) &&
-                        checkPartsExist(splitTitle, apiTitle_simple)
-                    )
-                ) {
-                    let apiData = await saveJikanApiData(title, type, apiTitle_simple, apiTitle, apiTitleEnglish, apiTitleJapanese, titleSynonyms, fullData, jikanID);
-                    jikanApiCache.push(apiData);
-                    return apiData;
-                }
-            }
-            jikanApiCache404.push({
-                title: title,
-                type: type,
-            });
-            return null;
-        } catch (error) {
-            if (error.response && error.response.status === 429) {
-                //too much request
-                await new Promise((resolve => setTimeout(resolve, 1500)));
-                waitCounter++;
-            } else {
-                if (error.response && error.response.status !== 404) {
-                    await saveError(error);
-                }
-                return null;
-            }
+        if (checkTitle(title, type, allTitles, fullData)) {
+            let apiData = await getJikanApiData_simple(title, type, allTitles, fullData, jikanID);
+            jikanApiCache.push(apiData);
+            return apiData;
         }
     }
-    await Sentry.captureMessage('lots of jikan api 1 call');
+    jikanApiCache404.push({
+        title: title,
+        type: type,
+    });
     return null;
+}
+
+function checkTitle(title, type, allTitles, fullData) {
+    let {
+        apiTitle, apiTitle_simple,
+        apiTitleEnglish, apiTitleEnglish_simple,
+        apiTitleJapanese, titleSynonyms,
+        splitTitle, splitApiTitle
+    } = allTitles;
+
+    let typeAndEpisodes = checkTypeEpisodes(type, fullData.episodes, fullData.aired.from);
+    let title_movieNumber = title.match(/\d/g);
+    title_movieNumber = title_movieNumber && title_movieNumber[0];
+    let apiTitle_simple_movieNumber = allTitles.apiTitle_simple.match(/\d/g);
+    apiTitle_simple_movieNumber = apiTitle_simple_movieNumber && apiTitle_simple_movieNumber[0];
+
+    // console.log(title); //todo : remove
+    // console.log(apiTitle_simple)
+    // console.log(title_movieNumber,' | ',apiTitle_simple_movieNumber)
+    // console.log(title_movieNumber === apiTitle_simple_movieNumber)
+    // console.log(apiTitle)
+    // console.log(apiTitleEnglish_simple)
+    // console.log(apiTitleEnglish)
+    // console.log()
+
+    return (
+        title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '') ||
+        title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '')
+            .replace('uu', 'u').replace(/[^\d]$/g, '') ||
+        title === apiTitle_simple ||
+        title === apiTitleEnglish_simple ||
+        title === apiTitleJapanese ||
+        checkEqualTitleWithEdit(title, apiTitle_simple) ||
+        titleSynonyms.includes(title) ||
+
+        (
+            splitTitle.length !== 2 &&
+            typeAndEpisodes &&
+            title.includes('movie') === apiTitle_simple.includes('movie') &&
+            !title.includes('season') && !apiTitle_simple.includes('season') &&
+            title_movieNumber === apiTitle_simple_movieNumber &&
+            apiTitle_simple.includes(title)
+        ) ||
+
+        (
+            splitTitle.length > 6 &&
+            typeAndEpisodes &&
+            (
+                (splitTitle.length > splitApiTitle.length && title.includes(apiTitle_simple)) ||
+                title === apiTitleEnglish_simple.replace(/\s\d/g, '') ||
+                title === apiTitleEnglish_simple.replace(' i ', ' ')
+            )
+        ) ||
+
+        (
+            splitTitle.length > 4 &&
+            typeAndEpisodes &&
+            (
+                apiTitle_simple.includes(title.replace(/\sova/g, '')) ||
+                apiTitleEnglish_simple.includes(title.replace(/\sova/g, '')) ||
+                title.replace(/\sova \d+/g, '') === apiTitleEnglish_simple ||
+                title.replace(/\sova \d+|.$/g, '') === apiTitleEnglish_simple
+            )
+        ) ||
+
+        (
+            splitTitle.length > 3 &&
+            !apiTitle_simple.includes(title) &&
+            checkPartsExist(splitTitle, apiTitle_simple)
+        )
+    );
 }
 
 export function getJikanApiFields(data) {
@@ -186,6 +181,7 @@ export function getJikanApiFields(data) {
             genres: data.genres.map(item => item.name.toLowerCase()) || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
+            animeListScore: data.score || 0,
             updateFields: {
                 jikanID: data.jikanID,
                 rawTitle: data.apiTitle,
@@ -233,41 +229,38 @@ function getRelatedTitles(data) {
     });
 }
 
-async function saveJikanApiData(title, type, apiTitle_simple, apiTitle, apiTitleEnglish, apiTitleJapanese, titleSynonyms, fullData, jikanID) {
+async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID) {
     delete fullData.title;
     delete fullData.title_english;
     delete fullData.title_japanese;
     delete fullData.title_synonyms;
     delete fullData.mal_id;
     // let characters_staff = await getJikanApiFullData(jikanID, '/characters_staff');
-    let apiData = {
+    return {
         ...fullData,
         jikanID: jikanID,
         siteTitle: title,
         type: type,
-        apiTitle_simple: apiTitle_simple,
-        apiTitle: apiTitle,
-        apiTitleEnglish: apiTitleEnglish,
-        apiTitleJapanese: apiTitleJapanese,
-        titleSynonyms: titleSynonyms,
+        apiTitle_simple: allTitles.apiTitle_simple,
+        apiTitle: allTitles.apiTitle,
+        apiTitleEnglish: allTitles.apiTitleEnglish,
+        apiTitleJapanese: allTitles.apiTitleJapanese,
+        titleSynonyms: allTitles.titleSynonyms,
         //todo : add characters_staff
         characters_staff: [],
     };
-    jikanApiCache.push(apiData);
-    return apiData;
 }
 
-export async function getJikanApiFullData(jikanId, request) {
+async function handleApiCall(url) {
     let waitCounter = 0;
-    while (waitCounter < 20) {
+    while (waitCounter < 30) {
         try {
-            let url = `https://api.jikan.moe/v3/anime/${jikanId}` + request;
             let response = await axios.get(url);
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 429) {
                 //too much request
-                await new Promise((resolve => setTimeout(resolve, 1500)));
+                await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
             } else {
                 if (error.response && error.response.status !== 404) {
@@ -277,7 +270,7 @@ export async function getJikanApiFullData(jikanId, request) {
             }
         }
     }
-    await Sentry.captureMessage(`lots of jikan api 2 ${request} call`);
+    await Sentry.captureMessage(`lots of jikan api call: ${url}`);
     return null;
 }
 

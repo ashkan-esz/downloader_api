@@ -6,6 +6,8 @@
     "start": "node -r esm server.js",
     "start_dev": "NODE_ENV=dev nodemon -r esm server.js",
     "test": "NODE_ENV=dev node -r esm test.js",
+    "test_limited_ram": "NODE_ENV=dev node --max-old-space-size=400 -r esm test.js",
+    "test_limited_ram_traceGcc": "NODE_ENV=dev node --max-old-space-size=400 --trace_gc -r esm test.js",
     "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm server.js"
   },
   "dependencies": {
@@ -27,6 +29,7 @@
     "http-errors": "~1.6.3",
     "jwks-rsa": "^1.11.0",
     "mongodb": "^3.6.3",
+    "p-queue": "^5.0.0",
     "persian-rex": "^2.3.3",
     "puppeteer": "^8.0.0",
     "tesseract.js": "^2.1.4",

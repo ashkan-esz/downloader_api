@@ -52,36 +52,21 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
 }
 
 async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID) {
-    let waitCounter = 0;
-    while (waitCounter < 12) {
-        try {
-            let response = await axios.get(`https://api.tvmaze.com/search/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
-            let data = response.data;
-            for (let i = 0; i < data.length; i++) {
-                let thisTitleData = data[i].show;
-                if (checkTitle(thisTitleData, title, alternateTitles, titleSynonyms, imdbID)) {
-                    let titleSearchResponse = await axios.get(`https://api.tvmaze.com/shows/${thisTitleData.id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
-                    let titleData = titleSearchResponse.data;
-                    if (checkTitle(titleData, title, alternateTitles, titleSynonyms, imdbID)) {
-                        return titleData;
-                    }
-                }
-            }
-            return null;
-        } catch (error) {
-            if (error.response && error.response.status === 429) {
-                //too much request
-                await new Promise((resolve => setTimeout(resolve, 1000)));
-                waitCounter++;
-            } else {
-                if (error.response && error.response.status === 404) {
-                    await saveError(error);
-                }
-                return null;
+    let multiSearcheUrl = `https://api.tvmaze.com/search/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
+    let data = await handleApiCall(multiSearcheUrl);
+    if (!data) {
+        return null;
+    }
+    for (let i = 0; i < data.length; i++) {
+        let thisTitleData = data[i].show;
+        if (checkTitle(thisTitleData, title, alternateTitles, titleSynonyms, imdbID)) {
+            let titleUrl = `https://api.tvmaze.com/shows/${thisTitleData.id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
+            let titleData = await handleApiCall(titleUrl);
+            if (titleData && checkTitle(titleData, title, alternateTitles, titleSynonyms, imdbID)) {
+                return titleData;
             }
         }
     }
-    await Sentry.captureMessage('lots of tvmaze (multiSearches) api call');
     return null;
 }
 
@@ -106,7 +91,7 @@ export function getTvMazeApiFields(data) {
                     data.averageRuntime ? data.averageRuntime + ' min' : '',
                 status: data.status.toLowerCase(),
                 movieLang: data.language || '',
-                releaseDay: data.schedule.days ? data.schedule.days[0].toLowerCase() : '',
+                releaseDay: data.schedule.days ? (data.schedule.days[0] || '').toLowerCase() : '',
                 officialSite: data.officialSite || "",
                 webChannel: data.webChannel ? data.webChannel.name || '' : '',
             },
@@ -117,6 +102,29 @@ export function getTvMazeApiFields(data) {
         saveError(error);
         return null;
     }
+}
+
+async function handleApiCall(url) {
+    let waitCounter = 0;
+    while (waitCounter < 12) {
+        try {
+            let response = await axios.get(url);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.status === 429) {
+                //too much request
+                await new Promise((resolve => setTimeout(resolve, 1000)));
+                waitCounter++;
+            } else {
+                if (error.response && error.response.status === 404) {
+                    await saveError(error);
+                }
+                return null;
+            }
+        }
+    }
+    await Sentry.captureMessage(`lots of tvmaze api call: ${url}`);
+    return null;
 }
 
 function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID) {
