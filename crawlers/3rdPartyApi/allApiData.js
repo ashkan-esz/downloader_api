@@ -1,3 +1,5 @@
+import {saveError} from "../../saveError";
+
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
@@ -234,18 +236,23 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
     return fields;
 }
 
-async function getAnimeRelatedTitles(titleData,jikanRelatedTitles) {
-    let collection = await getCollection('movies');
-    let newRelatedTitles = [];
-    for (let i = 0; i < jikanRelatedTitles.length; i++) {
-        let searchResult = await collection.findOne({
-            jikanID: jikanRelatedTitles[i].jikanID
-        }, {projection: dataConfig['medium']});
-        if (searchResult) {
-            newRelatedTitles.push(searchResult);
-        } else {
-            newRelatedTitles.push(jikanRelatedTitles[i]);
+async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
+    try {
+        let collection = await getCollection('movies');
+        let newRelatedTitles = [];
+        for (let i = 0; i < jikanRelatedTitles.length; i++) {
+            let searchResult = await collection.findOne({
+                jikanID: jikanRelatedTitles[i].jikanID
+            }, {projection: dataConfig['medium']});
+            if (searchResult) {
+                newRelatedTitles.push(searchResult);
+            } else {
+                newRelatedTitles.push(jikanRelatedTitles[i]);
+            }
         }
+        return newRelatedTitles;
+    } catch (error) {
+        saveError(error);
+        return titleData.relatedTitles;
     }
-    return newRelatedTitles;
 }

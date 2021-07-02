@@ -26,8 +26,9 @@ export async function wrapper_module(url, page_count, searchCB) {
             url.includes('film2movie')
         );
 
-        const promiseQueue = new PQueue({concurrency: 12});
-        for (let i = 2; i <= page_count; i++) { //todo : i=1
+        let concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
+        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
+        for (let i = 1; i <= page_count; i++) { //todo : i=1
             try {
                 let {$, links} = await getLinks(url + `${i}/`);
                 for (let j = 0; j < links.length; j++) {
