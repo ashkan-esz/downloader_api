@@ -17,7 +17,8 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let titleObj = await getTitleObj(title, type); //get titles from jikan api
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
-
+        // titleModel = await addApiData(titleModel, siteDownloadLinks); //todo : remove
+        // return; //todo : remove
         let {collection, db_data} = await searchOnCollection(titleObj, year, type);
 
         if (db_data === null) {//new title
@@ -50,17 +51,20 @@ async function getTitleObj(title, type) {
         jikanFound: false,
     }
 
-    let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
-    if (jikanApiData) {
-        titleObj.title = jikanApiData.apiTitle_simple;
-        titleObj.rawTitle = jikanApiData.apiTitle;
-        titleObj.alternateTitles = removeDuplicateElements(
-            [jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese]
-                .filter(value => value)
-                .map(value => value.toLowerCase())
-        );
-        titleObj.titleSynonyms = jikanApiData.titleSynonyms;
-        titleObj.jikanFound = true;
+    // todo : remove jikan api for non anime titles
+    if (type.includes('anime')){
+        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
+        if (jikanApiData) {
+            titleObj.title = jikanApiData.apiTitle_simple;
+            titleObj.rawTitle = jikanApiData.apiTitle;
+            titleObj.alternateTitles = removeDuplicateElements(
+                [jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese]
+                    .filter(value => value)
+                    .map(value => value.toLowerCase())
+            );
+            titleObj.titleSynonyms = jikanApiData.titleSynonyms;
+            titleObj.jikanFound = true;
+        }
     }
 
     return titleObj;
@@ -174,7 +178,9 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
         }
 
         if (db_data.summary.persian.length < 10) {
-            updateFields.summary.persian = site_persianSummary;
+            let currentSummary = updateFields.summary || db_data.summary;
+            currentSummary.summary.persian = site_persianSummary;
+            updateFields.summary = currentSummary;
         }
 
         if (subUpdates.posterChange) {

@@ -253,7 +253,7 @@ async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID)
 
 async function handleApiCall(url) {
     let waitCounter = 0;
-    while (waitCounter < 30) {
+    while (waitCounter < 35) {
         try {
             let response = await axios.get(url);
             return response.data;

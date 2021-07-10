@@ -89,6 +89,6 @@ export function getLatestData(site_links, type) {
             dubbed = checkDubbed(link, info) || dubbed;
         }
     }
-    latestQuality = latestQuality.replace(/s\d+e\d+\./g, '');
+    latestQuality = latestQuality.replace(/s\d+e\d+\./gi, '');
     return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};
 }

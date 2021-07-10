@@ -159,10 +159,9 @@ function get_file_size_movie($, link) {
 
 function getQualitySample($, link, type) {
     try {
-        if (type === 'serial') {
+        if (type.includes('serial')) {
             return '';
         }
-
         let nextNode = $(link).next()[0];
         let sampleUrl = nextNode.attribs['data-imgqu'];
         if (sampleUrl.includes('.jpg')) {

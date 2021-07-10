@@ -46,7 +46,7 @@ export function purgeTitle(title, type) {
 export function replaceSpecialCharacters(input) {
     return input
         .replace(/[.:\/☆]/g, ' ')
-        .replace(/["'’:;?!+#,()~♥△Ωω]/g, '')
+        .replace(/["'’‘:;?!+#,()~♥△Ωω]/g, '')
         .replace(/[\/_–-]/g, ' ')
         .replace(/\s\s\s\s/g, ' ')
         .replace(/\s\s\s/g, ' ')
@@ -324,8 +324,7 @@ export function purgeQualityText(qualityText) {
         .replace('فارسی', '')
         .replace('هاردساب', '')
         .replace(/[)(:]/g, '')
-        .replace('Web-DL', 'WEB-DL')
-        .replace('web-dl', 'WEB-DL')
+        .replace(/web-dl/gi, 'WEB-DL')
         .trim();
 }
 
@@ -348,6 +347,8 @@ export function purgeEncoderText(encoderText) {
         .replace('انکودر', '')
         .replace('انکدر', '')
         .replace('انکود', '')
+        .replace('لینک های دانلود با زیرنویس فارسی چسبیده', '')
+        .replace(/encoder/gi, '')
         .replace(':', '')
         .trim()
 }
