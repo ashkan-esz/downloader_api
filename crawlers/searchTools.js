@@ -2,9 +2,10 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
 const PQueue = require('p-queue');
-const {openBrowser, closeBrowser} = require('./puppetterBrowser');
+const {getPageObj, setPageFree, closeBrowser} = require('./puppetterBrowser');
 const {saveError} = require("../saveError");
 const {wordsToNumbers} = require('words-to-numbers');
+const Sentry = require('@sentry/node');
 
 axiosRetry(axios, {
     retries: 4, retryDelay: (retryCount) => {
@@ -17,6 +18,7 @@ let headLessBrowser = false;
 //todo : handle links that are in another page
 //todo : fix valamovie redirect to google cache
 //todo : fix zarmovie redirect to google cache
+//todo : check AutoscaledPool to maximize concurrencyNumber
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
@@ -26,17 +28,19 @@ export async function wrapper_module(url, page_count, searchCB) {
             url.includes('film2movie')
         );
 
-        let concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
+        // todo : check timing
+        // let start = new Date();
+        const concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) { //todo : i=1
             try {
                 let {$, links} = await getLinks(url + `${i}/`);
                 for (let j = 0; j < links.length; j++) {
-                    if (process.env.NODE_ENV === 'dev' || headLessBrowser) {
+                    if (process.env.NODE_ENV === 'dev') {
                         await searchCB($(links[j]), i, $);
                     } else {
                         while (promiseQueue.size > 40) {
-                            await new Promise((resolve => setTimeout(resolve, 5)));
+                            await new Promise((resolve => setTimeout(resolve, 2)));
                         }
                         promiseQueue.add(() => searchCB($(links[j]), i, $));
                     }
@@ -48,10 +52,17 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
+
+        // console.log('==================== waiting for promiseQueue to idle');
         await promiseQueue.onIdle();
+        // console.log('====================== before browser close');
         if (headLessBrowser) {
             await closeBrowser();
         }
+        // console.log('====================== browser closed');
+        // let end = new Date();
+        // let dif = end.getTime() - start.getTime();
+        // console.log('======================== time: ', dif);
     } catch (error) {
         await closeBrowser();
         saveError(error);
@@ -89,11 +100,11 @@ export async function search_in_title_page(title, page_link, type, get_file_size
 async function getLinks(url) {
     //todo : dont use google cache when exceed page number
     try {
-        let $, links;
+        url = url.replace('/page/1/', '');
+        let $, links = [];
         let triedGoogleCache = false;
         if (!headLessBrowser) {
             try {
-                url = url.replace('/page/1/', '');
                 let response = await axios.get(url);
                 $ = cheerio.load(response.data);
                 links = $('a');
@@ -105,11 +116,14 @@ async function getLinks(url) {
             }
         } else {
             try {
-                let page = await openBrowser();
-                await page.goto(url);
-                let pageContent = await page.content();
-                $ = cheerio.load(pageContent);
-                links = $('a');
+                let pageObj = await getPageObj();
+                if (pageObj) {
+                    await pageObj.page.goto(url);
+                    let pageContent = await pageObj.page.content();
+                    setPageFree(pageObj.id);
+                    $ = cheerio.load(pageContent);
+                    links = $('a');
+                }
             } catch (error) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
@@ -131,6 +145,11 @@ async function getLinks(url) {
 
 async function getFromGoogleCache(url) {
     try {
+        if (process.env.NODE_ENV === 'dev') {
+            console.log('google cache: ', url);
+        }else {
+            await Sentry.captureMessage(`google cache: ${url}`);
+        }
         let encodeUrl = encodeURIComponent(url);
         let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
         let webCacheUrl = cacheUrl + encodeUrl;

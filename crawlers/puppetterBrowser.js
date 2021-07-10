@@ -1,48 +1,93 @@
 const puppeteer = require('puppeteer');
 const {saveError} = require("../saveError");
 
-
 let browser = null;
-let page = null;
+let pages = [];
+let creatingPageCounter = 0;
+const concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
+const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || (1 / 3) * concurrencyNumber;
 
-//todo : add multiple pages browsing
+//todo : check AutoscaledPool to maximize tabNumber
+//todo : try to remove images from loading
 
-export async function openBrowser() {
-    if (!page || !browser || !browser.isConnected()) {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: [
-                "--no-sandbox",
-                "--single-process",
-                "--no-zygote"
-            ]
-        });
-        page = await browser.newPage();
+export async function getPageObj() {
+    try {
+        for (let i = 0; i < pages.length; i++) {
+            if (pages[i].state === 'free') {
+                pages[i].state = 'pending';
+                return pages[i];
+            }
+        }
+
+        if (pages.length + creatingPageCounter < tabNumber) {
+            creatingPageCounter++;
+            let newPage = await openNewPage();
+            let newPageObj = null;
+            if (newPage) {
+                newPageObj = {
+                    page: newPage,
+                    state: 'pending',
+                    id: pages.length
+                };
+                pages.push(newPageObj);
+            }
+            creatingPageCounter--;
+            return newPageObj;
+        } else {
+            while (true) {
+                await new Promise(resolve => setTimeout(resolve, 2));
+                for (let i = 0; i < pages.length; i++) {
+                    if (pages[i].state === 'free') {
+                        pages[i].state = 'pending';
+                        return pages[i];
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export function setPageFree(id) {
+    for (let i = 0; i < pages.length; i++) {
+        if (pages[i].id === id) {
+            pages[i].state = 'free';
+        }
+    }
+}
+
+async function openNewPage() {
+    try {
+        if (!browser || !browser.isConnected()) {
+            browser = await puppeteer.launch({
+                headless: true,
+                args: [
+                    "--no-sandbox",
+                    "--single-process",
+                    "--no-zygote"
+                ]
+            });
+        }
+        let page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
         await page.setViewport({width: 1280, height: 800});
-        await page.setDefaultTimeout(60000);
-        await page.setDefaultNavigationTimeout(60000);
+        await page.setDefaultTimeout(50000);
+        return page;
+    } catch (error) {
+        saveError(error);
+        return null;
     }
-    if (page && page.isClosed()) {
-        page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-        await page.setViewport({width: 1280, height: 800});
-        await page.setDefaultTimeout(60000);
-        await page.setDefaultNavigationTimeout(60000);
-    }
-    return page;
 }
 
 export async function closeBrowser() {
     try {
-        if (page && !page.isClosed()) {
-            await page.close();
-        }
-        page = null;
         if (browser && browser.isConnected()) {
             await browser.close();
         }
         browser = null;
+        pages = [];
     } catch (error) {
         await saveError(error);
     }
