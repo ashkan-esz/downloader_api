@@ -80,7 +80,8 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
             let headLessBrowser = (
                 sourcesUrls[i].includes('valamovie') ||
                 sourcesUrls[i].includes('digimovie') ||
-                sourcesUrls[i].includes('film2movie')
+                sourcesUrls[i].includes('film2movie') ||
+                sourcesUrls[i].includes('//zar')
             );
 
             let response;

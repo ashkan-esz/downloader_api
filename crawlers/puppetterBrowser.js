@@ -4,14 +4,12 @@ const {saveError} = require("../saveError");
 let browser = null;
 let pages = [];
 let creatingPageCounter = 0;
-const concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
-const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || (1 / 3) * concurrencyNumber;
-
-//todo : check AutoscaledPool to maximize tabNumber
-//todo : try to remove images from loading
 
 export async function getPageObj() {
     try {
+        const {_pageCount} = require('./searchTools');
+        const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) ||
+            (_pageCount === 1 ? 2 : 1);
         for (let i = 0; i < pages.length; i++) {
             if (pages[i].state === 'free') {
                 pages[i].state = 'pending';
@@ -74,6 +72,17 @@ async function openNewPage() {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
         await page.setViewport({width: 1280, height: 800});
         await page.setDefaultTimeout(50000);
+        await page.setRequestInterception(true);
+        page.on('request', (interceptedRequest) => {
+            if (
+                interceptedRequest.url().endsWith('.png') ||
+                interceptedRequest.url().endsWith('.jpg') ||
+                interceptedRequest.url().endsWith('.gif') ||
+                interceptedRequest.url().endsWith('.mp4')
+            )
+                interceptedRequest.abort();
+            else interceptedRequest.continue();
+        });
         return page;
     } catch (error) {
         saveError(error);

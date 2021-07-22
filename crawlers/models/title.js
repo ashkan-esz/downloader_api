@@ -53,7 +53,12 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         movieLang: "",
         country: "",
         genres: [],
-        rating: [], //[{source,value}]
+        rating: {
+            imdb: 0,
+            rottenTomatoes: 0,
+            metacritic: 0,
+            myAnimeList: 0
+        },
         duration: "0 min",
         director: "",
         writer: "",

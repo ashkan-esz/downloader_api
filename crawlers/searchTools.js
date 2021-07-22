@@ -13,56 +13,51 @@ axiosRetry(axios, {
     }
 });
 
-let headLessBrowser = false;
+let _headLessBrowser = false;
+export let _pageCount = 0;
 
 //todo : handle links that are in another page
-//todo : fix valamovie redirect to google cache
-//todo : fix zarmovie redirect to google cache
-//todo : check AutoscaledPool to maximize concurrencyNumber
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
-        headLessBrowser = (
+        _headLessBrowser = (
             url.includes('digimovie') ||
             url.includes('valamovie') ||
-            url.includes('film2movie')
+            url.includes('film2movie') ||
+            url.includes('//zar')
         );
+        _pageCount = page_count;
 
-        // todo : check timing
-        // let start = new Date();
-        const concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY) || 6;
+        const concurrencyNumber = getConcurrencyNumber(url, page_count);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
-        for (let i = 1; i <= page_count; i++) { //todo : i=1
+        for (let i = 1; i <= page_count; i++) {
             try {
-                let {$, links} = await getLinks(url + `${i}/`);
+                let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}/`);
+                if (checkLastPage($, links, checkGoogleCache, url, responseUrl, i)) {
+                    break;
+                }
                 for (let j = 0; j < links.length; j++) {
                     if (process.env.NODE_ENV === 'dev') {
-                        await searchCB($(links[j]), i, $);
+                        await searchCB($(links[j]), i, $, url);
                     } else {
                         while (promiseQueue.size > 40) {
                             await new Promise((resolve => setTimeout(resolve, 2)));
                         }
-                        promiseQueue.add(() => searchCB($(links[j]), i, $));
+                        promiseQueue.add(() => searchCB($(links[j]), i, $, url));
                     }
                 }
             } catch (error) {
-                if (headLessBrowser) {
+                if (_headLessBrowser) {
                     await closeBrowser();
                 }
                 saveError(error);
             }
         }
 
-        // console.log('==================== waiting for promiseQueue to idle');
         await promiseQueue.onIdle();
-        // console.log('====================== before browser close');
-        if (headLessBrowser) {
+        if (_headLessBrowser) {
             await closeBrowser();
         }
-        // console.log('====================== browser closed');
-        // let end = new Date();
-        // let dif = end.getTime() - start.getTime();
-        // console.log('======================== time: ', dif);
     } catch (error) {
         await closeBrowser();
         saveError(error);
@@ -98,21 +93,22 @@ export async function search_in_title_page(title, page_link, type, get_file_size
 }
 
 async function getLinks(url) {
-    //todo : dont use google cache when exceed page number
+    let checkGoogleCache = false;
+    let responseUrl = '';
     try {
         url = url.replace('/page/1/', '');
         let $, links = [];
-        let triedGoogleCache = false;
-        if (!headLessBrowser) {
+        if (!_headLessBrowser) {
             try {
                 let response = await axios.get(url);
+                responseUrl = response.request.res.responseUrl;
                 $ = cheerio.load(response.data);
                 links = $('a');
             } catch (error) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
-                triedGoogleCache = true;
+                checkGoogleCache = true;
             }
         } else {
             try {
@@ -120,6 +116,7 @@ async function getLinks(url) {
                 if (pageObj) {
                     await pageObj.page.goto(url);
                     let pageContent = await pageObj.page.content();
+                    responseUrl = pageObj.page.url();
                     setPageFree(pageObj.id);
                     $ = cheerio.load(pageContent);
                     links = $('a');
@@ -128,18 +125,19 @@ async function getLinks(url) {
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
-                triedGoogleCache = true;
+                checkGoogleCache = true;
             }
         }
-        if (links.length < 5 && !triedGoogleCache) {
+        if (links.length < 5 && !checkGoogleCache) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;
+            checkGoogleCache = true;
         }
-        return {$, links};
+        return {$, links, checkGoogleCache, responseUrl};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: []};
+        return {$: null, links: [], checkGoogleCache, responseUrl};
     }
 }
 
@@ -147,7 +145,7 @@ async function getFromGoogleCache(url) {
     try {
         if (process.env.NODE_ENV === 'dev') {
             console.log('google cache: ', url);
-        }else {
+        } else {
             await Sentry.captureMessage(`google cache: ${url}`);
         }
         let encodeUrl = encodeURIComponent(url);
@@ -164,14 +162,29 @@ async function getFromGoogleCache(url) {
     }
 }
 
+function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
+    if (url.includes('digimovie')) {
+        for (let i = 0; i < links.length; i++) {
+            let linkText = $(links[i]).text();
+            if (
+                (linkText && linkText.includes('دانلود') && !linkText.includes('تریلر'))
+            ) {
+                return false;
+            }
+        }
+    }
+
+    if (links.length === 0 && checkGoogleCache) {
+        return true;
+    }
+    return !(pageNumber === 1 || responseUrl.includes('page/'));
+}
+
 function check_download_link(original_link, matchCases, type) {
     let link = original_link.toLowerCase().replace(/[_-]/g, '.');
     if (link.includes('trailer')) {
         return null;
     }
-
-    // console.log(link) //todo : remove
-    // console.log(matchCases)
 
     if (type.includes('movie')) {
         if (
@@ -272,4 +285,20 @@ function check_format(link, type) {
 
 function checkSerialLinkMatch(link) {
     return decodeURIComponent(link).match(/s\d\de\d\d|e\d+|\d+\.nineanime|\[\d+]/g)
+}
+
+function getConcurrencyNumber(url, page_count) {
+    let concurrencyNumber;
+    if (process.env.CRAWLER_CONCURRENCY) {
+        concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
+    } else if (_headLessBrowser) {
+        concurrencyNumber = (page_count === 1) ? 4 : 6;
+    } else {
+        if (page_count === 1) {
+            concurrencyNumber = 10;
+        } else {
+            concurrencyNumber = (url.includes('nineanime')) ? 6 : 12;
+        }
+    }
+    return concurrencyNumber;
 }

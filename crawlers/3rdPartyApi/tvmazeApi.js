@@ -41,6 +41,13 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                     }
                 }
                 return null;
+            } else if (error.message && error.message.includes('Request path contains unescaped characters')) {
+                let newTitle = replaceSpecialCharacters(title);
+                if (newTitle !== title) {
+                    return await getTvMazeApiData(newTitle, alternateTitles, titleSynonyms, imdbID, type, canReTry);
+                } else {
+                    return null;
+                }
             } else {
                 await saveError(error);
                 return null;

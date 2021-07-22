@@ -88,20 +88,25 @@ function get_file_size($, link, type) {
 }
 
 function get_file_size_serial($, link) {
+    if ($(link).text().includes('قسمت ویژه')) {
+        return 'ignore';
+    }
     let text_array = $(link).text()
         .split(' ')
         .filter((text) => !persianRex.hasLetter.test(text));
-    text_array.shift();
+    if (text_array.length > 1) {
+        text_array.shift();
+    }
+
     let quality = text_array[0].replace(/[»:«]/g, '');
     let x265 = (text_array.length > 1) ? text_array[1].replace(/[»:«]/g, '') : '';
-    let href_array = $(link).attr('href').split('.');
-    let release = href_array[href_array.indexOf(quality) + 1];
-    let linkHref = $(link).attr('href').toLowerCase();
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    return [quality, x265, release, dubbed]
-        .filter(value => value !== '')
-        .join('.')
-        .replace(/Web-dl|web-dl/g, 'WEB-DL');
+    let linkHref = $(link).attr('href');
+    let href_array = linkHref.split('.');
+    let qualityIndex = href_array.indexOf(quality);
+    let release = qualityIndex !== -1 ? href_array[qualityIndex + 1] : '';
+    let dubbed = checkDubbed(linkHref.toLowerCase(), '') ? 'dubbed' : '';
+    let info = [quality, x265, release, dubbed].filter(value => value).join('.');
+    return purgeQualityText(info);
 }
 
 function get_file_size_movie($, link) {

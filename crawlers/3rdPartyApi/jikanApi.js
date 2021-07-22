@@ -181,7 +181,7 @@ export function getJikanApiFields(data) {
             genres: data.genres.map(item => item.name.toLowerCase()) || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
-            animeListScore: data.score || 0,
+            myAnimeListScore: Number(data.score) || 0,
             updateFields: {
                 jikanID: data.jikanID,
                 rawTitle: data.apiTitle,

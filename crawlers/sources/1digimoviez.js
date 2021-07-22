@@ -17,12 +17,15 @@ module.exports = async function digimovies({movie_url, serial_url, page_count, s
     await wrapper_module(movie_url, page_count, search_title);
 }
 
-async function search_title(link, i) {
+async function search_title(link, i, $, url) {
     try {
         let text = link.text();
         if (text && text.includes('دانلود') && text.includes('ادامه')) {
             let title = link.attr('title').toLowerCase();
             let type = getType(title);
+            if (url.includes('serie')) {
+                type = type.replace('movie', 'serial');
+            }
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`digimovies/${type}/${i}/${title}  ========>  `);

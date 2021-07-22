@@ -204,7 +204,7 @@ export function checkSource(case1, case2) {
         .replace(/\d/g, '')
         .replace(/s/g, '')
         .split('.')[0];
-    let isZarmovie = checkSourceNameAlternative(case1, case2, 'zarmovie', 'zarfilms');
+    let isZarmovie = checkSourceNameAlternative(case1, case2, 'zar', 'zar');
     let isGolchindl = checkSourceNameAlternative(case1, case2, 'golchin', 'golchin');
     return source_name === new_source_name || isZarmovie || isGolchindl;
 }

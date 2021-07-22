@@ -1,37 +1,37 @@
-import {saveError} from "../../saveError";
-
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const getCollection = require('../../mongoDB');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
 const {removeDuplicateElements} = require('../utils');
+const {saveError} = require('../../saveError');
 const {dataConfig} = require("../../routes/configs");
 
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let omdbApiData = await handle_OMDB_TvMaze_ApiCall(titleModel, 'omdb');
-    let omdbApiFields = null;
+    let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
+    let omdbApiFields = null, tvmazeApiFields = null;
+
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, titleModel.type);
         if (omdbApiFields) {
             titleModel = {...titleModel, ...omdbApiFields.updateFields};
             updateSpecificFields(titleModel, titleModel, omdbApiFields, 'omdb');
+            titleModel.rating = {...titleModel.rating, ...omdbApiFields.rating};
+        }
+    }
+
+    if (tvmazeApiData !== null) {
+        tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
+        if (tvmazeApiFields) {
+            titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
+            updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
         }
     }
 
     if (titleModel.type.includes('serial')) {
-        let tvmazeApiData = await handle_OMDB_TvMaze_ApiCall(titleModel, 'tvmaze');
-        let tvmazeApiFields = null;
-        if (tvmazeApiData !== null) {
-            tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
-            if (tvmazeApiFields) {
-                titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
-                updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
-            }
-        }
         let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
@@ -53,6 +53,7 @@ export async function addApiData(titleModel, site_links) {
                     titleModel.endYear = jikanApiFields.endYear;
                 }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
+                titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
                 titleModel.relatedTitles = getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
             }
         }
@@ -65,7 +66,7 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     let hoursBetween = (now.getTime() - apiUpdateDate.getTime()) / (3600 * 1000);
-    if (hoursBetween <= 4) {
+    if (hoursBetween <= 6) {
         return null;
     }
 
@@ -76,26 +77,28 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     db_data = titleUpdateResult.db_data;
     updateFields = titleUpdateResult.updateFields;
 
-    let omdbApiData = await handle_OMDB_TvMaze_ApiCall(db_data, 'omdb');
-    let omdbApiFields = null;
+    let {omdbApiData, tvmazeApiData} = await handleApiCalls(db_data);
+    let omdbApiFields = null, tvmazeApiFields = null;
+
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
         if (omdbApiFields) {
             updateFields = {...updateFields, ...omdbApiFields.updateFields};
             updateSpecificFields(db_data, updateFields, omdbApiFields, 'omdb');
+            db_data.rating = {...db_data.rating, ...omdbApiFields.rating};
+            updateFields.rating = db_data.rating;
+        }
+    }
+
+    if (tvmazeApiData !== null) {
+        tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
+        if (tvmazeApiFields) {
+            updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
+            updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
         }
     }
 
     if (db_data.type.includes('serial')) {
-        let tvmazeApiData = await handle_OMDB_TvMaze_ApiCall(db_data, 'tvmaze');
-        let tvmazeApiFields = null;
-        if (tvmazeApiData !== null) {
-            tvmazeApiFields = getTvMazeApiFields(tvmazeApiData);
-            if (tvmazeApiFields) {
-                updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
-                updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
-            }
-        }
         let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
@@ -107,6 +110,10 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
             if (jikanApiFields) {
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
+                let currentRating = updateFields.rating ? updateFields.rating : db_data.rating;
+                currentRating.myAnimeList = jikanApiFields.myAnimeListScore;
+                db_data.rating = currentRating;
+                updateFields.rating = currentRating;
                 let newRelatedTitles = getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
                 db_data.relatedTitles = newRelatedTitles;
                 updateFields.relatedTitles = newRelatedTitles;
@@ -140,6 +147,22 @@ function handleTitleUpdate(db_data, updateFields, titleObj, siteType) {
         updateFields = {...updateFields, ...titleObj};
     }
     return {db_data, updateFields};
+}
+
+async function handleApiCalls(titleData) {
+    let omdbApiData, tvmazeApiData;
+    if (titleData.type.includes('serial')) {
+        let results = await Promise.all([
+            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze')
+        ]);
+        omdbApiData = results[0];
+        tvmazeApiData = results[1];
+    } else {
+        omdbApiData = await handle_OMDB_TvMaze_ApiCall(titleData, 'omdb');
+        tvmazeApiData = null;
+    }
+    return {omdbApiData, tvmazeApiData};
 }
 
 async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {

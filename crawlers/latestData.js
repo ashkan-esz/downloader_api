@@ -56,6 +56,7 @@ export function getLatestData(site_links, type) {
     let latestQuality = site_links[0].info;
     let hardSub = type.includes('movie') ? false : '';
     let dubbed = type.includes('movie') ? false : '';
+    let prevStates = [1, 1, '', '', ''];
 
     for (let i = 0; i < site_links.length; i++) {
         let link = site_links[i].link;
@@ -66,6 +67,11 @@ export function getLatestData(site_links, type) {
                 ({season, episode} = getSeasonEpisode(info));
             }
             if (season > latestSeason) { //found new season
+                prevStates[0] = latestSeason;
+                prevStates[1] = latestEpisode;
+                prevStates[2] = latestQuality;
+                prevStates[3] = hardSub;
+                prevStates[4] = dubbed;
                 latestSeason = season;
                 latestEpisode = episode;
                 latestQuality = info;
@@ -73,11 +79,18 @@ export function getLatestData(site_links, type) {
                 dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
             } else if (season === latestSeason) {
                 if (episode > latestEpisode) {
+                    prevStates[1] = latestEpisode;
+                    prevStates[2] = latestQuality;
+                    prevStates[3] = hardSub;
+                    prevStates[4] = dubbed;
                     latestEpisode = episode;
                     latestQuality = info;
                     hardSub = checkHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
                     dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
                 } else if (episode === latestEpisode) {
+                    prevStates[2] = latestQuality;
+                    prevStates[3] = hardSub;
+                    prevStates[4] = dubbed;
                     latestQuality = checkBetterQuality(info, latestQuality) ? info : latestQuality;
                     hardSub = checkHardSub(info) ? `s${latestSeason}e${latestEpisode}` : hardSub;
                     dubbed = checkDubbed(link, info) ? `s${latestSeason}e${latestEpisode}` : dubbed;
@@ -90,5 +103,13 @@ export function getLatestData(site_links, type) {
         }
     }
     latestQuality = latestQuality.replace(/s\d+e\d+\./gi, '');
+    if (latestEpisode > 1 && latestEpisode - prevStates[1] > 1) {
+        //episode leaked
+        latestSeason = prevStates[0];
+        latestEpisode = prevStates[1];
+        latestQuality = prevStates[2];
+        hardSub = prevStates[3];
+        dubbed = prevStates[4];
+    }
     return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};
 }

@@ -51,8 +51,7 @@ async function getTitleObj(title, type) {
         jikanFound: false,
     }
 
-    // todo : remove jikan api for non anime titles
-    if (type.includes('anime')){
+    if (type.includes('anime')) {
         let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
         if (jikanApiData) {
             titleObj.title = jikanApiData.apiTitle_simple;
@@ -92,6 +91,7 @@ async function searchOnCollection(titleObj, year, type) {
         trailers: 1,
         watchOnlineLinks: 1,
         genres: 1,
+        rating: 1,
         duration: 1,
         totalSeasons: 1,
         seasons: 1,
@@ -112,7 +112,9 @@ async function searchOnCollection(titleObj, year, type) {
             $or: [
                 {title: titleObj.title},
                 {title: {$in: titleObj.alternateTitles}},
-                {title: {$in: titleObj.titleSynonyms}}
+                {title: {$in: titleObj.titleSynonyms}},
+                {alternateTitles: titleObj.title},
+                {titleSynonyms: titleObj.title},
             ],
             type: {$in: searchTypes}
         }, {projection: dataConfig}).toArray();
@@ -132,7 +134,9 @@ async function searchOnCollection(titleObj, year, type) {
             $or: [
                 {title: titleObj.title},
                 {title: {$in: titleObj.alternateTitles}},
-                {title: {$in: titleObj.titleSynonyms}}
+                {title: {$in: titleObj.titleSynonyms}},
+                {alternateTitles: titleObj.title},
+                {titleSynonyms: titleObj.title},
             ],
             type: {$in: searchTypes},
             premiered: {$in: searchYears}
@@ -177,9 +181,12 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
             }
         }
 
-        if (db_data.summary.persian.length < 10) {
-            let currentSummary = updateFields.summary || db_data.summary;
-            currentSummary.summary.persian = site_persianSummary;
+        if (db_data.summary.persian.length < site_persianSummary.length) {
+            let currentSummary = updateFields.summary;
+            if (currentSummary === undefined) {
+                currentSummary = db_data.summary;
+            }
+            currentSummary.persian = site_persianSummary;
             updateFields.summary = currentSummary;
         }
 

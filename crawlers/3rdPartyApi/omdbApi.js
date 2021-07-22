@@ -11,6 +11,8 @@ axiosRetry(axios, {
     }
 });
 
+let apiKeyCounter = -1;
+
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {
         title = title.toLowerCase().replace(/[∞△Ωω☆]|\(\)/g, '').trim();
@@ -59,6 +61,7 @@ export function getOMDBApiFields(data, type) {
         let apiFields = {
             summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
             genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()) : [],
+            rating: data.Ratings ? extractRatings(data.Ratings) : {},
             omdbTitle: data.Title,
             updateFields: {
                 imdbID: data.imdbID,
@@ -69,14 +72,6 @@ export function getOMDBApiFields(data, type) {
                 rated: data.Rated,
                 movieLang: data.Language.toLowerCase(),
                 country: data.Country.toLowerCase(),
-                rating: data.Ratings ? data.Ratings.map((item) => {
-                    let sourceName = item.Source.toLowerCase();
-                    sourceName = sourceName === "internet movie database" ? 'imdb' : sourceName;
-                    return ({
-                        source: sourceName,
-                        value: item.Value
-                    });
-                }) : [],
                 boxOffice: (type.includes('movie')) ? data.BoxOffice : '',
                 awards: data.Awards || '',
                 director: data.Director.toLowerCase(),
@@ -95,57 +90,53 @@ export function getOMDBApiFields(data, type) {
     }
 }
 
+function extractRatings(ratings) {
+    let ratingObj = {};
+    for (let i = 0; i < ratings.length; i++) {
+        let sourceName = ratings[i].Source.toLowerCase();
+        if (sourceName === "internet movie database") {
+            ratingObj.imdb = Number(ratings[i].Value.split('/')[0]);
+        }
+        if (sourceName === "rotten tomatoes") {
+            ratingObj.rottenTomatoes = Number(ratings[i].Value.replace('%', ''));
+        }
+        if (sourceName === "metacritic") {
+            ratingObj.metacritic = Number(ratings[i].Value.split('/')[0]);
+        }
+    }
+    return ratingObj;
+}
+
 export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type, duration, lastSeasonsOnly = false) {
     try {
         let seasons = [];
         let episodes = [];
         totalSeasons = isNaN(totalSeasons) ? 0 : Number(totalSeasons);
         let startSeasonNumber = (lastSeasonsOnly && totalSeasons > 1) ? totalSeasons - 1 : 1;
+        let promiseArray = [];
+
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
             let seasonResult = await handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`);
             if (seasonResult === null || seasonResult === '404' || seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
-                return null;
-            }
-            if (seasonResult === '404') {
                 seasons.push({
                     season: j,
                     episodes: 0
                 });
-                continue;
-            }
-            let seasonEpisodes = seasonResult.Episodes;
-            let seasonsEpisodeNumber = Number(seasonEpisodes[seasonEpisodes.length - 1].Episode);
-            seasons.push({
-                season: j,
-                episodes: seasonsEpisodeNumber
-            });
-            let promiseArray = [];
-            for (let k = 1; k <= seasonsEpisodeNumber; k++) {
-                let episodeResultPromise = handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
-                    if (episodeResult === null) {
-                        return null;
-                    }
-
-                    let releaseDate = 'unknown';
-                    if (episodeResult !== '404') {
-                        for (let i = 0; i < seasonEpisodes.length; i++) {
-                            if (seasonEpisodes[i].Episode === episodeResult.Episode) {
-                                releaseDate = seasonEpisodes[i].Released;
-                                break;
-                            }
-                        }
-                    }
-
-                    let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
-                    let episodeModel = (episodeResult === '404')
-                        ? getEpisodeModel('unknown', releaseDate, '', lastEpisodeDuration, j, k, '0', '')
-                        : getEpisodeModel(episodeResult.Title, releaseDate, '', episodeResult.Runtime, j, k, episodeResult.imdbRating, episodeResult.imdbID);
-                    episodes.push(episodeModel);
+            } else {
+                let thisSeasonEpisodes = seasonResult.Episodes;
+                let seasonsEpisodeNumber = Number(thisSeasonEpisodes[thisSeasonEpisodes.length - 1].Episode);
+                seasons.push({
+                    season: j,
+                    episodes: seasonsEpisodeNumber
                 });
-                promiseArray.push(episodeResultPromise);
+                for (let k = 1; k <= seasonsEpisodeNumber; k++) {
+                    let episodeResultPromise = getSeasonEpisode_episode(omdbTitle, episodes, thisSeasonEpisodes, j, k);
+                    promiseArray.push(episodeResultPromise);
+                }
             }
-            await Promise.all(promiseArray);
         }
+        await Promise.all(promiseArray);
+        seasons = seasons.sort((a, b) => (a.season > b.season ? 1 : -1));
         episodes = episodes.sort((a, b) => {
             return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
         });
@@ -155,6 +146,32 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
         await saveError(error);
         return null;
     }
+}
+
+function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
+    return handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
+        let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
+        if (episodeResult === null || episodeResult === '404') {
+            let episodeModel = getEpisodeModel(
+                'unknown', 'unknown', '',
+                lastEpisodeDuration, j, k,
+                '0', '');
+            episodes.push(episodeModel);
+        } else {
+            let releaseDate = 'unknown';
+            for (let i = 0; i < seasonEpisodes.length; i++) {
+                if (seasonEpisodes[i].Episode === episodeResult.Episode) {
+                    releaseDate = seasonEpisodes[i].Released;
+                    break;
+                }
+            }
+            let episodeModel = getEpisodeModel(
+                episodeResult.Title, releaseDate, '',
+                episodeResult.Runtime, j, k,
+                episodeResult.imdbRating, episodeResult.imdbID);
+            episodes.push(episodeModel);
+        }
+    });
 }
 
 function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) {
@@ -210,22 +227,36 @@ async function handle_OMDB_ApiKeys(url) {
             'fcf7d223', '710829ae', '7e8d4f94', '8bc0f117', '3bb301a',
             '15ab15a5', '8471f363', '5ad67ef6', 'cb646df1', '56f21919', //70
             '7e1997fd', '57c7344d', '4d6afd7', '74960d2', '964dd637',
-            '3b0cc1e8', 'cf3efbaf', '7385ce05', 'cca2bd4a'];
-        let apiKeyCounter = 0;
+            '3b0cc1e8', 'cf3efbaf', '7385ce05', 'cca2bd4a', '8f773fa0', //80
+            'e65a43b7', 'a6e35be3', '25e961cc', '449936a6', '2da97556',
+            '856f0de4', '930fe2e3', '390aedbb', '81fe29fc', '726e3575', //90
+            '3a04471b', 'ea06efba', '98b427fe', '9b330979', 'ba299dd2',
+            '742775ae', 'a0035fc1', '2700d178', '594f47cc', 'b014fdb6', //100
+        ];
+
+        let startTime = new Date();
         let response;
         while (true) {
             try {
+                apiKeyCounter++;
+                apiKeyCounter = apiKeyCounter % apiKeyArray.length;
                 response = await axios.get(url + `&apikey=${apiKeyArray[apiKeyCounter]}`);
                 break;
             } catch (error) {
-                if (error.response && error.response.data.Error === 'Request limit reached!') {
-                    apiKeyCounter++;
-                    if (apiKeyCounter === apiKeyArray.length) {
+                if (
+                    (error.response && error.response.data.Error === 'Request limit reached!') ||
+                    (error.response && error.response.status === 401)
+                ) {
+                    let endTime = new Date();
+                    let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
+                    if (timeElapsed > 10) {
                         await Sentry.captureMessage('more omdb api keys are needed');
                         return null;
                     }
                 } else {
-                    saveError(error);
+                    if (error.response && error.response.status !== 403) {
+                        saveError(error);
+                    }
                     return null;
                 }
             }
