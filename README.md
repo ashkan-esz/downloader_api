@@ -36,8 +36,7 @@ extraInfo = {
 [dataLevel] => low/medium/high
 if page = 0 then return based on count value
 
-//crawler/crawlAll/:password/:mode?
-//crawler/crawlSingleSource/:sourceNumber/:password/:mode?
+//crawler/:password/?mode&sourceNumber&handleDomainChange
 //crawler/domainChange/:password
 
 //search/searchByTitle/:title/:types/:dataLevel/:page/:count?
