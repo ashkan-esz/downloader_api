@@ -93,7 +93,7 @@ export function getType(title) {
         }
         return title.includes('سریال') ? 'anime_serial' : 'anime_movie';
     }
-    if (title.includes('سینمایی')) {
+    if (title.includes('سینمایی') || title.includes('لایو اکشن')) {
         return 'movie';
     }
     return 'serial';
@@ -107,10 +107,12 @@ export function checkDubbed(link, info = '') {
         link.includes('dub') ||
         link.includes('دوبله فارسی') ||
         link.includes('زبان : فارسی') ||
+        link.includes('زبان فارسی') ||
         info.includes('farsi') ||
         info.includes('dubbed') ||
         info.includes('دوبله فارسی') ||
         info.includes('زبان : فارسی') ||
+        info.includes('زبان فارسی') ||
         info.includes('دوبله')
     );
 }
@@ -339,7 +341,8 @@ export function purgeSizeText(sizeText) {
         .replace('گیگا بایت', 'GB')
         .replace('گیگ', 'GB')
         .replace('مگابایت', 'MB')
-        .replace(/[\s:]/g, '');
+        .replace(/[\s:]/g, '')
+        .toUpperCase();
 }
 
 export function purgeEncoderText(encoderText) {

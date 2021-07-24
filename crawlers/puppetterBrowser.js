@@ -7,9 +7,7 @@ let creatingPageCounter = 0;
 
 export async function getPageObj() {
     try {
-        const {_pageCount} = require('./searchTools');
-        const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) ||
-            (_pageCount === 1 ? 2 : 1);
+        const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || 2;
         for (let i = 0; i < pages.length; i++) {
             if (pages[i].state === 'free') {
                 pages[i].state = 'pending';

@@ -16,7 +16,6 @@ axiosRetry(axios, {
 let _headLessBrowser = false;
 export let _pageCount = 0;
 
-//todo : handle links that are in another page
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
@@ -34,6 +33,7 @@ export async function wrapper_module(url, page_count, searchCB) {
             try {
                 let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}/`);
                 if (checkLastPage($, links, checkGoogleCache, url, responseUrl, i)) {
+                    await Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
                 for (let j = 0; j < links.length; j++) {
@@ -64,7 +64,8 @@ export async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null) {
+export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null,
+                                           extraSearch_match = null, extraSearch_getFileSize = null, sourceLinkData = false) {
     try {
         let {$, links} = await getLinks(page_link);
         if ($ === null) {
@@ -74,15 +75,20 @@ export async function search_in_title_page(title, page_link, type, get_file_size
         let save_link = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
-            if (link && check_format(link, type)) {
-                let result = check_download_link(link, matchCases, type);
-                if (result) {
-                    let link_info = get_file_size($, links[j], type);
-                    let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
-                    if (link_info !== 'trailer' && link_info !== 'ignore') {
-                        save_link.push({link: result, info: link_info, qualitySample: qualitySample});
-                    }
+            if (link && (sourceLinkData || (check_format(link, type) && check_download_link(link, matchCases, type)))) {
+                let link_info = get_file_size($, links[j], type, sourceLinkData);
+                let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
+                if (link_info !== 'trailer' && link_info !== 'ignore') {
+                    save_link.push({link: link, info: link_info, qualitySample: qualitySample});
                 }
+            } else if (!sourceLinkData && extraSearch_match && extraSearch_match($, links[j], title)) {
+                let result = await search_in_title_page(title, link, type, extraSearch_getFileSize, getQualitySample,
+                    extraSearch_match, extraSearch_getFileSize, {$, link: links[j]});
+                let resultLinks = result.save_link;
+                for (let i = 0; i < resultLinks.length; i++) {
+                    resultLinks[i].link = link + resultLinks[i].link;
+                }
+                save_link.push(...resultLinks);
             }
         }
         return {save_link: save_link, $2: $};
