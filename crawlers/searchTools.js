@@ -19,12 +19,7 @@ export let _pageCount = 0;
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
-        _headLessBrowser = (
-            url.includes('digimovie') ||
-            url.includes('valamovie') ||
-            url.includes('film2movie') ||
-            url.includes('//zar')
-        );
+        _headLessBrowser = checkNeedHeadlessBrowser(url);
         _pageCount = page_count;
 
         const concurrencyNumber = getConcurrencyNumber(url, page_count);
@@ -192,13 +187,15 @@ function check_download_link(original_link, matchCases, type) {
         return null;
     }
 
+    let decodedLink = decodeURIComponent(link);
     if (type.includes('movie')) {
         if (
             link.includes(matchCases.case1) ||
             link.includes(matchCases.case2) ||
             link.includes(matchCases.case3) ||
             link.includes(matchCases.case4) ||
-            decodeURIComponent(link).includes(matchCases.case1.replace(/\./g, ' ')) ||
+            decodedLink.includes(matchCases.case1) ||
+            decodedLink.includes(matchCases.case1.replace(/\./g, ' ')) ||
             link.includes(matchCases.case1.replace('.iii', '.3')) ||
             link.includes(matchCases.case1.replace('.3', '.iii')) ||
             link.includes(matchCases.case1.replace('.ii', '.2')) ||
@@ -225,7 +222,7 @@ function check_download_link(original_link, matchCases, type) {
 
         return null;
     } else {
-        return checkSerialLinkMatch(link) ? original_link : null
+        return checkSerialLinkMatch(link) ? original_link : null;
     }
 }
 
@@ -280,7 +277,7 @@ function check_format(link, type) {
             if (link.includes('dvdrip') || link.includes('hdcam') || link.includes('mobile')) {
                 return true;
             }
-            if (link.match(/(\d\d\d\d|\d\d\d)\.nineanime/g)) {
+            if (link.match(/\d\d\d+\.nineanime/g)) {
                 return true;
             }
             return (type.includes('serial') && checkSerialLinkMatch(link));
@@ -290,7 +287,16 @@ function check_format(link, type) {
 }
 
 function checkSerialLinkMatch(link) {
-    return decodeURIComponent(link).match(/s\d\de\d\d|e\d+|\d+\.nineanime|\[\d+]/g)
+    return decodeURIComponent(link).match(/s\d\de\d\d|e\d+|\d+\.nineanime|\[\d+]|([.\-])\s*(\(\d+-\d+\)|\d+)\s*(\.bd|\.10bit)*\s*([.\[])\s*\d\d\d+p*\s*([.\]])(bia2anime|x265)/gi);
+}
+
+export function checkNeedHeadlessBrowser(url) {
+    return (
+        url.includes('digimovie') ||
+        url.includes('valamovie') ||
+        url.includes('film2movie') ||
+        url.includes('//zar')
+    );
 }
 
 function getConcurrencyNumber(url, page_count) {
@@ -298,7 +304,7 @@ function getConcurrencyNumber(url, page_count) {
     if (process.env.CRAWLER_CONCURRENCY) {
         concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
     } else if (_headLessBrowser) {
-        concurrencyNumber = (page_count === 1) ? 4 : 6;
+        concurrencyNumber = 5;
     } else {
         if (page_count === 1) {
             concurrencyNumber = 10;

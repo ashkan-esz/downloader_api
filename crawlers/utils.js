@@ -357,6 +357,7 @@ export function purgeEncoderText(encoderText) {
 }
 
 export function persianWordToNumber(text) {
+    text = text.replace('ذوم', 'دوم');
     let persian = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم', 'ششم', 'هفتم', 'هشتم', 'نهم', 'دهم'];
     return persian.findIndex(value => text.includes(value)) + 1;
 }

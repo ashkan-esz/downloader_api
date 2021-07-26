@@ -10,7 +10,7 @@ router.post('/:password/', async (req, res) => {
     let password = req.params.password;
     let sourceNumber = req.query.sourceNumber ? Number(req.query.sourceNumber) : -1;
     let mode = req.query.mode ? Number(req.query.mode) : 0;
-    let handleDomainChange = req.query.handleDomainChange === 'true';
+    let handleDomainChange = req.query.handleDomainChange === 'true' || req.query.handleDomainChange === undefined;
 
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {

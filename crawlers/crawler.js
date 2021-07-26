@@ -7,6 +7,7 @@ const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
 const nineanime = require('./sources/9nineanime');
+const bia2anime = require('./sources/10bia2anime');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
@@ -34,7 +35,7 @@ export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = 
                         valaMovieTrailerUrl = temp;
                     }
                 }
-            } else {
+            } else if (sourceNumber <= sourcesArray.length) {
                 let temp = await sourcesArray[sourceNumber - 1].starter();
                 if (sourcesArray[sourceNumber - 1].name === 'valamovie') {
                     valaMovieTrailerUrl = temp;
@@ -144,6 +145,15 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                 return nineanime({
                     ...sourcesObj.nineanime,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.nineanime.page_count + daysElapsed,
+                });
+            }
+        },
+        {
+            name: 'bia2anime',
+            starter: () => {
+                return bia2anime({
+                    ...sourcesObj.bia2anime,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.bia2anime.page_count + daysElapsed,
                 });
             }
         },

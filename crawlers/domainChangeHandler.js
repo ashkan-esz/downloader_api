@@ -2,6 +2,7 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
+const {checkNeedHeadlessBrowser} = require("../crawlers/searchTools");
 const {getPageObj, setPageFree, closeBrowser} = require("./puppetterBrowser");
 const {getSourcesArray} = require('./crawler');
 const {getNewURl} = require("./utils");
@@ -59,12 +60,7 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
     let isChanged = false;
     try {
         for (let i = 0; i < sourcesUrls.length; i++) {
-            let headLessBrowser = (
-                sourcesUrls[i].includes('valamovie') ||
-                sourcesUrls[i].includes('digimovie') ||
-                sourcesUrls[i].includes('film2movie') ||
-                sourcesUrls[i].includes('//zar')
-            );
+            let headLessBrowser = checkNeedHeadlessBrowser(sourcesUrls[i]);
 
             let responseUrl;
             try {
@@ -123,6 +119,8 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     sourcesObject.golchindl.movie_url = sourcesUrls[7];
 
     sourcesObject.nineanime.movie_url = sourcesUrls[8];
+
+    sourcesObject.bia2anime.movie_url = sourcesUrls[9];
 }
 
 async function updateDownloadLinks(sourcesObj, pageCounter_time, changedDomains) {
@@ -183,6 +181,11 @@ function getSourceNameByDomain(domain) {
     }
     if (domain.includes('nineanime')) {
         return 'nineanime';
+    }
+    if (domain.includes('bia2anime') ||
+        domain.includes('biaanime') ||
+        domain.includes('baanime')) {
+        return 'bia2anime';
     }
     return '';
 }
