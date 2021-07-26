@@ -4,7 +4,6 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
-//todo : error in page ~ 740 , 1050
 
 module.exports = async function salamdl({movie_url, page_count}) {
     await wrapper_module(movie_url, page_count, search_title);
@@ -128,9 +127,7 @@ function get_file_size($, link, type) {
         if (text.includes('لینک مستقیم')) {
             return get_file_size_extraLink($, link);
         }
-
-        let {info, size} = get_movie_size_info(text_array, dubbed);
-        return [info, size].filter(value => value !== '').join(' - ');
+        return get_movie_size_info(text_array, dubbed);
     } catch (error) {
         try {
             return checkTrailer_year($, link, text_array);
@@ -156,7 +153,7 @@ function get_file_size_serial($, link) {
             let index = link_href_array.indexOf(seasonEpisode);
             let array = link_href_array.slice(index + 1);
             array.pop();
-            return {info: array.join('.'), size: ''};
+            return purgeQualityText(array.join('.'));
         } else {
             return '';
         }
@@ -175,7 +172,7 @@ function get_file_size_serial($, link) {
         }
     }
     let info = [text_array[1], ...text_array.slice(2), bit10, text_array[0]].filter(value => value).join('.');
-    return [info, size].filter(value => value !== '').join(' - ');
+    return [info, size].filter(value => value).join(' - ');
 }
 
 function get_movie_size_info(text_array, dubbed) {
@@ -214,24 +211,24 @@ function get_movie_size_info(text_array, dubbed) {
     let quality = purgeQualityText(text_array[0]);
     if (quality.includes('دانلود نسخه سه بعد')) {
         let info = ['3D', dubbed].filter(value => value).join('.')
-        return {info, size};
+        return [info, size].filter(value => value).join(' - ');
     }
     quality = quality.split(' ').filter(value => value && !persianRex.hasLetter.test(value));
     if (quality.length === 1 && quality[0] === '--') {
         quality[0] = 'unknown';
     }
 
-    let info = (quality[0].match(/(\d\d\d\dp)|(\d\d\dp)/g)) ?
+    let info = (quality[0].match(/\d\d\d+p/g)) ?
         [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value).join('.') :
         [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.');
 
-    return {size, info};
+    return [info, size].filter(value => value).join(' - ');
 }
 
 function get_file_size_extraLink($, link) {
     let link_href = $(link).attr('href');
     let link_href_array = link_href.split('.');
-    let quality_match = link_href.match(/\d\d\d\dp|\d\d\dp/g);
+    let quality_match = link_href.match(/\d\d\d+p/g);
     if (quality_match) {
         let quality = quality_match.pop();
         let quality_index = link_href_array.indexOf(quality);
@@ -239,7 +236,7 @@ function get_file_size_extraLink($, link) {
         if (text_array[2] === 'x265') {
             text_array = [text_array[0], text_array[2], text_array[1], text_array[3]]
         }
-        return text_array.join('.');
+        return purgeQualityText(text_array.join('.'));
     } else {
         let year_match = link_href.match(/\d\d\d\d/g);
         if (year_match) {
@@ -264,7 +261,7 @@ function checkTrailer_year($, link, text_array) {
         let year_index = link_href_array.indexOf(year);
         let result = link_href_array.slice(year_index + 1);
         result.pop();
-        return result.join('.');
+        return purgeQualityText(result.join('.'));
     } else {
         return '';
     }
