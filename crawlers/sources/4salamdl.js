@@ -4,6 +4,7 @@ const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
 
+//todo : error in page ~ 740 , 1050
 
 module.exports = async function salamdl({movie_url, page_count}) {
     await wrapper_module(movie_url, page_count, search_title);
@@ -27,9 +28,7 @@ async function search_title(link, i) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    if (save_link.length > 0) {
-                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], type);
-                    }
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], type);
                 }
             }
         }

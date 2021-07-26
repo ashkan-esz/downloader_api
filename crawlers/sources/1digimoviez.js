@@ -11,6 +11,7 @@ const {
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
+//todo : fix crawler doesnt crawl to last page
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
     await wrapper_module(serial_url, serial_page_count, search_title);
@@ -40,12 +41,10 @@ async function search_title(link, i, $, url) {
                     let trailers = getTrailers($2);
                     let watchOnlineLinks = getWatchOnlineLinks($2);
                     save_link = removeDuplicateLinks(save_link);
-                    if (save_link.length > 0) {
-                        if (save_link[0].link.match(/s\d+e\d+/gi)) {
-                            type = 'serial';
-                        }
-                        await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, type);
+                    if (save_link[0].link.match(/s\d+e\d+/gi)) {
+                        type = 'serial';
                     }
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, type);
                 }
             }
         }

@@ -40,9 +40,7 @@ async function search_title_serial(link, i) {
                         valaMovieTrailerUrl = trailers[0].link.replace(/www.|https:\/\/|\/page\//g, '').split('/')[0];
                     }
 
-                    if (save_link.length > 0) {
-                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
-                    }
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
                 }
             }
         }
@@ -73,9 +71,7 @@ async function search_title_movie(link, i) {
                     }
 
                     save_link = removeDuplicateLinks(save_link);
-                    if (save_link.length > 0) {
-                        await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
-                    }
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
                 }
             }
         }

@@ -17,11 +17,10 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let titleObj = await getTitleObj(title, type); //get titles from jikan api
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
-        // titleModel = await addApiData(titleModel, siteDownloadLinks); //todo : remove
-        // return; //todo : remove
+
         let {collection, db_data} = await searchOnCollection(titleObj, year, type);
 
-        if (db_data === null) {//new title
+        if (db_data === null && siteDownloadLinks.length > 0) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
             await collection.insertOne(titleModel);
             return;
@@ -32,7 +31,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(collection, db_data, page_link, persianSummary, type, siteDownloadLinks);
             await handleUpdate(collection, db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
-        } else {
+        } else if (siteDownloadLinks.length > 0) {
             //new source
             await handleUpdate(collection, db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
         }
@@ -178,6 +177,16 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
             } else {
                 db_data.sources.push(result.sources[0]);
                 updateFields.sources = db_data.sources;
+            }
+            let prevSize = db_data.sources.length;
+            let newSources = db_data.sources.filter(item => item.links.length > 0);
+            let newSize = newSources.length;
+            if (newSize === 0) {
+                await collection.findOneAndDelete({_id: db_data._id});
+                return;
+            } else if (prevSize !== newSize) {
+                db_data.sources = newSources;
+                updateFields.sources = newSources;
             }
         }
 
