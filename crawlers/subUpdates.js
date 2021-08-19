@@ -1,7 +1,6 @@
 const {handleLatestDataUpdate} = require("./latestData");
 const {checkSource, removeDuplicateLinks, removeDuplicateElements} = require('./utils');
 
-//todo : sort poster-trailer links based on source name
 
 export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type) {
     let posterChange = handlePosterUpdate(db_data, poster);
@@ -36,6 +35,7 @@ function handlePosterUpdate(db_data, poster) {
 
     db_data.posters.push(poster); //new poster
     db_data.posters = removeDuplicateElements(db_data.posters);
+    db_data.posters = sortPosters(db_data.posters);
     return true;
 }
 
@@ -64,6 +64,7 @@ function handleTrailerUpdate(db_data, site_trailers) {
     }
     if (db_data.trailers !== null) {
         db_data.trailers = removeDuplicateLinks(db_data.trailers);
+        db_data.trailers = sortTrailers(db_data.trailers);
     }
     return trailersChanged;
 }
@@ -100,4 +101,35 @@ export function handleUrlUpdate(thiaSource, page_link) {
         return true;
     }
     return false;
+}
+
+function sortPosters(posters) {
+    const posterSources = ['valamovie', 'digimovie', 'film2movie', 'film2media', 'salamdl', 'zar', 'golching', 'anime-list', 'animelist', 'nineanime', 'bia2anime', 'ba2hd'];
+    let sortedPosters = [];
+    for (let i = 0; i < posterSources.length; i++) {
+        for (let j = 0; j < posters.length; j++) {
+            if (posters[j].includes(posterSources[i])) {
+                sortedPosters.push(posters[j]);
+            }
+        }
+    }
+    return sortedPosters;
+}
+
+function sortTrailers(trailers) {
+    const trailerSources = ['valamovie', 'zar', 'digimovie', 'anime-list', 'film2movie', 'salamdl', 'ba2hd', 'animelist', 'nineanime', 'bia2anime', 'golching', 'film2media'];
+    let trailerQualities = ['1080', '720', '360'];
+    let sortedTrailers = [];
+
+    for (let i = 0; i < trailerSources.length; i++) {
+        for (let j = 0; j < trailerQualities.length; j++) {
+            for (let k = 0; k < trailers.length; k++) {
+                if (trailers[k].info.includes(trailerSources[i]) &&
+                    trailers[k].info.includes(trailerQualities[j])) {
+                    sortedTrailers.push(trailers[k]);
+                }
+            }
+        }
+    }
+    return sortedTrailers;
 }
