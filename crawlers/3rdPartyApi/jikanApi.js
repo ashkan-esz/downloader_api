@@ -65,28 +65,38 @@ export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = fal
         return jikanCacheResult;
     }
 
-    let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${title}&limit=7`;
+    let searchTitle = (title.match(/^\d+$/g) || title.length < 3) ? (' ' + title) : title;
+    searchTitle = (searchTitle.length < 3) ? (' ' + searchTitle) : searchTitle;
+    let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${searchTitle}&limit=10`;
     let data = await handleApiCall(animeSearchUrl);
     if (!data) {
-        return null;
+        if (title.length === 2) {
+            let searchTitle = title.split('').join('\'');
+            let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${searchTitle}&limit=10`;
+            data = await handleApiCall(animeSearchUrl);
+            if (!data) {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
-    for (let i = 0; i < data.results.length && i <= 6; i++) {
+    for (let i = 0; i < data.results.length; i++) {
+        if (type.includes('movie') && Number(data.results[i].episodes) > 1) {
+            continue;
+        }
+
         let animeUrl = `https://api.jikan.moe/v3/anime/${data.results[i].mal_id}`;
         let fullData = await handleApiCall(animeUrl);
-        if (!fullData || (fullData.duration && fullData.duration === "1 min per ep")) {
+        if (!fullData) {
             continue;
         }
         let jikanID = fullData.mal_id;
 
         let allTitles = getTitlesFromData(title, fullData);
 
-        title = title.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
-        allTitles.apiTitle_simple = allTitles.apiTitle_simple.replace(' the', '').replace('memories', 'memory').replace('tv', '').trim();
-        allTitles.apiTitle = allTitles.apiTitle.replace('(TV)', '');
-        allTitles.apiTitleEnglish_simple = allTitles.apiTitleEnglish_simple.replace(' the', '').replace('memories', 'memory');
-
-        if (checkTitle(title, type, allTitles, fullData)) {
+        if (checkTitle(title, type, allTitles)) {
             let apiData = await getJikanApiData_simple(title, type, allTitles, fullData, jikanID);
             jikanApiCache.push(apiData);
             return apiData;
@@ -99,74 +109,19 @@ export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = fal
     return null;
 }
 
-function checkTitle(title, type, allTitles, fullData) {
+function checkTitle(title, type, allTitles) {
     let {
-        apiTitle, apiTitle_simple,
-        apiTitleEnglish, apiTitleEnglish_simple,
-        apiTitleJapanese, titleSynonyms,
-        splitTitle, splitApiTitle
+        apiTitle_simple,
+        apiTitleEnglish_simple,
+        apiTitleJapanese,
+        titleSynonyms,
     } = allTitles;
 
-    let typeAndEpisodes = checkTypeEpisodes(type, fullData.episodes, fullData.aired.from);
-    let title_movieNumber = title.match(/\d/g);
-    title_movieNumber = title_movieNumber && title_movieNumber[0];
-    let apiTitle_simple_movieNumber = allTitles.apiTitle_simple.match(/\d/g);
-    apiTitle_simple_movieNumber = apiTitle_simple_movieNumber && apiTitle_simple_movieNumber[0];
-
-    // console.log(title); //todo : remove
-    // console.log(apiTitle_simple)
-    // console.log(title_movieNumber,' | ',apiTitle_simple_movieNumber)
-    // console.log(title_movieNumber === apiTitle_simple_movieNumber)
-    // console.log(apiTitle)
-    // console.log(apiTitleEnglish_simple)
-    // console.log(apiTitleEnglish)
-    // console.log()
-
     return (
-        title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '') ||
-        title.replace(/\s/g, '') === apiTitle_simple.replace(/\s/g, '')
-            .replace('uu', 'u').replace(/[^\d]$/g, '') ||
-        title === apiTitle_simple ||
-        title === apiTitleEnglish_simple ||
+        title.replace(/tv|the|\s+/g, '').trim() === apiTitle_simple.replace(/the|tv|\s+/g, '').trim() ||
+        title === apiTitleEnglish_simple.replace(/the/gi, '').replace(/\s\s+/g, ' ') ||
         title === apiTitleJapanese ||
-        checkEqualTitleWithEdit(title, apiTitle_simple) ||
-        titleSynonyms.includes(title) ||
-
-        (
-            splitTitle.length !== 2 &&
-            typeAndEpisodes &&
-            title.includes('movie') === apiTitle_simple.includes('movie') &&
-            !title.includes('season') && !apiTitle_simple.includes('season') &&
-            title_movieNumber === apiTitle_simple_movieNumber &&
-            apiTitle_simple.includes(title)
-        ) ||
-
-        (
-            splitTitle.length > 6 &&
-            typeAndEpisodes &&
-            (
-                (splitTitle.length > splitApiTitle.length && title.includes(apiTitle_simple)) ||
-                title === apiTitleEnglish_simple.replace(/\s\d/g, '') ||
-                title === apiTitleEnglish_simple.replace(' i ', ' ')
-            )
-        ) ||
-
-        (
-            splitTitle.length > 4 &&
-            typeAndEpisodes &&
-            (
-                apiTitle_simple.includes(title.replace(/\sova/g, '')) ||
-                apiTitleEnglish_simple.includes(title.replace(/\sova/g, '')) ||
-                title.replace(/\sova \d+/g, '') === apiTitleEnglish_simple ||
-                title.replace(/\sova \d+|.$/g, '') === apiTitleEnglish_simple
-            )
-        ) ||
-
-        (
-            splitTitle.length > 3 &&
-            !apiTitle_simple.includes(title) &&
-            checkPartsExist(splitTitle, apiTitle_simple)
-        )
+        titleSynonyms.includes(title)
     );
 }
 
@@ -174,6 +129,8 @@ export function getJikanApiFields(data) {
     //todo : maybe cast/writer/director overwrite from omdb api
     try {
         //todo : add characters_staff
+
+        //todo : add field for ova-ona-...
 
         let apiFields = {
             jikanRelatedTitles: getRelatedTitles(data),
@@ -187,7 +144,9 @@ export function getJikanApiFields(data) {
                 rawTitle: data.apiTitle,
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
-                duration: data.duration === "Unknown" ? '' : convertHourToMinute(data.duration.replace('per ep', '').trim()),
+                duration: (data.duration === "Unknown" || data.duration === "1 min per ep")
+                    ? ''
+                    : convertHourToMinute(data.duration.replace('per ep', '').trim()),
                 releaseDay: (data.broadcast === null || data.broadcast === 'Unknown') ? '' : data.broadcast.split(' ')[0].replace(/s$/g, '').toLowerCase(),
                 rated: data.rating === "None" ? '' : data.rating || '',
                 animeSource: data.source,
@@ -253,14 +212,14 @@ async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID)
 
 async function handleApiCall(url) {
     let waitCounter = 0;
-    while (waitCounter < 35) {
+    while (waitCounter < 40) {
         try {
             let response = await axios.get(url);
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 429) {
                 //too much request
-                await new Promise((resolve => setTimeout(resolve, 1000)));
+                await new Promise((resolve => setTimeout(resolve, 1100)));
                 waitCounter++;
             } else {
                 if (error.response && error.response.status !== 404) {
@@ -286,9 +245,7 @@ function getTitlesFromData(title, fullData) {
     let apiTitleJapanese = replaceSpecialCharacters(japaneseTitle);
     let titleSynonyms = fullData.title_synonyms.map(value => value.toLowerCase());
 
-    let splitTitle = title.split(' ');
     let splitApiTitle = apiTitle_simple.split(' ');
-
     let splitApiTitle_lastPart = splitApiTitle[splitApiTitle.length - 1];
     if (!isNaN(splitApiTitle_lastPart) && Number(splitApiTitle_lastPart) > 2000) {
         let number = splitApiTitle.pop();
@@ -297,6 +254,10 @@ function getTitlesFromData(title, fullData) {
         apiTitle = apiTitle.replace(number, '').trim();
     }
 
+    apiTitle_simple = apiTitle_simple.replace(/tv/gi, '').replace(/\s\s+/g, ' ').trim();
+    apiTitle = apiTitle.replace('(TV)', '').replace(/\s\s+/g, ' ').trim();
+    apiTitleEnglish_simple = apiTitleEnglish_simple.replace(/tv/gi, '').replace(/\s\s+/g, ' ').trim();
+
     return {
         apiTitle,
         apiTitle_simple,
@@ -304,53 +265,5 @@ function getTitlesFromData(title, fullData) {
         apiTitleEnglish_simple,
         apiTitleJapanese,
         titleSynonyms,
-        splitTitle,
-        splitApiTitle
     };
-}
-
-function checkEqualTitleWithEdit(title, apiTitle) {
-    let case1 = title.replace(' no ', ' wo ');
-    let case2 = case1.replace('yarinaosu', 'yarinaoshi');
-    let case3 = case2.replace(' hero', ' hirou');
-    let case4 = case3.replace(' wa ', ' no ');
-    let case5 = case4.replace('go ', '5 ');
-    return (
-        case1 === apiTitle ||
-        case2 === apiTitle ||
-        case3 === apiTitle ||
-        case4 === apiTitle ||
-        case5 === apiTitle
-    );
-}
-
-function checkTypeEpisodes(type, episodes, apiStartDate) {
-    let now = new Date();
-    let startDate = new Date(apiStartDate);
-    let daysBetween = (now.getTime() - startDate.getTime()) / (24 * 3600 * 1000);
-    return (
-        ((type.includes('movie')) && (episodes === 1)) ||
-        ((type.includes('serial')) && (episodes > 1 || daysBetween < 10))
-    );
-}
-
-function checkPartsExist(splitTitle, apiTitle) {
-    let hasAllPart = true;
-    let matchCounter = 0;
-    let notMatchIndex = -1;
-    for (let j = 0; j < splitTitle.length; j++) {
-        if (!apiTitle.includes(splitTitle[j])) {
-            hasAllPart = false;
-            notMatchIndex = j;
-        } else {
-            matchCounter++;
-        }
-    }
-    return (
-        hasAllPart ||
-        ((splitTitle.length === matchCounter + 1) &&
-            !splitTitle[notMatchIndex].match(/\d/g) &&
-            !splitTitle[notMatchIndex].includes('season') &&
-            !splitTitle[notMatchIndex].includes('ova'))
-    );
 }

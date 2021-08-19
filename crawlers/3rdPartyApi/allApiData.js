@@ -1,3 +1,5 @@
+const axios = require('axios').default;
+const axiosRetry = require("axios-retry");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
@@ -7,6 +9,20 @@ const {removeDuplicateElements} = require('../utils');
 const {saveError} = require('../../saveError');
 const {dataConfig} = require("../../routes/configs");
 
+axiosRetry(axios, {
+    retries: 3, // number of retries
+    retryDelay: (retryCount) => {
+        return retryCount * 1000; // time interval between retries
+    },
+    retryCondition: (error) => (
+        error.response &&
+        error.response.status !== 429 &&
+        error.response.status !== 404 &&
+        error.response.status !== 403
+    ),
+});
+
+//todo : handle --> different seasons of anime titles are separated , check api result
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
@@ -173,8 +189,9 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
     if (result) {
         return result;
     } else {
-        for (let i = 0; i < titleData.alternateTitles.length - 1; i++) {
-            if (titleData.alternateTitles[i].toLowerCase() === titleData.rawTitle.toLowerCase()) {
+        let alternateTitlesSize = Math.min(titleData.alternateTitles.length, 2);
+        for (let i = 0; i < alternateTitlesSize; i++) {
+            if (titleData.alternateTitles[i].toLowerCase() === searchTitle.toLowerCase()) {
                 continue;
             }
             let newAlternateTitles = [...titleData.alternateTitles, titleData.rawTitle];

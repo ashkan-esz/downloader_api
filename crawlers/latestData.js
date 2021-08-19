@@ -53,7 +53,7 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
 export function getLatestData(site_links, type) {
     let latestSeason = type.includes('movie') ? 0 : 1;
     let latestEpisode = type.includes('movie') ? 0 : 1;
-    let latestQuality = site_links[0].info;
+    let latestQuality = site_links.length > 0 ? site_links[0].info : '';
     let hardSub = type.includes('movie') ? false : '';
     let dubbed = type.includes('movie') ? false : '';
     let prevStates = [1, 1, '', '', ''];

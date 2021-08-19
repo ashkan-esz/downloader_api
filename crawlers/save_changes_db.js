@@ -11,6 +11,7 @@ const {saveError} = require("../saveError");
 //todo : add doc for upcoming
 //todo : handle insert_date - update_date for upcoming title
 
+//todo : get jikanID from db to reduce api call for anime titles
 
 module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
     try {
@@ -42,9 +43,10 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
 }
 
 async function getTitleObj(title, type) {
+    let rawTitle = title.split(' ').map(value => value.charAt(0).toUpperCase() + value.slice(1)).join(' ');
     let titleObj = {
         title: title,
-        rawTitle: title,
+        rawTitle: rawTitle,
         alternateTitles: [],
         titleSynonyms: [],
         jikanFound: false,
@@ -55,11 +57,15 @@ async function getTitleObj(title, type) {
         if (jikanApiData) {
             titleObj.title = jikanApiData.apiTitle_simple;
             titleObj.rawTitle = jikanApiData.apiTitle;
-            titleObj.alternateTitles = removeDuplicateElements(
+            let temp = removeDuplicateElements(
                 [jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese]
                     .filter(value => value)
                     .map(value => value.toLowerCase())
             );
+            if (temp.length > 1 && temp[1].includes(temp[0].replace('.', '')) && temp[1].match(/(\dth|2nd|3rd) season/gi)) {
+                temp.shift();
+            }
+            titleObj.alternateTitles = temp;
             titleObj.titleSynonyms = jikanApiData.titleSynonyms;
             titleObj.jikanFound = true;
         }

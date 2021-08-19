@@ -45,29 +45,26 @@ export function purgeTitle(title, type) {
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[.:\/☆]/g, ' ')
-        .replace(/["'’‘:;?!+#,()~♥△Ωω]/g, '')
-        .replace(/[\/_–-]/g, ' ')
-        .replace(/\s\s\s\s/g, ' ')
-        .replace(/\s\s\s/g, ' ')
-        .replace(/\s\s/g, ' ')
+        .replace(/[;.:…\/☆★♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
+        .replace(/["'’‘:?!#,()~♥△Ωωψ]/g, '')
+        .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace(/&/g, 'and')
-        .replace('∞', '8')
-        .replace(/[áåä]/g, 'a')
-        .replace(/[éëè]/g, 'e')
-        .replace('ß', 'b')
+        .replace('∞', ' infinity')
+        .replace(/[áåä@]/g, 'a')
+        .replace(/[éëèē]/g, 'e')
+        .replace('†', 't')
+        .replace(/[ß♭]/g, 'b')
         .replace('ç', 'c')
         .replace('ş', 's')
-        .replace(/[ôöøó]/g, 'o')
+        .replace(/[ôöøóō◯]/g, 'o')
         .replace(/[üúû]/g, 'u')
         .replace(/[ıí]/g, 'i')
-        .replace(' iii', ' 3')
+        .replace(/(^|\s)iii/gi, ' 3')
         .replace(' ii', ' 2')
-        .replace('…', '')
+        .replace(' ∬', ' 2')
         .replace('marvels', '')
-        .replace(/\s\drd season/g, '')
-        .replace(/\drd season/g, '')
+        .replace(/\s\s+/g, ' ')
         .trim();
 }
 
@@ -104,7 +101,7 @@ export function checkDubbed(link, info = '') {
     info = info.toLowerCase();
     return (
         link.includes('farsi') ||
-        link.includes('dub') ||
+        link.includes('dubbed') ||
         link.includes('دوبله فارسی') ||
         link.includes('زبان : فارسی') ||
         link.includes('زبان فارسی') ||
@@ -395,4 +392,21 @@ export function purgeObjFalsyValues(obj) {
         saveError(error);
         return obj;
     }
+}
+
+export function getDecodedLink(link) {
+    let decodedLink = link;
+    try {
+        decodedLink = decodeURIComponent(decodedLink);
+    } catch (error) {
+    }
+    return decodedLink;
+}
+
+export function sortLinks(links, type) {
+    return links.sort((a, b) => {
+        let a_se = type.includes('anime') ? getSeasonEpisode(a.info) : getSeasonEpisode(a.link);
+        let b_se = type.includes('anime') ? getSeasonEpisode(b.info) : getSeasonEpisode(b.link);
+        return ((a_se.season > b_se.season) || (a_se.season === b_se.season && a_se.episode > b_se.episode)) ? 1 : -1;
+    });
 }

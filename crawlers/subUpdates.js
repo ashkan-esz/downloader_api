@@ -1,6 +1,8 @@
 const {handleLatestDataUpdate} = require("./latestData");
 const {checkSource, removeDuplicateLinks, removeDuplicateElements} = require('./utils');
 
+//todo : sort poster-trailer links based on source name
+
 export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type) {
     let posterChange = handlePosterUpdate(db_data, poster);
     let trailerChange = handleTrailerUpdate(db_data, trailers);

@@ -4,11 +4,16 @@ const {getEpisodeModel} = require("../models/episode");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
+
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, type, canReTry = true) {
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
-            title = title.toLowerCase();
+            title = title.toLowerCase()
+                .replace(' all seasons', '')
+                .replace(' all', '')
+                .replace(' full episodes', '');
+
             let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
             let titleMatch = checkTitle(data, title, alternateTitles, titleSynonyms, imdbID);
@@ -23,19 +28,8 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
             } else if (error.response && error.response.status === 404) {
-                if (type === 'anime_serial' && canReTry) {
-                    let newTitle = title
-                        .replace(' the ', ' this ')
-                        .replace('summons', 'calls')
-                        .replace('dont', 'don\'t')
-                        .replace('wont', 'won\'t')
-                        .replace('heavens', 'heaven\'s')
-                        .replace('havent', 'haven\'t')
-                        .replace(' im ', ' i\'m ')
-                        .replace(' comedy', ' come')
-                        .replace(' renai ', ' ren\'ai ')
-                        .replace(' zunousen', ' zunô sen')
-                        .replace(' kusoge', ' kusogee');
+                if (type.includes('anime') && canReTry) {
+                    let newTitle = getEditedTitle(title);
                     if (newTitle !== title) {
                         return await getTvMazeApiData(newTitle, alternateTitles, titleSynonyms, imdbID, type, false);
                     }
@@ -56,6 +50,26 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
     }
     await Sentry.captureMessage('lots of tvmaze api call');
     return null;
+}
+
+function getEditedTitle(title) {
+    return title
+        .replace('saenai heroine no sodatekata fine', 'saenai heroine no sodatekata')
+        .replace('biohazard infinite darkness', 'resident evil infinite darkness')
+        .replace(' wo ', ' o ')
+        .replace(' the ', ' this ')
+        .replace(' sotsu', '')
+        .replace('brorhood', 'brotherhood')
+        .replace(' zunousen', ' zuno sen')
+        .replace(' kusoge', ' kusogee')
+        .replace('summons', 'calls')
+        .replace('dont', 'don\'t')
+        .replace('wont', 'won\'t')
+        .replace('heavens', 'heaven\'s')
+        .replace('havent', 'haven\'t')
+        .replace(' im ', ' i\'m ')
+        .replace(' comedy', ' come')
+        .replace(' renai ', ' ren\'ai ');
 }
 
 async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID) {
@@ -123,7 +137,7 @@ async function handleApiCall(url) {
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
             } else {
-                if (error.response && error.response.status === 404) {
+                if (error.response && error.response.status !== 404) {
                     await saveError(error);
                 }
                 return null;
@@ -140,15 +154,26 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID) {
     alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()));
     titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()));
 
+    let specialCase1 = title.replace('cautious hero: the hero is overpowered but overly cautious', 'the hero is overpowered but overly cautious');
+    let specialCase2 = title.replace('iya na kao sare nagara opantsu misete moraitai', 'i want you to make a disgusted face and show me your underwear');
+    let specialCase3 = title.replace('nounai', 'nonai').replace('love comedy wo', 'rabu kome o');
+    let specialCase4 = title.replace('bougyoryoku', 'bogyoryoku');
+
     return (
         imdbID && imdbID === data.externals.imdb ||
         title === apiTitle ||
         title === apiTitle_simple ||
         title.replace(' wo ', ' o ') === apiTitle_simple ||
+        title.replace(/\swo$/, ' o') === apiTitle_simple ||
+        specialCase4 === apiTitle_simple ||
+        specialCase1 === apiTitle_simple ||
+        specialCase2 === apiTitle_simple ||
+        specialCase3 === apiTitle_simple ||
         alternateTitles.includes(apiTitle) ||
         alternateTitles.includes(apiTitle_simple) ||
         alternateTitles.includes(apiTitle_simple.replace('this', 'the')) ||
         titleSynonyms.includes(apiTitle) ||
+        titleSynonyms.includes(apiTitle_simple) ||
         title.replace(/.$/, '') === apiTitle_simple ||
         title.replace(/..$/, '') === apiTitle_simple
     );

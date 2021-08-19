@@ -1,40 +1,26 @@
 const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
 const {replaceSpecialCharacters, purgeObjFalsyValues} = require("../utils");
 const {getEpisodeModel} = require("../models/episode");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
-axiosRetry(axios, {
-    retries: 4, retryDelay: (retryCount) => {
-        return retryCount * 1000;
-    }
-});
-
 let apiKeyCounter = -1;
 
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {
-        title = title.toLowerCase().replace(/[∞△Ωω☆]|\(\)/g, '').trim();
+        title = title.toLowerCase()
+            .replace('!!', '!')
+            .replace(' all seasons', '')
+            .replace(' all', '')
+            .replace(' full episodes', '');
+
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
         let url = `https://www.omdbapi.com/?t=${title}&type=${searchType}`;
-        let data = await handle_OMDB_ApiKeys(url);
-        if (data === null || data === '404') {
+        let data = await handle_OMDB_ApiKeys(url, title);
+        if (data === null) {
             if (canRetry) {
-                let newTitle = title
-                    .replace(' the movie', '')
-                    .replace('summons', 'calls')
-                    .replace('dont', 'don\'t')
-                    .replace('wont', 'won\'t')
-                    .replace('heavens', 'heaven\'s')
-                    .replace('havent', 'haven\'t')
-                    .replace(' im ', ' i\'m ')
-                    .replace(' comedy', ' come')
-                    .replace(' renai ', ' ren\'ai ')
-                    .replace(' zunousen', ' zunô sen')
-                    .replace(' kusoge', ' kusogee');
-
+                let newTitle = getEditedTitle(title);
                 if (newTitle !== title) {
                     return await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
                 }
@@ -44,8 +30,12 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
 
         if (
             type.includes('anime') &&
+            data.Country.toLowerCase() !== 'n/a' &&
             !data.Country.toLowerCase().includes('japan') &&
-            !data.Language.toLowerCase().includes('Japanese')) {
+            !data.Country.toLowerCase().includes('china') &&
+            !data.Country.toLowerCase().includes('korea') &&
+            !data.Language.toLowerCase().includes('japanese')
+        ) {
             return null;
         }
 
@@ -54,6 +44,60 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         await saveError(error);
         return null;
     }
+}
+
+function getEditedTitle(title) {
+    return title
+        .replace('!', '')
+        .replace('arc', 'ark')
+        .replace('5', 'go')
+        .replace('hunter x hunter movie 1 phantom rouge', 'gekijouban hunter x hunter fantomu ruju')
+        .replace('date a bullet dead or bullet', 'date a bullet zenpen dead or bullet')
+        .replace('ookami', 'okami')
+        .replace('apple', 'aplle')
+        .replace('douchuu', 'dochu')
+        .replace('yuusha', 'yusha')
+        .replace('oukoku', 'okoku')
+        .replace('suizou wo tabetai', 'suizo o tabetai')
+        .replace(' wo ', ' o ')
+        .replace(/\swo$/, ' o')
+        .replace('yume o minai', 'yume wo minai')
+        .replace('yuu yuu', 'yu yu')
+        .replace('saibou', 'saibo')
+        .replace('youma', 'yoma')
+        .replace('yarou', 'yaro')
+        .replace(/yuusha/g, 'yusha')
+        .replace(/shinchou/g, 'shincho')
+        .replace('kazarou', 'kazaro')
+        .replace('majuu', 'maju')
+        .replace('maid', 'meido')
+        .replace('juunin', 'junin')
+        .replace('gakkou', 'gakko')
+        .replace('makenai love comedy', 'makenai love come')
+        .replace('love comedy', 'rabukome')
+        .replace('nani ka', 'nanika')
+        .replace('drugstore', 'drug store')
+        .replace('saikenki', 'saiken ki')
+        .replace('maoujou', 'maou jou')
+        .replace('oishasan', 'oisha san')
+        .replace('tatteiru', 'tatte iru')
+        .replace('regenesis', 're genesis')
+        .replace('kancolle', 'kan colle')
+        .replace('aruiwa', 'arui wa')
+        .replace(' the movie', '')
+        .replace(' movie ', ' ')
+        .replace('summons', 'calls')
+        .replace('dont', 'don\'t')
+        .replace('wont', 'won\'t')
+        .replace('heavens', 'heaven\'s')
+        .replace('havent', 'haven\'t')
+        .replace(' im ', ' i\'m ')
+        .replace(' comedy', ' come')
+        .replace(' renai ', ' ren\'ai ')
+        .replace(' zunousen', ' zuno sen')
+        .replace(' kusoge', ' kusogee')
+        .replace(/\s\s+/g, '')
+        .trim();
 }
 
 export function getOMDBApiFields(data, type) {
@@ -117,7 +161,7 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
 
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
             let seasonResult = await handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`);
-            if (seasonResult === null || seasonResult === '404' || seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
+            if (seasonResult === null || seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
                 seasons.push({
                     season: j,
                     episodes: 0
@@ -151,7 +195,7 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
 function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
     return handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
         let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
-        if (episodeResult === null || episodeResult === '404') {
+        if (episodeResult === null) {
             let episodeModel = getEpisodeModel(
                 'unknown', 'unknown', '',
                 lastEpisodeDuration, j, k,
@@ -165,6 +209,7 @@ function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
                     break;
                 }
             }
+            //todo : fix season number and episode number
             let episodeModel = getEpisodeModel(
                 episodeResult.Title, releaseDate, '',
                 episodeResult.Runtime, j, k,
@@ -197,8 +242,10 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type
         (
             title === apiTitle ||
             title === apiTitle.replace(' movie', '') ||
+            title === apiTitle.replace('eiga ', '') ||
+            title === apiTitle.replace('gekijouban ', '') ||
             title.replace('uu', 'u') === apiTitle.replace('uu', 'u') ||
-            (originalTitle.includes('the movie:') && title.replace('the movie', '').replace(/\s\s/g, ' ') === apiTitle) ||
+            (originalTitle.includes('the movie:') && title.replace('the movie', '').replace(/\s\s+/g, ' ') === apiTitle) ||
             alternateTitles.includes(apiTitle.replace('uu', 'u')) ||
             titleSynonyms.includes(apiTitle.replace('uu', 'u')) ||
             (!type.includes('anime') && titlesMatched) ||
@@ -208,9 +255,61 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type
     );
 }
 
-async function handle_OMDB_ApiKeys(url) {
+async function handle_OMDB_ApiKeys(url, title = '') {
     try {
-        let apiKeyArray = [
+        const apiKeyArray = getApiKeys();
+        let startTime = new Date();
+        let response;
+        while (true) {
+            try {
+                apiKeyCounter++;
+                apiKeyCounter = apiKeyCounter % apiKeyArray.length;
+                response = await axios.get(url + `&apikey=${apiKeyArray[apiKeyCounter]}`);
+                break;
+            } catch (error) {
+                if (
+                    (error.response && error.response.data.Error === 'Request limit reached!') ||
+                    (error.response && error.response.status === 401)
+                ) {
+                    let endTime = new Date();
+                    let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
+                    if (timeElapsed > 12) {
+                        await Sentry.captureMessage('more omdb api keys are needed');
+                        return null;
+                    }
+                } else if (
+                    (error.response && error.response.status === 403) ||
+                    (error.message && error.message.includes('Request path contains unescaped characters'))
+                ) {
+                    let newTitle = replaceSpecialCharacters(title);
+                    if (newTitle !== title) {
+                        url = url.replace(title, newTitle);
+                    } else {
+                        return null;
+                    }
+                } else {
+                    saveError(error);
+                    return null;
+                }
+            }
+        }
+
+        if (
+            response.data.Response === 'False' ||
+            (response.data.Error && response.data.Error.includes('not found'))
+        ) {
+            return null;
+        }
+        return response.data;
+    } catch (error) {
+        await saveError(error);
+        return null;
+    }
+}
+
+function getApiKeys() {
+    return (
+        [
             '48621e95', '4de5ec8d', '1bc90abf', '7c0fe6e', '16070419',
             '8cf4fc9a', 'e42203dc', '25e38d4e', 'a3a8d729', '51f6c05a',
             'b9a766e3', 'e0c9d334', '91a3f2ee', '88862eae', 'aa0723f2', //10
@@ -232,47 +331,8 @@ async function handle_OMDB_ApiKeys(url) {
             '856f0de4', '930fe2e3', '390aedbb', '81fe29fc', '726e3575', //90
             '3a04471b', 'ea06efba', '98b427fe', '9b330979', 'ba299dd2',
             '742775ae', 'a0035fc1', '2700d178', '594f47cc', 'b014fdb6', //100
-        ];
-
-        let startTime = new Date();
-        let response;
-        while (true) {
-            try {
-                apiKeyCounter++;
-                apiKeyCounter = apiKeyCounter % apiKeyArray.length;
-                response = await axios.get(url + `&apikey=${apiKeyArray[apiKeyCounter]}`);
-                break;
-            } catch (error) {
-                if (
-                    (error.response && error.response.data.Error === 'Request limit reached!') ||
-                    (error.response && error.response.status === 401)
-                ) {
-                    let endTime = new Date();
-                    let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
-                    if (timeElapsed > 12) {
-                        await Sentry.captureMessage('more omdb api keys are needed');
-                        return null;
-                    }
-                } else {
-                    if (error.response && error.response.status !== 403) {
-                        saveError(error);
-                    }
-                    return null;
-                }
-            }
-        }
-
-        if (response.data.Error && response.data.Error.includes('not found')) {
-            return '404';
-        }
-        if (response.data.Response === 'False') {
-            return null;
-        }
-        return response.data;
-    } catch (error) {
-        await saveError(error);
-        return null;
-    }
+        ]
+    );
 }
 
 export function fixEpisodesZeroDuration(episodes, duration) {
@@ -306,6 +366,7 @@ export function fixEpisodesZeroDuration(episodes, duration) {
                 }
             }
             if (!fixed) {
+                //todo : use 24min for anime titles
                 episodes[i].duration = duration || '0 min';
             }
         }

@@ -9,9 +9,16 @@ const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 
 axiosRetry(axios, {
-    retries: 4, retryDelay: (retryCount) => {
-        return retryCount * 1000;
-    }
+    retries: 3, // number of retries
+    retryDelay: (retryCount) => {
+        return retryCount * 1000; // time interval between retries
+    },
+    retryCondition: (error) => (
+        error.response &&
+        error.response.status !== 429 &&
+        error.response.status !== 404 &&
+        error.response.status !== 403
+    ),
 });
 
 
@@ -64,15 +71,16 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
 
             let responseUrl;
             try {
+                let homePageLink = sourcesUrls[i].replace('/page/', '').replace('?page=', '');
                 if (headLessBrowser) {
                     let pageObj = await getPageObj();
                     if (pageObj) {
-                        await pageObj.page.goto(sourcesUrls[i].replace('/page/', ''));
+                        await pageObj.page.goto(homePageLink);
                         responseUrl = pageObj.page.url();
                         setPageFree(pageObj.id);
                     }
                 } else {
-                    let response = await axios.get(sourcesUrls[i].replace('/page/', ''));
+                    let response = await axios.get(homePageLink);
                     responseUrl = response.request.res.responseUrl;
                 }
             } catch (error) {
@@ -121,6 +129,10 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     sourcesObject.nineanime.movie_url = sourcesUrls[8];
 
     sourcesObject.bia2anime.movie_url = sourcesUrls[9];
+
+    //todo : check
+    sourcesObject.animelist.movie_url = sourcesUrls[10];
+    sourcesObject.animelist.serial_url = getNewURl(sourcesObject.animelist.serial_url, sourcesUrls[10]);
 }
 
 async function updateDownloadLinks(sourcesObj, pageCounter_time, changedDomains) {
@@ -128,6 +140,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedDomains)
     for (let i = 0; i < changedDomains.length; i++) {
         try {
             let domain = changedDomains[i].replace(/\d/g, '');
+            //todo : check
             let sourceName = changedDomains[i].replace(/www.|https:\/\/|http:\/\/|\/page\//g, '').split('/')[0];
             let startTime = new Date();
             await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
@@ -187,12 +200,15 @@ function getSourceNameByDomain(domain) {
         domain.includes('baanime')) {
         return 'bia2anime';
     }
+    if (domain.includes('anime-list') || domain.includes('animelist')) {
+        return 'animelist';
+    }
     return '';
 }
 
 async function updateValaMovieTrailers(valaMovieTrailerUrls) {
     let collection = await getCollection('movies');
-    let docs_array = await collection.find({}, {projection: {posters: 1, trailers: 1}}).toArray();
+    let docs_array = await collection.find({}, {projection: {trailers: 1}}).toArray();
     let promiseArray = [];
 
     for (let i = 0; i < docs_array.length; i++) {

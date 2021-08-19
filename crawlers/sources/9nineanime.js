@@ -6,7 +6,8 @@ const {
     replacePersianNumbers,
     purgeQualityText,
     purgeSizeText,
-    persianWordToNumber
+    persianWordToNumber,
+    getDecodedLink
 } = require('../utils');
 const persianRex = require('persian-rex');
 const save = require('../save_changes_db');
@@ -42,12 +43,14 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
+                type = fixWrongType(title, type);
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
                     extraSearch_match, extraSearch_getFileSize);
                 if (pageSearchResult) {
                     let {save_link, $2} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
+                    title = replaceShortTitleWithFull(title, type);
                     await save(title, page_link, save_link, persian_summary, poster, [], [], type);
                 }
             }
@@ -128,7 +131,7 @@ function get_file_size_serial($, link) {
             let episodes = linkText.split('و');
             seasonEpisode = 'S' + seasonNumber + 'E' + episodes[0] + '-' + episodes[1];
         } else {
-            let episodeNumber = decodeURIComponent(linkHref).match(/\[\d+(\.\d)*]|e\d+(\.\d[^\d])*/g)[0].replace(/[\[\]e]/g, '');
+            let episodeNumber = getDecodedLink(linkHref).match(/\[\d+(\.\d)*]|e\d+(\.\d[^\d])*/g)[0].replace(/[\[\]e]/g, '');
             seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
         }
         ova = '';
@@ -213,7 +216,7 @@ function extraSearch_match($, link, title) {
 
 function extraSearch_getFileSize($, link, type, sourceLinkData) {
     try {
-        let linkHref = decodeURIComponent($(link).attr('href').toLowerCase());
+        let linkHref = getDecodedLink($(link).attr('href').toLowerCase());
         if (linkHref.match(/^\.+\/\.*$/g)) {
             return 'ignore';
         }
@@ -246,4 +249,138 @@ function extraSearch_getFileSize($, link, type, sourceLinkData) {
         saveError(error);
         return '';
     }
+}
+
+function replaceShortTitleWithFull(title, type) {
+    if (title === 'mushoku tensei' && type === 'anime_serial') {
+        title = 'mushoku tensei isekai ittara honki dasu';
+    } else if (title === 'kings raid ishi o tsugu mono tachi' && type === 'anime_serial') {
+        title = 'kings raid ishi wo tsugumono tachi';
+    } else if (title === 'shinchou yuusha' && type === 'anime_serial') {
+        title = 'shinchou yuusha kono yuusha ga ore tueee kuse ni shinchou sugiru';
+    } else if (title === 'maou gakuin no futekigousha' && type === 'anime_serial') {
+        title = 'maou gakuin no futekigousha shijou saikyou no maou no shiso tensei shite shison tachi no gakkou e';
+    } else if (title === 'kaguya sama wa kokurasetai' && type === 'anime_serial') {
+        title = 'kaguya sama wa kokurasetai tensai tachi no renai zunousen all seasons';
+    } else if (title === 'saenai heroine' && type === 'anime_movie') {
+        title = 'saenai heroine no sodatekata fine';
+    } else if (title === 'yahari ore no seishun rabukome wa machigatteiru' && type === 'anime_serial') {
+        title = 'yahari ore no seishun love comedy wa machigatteiru all seasons';
+    } else if (title === 'genjitsu shugi yuusha' && type === 'anime_serial') {
+        title = 'genjitsu shugi yuusha no oukoku saikenki';
+    } else if (title === 'fumetsu no anata' && type === 'anime_serial') {
+        title = 'fumetsu no anata e';
+    } else if (title === 'chuunibyou' && type === 'anime_serial') {
+        title = 'chuunibyou demo koi ga shitai';
+    } else if (title === 'kyuukyoku shinka shita full dive rpg' && type === 'anime_serial') {
+        title = 'kyuukyoku shinka shita full dive rpg ga genjitsu yori mo kusoge dattara';
+    } else if (title === 'osananajimi ga zettai' && type === 'anime_serial') {
+        title = 'osananajimi ga zettai ni makenai love comedy';
+    } else if (title === 'resident evil infinite darkness' && type === 'anime_serial') {
+        title = 'biohazard infinite darkness';
+    } else if (title === 'seijo no maryoku' && type === 'anime_serial') {
+        title = 'seijo no maryoku wa bannou desu';
+    } else if (title === 'hige wo soru soshite joshikousei no hero' && type === 'anime_serial') {
+        title = 'hige wo soru soshite joshikousei wo hirou';
+    } else if (title === 'ore wo suki' && type === 'anime_serial') {
+        title = 'ore wo suki nano wa omae dake ka yo';
+    } else if (title === 'sword art online alternative' && type === 'anime_serial') {
+        title = 'sword art online alternative gun gale online';
+    } else if (title === 'gekijouban toriniti sebun' && type === 'anime_movie') {
+        title = 'trinity seven movie 1 eternity library to alchemic girl';
+    } else if (title === 'fate grand order babylonia' && type === 'anime_serial') {
+        title = 'fate grand order zettai majuu sensen babylonia';
+    } else if (title === 'konosuba' && type === 'anime_serial') {
+        title = 'kono subarashii sekai ni shukufuku wo all seasons';
+    } else if (title === 'the devil ring' && type === 'anime_serial') {
+        title = 'jie mo ren';
+    } else if (title === 'shingeki no kyojin OVA' && type === 'anime_serial') {
+        title = 'shingeki no kyojin ova all';
+    } else if (title === 'itai no wa iya' && type === 'anime_serial') {
+        title = 'itai no wa iya nano de bougyoryoku ni kyokufuri shitai to omoimasu all seasons';
+    } else if (title === 'arifureta shokugyou de sekai' && type === 'anime_serial') {
+        title = 'arifureta shokugyou de sekai saikyou all seasons';
+    } else if (title === 'seishun buta yarou wa' && type === 'anime_serial') {
+        title = 'seishun buta yarou wa bunny girl senpai no yume wo minai';
+    } else if (title === 'mahouka koukou no rettousei movie' && type === 'anime_movie') {
+        title = 'mahouka koukou no rettousei movie hoshi wo yobu shoujo';
+    } else if (title === 'the girl who leapt through time' && type === 'anime_movie') {
+        title = 'toki wo kakeru shoujo';
+    } else if (title === 'kaifuku jutsushi wa yarinaosu' && type === 'anime_serial') {
+        title = 'kaifuku jutsushi no yarinaoshi';
+    } else if (title === 'despicable me' && type === 'anime_serial') {
+        title = 'despicable me all';
+    } else if (title === 'doukyonin wa hiza tokidoki' && type === 'anime_serial') {
+        title = 'doukyonin wa hiza tokidoki atama no ue';
+    } else if (title === 'gintama the movie 1' && type === 'anime_movie') {
+        title = 'gintama movie 1 shinyaku benizakura hen';
+    } else if (title === 'hypnosis mic division rap battle' && type === 'anime_serial') {
+        title = 'hypnosis mic division rap battle rhyme anima';
+    } else if (title === 'nakitai watashi wa' && type === 'anime_movie') {
+        title = 'nakitai watashi wa neko wo kaburu';
+    } else if (title === 'sora no aosa wo shiru hito yo her blue sky' && type === 'anime_movie') {
+        title = 'sora no aosa wo shiru hito yo';
+    } else if (title === 'arpeggio of blue steel candeza' && type === 'anime_movie') {
+        title = 'aoki hagane no arpeggio ars nova movie 2 cadenza';
+    } else if (title === 're zero ova 02 frozen bonds' && type === 'anime_serial') {
+        title = 're zero kara hajimeru isekai seikatsu hyouketsu no kizuna';
+    } else if (title === 'iya na kao sare nagara opantsu misete moraita' && type === 'anime_serial') {
+        title = 'iya na kao sare nagara opantsu misete moraitai all seasons';
+    } else if (title === 'natsume yujin cho' && type === 'anime_movie') {
+        title = 'natsume yuujinchou movie utsusemi ni musubu';
+    } else if (title === 'fate stay night heavens feel i' && type === 'anime_movie') {
+        title = 'fate stay night movie heavens feel i presage flower';
+    } else if (title === 'konosuba' && type === 'anime_movie') {
+        title = 'kono subarashii sekai ni shukufuku wo kono subarashii choker ni shukufuku wo';
+    } else if (title === 'go toubun no hanayome' && type === 'anime_serial') {
+        title = '5 toubun no hanayome all seasons';
+    } else if (title === 'date a live ova 2' && type === 'anime_serial') {
+        title = 'date a live 2 kurumi star festival';
+    } else if (title === 'kishuku gakko no juliet' && type === 'anime_serial') {
+        title = 'kishuku gakkou no juliet';
+    } else if (title === 'overlord movie 2' && type === 'anime_movie') {
+        title = 'overlord movie 2 shikkoku no eiyuu';
+    } else if (title === 'overlord movie 1' && type === 'anime_movie') {
+        title = 'overlord movie 1 fushisha no ou';
+    } else if (title === 'violet evergarden eternity and the auto memories doll' && type === 'anime_movie') {
+        title = 'violet evergarden gaiden eien to jidou shuki ningyou';
+    } else if (title === 'hunter x hunter phantom rouge' && type === 'anime_movie') {
+        title = 'hunter x hunter movie 1 phantom rouge';
+    } else if (title === 'highschool of the dead ova' && type === 'anime_serial') {
+        title = 'highschool of the dead drifters of the dead';
+    } else if (title === 'date a bullet zenpen dead or bullet' && type === 'anime_movie') {
+        title = 'date a bullet dead or bullet';
+    } else if (title === 'given' && type === 'anime_movie') {
+        title = 'given movie';
+    } else if (title === 'noragami' && type === 'anime_serial') {
+        title = 'noragami ova';
+    } else if (title === 'ice age' && type === 'movie') {
+        title = 'ice age all';
+    }
+    return title;
+}
+
+function fixWrongType(title, type) {
+    if (title === 'resident evil infinite darkness' && type === 'serial') {
+        type = 'anime_serial';
+    } else if (title === 'despicable me' && type === 'serial') {
+        type = 'movie';
+    } else if (title === 'avatar the last airbender' && type === 'movie') {
+        type = 'serial';
+    } else if (title === 're zero ova 02 frozen bonds' && type === 'anime_movie') {
+        type = 'anime_serial';
+    } else if (title === 'dota dragons blood' && type === 'anime_serial') {
+        type = 'serial';
+    } else if (title === 'date a live ova 2' && type === 'anime_movie') {
+        type = 'anime_serial';
+    } else if (title === 'highschool of the dead ova' && type === 'anime_movie') {
+        type = 'anime_serial';
+    } else if (title === 'your name' && type === 'anime_serial') {
+        type = 'anime_movie';
+    } else if (title === 'a silent voice' && type === 'anime_serial') {
+        type = 'anime_movie';
+    } else if (title === 'noragami' && type === 'anime_movie') {
+        type = 'anime_serial';
+    }
+    return type;
 }

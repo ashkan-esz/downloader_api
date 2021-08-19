@@ -5,7 +5,8 @@ const {
     replacePersianNumbers,
     purgeQualityText,
     persianWordToNumber,
-    getSeasonEpisode
+    getSeasonEpisode,
+    getDecodedLink
 } = require('../utils');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
@@ -27,6 +28,10 @@ async function search_title(link, i) {
             }
             title = purgeTitle(title, type);
 
+            if (title === 'dota dragons blood' && type === 'anime_serial') {
+                type = 'serial';
+            }
+
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null);
                 if (pageSearchResult) {
@@ -34,6 +39,7 @@ async function search_title(link, i) {
                     save_link = sortLinks(save_link);
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
+                    title = replaceShortTitleWithFull(title);
                     await save(title, page_link, save_link, persian_summary, poster, [], [], type);
                 }
             }
@@ -107,7 +113,7 @@ function get_file_size_serial($, link) {
     }
     let infoNodeChildren = $(parentNode.prev().children()[0]).children();
 
-    let linkHref = decodeURIComponent($(link).attr('href')).toLowerCase();
+    let linkHref = getDecodedLink($(link).attr('href')).toLowerCase();
     let linkText = $(link).text();
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
 
@@ -169,4 +175,29 @@ function sortLinks(links) {
         let b_SE = getSeasonEpisode(b.info);
         return ((a_SE.season > b_SE.season) || (a_SE.season === b_SE.season && a_SE.episode > b_SE.episode)) ? 1 : -1;
     });
+}
+
+function replaceShortTitleWithFull(title, type) {
+    if (title === 'slime taoshite 300 nen' && type === 'anime_serial') {
+        title = 'slime taoshite 300 nen shiranai uchi ni level max ni nattemashita';
+    } else if (title === 'otome game no hametsu flag' && type === 'anime_serial') {
+        title = 'otome game no hametsu flag shika nai akuyaku reijou ni tensei shiteshimatta all seasons';
+    } else if (title === 'mushoku tensei' && type === 'anime_serial') {
+        title = 'mushoku tensei isekai ittara honki dasu';
+    } else if (title === 'kings raid ishi o tsugu mono tachi' && type === 'anime_serial') {
+        title = 'kings raid ishi wo tsugumono tachi';
+    } else if (title === 'tatoeba last dungeon mae no mura' && type === 'anime_serial') {
+        title = 'tatoeba last dungeon mae no mura no shounen ga joban no machi de kurasu youna monogatari';
+    } else if (title === 'shinchou yuusha' && type === 'anime_serial') {
+        title = 'shinchou yuusha kono yuusha ga ore tueee kuse ni shinchou sugiru';
+    } else if (title === 'maou gakuin no futekigousha' && type === 'anime_serial') {
+        title = 'maou gakuin no futekigousha shijou saikyou no maou no shiso tensei shite shison tachi no gakkou e';
+    } else if (title === 'kaguya sama wa kokurasetai' && type === 'anime_serial') {
+        title = 'kaguya sama wa kokurasetai tensai tachi no renai zunousen all seasons';
+    } else if (title === 'honzuki no gekokujou' && type === 'anime_serial') {
+        title = 'honzuki no gekokujou shisho ni naru tame ni wa shudan wo erandeiraremasen all seasons';
+    } else if (title === 'itai no wa iya nano de bougyoryoku' && type === 'anime_serial') {
+        title = 'itai no wa iya nano de bougyoryoku ni kyokufuri shitai to omoimasu all seasons';
+    }
+    return title;
 }
