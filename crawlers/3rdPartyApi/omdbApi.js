@@ -184,7 +184,7 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
         episodes = episodes.sort((a, b) => {
             return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
         });
-        fixEpisodesZeroDuration(episodes, duration);
+        fixEpisodesZeroDuration(episodes, duration, type);
         return {seasons, episodes};
     } catch (error) {
         await saveError(error);
@@ -209,7 +209,7 @@ function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
                     break;
                 }
             }
-            //todo : fix season number and episode number
+
             let episodeModel = getEpisodeModel(
                 episodeResult.Title, releaseDate, '',
                 episodeResult.Runtime, j, k,
@@ -335,9 +335,13 @@ function getApiKeys() {
     );
 }
 
-export function fixEpisodesZeroDuration(episodes, duration) {
+export function fixEpisodesZeroDuration(episodes, duration, type) {
     let badCases = [null, 'null min', '', 'N/A', 'N/A min', '0 min'];
-    duration = badCases.includes(duration) ? '0 min' : duration;
+    duration = (badCases.includes(duration) || !duration) ? '0 min' : duration;
+    if (duration === '0 min' && type === 'anime_serial') {
+        duration = '23 min';
+    }
+
     for (let i = 0; i < episodes.length; i++) {
         if (!badCases.includes(episodes[i].duration) && episodes[i].duration && !isNaN(episodes[i].duration)) {
             episodes[i].duration = episodes[i].duration + ' min';
@@ -366,8 +370,7 @@ export function fixEpisodesZeroDuration(episodes, duration) {
                 }
             }
             if (!fixed) {
-                //todo : use 24min for anime titles
-                episodes[i].duration = duration || '0 min';
+                episodes[i].duration = duration;
             }
         }
     }

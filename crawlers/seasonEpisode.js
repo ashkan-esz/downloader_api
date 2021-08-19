@@ -13,7 +13,7 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
         let omdb_result = await get_OMDB_seasonEpisode_info(omdbApiFields.omdbTitle, totalSeasons, db_data.type, db_data.duration, titleExist);
         if (omdb_result) {
             seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdb_result.seasons) || seasonsUpdate;
-            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration);
+            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration, db_data.type);
         }
     }
 
@@ -23,10 +23,10 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
         nextEpisodeUpdate = true;
         let tvmaze_seasons = getSeasonsFromTvMazeApi(tvmazeApiFields.episodes);
         seasonsUpdate = handleSeasonUpdate(db_data.seasons, tvmaze_seasons) || seasonsUpdate;
-        episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApiFields.episodes, db_data.duration) || episodesUpdate;
+        episodesUpdate = handleEpisodesUpdate(db_data.episodes, tvmazeApiFields.episodes, db_data.duration, db_data.type) || episodesUpdate;
     }
 
-    episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, titleExist) || episodesUpdate;
+    episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, db_data.type, titleExist) || episodesUpdate;
 
     return {
         seasonsUpdate,
@@ -38,7 +38,7 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
 export function handleSiteSeasonEpisodeUpdate(db_data, site_links, titleExist) {
     let links_seasons = getSeasonsFromLinks(site_links);
     let seasonsUpdate = handleSeasonUpdate(db_data.seasons, links_seasons);
-    let episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, titleExist);
+    let episodesUpdate = handleMissedEpisode(db_data.seasons, db_data.episodes, db_data.duration, db_data.type, titleExist);
     return {
         seasonsUpdate,
         episodesUpdate,
@@ -67,7 +67,7 @@ function handleSeasonUpdate(db_seasons, compareSeasons) {
     return seasonsUpdated;
 }
 
-function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration) {
+function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration, type) {
     let episodeUpdated = false;
     for (let i = 0; i < compareEpisodes.length; i++) {
         let episodeExist = false;
@@ -115,12 +115,12 @@ function handleEpisodesUpdate(db_episodes, compareEpisodes, db_duration) {
         }
     }
     if (episodeUpdated) {
-        fixEpisodesZeroDuration(db_episodes, db_duration);
+        fixEpisodesZeroDuration(db_episodes, db_duration, type);
     }
     return episodeUpdated;
 }
 
-function handleMissedEpisode(db_seasons, db_episodes, db_duration, lastSeasonsOnly = false) {
+function handleMissedEpisode(db_seasons, db_episodes, db_duration, type, lastSeasonsOnly = false) {
     let missedEpisode = false;
     let startSeasonNumber = (lastSeasonsOnly && db_seasons.length > 2) ? db_seasons.length - 2 : 0;
     for (let j = startSeasonNumber; j < db_seasons.length; j++) {
@@ -154,7 +154,7 @@ function handleMissedEpisode(db_seasons, db_episodes, db_duration, lastSeasonsOn
         db_episodes = db_episodes.sort((a, b) => {
             return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
         });
-        fixEpisodesZeroDuration(db_episodes, db_duration);
+        fixEpisodesZeroDuration(db_episodes, db_duration, type);
     }
     return missedEpisode;
 }
