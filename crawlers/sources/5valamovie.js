@@ -37,7 +37,7 @@ async function search_title_serial(link, i) {
                     let trailers = getTrailers($2);
 
                     if (!valaMovieTrailerUrl && trailers.length > 0) {
-                        valaMovieTrailerUrl = trailers[0].link.replace(/www.|https:\/\/|\/page\//g, '').split('/')[0];
+                        valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
                     }
 
                     await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
@@ -67,7 +67,7 @@ async function search_title_movie(link, i) {
                     let trailers = getTrailers($2);
 
                     if (!valaMovieTrailerUrl && trailers.length > 0) {
-                        valaMovieTrailerUrl = trailers[0].link.replace(/www.|https:\/\/|\/page\//g, '').split('/')[0];
+                        valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
                     }
 
                     save_link = removeDuplicateLinks(save_link);

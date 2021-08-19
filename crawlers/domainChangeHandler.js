@@ -71,7 +71,7 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
 
             let responseUrl;
             try {
-                let homePageLink = sourcesUrls[i].replace('/page/', '').replace('?page=', '');
+                let homePageLink = sourcesUrls[i].replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
                 if (headLessBrowser) {
                     let pageObj = await getPageObj();
                     if (pageObj) {
@@ -130,7 +130,6 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 
     sourcesObject.bia2anime.movie_url = sourcesUrls[9];
 
-    //todo : check
     sourcesObject.animelist.movie_url = sourcesUrls[10];
     sourcesObject.animelist.serial_url = getNewURl(sourcesObject.animelist.serial_url, sourcesUrls[10]);
 }
@@ -140,8 +139,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedDomains)
     for (let i = 0; i < changedDomains.length; i++) {
         try {
             let domain = changedDomains[i].replace(/\d/g, '');
-            //todo : check
-            let sourceName = changedDomains[i].replace(/www.|https:\/\/|http:\/\/|\/page\//g, '').split('/')[0];
+            let sourceName = changedDomains[i].replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
             let startTime = new Date();
             await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
 

@@ -216,10 +216,10 @@ function checkSourceNameAlternative(link1, link2, name1, name2) {
 
 export function getNewURl(url, currentUrl) {
     let domain = url
-        .replace(/www.|https:\/\/|http:\/\/|\/page\//g, '')
+        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
         .split('/')[0];
     let currentDomain = currentUrl
-        .replace(/www.|https:\/\/|http:\/\/|\/page\//g, '')
+        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
         .split('/')[0];
     return url.replace(domain, currentDomain);
 }
