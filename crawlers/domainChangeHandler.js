@@ -14,10 +14,11 @@ axiosRetry(axios, {
         return retryCount * 1000; // time interval between retries
     },
     retryCondition: (error) => (
-        error.response &&
-        error.response.status !== 429 &&
-        error.response.status !== 404 &&
-        error.response.status !== 403
+        error.code === 'ECONNRESET' ||
+        (error.response &&
+            error.response.status !== 429 &&
+            error.response.status !== 404 &&
+            error.response.status !== 403)
     ),
 });
 

@@ -1,8 +1,8 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
-const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
+const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const getCollection = require('../../mongoDB');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
 const {removeDuplicateElements} = require('../utils');
@@ -15,10 +15,11 @@ axiosRetry(axios, {
         return retryCount * 1000; // time interval between retries
     },
     retryCondition: (error) => (
-        error.response &&
-        error.response.status !== 429 &&
-        error.response.status !== 404 &&
-        error.response.status !== 403
+        error.code === 'ECONNRESET' ||
+        (error.response &&
+            error.response.status !== 429 &&
+            error.response.status !== 404 &&
+            error.response.status !== 403)
     ),
 });
 

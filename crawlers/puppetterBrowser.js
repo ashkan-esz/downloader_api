@@ -6,9 +6,6 @@ let pages = [];
 let pageIdCounter = 0;
 let creatingPageCounter = 0;
 
-//todo : optimize puppeteer for other sources
-//todo : check puppeteer works on all needed source
-//todo : check memory usage of chrome in anime-list
 
 export async function getPageObj() {
     try {
@@ -75,42 +72,58 @@ async function openNewPage() {
         let page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
         await page.setViewport({width: 1280, height: 800});
-        //todo : lower timeout and use page recreation
-        await page.setDefaultTimeout(50000);
-        await page.setRequestInterception(true);
-        page.on('request', (interceptedRequest) => {
-            if (
-                interceptedRequest.url().endsWith('.png') ||
-                interceptedRequest.url().endsWith('.jpg') ||
-                interceptedRequest.url().endsWith('.jpeg') ||
-                interceptedRequest.url().endsWith('.gif') ||
-                interceptedRequest.url().endsWith('.svg') ||
-                interceptedRequest.url().endsWith('.ico') ||
-                interceptedRequest.url().endsWith('.woff2') ||
-                interceptedRequest.url().endsWith('.ttf') ||
-                interceptedRequest.url().endsWith('.css') ||
-                interceptedRequest.url().endsWith('.webp') ||
-                interceptedRequest.url().endsWith('.json') ||
-                interceptedRequest.url().endsWith('.mp4') ||
-                interceptedRequest.url().endsWith('all.js') ||
-                interceptedRequest.url().endsWith('footer-bundle.js') ||
-                interceptedRequest.url().endsWith('jquery.ui.position.min.js') ||
-                interceptedRequest.url().endsWith('uikit-icons.min.js') ||
-                interceptedRequest.url().includes('youtube') ||
-                interceptedRequest.url().includes('yektanet') ||
-                interceptedRequest.url().includes('google') ||
-                interceptedRequest.url().includes('zarpop')
-            ) {
-                interceptedRequest.abort();
-            } else {
-                interceptedRequest.continue();
-            }
-        });
+        await page.setDefaultTimeout(40000);
+        await configRequestInterception(page);
         return page;
     } catch (error) {
         saveError(error);
         return null;
     }
+}
+
+async function configRequestInterception(page) {
+    await page.setRequestInterception(true);
+    page.on('request', (interceptedRequest) => {
+        if (
+            interceptedRequest.url().endsWith('.png') ||
+            interceptedRequest.url().endsWith('.jpg') ||
+            interceptedRequest.url().endsWith('.jpeg') ||
+            interceptedRequest.url().endsWith('.gif') ||
+            interceptedRequest.url().endsWith('.svg') ||
+            interceptedRequest.url().endsWith('.ico') ||
+            interceptedRequest.url().endsWith('.woff') ||
+            interceptedRequest.url().endsWith('.woff2') ||
+            interceptedRequest.url().endsWith('.ttf') ||
+            interceptedRequest.url().endsWith('.css') ||
+            interceptedRequest.url().endsWith('.webp') ||
+            interceptedRequest.url().endsWith('.json') ||
+            interceptedRequest.url().endsWith('.mp4') ||
+            interceptedRequest.url().endsWith('all.js') ||
+            interceptedRequest.url().endsWith('footer-bundle.js') ||
+            interceptedRequest.url().endsWith('jquery.ui.position.min.js') ||
+            interceptedRequest.url().endsWith('uikit-icons.min.js') ||
+            interceptedRequest.url().includes('query.min.js') ||
+            interceptedRequest.url().includes('bootstrap.bundle.min.js') ||
+            interceptedRequest.url().includes('swiper.min.js') ||
+            interceptedRequest.url().includes('select2.min.js') ||
+            interceptedRequest.url().includes('flatpickr.min.js') ||
+            interceptedRequest.url().includes('slick.min.js') ||
+            interceptedRequest.url().includes('sweetalert2.min.js') ||
+            interceptedRequest.url().includes('site-reviews.js') ||
+            interceptedRequest.url().includes('range.js') ||
+            interceptedRequest.url().includes('jquery.magnific-popup.min.js') ||
+            interceptedRequest.url().includes('jquery-migrate.min.js') ||
+            interceptedRequest.url().includes('ajax.js') ||
+            interceptedRequest.url().includes('youtube') ||
+            interceptedRequest.url().includes('yektanet') ||
+            interceptedRequest.url().includes('google') ||
+            interceptedRequest.url().includes('zarpop')
+        ) {
+            interceptedRequest.abort();
+        } else {
+            interceptedRequest.continue();
+        }
+    });
 }
 
 export async function closePage(id) {

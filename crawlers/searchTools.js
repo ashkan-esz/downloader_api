@@ -15,21 +15,21 @@ axiosRetry(axios, {
         return retryCount * 1000; // time interval between retries
     },
     retryCondition: (error) => (
-        error.response &&
-        error.response.status !== 429 &&
-        error.response.status !== 404 &&
-        error.response.status !== 403
+        error.code === 'ECONNRESET' ||
+        (error.response &&
+            error.response.status !== 429 &&
+            error.response.status !== 404 &&
+            error.response.status !== 403)
     ),
 });
 
 let _headLessBrowser = false;
-export let _pageCount = 0;
+let tesseractCounter = 0;
 
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
         _headLessBrowser = checkNeedHeadlessBrowser(url);
-        _pageCount = page_count;
 
         const concurrencyNumber = getConcurrencyNumber(url, page_count);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
@@ -134,7 +134,7 @@ async function getLinks(url, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
     try {
-        url = url.replace('/page/1/', '').replace(/\?page=1$/g, '');
+        url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
         let $, links = [];
         if (!_headLessBrowser || (sourceLinkData && sourceLinkData.sourceLink.includes('anime-list'))) {
             try {
@@ -178,7 +178,7 @@ async function getLinks(url, sourceLinkData = null) {
     }
 }
 
-async function getLinks_headlessBrowser(url) {
+async function getLinks_headlessBrowser(url, canRetry = true) {
     let pageObj = await getPageObj();
     if (!pageObj) {
         pageObj = await getPageObj();
@@ -186,49 +186,51 @@ async function getLinks_headlessBrowser(url) {
             return null;
         }
     }
-    //todo : make simple
-    if (url.includes('anime-list')) {
-        try {
-            await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
-        } catch (error) {
+
+    let isAnimelist = url.includes('anime-list') || url.includes('animelist');
+    let pageLoaded = await loadPageWithHeadlessBrowser(url, isAnimelist, pageObj);
+    if (!pageLoaded) {
+        return null;
+    }
+    if (isAnimelist && url.includes('/anime/')) {
+        let captchaResult = await handleAnimeListCaptcha(pageObj.page);
+        if (!captchaResult) {
             await closePage(pageObj.id);
-            pageObj = await getPageObj();
-            if (pageObj) {
-                await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
-            } else {
-                return null;
-            }
-        }
-        if (url.includes('/anime/')) {
-            let captchaResult = await handleAnimeListCaptcha(pageObj.page);
-            if (!captchaResult) {
-                await closePage(pageObj.id);
-                pageObj = await getPageObj();
-                if (pageObj) {
-                    await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
-                    captchaResult = await handleAnimeListCaptcha(pageObj.page);
-                    if (!captchaResult) {
-                        return null;
-                    }
-                } else {
-                    return null;
-                }
-            }
-        }
-    } else {
-        try {
-            await pageObj.page.goto(url);
-        } catch (error) {
-            await closePage(pageObj.id);
-            pageObj = await getPageObj();
-            if (pageObj) {
-                await pageObj.page.goto(url);
+            if (canRetry) {
+                return await getLinks_headlessBrowser(url, false);
             } else {
                 return null;
             }
         }
     }
     return pageObj;
+}
+
+async function loadPageWithHeadlessBrowser(url, isAnimelist, pageObj, canRetry = true) {
+    try {
+        if (isAnimelist) {
+            await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
+        } else {
+            await pageObj.page.goto(url);
+        }
+        if (url.includes('digimovie')) {
+            await pageObj.page.waitForSelector('.container');
+            if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
+                await pageObj.page.waitForSelector('.main_site');
+                await pageObj.page.waitForSelector('.alphapageNavi');
+            }
+        }
+        return true;
+    } catch (error) {
+        await closePage(pageObj.id);
+        pageObj = await getPageObj();
+        if (pageObj && canRetry) {
+            return await loadPageWithHeadlessBrowser(url, isAnimelist, pageObj, false);
+        } else {
+            saveError(error);
+            return false;
+        }
+    }
 }
 
 async function getFromGoogleCache(url) {
@@ -253,7 +255,6 @@ async function getFromGoogleCache(url) {
 }
 
 function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
-    //todo : handle last page for bia2anime , animelist
     if (url.includes('digimovie')) {
         for (let i = 0; i < links.length; i++) {
             let linkText = $(links[i]).text();
@@ -263,6 +264,14 @@ function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber)
                 return false;
             }
         }
+    } else if (url.includes('anime-list') || url.includes('animelist')) {
+        let $div = $('div');
+        for (let i = 0; i < $div.length; i++) {
+            if ($($div[i]).hasClass('character-movie')) {
+                return false;
+            }
+        }
+        return true;
     }
 
     if (links.length === 0 && checkGoogleCache) {
@@ -427,9 +436,11 @@ function getConcurrencyNumber(url, page_count) {
 }
 
 async function handleAnimeListCaptcha(page) {
-    //todo : fix crash while loading eng.traineddata
-    //todo : handle wrong captcha code
     try {
+        tesseractCounter++;
+        while (tesseractCounter > 1) {
+            await new Promise(resolve => setTimeout(resolve, 2));
+        }
         let captchaImage = await page.evaluate('document.querySelector("#captcha").getAttribute("src")');
         let imageBuffer = Buffer.from(captchaImage.split(',')[1], "base64");
         const worker = createWorker();
@@ -438,12 +449,13 @@ async function handleAnimeListCaptcha(page) {
         await worker.initialize('eng');
         const {data: {text}} = await worker.recognize(imageBuffer);
         await worker.terminate();
+        tesseractCounter--;
         await page.type('#securityCode', text);
         await page.evaluate(() => {
             document.querySelector('button[name=submit]').click();
         });
         try {
-            await page.waitForSelector('#securityCode', {hidden: true});
+            await page.waitForSelector('#securityCode', {hidden: true, timeout: 10000});
         } catch (error) {
             return null;
         }
