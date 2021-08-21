@@ -1,4 +1,4 @@
-const getCollection = require('../mongoDB');
+const {searchTitleDB, insertTitleDB, updateTitleByIdDB, removeTitleByIdDB} = require('../dbMethods');
 const {checkSourceExist, checkSource, getYear, removeDuplicateElements} = require('./utils');
 const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
@@ -19,22 +19,22 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
-        let {collection, db_data} = await searchOnCollection(titleObj, year, type);
+        let db_data = await searchOnCollection(titleObj, year, type);
 
         if (db_data === null && siteDownloadLinks.length > 0) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
-            await collection.insertOne(titleModel);
+            await insertTitleDB(titleModel);
             return;
         }
 
         let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         let apiDataUpdateFields = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
         if (checkSourceExist(db_data.sources, page_link)) {
-            let linkUpdate = handleDownloadLinksUpdate(collection, db_data, page_link, persianSummary, type, siteDownloadLinks);
-            await handleUpdate(collection, db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
+            let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
+            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
         } else if (siteDownloadLinks.length > 0) {
             //new source
-            await handleUpdate(collection, db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
+            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
         }
 
     } catch (error) {
@@ -75,7 +75,6 @@ async function getTitleObj(title, type) {
 }
 
 async function searchOnCollection(titleObj, year, type) {
-    let collection = await getCollection('movies');
     let db_data = null;
     let dataConfig = {
         title: 1,
@@ -113,16 +112,7 @@ async function searchOnCollection(titleObj, year, type) {
     }
 
     if (type.includes('serial')) {
-        let searchResults = await collection.find({
-            $or: [
-                {title: titleObj.title},
-                {title: {$in: titleObj.alternateTitles}},
-                {title: {$in: titleObj.titleSynonyms}},
-                {alternateTitles: titleObj.title},
-                {titleSynonyms: titleObj.title},
-            ],
-            type: {$in: searchTypes}
-        }, {projection: dataConfig}).toArray();
+        let searchResults = await searchTitleDB(titleObj, type, searchTypes, [], dataConfig);
 
         A: for (let i = 0; i < searchTypes.length; i++) {
             for (let j = 0; j < searchResults.length; j++) {
@@ -135,17 +125,7 @@ async function searchOnCollection(titleObj, year, type) {
     } else {
         let YEAR = Number(year);
         let searchYears = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        let searchResults = await collection.find({
-            $or: [
-                {title: titleObj.title},
-                {title: {$in: titleObj.alternateTitles}},
-                {title: {$in: titleObj.titleSynonyms}},
-                {alternateTitles: titleObj.title},
-                {titleSynonyms: titleObj.title},
-            ],
-            type: {$in: searchTypes},
-            premiered: {$in: searchYears}
-        }, {projection: dataConfig}).toArray();
+        let searchResults = await searchTitleDB(titleObj, type, searchTypes, searchYears, dataConfig)
 
         A: for (let i = 0; i < searchYears.length; i++) {
             for (let j = 0; j < searchTypes.length; j++) {
@@ -159,10 +139,10 @@ async function searchOnCollection(titleObj, year, type) {
             }
         }
     }
-    return {collection, db_data};
+    return db_data;
 }
 
-async function handleUpdate(collection, db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdate) {
+async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdate) {
     try {
         let updateFields = apiDataUpdate || {};
 
@@ -188,7 +168,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
             let newSources = db_data.sources.filter(item => item.links.length > 0);
             let newSize = newSources.length;
             if (newSize === 0) {
-                await collection.findOneAndDelete({_id: db_data._id});
+                await removeTitleByIdDB(db_data._id);
                 return;
             } else if (prevSize !== newSize) {
                 db_data.sources = newSources;
@@ -222,9 +202,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
 
 
         if (Object.keys(updateFields).length > 0) {
-            await collection.findOneAndUpdate({_id: db_data._id}, {
-                $set: updateFields
-            });
+            await updateTitleByIdDB(db_data._id, updateFields);
         }
 
     } catch (error) {
@@ -232,7 +210,7 @@ async function handleUpdate(collection, db_data, linkUpdate, result, site_persia
     }
 }
 
-function handleDownloadLinksUpdate(collection, db_data, page_link, persian_summary, type, siteDownloadLinks) {
+function handleDownloadLinksUpdate(db_data, page_link, persian_summary, type, siteDownloadLinks) {
     for (let j = 0; j < db_data.sources.length; j++) {//check source exist
         if (checkSource(db_data.sources[j].url, page_link)) { // this source exist
             let shouldUpdate = checkDownloadLinksUpdate(siteDownloadLinks, db_data.sources[j].links, type);
