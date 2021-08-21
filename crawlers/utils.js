@@ -40,13 +40,20 @@ export function purgeTitle(title, type) {
             title_array.pop();
         }
     }
+
+    let firstPart = title_array[0];
+    let lastPart = title_array[title_array.length - 1];
+    if (firstPart === lastPart && !isNaN(firstPart)) {
+        title_array.shift();
+    }
+
     return title_array.join(' ');
 }
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;.:…\/☆★♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
-        .replace(/["'’‘:?!#,()~♥△Ωωψ]/g, '')
+        .replace(/[;:…\/☆★♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
+        .replace(/["'’‘.:?!#,()~♥△Ωωψ]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace(/&/g, 'and')
