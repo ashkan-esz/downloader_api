@@ -54,7 +54,7 @@ export async function addApiData(titleModel, site_links) {
     }
 
     if (titleModel.type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.type, true);
+        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.type, 0, true);
         if (jikanApiData) {
             let jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
@@ -121,7 +121,7 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     }
 
     if (db_data.type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.type, true);
+        let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.type, 0, true);
         if (jikanApiData) {
             let jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {

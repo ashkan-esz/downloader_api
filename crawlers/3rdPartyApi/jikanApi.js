@@ -55,7 +55,7 @@ function getFromJikanApiCache(title, rawTitle, type) {
     return null;
 }
 
-export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = false) {
+export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheOnly) {
     let jikanCacheResult404 = getFromJikanApiCache404(title, rawTitle, type);
     if (jikanCacheResult404 === '404') {
         return null;
@@ -63,6 +63,19 @@ export async function getJikanApiData(title, rawTitle, type, fromCacheOnly = fal
     let jikanCacheResult = getFromJikanApiCache(title, rawTitle, type);
     if (jikanCacheResult || fromCacheOnly) {
         return jikanCacheResult;
+    }
+
+    if (jikanID) {
+        let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
+        let fullData = await handleApiCall(animeUrl);
+        if (fullData) {
+            let allTitles = getTitlesFromData(title, fullData);
+            if (checkTitle(title, type, allTitles)) {
+                let apiData = await getJikanApiData_simple(title, type, allTitles, fullData, jikanID);
+                jikanApiCache.push(apiData);
+                return apiData;
+            }
+        }
     }
 
     let searchTitle = (title.match(/^\d+$/g) || title.length < 3) ? (' ' + title) : title;

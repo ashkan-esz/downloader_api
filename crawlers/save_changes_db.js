@@ -11,15 +11,21 @@ const {saveError} = require("../saveError");
 //todo : add doc for upcoming
 //todo : handle insert_date - update_date for upcoming title
 
-//todo : get jikanID from db to reduce api call for anime titles
 
 module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
     try {
-        let titleObj = await getTitleObj(title, type); //get titles from jikan api
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
-        let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
+        let titleObj = await getTitleObj(title, type, false, 0);
         let db_data = await searchOnCollection(titleObj, year, type);
+        if (db_data) {
+            titleObj = await getTitleObj(title, type, true, db_data.jikanID);
+        } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
+            titleObj = await getTitleObj(title, type, true, 0); //get titles from jikan api
+            db_data = await searchOnCollection(titleObj, year, type);
+        }
+
+        let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
         if (db_data === null && siteDownloadLinks.length > 0) {//new title
             titleModel = await addApiData(titleModel, siteDownloadLinks);
@@ -42,7 +48,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
     }
 }
 
-async function getTitleObj(title, type) {
+async function getTitleObj(title, type, useJikanApi, jikanID) {
     let rawTitle = title.split(' ').map(value => value.charAt(0).toUpperCase() + value.slice(1)).join(' ');
     let titleObj = {
         title: title,
@@ -52,8 +58,8 @@ async function getTitleObj(title, type) {
         jikanFound: false,
     }
 
-    if (type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, false);
+    if (type.includes('anime') && (useJikanApi || jikanID)) {
+        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, jikanID, false);
         if (jikanApiData) {
             titleObj.title = jikanApiData.apiTitle_simple;
             titleObj.rawTitle = jikanApiData.apiTitle;
