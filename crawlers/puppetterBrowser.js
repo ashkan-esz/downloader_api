@@ -114,6 +114,8 @@ async function configRequestInterception(page) {
             interceptedRequest.url().includes('jquery.magnific-popup.min.js') ||
             interceptedRequest.url().includes('jquery-migrate.min.js') ||
             interceptedRequest.url().includes('ajax.js') ||
+            interceptedRequest.url().includes('core.min.js') ||
+            interceptedRequest.url().includes('script.js') ||
             interceptedRequest.url().includes('youtube') ||
             interceptedRequest.url().includes('yektanet') ||
             interceptedRequest.url().includes('google') ||

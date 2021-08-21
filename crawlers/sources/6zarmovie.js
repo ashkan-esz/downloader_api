@@ -14,7 +14,7 @@ const {saveError} = require("../../saveError");
 
 
 module.exports = async function zarmovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title);
+    // await wrapper_module(serial_url, serial_page_count, search_title);
     await wrapper_module(movie_url, page_count, search_title);
 }
 
