@@ -34,6 +34,9 @@ async function search_title(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`nineanime/${type}/${i}/${title}  ========>  `);
             }
+            if (title.includes('دانلود مانهوا')) {
+                return;
+            }
             if (title.toLowerCase().includes('قسمت های سینمایی') && !type.includes('anime')) {
                 type = 'anime_' + type;
             }
@@ -51,6 +54,7 @@ async function search_title(link, i) {
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     title = replaceShortTitleWithFull(title, type);
+                    type = fixWrongType2(title, type);
                     await save(title, page_link, save_link, persian_summary, poster, [], [], type);
                 }
             }
@@ -356,6 +360,8 @@ function replaceShortTitleWithFull(title, type) {
         title = 'noragami ova';
     } else if (title === 'ice age' && type === 'movie') {
         title = 'ice age all';
+    } else if (title === 'high school dxd' && type === 'anime_serial') {
+        title = 'high school dxd all seasons';
     }
     return title;
 }
@@ -381,6 +387,19 @@ function fixWrongType(title, type) {
         type = 'anime_movie';
     } else if (title === 'noragami' && type === 'anime_movie') {
         type = 'anime_serial';
+    } else if (title === 'high school dxd' && type === 'serial') {
+        type = 'anime_serial';
+    } else if (title === 'mononoke hime' && type === 'anime_serial') {
+        type = 'anime_movie';
+    }
+    return type;
+}
+
+function fixWrongType2(title, type) {
+    if (title === 'kono subarashii sekai ni shukufuku wo kono subarashii choker ni shukufuku wo' && type === 'anime_movie') {
+        type = 'anime_serial';
+    } else if (title === 'kono subarashii sekai ni shukufuku wo kono subarashii choker ni shukufuku wo' && type === 'anime_serial') {
+        type = 'anime_movie';
     }
     return type;
 }
