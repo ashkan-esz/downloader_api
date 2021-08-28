@@ -10,10 +10,10 @@ export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeason
 
     //omdb api
     if (omdbApiFields) {
-        let omdb_result = await get_OMDB_seasonEpisode_info(omdbApiFields.omdbTitle, totalSeasons, db_data.type, db_data.duration, titleExist);
-        if (omdb_result) {
-            seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdb_result.seasons) || seasonsUpdate;
-            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdb_result.episodes, db_data.duration, db_data.type);
+        let omdbResult = await get_OMDB_seasonEpisode_info(omdbApiFields.omdbTitle, totalSeasons, db_data.type, db_data.duration, titleExist);
+        if (omdbResult) {
+            seasonsUpdate = handleSeasonUpdate(db_data.seasons, omdbResult.seasons) || seasonsUpdate;
+            episodesUpdate = handleEpisodesUpdate(db_data.episodes, omdbResult.episodes, db_data.duration, db_data.type);
         }
     }
 

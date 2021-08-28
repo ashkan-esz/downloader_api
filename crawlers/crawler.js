@@ -30,7 +30,8 @@ export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = 
             let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
             if (sourceNumber === -1) {
-                for (let i = 0; i < sourcesArray.length; i++) {
+                //start from anime sources (11)
+                for (let i = sourcesArray.length - 1; i >= 0; i--) {
                     let temp = await sourcesArray[i].starter();
                     if (sourcesArray[i].name === 'valamovie') {
                         valaMovieTrailerUrl = temp;

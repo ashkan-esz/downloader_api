@@ -1,6 +1,7 @@
-const {searchTitleDB, insertTitleDB, updateTitleByIdDB, removeTitleByIdDB} = require('../dbMethods');
+const {searchTitleDB, insertToDB, updateByIdDB, removeTitleByIdDB} = require('../dbMethods');
 const {checkSourceExist, checkSource, getYear, removeDuplicateElements} = require('./utils');
 const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
+const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {getTitleModel} = require("./models/title");
@@ -28,19 +29,30 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
 
         if (db_data === null && siteDownloadLinks.length > 0) {//new title
-            titleModel = await addApiData(titleModel, siteDownloadLinks);
-            await insertTitleDB(titleModel);
+            let result = await addApiData(titleModel, siteDownloadLinks);
+            let insertedId = await insertToDB('movies', result.titleModel);
+            if (insertedId) {
+                let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
+                let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData,0);
+                if (temp) {
+                    let updateFields = {
+                        staffAndCharactersData: temp,
+                        castUpdateDate: new Date(),
+                    }
+                    await updateByIdDB('movies', insertedId, updateFields);
+                }
+            }
             return;
         }
 
         let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
-        let apiDataUpdateFields = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
+        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
-            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
+            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiData);
         } else if (siteDownloadLinks.length > 0) {
             //new source
-            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdateFields);
+            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiData);
         }
 
     } catch (error) {
@@ -91,6 +103,7 @@ async function searchOnCollection(titleObj, year, type) {
         alternateTitles: 1,
         titleSynonyms: 1,
         apiUpdateDate: 1,
+        castUpdateDate: 1,
         status: 1,
         imdbID: 1,
         tvmazeID: 1,
@@ -148,9 +161,9 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiDataUpdate) {
+async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiData) {
     try {
-        let updateFields = apiDataUpdate || {};
+        let updateFields = apiData ? apiData.updateFields : {};
 
         if (type.includes('serial')) {
             let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, siteDownloadLinks, true);
@@ -206,9 +219,17 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             updateFields.update_date = new Date();
         }
 
+        if (apiData) {
+            let poster = db_data.posters.length > 0 ? db_data.posters[0] : '';
+            let temp = await addStaffAndCharacters(db_data._id, db_data.rawTitle, poster, apiData.allApiData,db_data.castUpdateDate);
+            if (temp) {
+                updateFields.staffAndCharactersData = temp;
+                updateFields.castUpdateDate = new Date();
+            }
+        }
 
         if (Object.keys(updateFields).length > 0) {
-            await updateTitleByIdDB(db_data._id, updateFields);
+            await updateByIdDB('movies', db_data._id, updateFields);
         }
 
     } catch (error) {

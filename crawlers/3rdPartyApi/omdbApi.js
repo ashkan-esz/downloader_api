@@ -16,7 +16,7 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
 
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
-        let url = `https://www.omdbapi.com/?t=${title}&type=${searchType}`;
+        let url = `https://www.omdbapi.com/?t=${title}&type=${searchType}&plot=full`;
         let data = await handle_OMDB_ApiKeys(url, title);
         if (data === null) {
             if (canRetry) {
@@ -103,6 +103,9 @@ function getEditedTitle(title) {
 export function getOMDBApiFields(data, type) {
     try {
         let apiFields = {
+            directorsNames: data.Director.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
+            writersNames: data.Writer.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
+            actorsNames: data.Actors.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
             genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()) : [],
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
@@ -118,12 +121,6 @@ export function getOMDBApiFields(data, type) {
                 country: data.Country.toLowerCase(),
                 boxOffice: (type.includes('movie')) ? data.BoxOffice : '',
                 awards: data.Awards || '',
-                director: data.Director.toLowerCase(),
-                writer: data.Writer.toLowerCase(),
-                cast: data.Actors.toLowerCase()
-                    .split(',')
-                    .map(value => replaceSpecialCharacters(value))
-                    .filter(value => value && value.toLowerCase() !== 'n/a'),
             },
         };
         apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);

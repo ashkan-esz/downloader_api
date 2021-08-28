@@ -16,6 +16,8 @@ axiosRetry(axios, {
     },
     retryCondition: (error) => (
         error.code === 'ECONNRESET' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNABORTED' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -23,13 +25,12 @@ axiosRetry(axios, {
     ),
 });
 
-//todo : handle --> different seasons of anime titles are separated , check api result
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
-    let omdbApiFields = null, tvmazeApiFields = null;
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, titleModel.type);
@@ -56,7 +57,7 @@ export async function addApiData(titleModel, site_links) {
     if (titleModel.type.includes('anime')) {
         let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.type, 0, true);
         if (jikanApiData) {
-            let jikanApiFields = getJikanApiFields(jikanApiData);
+            jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 titleModel = {...titleModel, ...jikanApiFields.updateFields};
                 if (!titleModel.movieLang) {
@@ -76,7 +77,13 @@ export async function addApiData(titleModel, site_links) {
         }
     }
 
-    return titleModel;
+
+    return {
+        titleModel,
+        allApiData: {
+            omdbApiFields, tvmazeApiFields, jikanApiFields
+        }
+    };
 }
 
 export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
@@ -95,7 +102,7 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     updateFields = titleUpdateResult.updateFields;
 
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(db_data);
-    let omdbApiFields = null, tvmazeApiFields = null;
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
@@ -123,7 +130,7 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     if (db_data.type.includes('anime')) {
         let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.type, 0, true);
         if (jikanApiData) {
-            let jikanApiFields = getJikanApiFields(jikanApiData);
+            jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
@@ -138,7 +145,12 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
         }
     }
 
-    return updateFields;
+    return {
+        updateFields,
+        allApiData: {
+            omdbApiFields, tvmazeApiFields, jikanApiFields
+        }
+    };
 }
 
 function handleTitleUpdate(db_data, updateFields, titleObj, siteType) {

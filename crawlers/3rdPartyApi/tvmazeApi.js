@@ -93,9 +93,8 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
 
 export function getTvMazeApiFields(data) {
     try {
-        //todo : add cast
-
         let apiFields = {
+            cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
             summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',

@@ -25,18 +25,32 @@ export async function searchTitleDB(titleObj, type, searchTypes, searchYears, da
     }
 }
 
-export async function insertTitleDB(titleModel) {
+export async function searchStaffAndCharactersDB(collectionName, searchName) {
     try {
-        let collection = await getCollection('movies');
-        await collection.insertOne(titleModel);
+        let collection = await getCollection(collectionName);
+        return await collection.findOne({name: searchName});
     } catch (error) {
         saveError(error);
+        return null;
     }
 }
 
-export async function updateTitleByIdDB(id, updateFields) {
+export async function insertToDB(collectionName, dataToInsert, isMany = false) {
     try {
-        let collection = await getCollection('movies');
+        let collection = await getCollection(collectionName);
+        let result = (isMany)
+            ? await collection.insertMany(dataToInsert)
+            : await collection.insertOne(dataToInsert);
+        return (result.insertedId || result.insertedIds);
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function updateByIdDB(collectionName, id, updateFields) {
+    try {
+        let collection = await getCollection(collectionName);
         await collection.findOneAndUpdate({_id: id}, {
             $set: updateFields
         });

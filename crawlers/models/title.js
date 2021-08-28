@@ -18,6 +18,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         insert_date: new Date(),
         update_date: 0,
         apiUpdateDate: new Date(),
+        castUpdateDate: 0,
         seasons: [],
         episodes: [],
         posters: [poster],
@@ -60,11 +61,10 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
             myAnimeList: 0
         },
         duration: "0 min",
-        director: "",
-        writer: "",
-        cast: [],
+        staffAndCharactersData: [],
         awards: "",
         //jikan api data
+        animeType: '',
         animeSource: '',
         relatedTitles: [],
     };

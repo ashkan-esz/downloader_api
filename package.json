@@ -12,6 +12,7 @@
     "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm server.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.27.0",
     "@sentry/node": "^5.29.2",
     "@sentry/tracing": "^5.30.0",
     "axios": "^0.21.0",

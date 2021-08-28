@@ -15,6 +15,7 @@ axiosRetry(axios, {
     },
     retryCondition: (error) => (
         error.code === 'ECONNRESET' ||
+        error.code === 'ENOTFOUND' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&

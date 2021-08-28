@@ -95,8 +95,19 @@ export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheO
         }
     }
 
+    if (
+        type.includes('serial') &&
+        data.results[0].title.replace(/the|\(tv\)|\s+/gi, '') === data.results[1].title.replace(/the|\(tv\)|\s+/gi, '') &&
+        (data.results[0].type.match(/ova|ona/gi) && Number(data.results[0].episodes) < Number(data.results[1].episodes))
+    ) {
+        data.results.shift();
+    }
+
     for (let i = 0; i < data.results.length; i++) {
-        if (type.includes('movie') && Number(data.results[i].episodes) > 1) {
+        if (
+            (type.includes('serial') && Number(data.results[i].episodes) === 0) ||
+            (type.includes('movie') && Number(data.results[i].episodes) > 1)
+        ) {
             continue;
         }
 
@@ -139,12 +150,8 @@ function checkTitle(title, type, allTitles) {
 }
 
 export function getJikanApiFields(data) {
-    //todo : maybe cast/writer/director overwrite from omdb api
     try {
-        //todo : add characters_staff
-
-        //todo : add field for ova-ona-...
-
+        //todo : add episodes
         let apiFields = {
             jikanRelatedTitles: getRelatedTitles(data),
             summary_en: data.synopsis || '',
@@ -156,6 +163,7 @@ export function getJikanApiFields(data) {
                 jikanID: data.jikanID,
                 rawTitle: data.apiTitle,
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
+                animeType: data.animeType,
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
                 duration: (data.duration === "Unknown" || data.duration === "1 min per ep")
                     ? ''
@@ -170,6 +178,34 @@ export function getJikanApiFields(data) {
     } catch (error) {
         saveError(error);
         return null;
+    }
+}
+
+export async function getCharactersStaff(jikanID) {
+    if (jikanID) {
+        let url = `https://api.jikan.moe/v3/anime/${jikanID}/characters_staff`;
+        let data = await handleApiCall(url);
+        if (data) {
+            return {
+                characters: data.characters,
+                staff: data.staff,
+            }
+        }
+        return null;
+    }
+}
+
+export async function getPersonInfo(jikanID) {
+    if (jikanID) {
+        let url = `https://api.jikan.moe/v3/person/${jikanID}`;
+        return await handleApiCall(url);
+    }
+}
+
+export async function getCharacterInfo(jikanID) {
+    if (jikanID) {
+        let url = `https://api.jikan.moe/v3/character/${jikanID}`;
+        return await handleApiCall(url);
     }
 }
 
@@ -207,19 +243,18 @@ async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID)
     delete fullData.title_japanese;
     delete fullData.title_synonyms;
     delete fullData.mal_id;
-    // let characters_staff = await getJikanApiFullData(jikanID, '/characters_staff');
+
     return {
         ...fullData,
         jikanID: jikanID,
         siteTitle: title,
         type: type,
+        animeType: fullData.type,
         apiTitle_simple: allTitles.apiTitle_simple,
         apiTitle: allTitles.apiTitle,
         apiTitleEnglish: allTitles.apiTitleEnglish,
         apiTitleJapanese: allTitles.apiTitleJapanese,
         titleSynonyms: allTitles.titleSynonyms,
-        //todo : add characters_staff
-        characters_staff: [],
     };
 }
 
@@ -235,7 +270,10 @@ async function handleApiCall(url) {
                 await new Promise((resolve => setTimeout(resolve, 1100)));
                 waitCounter++;
             } else {
-                if (error.response && error.response.status !== 404) {
+                if (
+                    error.code === 'ECONNABORTED' ||
+                    (error.response && error.response.status !== 404)
+                ) {
                     await saveError(error);
                 }
                 return null;
