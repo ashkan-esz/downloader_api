@@ -7,6 +7,7 @@ const {check_download_link, getMatchCases, check_format} = require('./link');
 const {getDecodedLink} = require('./utils');
 const {saveError} = require("../saveError");
 const {createWorker} = require('tesseract.js');
+const FormData = require('form-data');
 const Sentry = require('@sentry/node');
 
 axiosRetry(axios, {
@@ -311,20 +312,41 @@ function getConcurrencyNumber(url, page_count) {
 
 async function handleAnimeListCaptcha(page) {
     try {
-        tesseractCounter++;
-        while (tesseractCounter > 1) {
-            await new Promise(resolve => setTimeout(resolve, 2));
-        }
         let captchaImage = await page.evaluate('document.querySelector("#captcha").getAttribute("src")');
-        let imageBuffer = Buffer.from(captchaImage.split(',')[1], "base64");
-        const worker = createWorker();
-        await worker.load();
-        await worker.loadLanguage('eng');
-        await worker.initialize('eng');
-        const {data: {text}} = await worker.recognize(imageBuffer);
-        await worker.terminate();
-        tesseractCounter--;
-        await page.type('#securityCode', text);
+        captchaImage = captchaImage.split(';base64,').pop();
+        let captchaCode = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('data', captchaImage);
+            let url = 'https://captcha-solver-flask-app.herokuapp.com/';
+            let result = await axios.post(url, formData, {
+                headers: formData.getHeaders()
+            });
+            if (result && result.data) {
+                captchaCode = result.data.toString();
+            }
+        } catch (error) {
+            saveError(error);
+        }
+
+        if (!captchaCode) {
+            tesseractCounter++;
+            while (tesseractCounter > 1) {
+                await new Promise(resolve => setTimeout(resolve, 2));
+            }
+            let imageBuffer = Buffer.from(captchaImage, "base64");
+            const worker = createWorker();
+            await worker.load();
+            await worker.loadLanguage('eng');
+            await worker.initialize('eng');
+            const {data: {text}} = await worker.recognize(imageBuffer);
+            await worker.terminate();
+            captchaCode = text;
+            tesseractCounter--;
+        }
+
+        await page.type('#securityCode', captchaCode);
         await page.evaluate(() => {
             document.querySelector('button[name=submit]').click();
         });
