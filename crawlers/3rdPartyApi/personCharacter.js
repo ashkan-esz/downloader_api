@@ -50,11 +50,37 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
             staffAndCharactersData = addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields);
         }
 
-        return staffAndCharactersData;
+        return extractActorsAndDirectorsAndWriters(staffAndCharactersData);
     } catch (error) {
         saveError(error);
         return null;
     }
+}
+
+function extractActorsAndDirectorsAndWriters(staffAndCharacters) {
+    let staffAndCharactersData = [];
+    let actors = [];
+    let directors = [];
+    let writers = [];
+
+    for (let i = 0; i < staffAndCharacters.length; i++) {
+        let positions = staffAndCharacters[i].positions.map(item => item.toLowerCase()).join(' , ');
+        if (positions.includes('actor') || positions.includes('voice actor')) {
+            actors.push(staffAndCharacters[i]);
+        } else if (positions.includes('director')) {
+            directors.push(staffAndCharacters[i]);
+        } else if (positions.includes('writer')) {
+            writers.push(staffAndCharacters[i]);
+        } else {
+            staffAndCharactersData.push(staffAndCharacters[i]);
+        }
+    }
+    return {
+        staffAndCharactersData,
+        actors,
+        directors,
+        writers
+    };
 }
 
 function getStaffAndCharactersData(staff, characters, movieID) {

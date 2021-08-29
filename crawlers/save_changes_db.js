@@ -33,10 +33,13 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
             let insertedId = await insertToDB('movies', result.titleModel);
             if (insertedId) {
                 let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
-                let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData,0);
+                let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData, 0);
                 if (temp) {
                     let updateFields = {
-                        staffAndCharactersData: temp,
+                        staffAndCharactersData: temp.staffAndCharactersData,
+                        actors: temp.actors,
+                        directors: temp.directors,
+                        writers: temp.writers,
                         castUpdateDate: new Date(),
                     }
                     await updateByIdDB('movies', insertedId, updateFields);
@@ -221,9 +224,12 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
 
         if (apiData) {
             let poster = db_data.posters.length > 0 ? db_data.posters[0] : '';
-            let temp = await addStaffAndCharacters(db_data._id, db_data.rawTitle, poster, apiData.allApiData,db_data.castUpdateDate);
+            let temp = await addStaffAndCharacters(db_data._id, db_data.rawTitle, poster, apiData.allApiData, db_data.castUpdateDate);
             if (temp) {
-                updateFields.staffAndCharactersData = temp;
+                updateFields.staffAndCharactersData = temp.staffAndCharactersData;
+                updateFields.actors = temp.actors;
+                updateFields.directors = temp.directors;
+                updateFields.writers = temp.writers;
                 updateFields.castUpdateDate = new Date();
             }
         }

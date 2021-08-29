@@ -151,7 +151,6 @@ function checkTitle(title, type, allTitles) {
 
 export function getJikanApiFields(data) {
     try {
-        //todo : add episodes
         let apiFields = {
             jikanRelatedTitles: getRelatedTitles(data),
             summary_en: data.synopsis || '',

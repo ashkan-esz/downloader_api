@@ -62,6 +62,9 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         },
         duration: "0 min",
         staffAndCharactersData: [],
+        actors: [],
+        directors: [],
+        writers: [],
         awards: "",
         //jikan api data
         animeType: '',
