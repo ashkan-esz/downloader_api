@@ -5,7 +5,7 @@ const {saveError} = require("../saveError");
 
 export function check_download_link(original_link, matchCases, type) {
     try {
-        let link = original_link.toLowerCase().replace(/[_-]/g, '.');
+        let link = original_link.toLowerCase().replace(/[_-]|\.\.+/g, '.');
         if (link.includes('trailer')) {
             return null;
         }
@@ -19,6 +19,8 @@ export function check_download_link(original_link, matchCases, type) {
                 link.includes(matchCases.case4) ||
                 decodedLink.includes(matchCases.case1) ||
                 decodedLink.includes(matchCases.case1.replace(/\./g, ' ')) ||
+                link.split('/').pop().replace(/\.the\.movie|[.%s]/g, '').includes(matchCases.case1.replace(/[.%s]/g, '')) ||
+                link.replace(/\.the\.movie|the\.|at\./g, '').includes(matchCases.case1.replace(/\.the\.movie|the\.|at\./g, '')) ||
                 link.includes(matchCases.case1.replace(/\./g, '')) ||
                 link.includes(matchCases.case1.replace('.ova', '.oad')) ||
                 link.includes(matchCases.case1.replace('.iii', '.3')) ||
@@ -75,9 +77,9 @@ export function getMatchCases(title, type) {
 }
 
 export function check_format(link, type) {
-    link = link.toLowerCase();
+    link = link.toLowerCase().trim();
     let qualities = ['bluray', 'mobile', 'dvdrip', 'hdrip', 'brip', 'webrip', 'web-dl', 'web.dl',
-        'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '720p', '1080p', 'farsi.dubbed'];
+        'farsi_dubbed', 'dvdscr', 'x264', '3d', 'hdcam', '480p', '720p', '1080p', 'farsi.dubbed'];
     let encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
         'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
 

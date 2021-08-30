@@ -6,7 +6,7 @@ export function purgeTitle(title, type) {
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
-    title = title.replace('شماره ۱', '').replace('فیلم 1', '').replace(/سینمایی \d/g, '');
+    title = title.replace('شماره ۱', '').replace('دوبله فارسی انیمیشن 2 ', ' ').replace('فیلم 1', '').replace(/سینمایی \d/g, '');
     let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
     if (title.includes('قسمت های ویژه') && !title.toLowerCase().includes('ova')) {
         title_array.push('OVA');
@@ -42,8 +42,12 @@ export function purgeTitle(title, type) {
     }
 
     let firstPart = title_array[0];
+    let thirdPart = title_array.length > 1 ? title_array[2] : '';
     let lastPart = title_array[title_array.length - 1];
-    if (firstPart === lastPart && !isNaN(firstPart)) {
+    if (
+        (firstPart === lastPart && !isNaN(firstPart)) ||
+        (thirdPart && firstPart === thirdPart && Number(firstPart) < 5)
+    ) {
         title_array.shift();
     }
 
@@ -85,7 +89,9 @@ export function replacePersianNumbers(input) {
 }
 
 export function getType(title) {
-    if (title.includes('فیلم') || title.includes('استندآپ')) {
+    if (title.includes('فیلم') ||
+        title.includes('استندآپ') ||
+        title.includes('استند آپ')) {
         return 'movie';
     }
     if (title.includes('انیمیشن')) {
@@ -97,7 +103,11 @@ export function getType(title) {
         }
         return title.includes('سریال') ? 'anime_serial' : 'anime_movie';
     }
-    if (title.includes('سینمایی') || title.includes('لایو اکشن')) {
+    if (
+        title.includes('سینمایی') ||
+        title.includes('لایو اکشن') ||
+        (title.includes('دانلود مستند') && !title.includes('دانلود مستند سریالی'))
+    ) {
         return 'movie';
     }
     return 'serial';
@@ -329,8 +339,11 @@ export function purgeQualityText(qualityText) {
         .replace('دوبله', '')
         .replace('فارسی', '')
         .replace('هاردساب', '')
+        .replace('پخش آنلاین', '')
         .replace(/[)(:]/g, '')
-        .replace(/web-dl/gi, 'WEB-DL')
+        .replace(/web[-_]dl/gi, 'WEB-DL')
+        .replace(/webrip/gi, 'WEB-RIP')
+        .replace(/full hd/gi, 'FULL-HD')
         .trim();
 }
 

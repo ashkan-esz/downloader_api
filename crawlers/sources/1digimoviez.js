@@ -11,8 +11,6 @@ const {
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
 
-//todo : fix crawler doesnt crawl to last page
-//todo : check links info
 
 module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
     await wrapper_module(serial_url, serial_page_count, search_title);
@@ -165,18 +163,19 @@ function get_file_size($, link, type) {
 function sortQualityInfo(quality) {
     let spited_quality = quality.split('.');
 
-    if (quality.match(/(\d\d\d\dp|\d\d\dp).10bit.(BluRay|WEB-DL|HDTV).x265/g)) {
+    if (quality.match(/(\d\d\d\dp|\d\d\dp)\.10bit\.(BluRay|WEB-DL|WEB-RIP|HDTV)(\.6ch)*\.x265/gi)) {
         //'1080p.10bit.BluRay.x265','1080p.x265.10bit.BluRay'
         spited_quality = spited_quality.filter(text => text !== 'x265');
-        quality = [spited_quality[0], spited_quality[3], ...spited_quality.slice(1)].filter(value => value).join('.');
-    } else if (quality.match(/(\d\d\d\dp|\d\d\dp).(BluRay|WEB-DL|HDTV).x265/g)) {
+        quality = [spited_quality[0], 'x265', ...spited_quality.slice(1)].filter(value => value).join('.');
+    } else if (quality.match(/(\d\d\d\dp|\d\d\dp)\.(BluRay|WEB-DL|WEB-RIP|HDTV)\.x265/gi)) {
         //'1080p.BluRay.x265','1080p.x265.BluRay'
         quality = [spited_quality[0], ...spited_quality.slice(2), spited_quality[1]].filter(value => value).join('.');
-    } else if (quality.match(/BluRay.(\d\d\d\dp|\d\d\dp)/g)) {
+    } else if (quality.match(/BluRay\.(\d\d\d\dp|\d\d\dp)/gi)) {
         //'BluRay.1080p.x265','1080p.x265.BluRay'
         //'BluRay.1080p','1080p.BluRay'
         quality = [...spited_quality.slice(1), spited_quality[0]].filter(value => value).join('.');
     }
+    quality = quality.replace('REMASTERED.1080p.BluRay', '1080p.BluRay.REMASTERED');
     return quality;
 }
 
