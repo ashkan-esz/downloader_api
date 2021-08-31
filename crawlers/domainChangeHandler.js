@@ -2,8 +2,7 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
-const {checkNeedHeadlessBrowser} = require("../crawlers/searchTools");
-const {getPageObj, setPageFree, closeBrowser} = require("./puppetterBrowser");
+const {checkNeedHeadlessBrowser, getPageData} = require("../crawlers/searchTools");
 const {getSourcesArray} = require('./crawler');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
@@ -75,11 +74,9 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
             try {
                 let homePageLink = sourcesUrls[i].replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
                 if (headLessBrowser) {
-                    let pageObj = await getPageObj();
-                    if (pageObj) {
-                        await pageObj.page.goto(homePageLink);
-                        responseUrl = pageObj.page.url();
-                        setPageFree(pageObj.id);
+                    let pageData = await getPageData(homePageLink);
+                    if (pageData && pageData.pageContent) {
+                        responseUrl = pageData.responseUrl;
                     }
                 } else {
                     let response = await axios.get(homePageLink);
@@ -98,11 +95,9 @@ async function checkSourcesUrl(sourcesUrls, changedDomains) {
                 changedDomains.push(responseUrl);
             }
         }
-        await closeBrowser();
         return isChanged;
     } catch (error) {
         await saveError(error);
-        await closeBrowser();
         return isChanged;
     }
 }

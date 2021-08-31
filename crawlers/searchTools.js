@@ -2,12 +2,9 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
 const PQueue = require('p-queue');
-const {getPageObj, setPageFree, closePage, closeBrowser} = require('./puppetterBrowser');
 const {check_download_link, getMatchCases, check_format} = require('./link');
 const {getDecodedLink} = require('./utils');
 const {saveError} = require("../saveError");
-const {createWorker} = require('tesseract.js');
-const FormData = require('form-data');
 const Sentry = require('@sentry/node');
 
 axiosRetry(axios, {
@@ -27,14 +24,13 @@ axiosRetry(axios, {
 });
 
 let _headLessBrowser = false;
-let tesseractCounter = 0;
 
 
 export async function wrapper_module(url, page_count, searchCB) {
     try {
         _headLessBrowser = checkNeedHeadlessBrowser(url);
 
-        const concurrencyNumber = getConcurrencyNumber(url, page_count);
+        const concurrencyNumber = getConcurrencyNumber(url);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
@@ -54,19 +50,12 @@ export async function wrapper_module(url, page_count, searchCB) {
                     }
                 }
             } catch (error) {
-                if (_headLessBrowser) {
-                    await closeBrowser();
-                }
                 saveError(error);
             }
         }
 
         await promiseQueue.onIdle();
-        if (_headLessBrowser) {
-            await closeBrowser();
-        }
     } catch (error) {
-        await closeBrowser();
         saveError(error);
     }
 }
@@ -153,12 +142,10 @@ async function getLinks(url, sourceLinkData = null) {
             }
         } else {
             try {
-                let pageObj = await getLinks_headlessBrowser(url);
-                if (pageObj) {
-                    let pageContent = await pageObj.page.content();
-                    responseUrl = pageObj.page.url();
-                    setPageFree(pageObj.id);
-                    $ = cheerio.load(pageContent);
+                let pageData = await getPageData(url);
+                if (pageData && pageData.pageContent) {
+                    responseUrl = pageData.responseUrl;
+                    $ = cheerio.load(pageData.pageContent);
                     links = $('a');
                 }
             } catch (error) {
@@ -181,58 +168,19 @@ async function getLinks(url, sourceLinkData = null) {
     }
 }
 
-async function getLinks_headlessBrowser(url, canRetry = true) {
-    let pageObj = await getPageObj();
-    if (!pageObj) {
-        pageObj = await getPageObj();
-        if (!pageObj) {
-            return null;
-        }
-    }
-
-    let isAnimelist = url.includes('anime-list') || url.includes('animelist');
-    let pageLoaded = await loadPageWithHeadlessBrowser(url, isAnimelist, pageObj);
-    if (!pageLoaded) {
-        return null;
-    }
-    if (isAnimelist && url.includes('/anime/')) {
-        let captchaResult = await handleAnimeListCaptcha(pageObj.page);
-        if (!captchaResult) {
-            await closePage(pageObj.id);
-            if (canRetry) {
-                return await getLinks_headlessBrowser(url, false);
-            } else {
-                return null;
-            }
-        }
-    }
-    return pageObj;
-}
-
-async function loadPageWithHeadlessBrowser(url, isAnimelist, pageObj, canRetry = true) {
+export async function getPageData(url) {
     try {
-        if (isAnimelist) {
-            await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
-        } else {
-            await pageObj.page.goto(url);
-        }
-        if (url.includes('digimovie')) {
-            await pageObj.page.waitForSelector('.container');
-            if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
-                await pageObj.page.waitForSelector('.main_site');
-                await pageObj.page.waitForSelector('.alphapageNavi');
-            }
-        }
-        return true;
+        url = encodeURIComponent(url);
+        let remoteBrowserPassword = encodeURIComponent(process.env.REMOTE_BROWSER_PASSWORD);
+        let remoteBrowserEndPoint = process.env.REMOTE_BROWSER_ENDPOINT;
+        let response = await axios.get(
+            `${remoteBrowserEndPoint}/headlessBrowser/?password=${remoteBrowserPassword}&url=${url}`
+        );
+        let data = response.data;
+        return (!data || data.error) ? null : data;
     } catch (error) {
-        await closePage(pageObj.id);
-        pageObj = await getPageObj();
-        if (pageObj && canRetry) {
-            return await loadPageWithHeadlessBrowser(url, isAnimelist, pageObj, false);
-        } else {
-            saveError(error);
-            return false;
-        }
+        await saveError(error);
+        return null;
     }
 }
 
@@ -258,29 +206,34 @@ async function getFromGoogleCache(url) {
 }
 
 function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
-    if (url.includes('digimovie')) {
-        for (let i = 0; i < links.length; i++) {
-            let linkText = $(links[i]).text();
-            if (
-                (linkText && linkText.includes('دانلود') && !linkText.includes('تریلر'))
-            ) {
-                return false;
+    try {
+        if (url.includes('digimovie')) {
+            for (let i = 0; i < links.length; i++) {
+                let linkText = $(links[i]).text();
+                if (
+                    (linkText && linkText.includes('دانلود') && !linkText.includes('تریلر'))
+                ) {
+                    return false;
+                }
             }
-        }
-    } else if (url.includes('anime-list') || url.includes('animelist')) {
-        let $div = $('div');
-        for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('character-movie')) {
-                return false;
+        } else if (url.includes('anime-list') || url.includes('animelist')) {
+            let $div = $('div');
+            for (let i = 0; i < $div.length; i++) {
+                if ($($div[i]).hasClass('character-movie')) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
-    }
 
-    if (links.length === 0 && checkGoogleCache) {
+        if (links.length === 0 && checkGoogleCache) {
+            return true;
+        }
+        return !(pageNumber === 1 || responseUrl.includes('page'));
+    } catch (error) {
+        saveError(error);
         return true;
     }
-    return !(pageNumber === 1 || responseUrl.includes('page'));
 }
 
 export function checkNeedHeadlessBrowser(url) {
@@ -294,71 +247,12 @@ export function checkNeedHeadlessBrowser(url) {
     );
 }
 
-function getConcurrencyNumber(url, page_count) {
+function getConcurrencyNumber(url) {
     let concurrencyNumber;
     if (process.env.CRAWLER_CONCURRENCY) {
         concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
-    } else if (_headLessBrowser) {
-        concurrencyNumber = 5;
     } else {
-        if (page_count === 1) {
-            concurrencyNumber = 10;
-        } else {
-            concurrencyNumber = (url.includes('anime')) ? 6 : 12;
-        }
+        concurrencyNumber = (url.includes('anime')) ? 6 : 12;
     }
     return concurrencyNumber;
-}
-
-async function handleAnimeListCaptcha(page) {
-    try {
-        let captchaImage = await page.evaluate('document.querySelector("#captcha").getAttribute("src")');
-        captchaImage = captchaImage.split(';base64,').pop();
-        let captchaCode = '';
-
-        try {
-            const formData = new FormData();
-            formData.append('data', captchaImage);
-            let url = 'https://captcha-solver-flask-app.herokuapp.com/';
-            let result = await axios.post(url, formData, {
-                headers: formData.getHeaders()
-            });
-            if (result && result.data) {
-                captchaCode = result.data.toString();
-            }
-        } catch (error) {
-            saveError(error);
-        }
-
-        if (!captchaCode) {
-            tesseractCounter++;
-            while (tesseractCounter > 1) {
-                await new Promise(resolve => setTimeout(resolve, 2));
-            }
-            let imageBuffer = Buffer.from(captchaImage, "base64");
-            const worker = createWorker();
-            await worker.load();
-            await worker.loadLanguage('eng');
-            await worker.initialize('eng');
-            const {data: {text}} = await worker.recognize(imageBuffer);
-            await worker.terminate();
-            captchaCode = text;
-            tesseractCounter--;
-        }
-
-        await page.type('#securityCode', captchaCode);
-        await page.evaluate(() => {
-            document.querySelector('button[name=submit]').click();
-        });
-        try {
-            await page.waitForSelector('#securityCode', {hidden: true, timeout: 10000});
-        } catch (error) {
-            return null;
-        }
-        await page.waitForTimeout(10);
-        return 1;
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
 }

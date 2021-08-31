@@ -27,15 +27,12 @@
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
-    "form-data": "^4.0.0",
     "helmet": "^4.2.0",
     "http-errors": "~1.6.3",
     "jwks-rsa": "^1.11.0",
     "mongodb": "^3.6.3",
     "p-queue": "^5.0.0",
     "persian-rex": "^2.3.3",
-    "puppeteer": "^10.1.0",
-    "tesseract.js": "^2.1.4",
     "words-to-numbers": "^1.5.1"
   },
   "devDependencies": {
