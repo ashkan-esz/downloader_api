@@ -41,7 +41,7 @@ async function search_title(link, i, $, url) {
                     extraSearch_match, extraSearch_getFileSize, null, extraChecker);
 
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     save_link = removeDuplicateLinks(save_link);
                     if (type.includes('serial')) {
                         save_link = sortLinks(save_link, type);
@@ -49,7 +49,7 @@ async function search_title(link, i, $, url) {
                     }
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2, url);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
                 }
             }
         }

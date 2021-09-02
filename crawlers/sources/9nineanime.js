@@ -50,12 +50,12 @@ async function search_title(link, i) {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
                     extraSearch_match, extraSearch_getFileSize);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     title = replaceShortTitleWithFull(title, type);
                     type = fixWrongType2(title, type);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
                 }
             }
         }

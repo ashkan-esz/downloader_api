@@ -31,7 +31,7 @@ async function search_title_serial(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, 'serial', get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -40,7 +40,7 @@ async function search_title_serial(link, i) {
                         valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
                     }
 
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'serial');
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, 'serial');
                 }
             }
         }
@@ -61,7 +61,7 @@ async function search_title_movie(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, 'movie', get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -71,7 +71,7 @@ async function search_title_movie(link, i) {
                     }
 
                     save_link = removeDuplicateLinks(save_link);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], 'movie');
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, 'movie');
                 }
             }
         }

@@ -34,7 +34,7 @@ async function search_title(link, i, $, url) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, getQualitySample);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -43,7 +43,7 @@ async function search_title(link, i, $, url) {
                     if (save_link.length > 0 && save_link[0].link.match(/s\d+e\d+/gi)) {
                         type = 'serial';
                     }
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, type);
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, type);
                 }
             }
         }

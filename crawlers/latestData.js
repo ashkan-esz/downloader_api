@@ -4,6 +4,7 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
     let changed = false;
     let hardSubChange = false;
     let dubbedChange = false;
+    let subtitleChange = false;
     let prevLatestData = db_data.latestData;
 
     if (type.includes('serial')) {
@@ -35,6 +36,12 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
         }
     }
 
+    if (type.includes('serial')) {
+        subtitleChange = prevLatestData.subtitle < latestData.subtitle;
+    } else {
+        subtitleChange = !prevLatestData.subtitle && latestData.subtitle;
+    }
+
     if (changed) {
         db_data.latestData.season = latestData.season;
         db_data.latestData.episode = latestData.episode;
@@ -46,16 +53,20 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
     if (dubbedChange) {
         db_data.latestData.dubbed = latestData.dubbed;
     }
+    if (subtitleChange) {
+        db_data.latestData.subtitle = latestData.subtitle;
+    }
 
-    return changed || hardSubChange || dubbedChange;
+    return (changed || hardSubChange || dubbedChange || subtitleChange);
 }
 
-export function getLatestData(site_links, type) {
+export function getLatestData(site_links, subtitles, type) {
     let latestSeason = type.includes('movie') ? 0 : 1;
     let latestEpisode = type.includes('movie') ? 0 : 1;
     let latestQuality = site_links.length > 0 ? site_links[0].info : '';
     let hardSub = type.includes('movie') ? false : '';
     let dubbed = type.includes('movie') ? false : '';
+    let sub = type.includes('movie') ? subtitles.length > 0 : 0;
     let prevStates = [1, 1, '', '', ''];
 
     for (let i = 0; i < site_links.length; i++) {
@@ -111,5 +122,14 @@ export function getLatestData(site_links, type) {
         hardSub = prevStates[3];
         dubbed = prevStates[4];
     }
-    return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed};
+
+    if (type.includes('serial')) {
+        for (let i = 0; i < subtitles.length; i++) {
+            if (subtitles[i].episode > sub) {
+                sub = subtitles[i].episode;
+            }
+        }
+    }
+
+    return {season: latestSeason, episode: latestEpisode, quality: latestQuality, hardSub, dubbed, sub};
 }

@@ -30,10 +30,10 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
+                    let {save_link, $2, subtitles} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
                 }
             }
         }

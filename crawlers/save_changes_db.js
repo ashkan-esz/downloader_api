@@ -13,7 +13,7 @@ const {saveError} = require("../saveError");
 //todo : handle insert_date - update_date for upcoming title
 
 
-module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, type) {
+module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, type) {
     try {
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
 
@@ -26,7 +26,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
             db_data = await searchOnCollection(titleObj, year, type);
         }
 
-        let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks);
+        let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
 
         if (db_data === null && siteDownloadLinks.length > 0) {//new title
             let result = await addApiData(titleModel, siteDownloadLinks);
@@ -52,10 +52,10 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let apiData = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
-            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, type, apiData);
+            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData);
         } else if (siteDownloadLinks.length > 0) {
             //new source
-            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, type, apiData);
+            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData);
         }
 
     } catch (error) {
@@ -116,6 +116,7 @@ async function searchOnCollection(titleObj, year, type) {
         posters: 1,
         trailers: 1,
         watchOnlineLinks: 1,
+        subtitles: 1,
         genres: 1,
         rating: 1,
         duration: 1,
@@ -164,7 +165,7 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, type, apiData) {
+async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -196,6 +197,14 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
                 db_data.sources = newSources;
                 updateFields.sources = newSources;
             }
+        }
+
+        if (subtitles.length > 0) {
+            let temp = [...db_data.subtitles, ...subtitles];
+            temp = temp.sort((a, b) =>
+                Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
+            );
+            updateFields.subtitles = temp;
         }
 
         if (db_data.summary.persian.length < site_persianSummary.length) {

@@ -1,7 +1,7 @@
 const {getLatestData} = require("../latestData");
 
-export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks) {
-    let {season, episode, quality, hardSub, dubbed} = getLatestData(siteDownloadLinks, type);
+export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
+    let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);
     type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
     return {
         title: titleObj.title,
@@ -28,12 +28,14 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'link,info'}]
         watchOnlineLinks: watchOnlineLinks,
+        subtitles: subtitles,
         latestData: {
             season: type.includes('movie') ? 0 : season,
             episode: type.includes('movie') ? 0 : episode,
             quality: quality,
             hardSub: hardSub,
-            dubbed: dubbed
+            dubbed: dubbed,
+            subtitle: sub,
         },
         status: type.includes('movie') ? 'ended' : 'unknown',
         releaseDay: "",

@@ -63,7 +63,7 @@ export async function wrapper_module(url, page_count, searchCB) {
 export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null,
                                            extraSearch_match = null, extraSearch_getFileSize = null, sourceLinkData = null, extraChecker = null) {
     try {
-        let {$, links} = await getLinks(page_link, sourceLinkData);
+        let {$, links, subtitles} = await getLinks(page_link, sourceLinkData);
         if ($ === null) {
             return null;
         }
@@ -115,7 +115,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
             }
         }
         await Promise.all(promiseArray);
-        return {save_link: save_link, $2: $};
+        return {save_link: save_link, $2: $, subtitles};
     } catch (error) {
         saveError(error);
         return null;
@@ -125,6 +125,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
 async function getLinks(url, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
+    let subtitles = [];
     try {
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
         let $, links = [];
@@ -145,6 +146,7 @@ async function getLinks(url, sourceLinkData = null) {
                 let pageData = await getPageData(url);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
+                    subtitles = pageData.subtitles;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
                 }
@@ -161,10 +163,10 @@ async function getLinks(url, sourceLinkData = null) {
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, checkGoogleCache, responseUrl};
+        return {$, links, subtitles, checkGoogleCache, responseUrl};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: [], checkGoogleCache, responseUrl};
+        return {$: null, links: [], subtitles, checkGoogleCache, responseUrl};
     }
 }
 
