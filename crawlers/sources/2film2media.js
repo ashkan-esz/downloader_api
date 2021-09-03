@@ -21,6 +21,9 @@ async function search_title(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`film2media/${type}/${i}/${title}  ========>  `);
             }
+            if (type === 'serial' && !title.includes('فیلم') && !title.includes('سریال')) {
+                type = 'movie';
+            }
             title = purgeTitle(title, type);
             save_title = title.replace(/\s/g, '.');
             collection = (page_link.includes('collection')) ? 'collection' : '';

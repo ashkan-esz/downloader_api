@@ -15,6 +15,8 @@ axiosRetry(axios, {
     retryCondition: (error) => (
         error.code === 'ECONNRESET' ||
         error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNABORTED' ||
+        error.code === 'ETIMEDOUT' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -166,7 +168,8 @@ function getSourceNameByDomain(domain) {
     if (domain.includes('digimovie')) {
         return 'digimoviez';
     }
-    if (domain.includes('film2media') || domain.includes('filmmedia')) {
+    if (domain.includes('film2media') || domain.includes('filmmedia') ||
+        domain.includes('f2m') || domain.includes('fm')) {
         return 'film2media';
     }
     if (domain.includes('film2movie') || domain.includes('filmmovie')) {

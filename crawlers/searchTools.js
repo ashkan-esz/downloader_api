@@ -16,6 +16,7 @@ axiosRetry(axios, {
         error.code === 'ECONNRESET' ||
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
+        error.code === 'ETIMEDOUT' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&

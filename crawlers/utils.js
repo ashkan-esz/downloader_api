@@ -222,7 +222,8 @@ export function checkSource(case1, case2) {
         .split('.')[0];
     let isZarmovie = checkSourceNameAlternative(case1, case2, 'zar', 'zar');
     let isGolchindl = checkSourceNameAlternative(case1, case2, 'golchin', 'golchin');
-    return source_name === new_source_name || isZarmovie || isGolchindl;
+    let film2media = checkSourceNameAlternative(case1, case2, 'film2media', 'f2m');
+    return source_name === new_source_name || isZarmovie || isGolchindl || film2media;
 }
 
 function checkSourceNameAlternative(link1, link2, name1, name2) {

@@ -32,6 +32,9 @@ async function search_title(link, i) {
                 type = 'serial';
             }
 
+            if (title === 'kuroshitsuji') {
+                return;
+            }
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null);
                 if (pageSearchResult) {
@@ -93,7 +96,7 @@ function get_file_size($, link, type) {
         return '';
     } catch (error) {
         saveError(error);
-        return '';
+        return 'ignore';
     }
 }
 
@@ -142,9 +145,13 @@ function get_file_size_serial($, link) {
         }
     }
 
-    let episodeNumber = linkHref
-        .match(/([.\-])\s*\d+\s*(\.bd|\.10bit)*\s*([.\[]+)\d\d\d+p*([.\]])|s\d+e\d+|e\d+/g)[0]
-        .replace(/(\.bd|\.10bit)*\s*([.\[]+)\d\d\d+p*([.\]])|\s|^[.\-]|s\d+e|e/g, '')
+    let episodeMatch = linkHref
+        .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
+    if (!episodeMatch && linkHref.match(/\/movies\.\d\d\d+p\/|\.((ed|op) \d+|\d+\.ova)\.\d\d\d+p\./g)) {
+        return 'ignore';
+    }
+    let episodeNumber = episodeMatch[0]
+        .replace(/(\.v\d+)*(\.bd|\.10bit\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|(\.web\.dual\.audio)*(bia2anime|bitdownload\.ir|\.\d\d\d+p|\.br|\.uncen)\.mkv|\s|^[.\-]|s\d+e|e/g, '')
         .split(/([.\-])/g)[0];
     let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
 
@@ -165,6 +172,9 @@ function get_file_size_serial($, link) {
     }
     quality = quality.includes('p') ? quality : quality !== '' ? quality + 'p' : '';
     quality = replacePersianNumbers(quality);
+    if (quality === '') {
+        quality = '720p';
+    }
 
     return [seasonEpisode, quality, dubbed].filter(value => value).join('.');
 }

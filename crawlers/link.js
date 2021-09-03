@@ -125,5 +125,5 @@ function checkSerialLinkMatch(link) {
         return true;
     }
     return decodedLink.match(
-        /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi);
+        /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi);
 }
