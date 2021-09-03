@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
-const PQueue = require('p-queue');
+const {default: pQueue} = require('p-queue');
 const {check_download_link, getMatchCases, check_format} = require('./link');
 const {getDecodedLink} = require('./utils');
 const {saveError} = require("../saveError");
@@ -32,7 +32,7 @@ export async function wrapper_module(url, page_count, searchCB) {
         _headLessBrowser = checkNeedHeadlessBrowser(url);
 
         const concurrencyNumber = getConcurrencyNumber(url);
-        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
+        const promiseQueue = new pQueue({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
                 let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}`);
@@ -44,8 +44,8 @@ export async function wrapper_module(url, page_count, searchCB) {
                     if (process.env.NODE_ENV === 'dev') {
                         await searchCB($(links[j]), i, $, url);
                     } else {
-                        while (promiseQueue.size > 40) {
-                            await new Promise((resolve => setTimeout(resolve, 2)));
+                        while (promiseQueue.size > 50) {
+                            await new Promise((resolve => setTimeout(resolve, 50)));
                         }
                         promiseQueue.add(() => searchCB($(links[j]), i, $, url));
                     }
@@ -54,8 +54,11 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
-
+        await Sentry.captureMessage('------ here 1');
+        console.log('------ here 1');
         await promiseQueue.onIdle();
+        console.log('------ here 2');
+        await Sentry.captureMessage('------ here 2');
     } catch (error) {
         saveError(error);
     }
