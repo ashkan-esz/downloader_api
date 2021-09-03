@@ -28,21 +28,23 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
 
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
 
-        if (db_data === null && siteDownloadLinks.length > 0) {//new title
-            let result = await addApiData(titleModel, siteDownloadLinks);
-            let insertedId = await insertToDB('movies', result.titleModel);
-            if (insertedId) {
-                let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
-                let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData, 0);
-                if (temp) {
-                    let updateFields = {
-                        staffAndCharactersData: temp.staffAndCharactersData,
-                        actors: temp.actors,
-                        directors: temp.directors,
-                        writers: temp.writers,
-                        castUpdateDate: new Date(),
+        if (db_data === null) {//new title
+            if (siteDownloadLinks.length > 0) {
+                let result = await addApiData(titleModel, siteDownloadLinks);
+                let insertedId = await insertToDB('movies', result.titleModel);
+                if (insertedId) {
+                    let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
+                    let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData, 0);
+                    if (temp) {
+                        let updateFields = {
+                            staffAndCharactersData: temp.staffAndCharactersData,
+                            actors: temp.actors,
+                            directors: temp.directors,
+                            writers: temp.writers,
+                            castUpdateDate: new Date(),
+                        }
+                        await updateByIdDB('movies', insertedId, updateFields);
                     }
-                    await updateByIdDB('movies', insertedId, updateFields);
                 }
             }
             return;

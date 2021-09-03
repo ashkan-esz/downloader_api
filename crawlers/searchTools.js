@@ -56,6 +56,9 @@ export async function wrapper_module(url, page_count, searchCB) {
         }
         await Sentry.captureMessage('------ here 1');
         console.log('------ here 1');
+        await promiseQueue.onEmpty();
+        await Sentry.captureMessage('------ here 1.1');
+        console.log('------ here 1.1');
         await promiseQueue.onIdle();
         console.log('------ here 2');
         await Sentry.captureMessage('------ here 2');
