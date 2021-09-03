@@ -211,6 +211,9 @@ async function getFromGoogleCache(url) {
 function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
     try {
         if (url.includes('digimovie')) {
+            if (pageNumber > 1 && !responseUrl.includes('page')) {
+                return true;
+            }
             for (let i = 0; i < links.length; i++) {
                 let linkText = $(links[i]).text();
                 if (
