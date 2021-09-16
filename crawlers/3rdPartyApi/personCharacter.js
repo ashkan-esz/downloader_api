@@ -1,5 +1,5 @@
 const {searchStaffAndCharactersDB, insertToDB, updateByIdDB} = require('../../dbMethods');
-const {uploadCastImageToS3ByURl} = require('../../cloudStorage');
+const {uploadCastImageToS3ByURl, checkCastImageExist} = require('../../cloudStorage');
 const {getCharactersStaff, getPersonInfo, getCharacterInfo} = require('./jikanApi');
 const {getPersonModel} = require('../models/person');
 const {getCharacterModel} = require('../models/character');
@@ -173,11 +173,11 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
         });
         promiseArray.push(promise);
         if (promiseArray.length > 20) {
-            await Promise.all(promiseArray);
+            await Promise.allSettled(promiseArray);
             promiseArray = [];
         }
     }
-    await Promise.all(promiseArray);
+    await Promise.allSettled(promiseArray);
 
     if (newStaffCharactersArray.length > 0) {
         newStaffCharactersArray = await addImage(newStaffCharactersArray);
@@ -195,11 +195,11 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
             let promise = updateByIdDB(type, updateStaffCharactersArray[i]._id, updateStaffCharactersArray[i]);
             promiseArray.push(promise);
             if (promiseArray.length > 20) {
-                await Promise.all(promiseArray);
+                await Promise.allSettled(promiseArray);
                 promiseArray = [];
             }
         }
-        await Promise.all(promiseArray);
+        await Promise.allSettled(promiseArray);
     }
     return staff_characters;
 }
@@ -266,17 +266,23 @@ async function addImage(dataArray) {
     let promiseArray = [];
     for (let i = 0; i < dataArray.length; i++) {
         if (dataArray[i].originalImages.length > 0) {
-            let promise = uploadCastImageToS3ByURl(dataArray[i].originalImages[0], dataArray[i].name + '.jpg').then(imageUrl => {
-                dataArray[i].image = imageUrl;
-            });
-            promiseArray.push(promise);
-            if (promiseArray.length > 10) {
-                await Promise.all(promiseArray);
-                promiseArray = [];
+            let imageName = dataArray[i].name + '.jpg';
+            let checkImageExistResult = await checkCastImageExist(imageName);
+            if (checkImageExistResult) {
+                dataArray[i].image = checkImageExistResult;
+            } else {
+                let promise = uploadCastImageToS3ByURl(dataArray[i].originalImages[0], imageName).then(imageUrl => {
+                    dataArray[i].image = imageUrl;
+                });
+                promiseArray.push(promise);
+                if (promiseArray.length > 10) {
+                    await Promise.allSettled(promiseArray);
+                    promiseArray = [];
+                }
             }
         }
     }
-    await Promise.all(promiseArray);
+    await Promise.allSettled(promiseArray);
     return dataArray;
 }
 

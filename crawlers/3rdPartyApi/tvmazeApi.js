@@ -13,6 +13,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 .replace(' all seasons', '')
                 .replace(' all', '')
                 .replace(' full episodes', '');
+            title = replaceSpecialCharacters(title);
 
             let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
@@ -35,13 +36,6 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                     }
                 }
                 return null;
-            } else if (error.message && error.message.includes('Request path contains unescaped characters')) {
-                let newTitle = replaceSpecialCharacters(title);
-                if (newTitle !== title) {
-                    return await getTvMazeApiData(newTitle, alternateTitles, titleSynonyms, imdbID, type, canReTry);
-                } else {
-                    return null;
-                }
             } else {
                 await saveError(error);
                 return null;

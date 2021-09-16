@@ -5,6 +5,7 @@ const {
     checkHardSub,
     removeDuplicateLinks,
     purgeQualityText,
+    purgeEncoderText,
     purgeSizeText
 } = require('../utils');
 const save = require('../save_changes_db');
@@ -31,7 +32,7 @@ async function search_title_serial(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, 'serial', get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -40,7 +41,7 @@ async function search_title_serial(link, i) {
                         valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
                     }
 
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, 'serial');
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, 'serial');
                 }
             }
         }
@@ -61,7 +62,7 @@ async function search_title_movie(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, 'movie', get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -71,7 +72,7 @@ async function search_title_movie(link, i) {
                     }
 
                     save_link = removeDuplicateLinks(save_link);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, 'movie');
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, 'movie');
                 }
             }
         }
@@ -198,27 +199,46 @@ function get_file_size_movie($, link) {
     let link_href = $(link).attr('href').toLowerCase();
     let dubbed = checkDubbed(link_href, '') ? 'dubbed' : '';
 
-    let text = $(prevNode).text();
-    let trash = $($(prevNode).children()).text().split(' ');
-    for (let i = 0; i < trash.length; i++) {
-        text = text.replace(trash[i], '');
-    }
-    let text_array = text.replace(/:/g, '').split('  ').filter(value => value !== '' && value !== ' ');
+    let text = $(prevNode).text().replace(/مدت زمان: \d+:\d+:\d+/g, '').replace(/[()]/g, '').trim();
+    let text_array = text.replace(/:\s\s/g, ': ').split('  ').filter(value => value);
 
-    let quality = text_array[0].split(' ');
-    let encoder = text_array[1];
-    let size = (text_array.length > 2) ? text_array[2].replace(/\s/g, '') : '';
-    if (text_array[1].toLowerCase().includes('mb') ||
-        text_array[1].toLowerCase().includes('gb') ||
-        text_array[1].toLowerCase().includes('گیگابایت') ||
-        text_array[1].toLowerCase().includes('مگابایت') ||
-        dubbed === 'dubbed') {
-        encoder = '';
-        size = purgeSizeText(text_array[1]);
+    let quality = purgeQualityText(text_array[0]).split(' ');
+    let size = '', encoder = '';
+
+    if (text_array[0].includes('کیفیت : انکودر :')) {
+        let resolution = link_href.match(/\d\d\d+p|dvdrip/gi);
+        if (resolution) {
+            quality = [resolution.pop()];
+        } else {
+            quality = [];
+        }
+        encoder = purgeEncoderText(purgeQualityText(text_array[0]));
+        size = '';
+    } else if (text_array.length === 2) {
+        if (text_array[1].toLowerCase().includes('حجم') ||
+            text_array[1].toLowerCase().includes('mb') ||
+            text_array[1].toLowerCase().includes('gb') ||
+            text_array[1].toLowerCase().includes('گیگابایت') ||
+            text_array[1].toLowerCase().includes('مگابایت')) {
+            encoder = '';
+            size = purgeSizeText(text_array[1]);
+        } else {
+            encoder = purgeEncoderText(text_array[1]);
+            size = '';
+        }
+    } else if (text_array.length === 3) {
+        encoder = purgeEncoderText(text_array[1]);
+        size = purgeSizeText(text_array[2]);
     }
+
     let info = (quality[2] === '10bit')
         ? [quality[1], ...quality.slice(3), quality[0], quality[2], encoder, dubbed].filter(value => value).join('.')
         : [quality[1], ...quality.slice(2), quality[0], bit10, encoder, dubbed].filter(value => value).join('.');
+    info = info
+        .replace('4K.WEB-DL.10bit', '10bit.4K.WEB-DL')
+        .replace('WEB-ًRIP.10bit', '10bit.WEB-RIP')
+        .replace('WEB-DL.10bit', '10bit.WEB-DL')
+        .replace('BluRay.10bit', '10bit.BluRay');
     return [info, size].filter(value => value !== '').join(' - ');
 }
 

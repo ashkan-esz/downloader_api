@@ -5,7 +5,7 @@ const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const getCollection = require('../../mongoDB');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
-const {removeDuplicateElements} = require('../utils');
+const {removeDuplicateElements, replaceSpecialCharacters} = require('../utils');
 const {saveError} = require('../../saveError');
 const {dataConfig} = require("../../routes/configs");
 
@@ -19,6 +19,7 @@ axiosRetry(axios, {
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
         error.code === 'ETIMEDOUT' ||
+        error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -182,12 +183,12 @@ function handleTitleUpdate(db_data, updateFields, titleObj, siteType) {
 async function handleApiCalls(titleData) {
     let omdbApiData, tvmazeApiData;
     if (titleData.type.includes('serial')) {
-        let results = await Promise.all([
+        let results = await Promise.allSettled([
             handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
             handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze')
         ]);
-        omdbApiData = results[0];
-        tvmazeApiData = results[1];
+        omdbApiData = results[0].value;
+        tvmazeApiData = results[1].value;
     } else {
         omdbApiData = await handle_OMDB_TvMaze_ApiCall(titleData, 'omdb');
         tvmazeApiData = null;
@@ -203,15 +204,18 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
     if (result) {
         return result;
     } else {
-        let alternateTitlesSize = Math.min(titleData.alternateTitles.length, 2);
-        for (let i = 0; i < alternateTitlesSize; i++) {
-            if (titleData.alternateTitles[i].toLowerCase() === searchTitle.toLowerCase()) {
-                continue;
-            }
-            let newAlternateTitles = [...titleData.alternateTitles, titleData.rawTitle];
+        let japaneseRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/gi;
+        searchTitle = replaceSpecialCharacters(searchTitle.toLowerCase());
+        let alternateTitles = titleData.alternateTitles
+            .map(item => replaceSpecialCharacters(item.toLowerCase()))
+            .filter(item => item !== searchTitle && !item.match(japaneseRegex));
+        alternateTitles = removeDuplicateElements(alternateTitles);
+
+        let newAlternateTitles = [...alternateTitles, titleData.rawTitle];
+        for (let i = 0; i < alternateTitles.length; i++) {
             result = (apiName === 'omdb')
-                ? await getOMDBApiData(titleData.alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
-                : await getTvMazeApiData(titleData.alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
+                ? await getOMDBApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
+                : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
             if (result) {
                 return result;
             }
@@ -299,7 +303,11 @@ async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
                 jikanID: jikanRelatedTitles[i].jikanID
             }, {projection: dataConfig['medium']});
             if (searchResult) {
-                newRelatedTitles.push(searchResult);
+                let relatedTitleData = {
+                    ...jikanRelatedTitles[i],
+                    ...searchResult
+                };
+                newRelatedTitles.push(relatedTitleData);
             } else {
                 newRelatedTitles.push(jikanRelatedTitles[i]);
             }

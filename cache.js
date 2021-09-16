@@ -22,13 +22,13 @@ let seriesOfWeek1 = null; // 1 * ~100
 export async function setCache_all() {
     return new Promise(async (resolve, reject) => {
         try {
-            await Promise.all([
+            await Promise.allSettled([
                 setCache_news(),
                 setCache_updates(),
                 setCache_TopLikes(),
                 setCache_Trailers(),
             ]);
-            await Promise.all([
+            await Promise.allSettled([
                 setCache_SeriesOfDay(),
                 setCache_seriesOfWeek(),
             ]);

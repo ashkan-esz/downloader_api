@@ -50,12 +50,12 @@ async function search_title(link, i) {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
                     extraSearch_match, extraSearch_getFileSize);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     title = replaceShortTitleWithFull(title, type);
                     type = fixWrongType2(title, type);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
                 }
             }
         }
@@ -118,6 +118,10 @@ function get_file_size_serial($, link) {
         ? $($(link).parent().prev().children()[0]).children()
         : $($(link).parent().parent().parent().parent().prev().children()[0]).children();
 
+    if (infoNodeChildren.text() === '') {
+        infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
+    }
+
     let linkHref = $(link).attr('href').toLowerCase();
     let infoText = replacePersianNumbers($(infoNodeChildren[1]).text());
     infoText = purgeQualityText(infoText).replace('قسمت ', '');
@@ -135,7 +139,10 @@ function get_file_size_serial($, link) {
             let episodes = linkText.split('و');
             seasonEpisode = 'S' + seasonNumber + 'E' + episodes[0] + '-' + episodes[1];
         } else {
-            let episodeNumber = getDecodedLink(linkHref).match(/\[\d+(\.\d)*]|e\d+(\.\d[^\d])*/g)[0].replace(/[\[\]e]/g, '');
+            let episodeNumber = getDecodedLink(linkHref)
+                .replace('/nine9anime', '')
+                .match(/-\s*\d+\s*\[\d\d\d+]\.mkv|\[\d+(\.\d)*]|e\d+(\.\d[^\d])*/g)[0]
+                .replace(/\[720]\.mkv|[\[\]e\-]/g, '').trim();
             seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
         }
         ova = '';
@@ -156,6 +163,13 @@ function get_file_size_serial($, link) {
     }
     let quality = purgeQualityText($(infoNodeChildren[2]).text());
     quality = replacePersianNumbers(quality);
+    if (quality === '') {
+        let resolution = linkHref.match(/\.\d\d\d+\.nineanime\.ir\.mkv/g);
+        if (resolution) {
+            quality = resolution.pop().replace('nineanime.ir.mkv', '').replace(/\./g, '');
+        }
+    }
+
     quality = quality.match(/\d\d\d+p/g) ? quality : quality + 'p';
     let temp = $(infoNodeChildren[3]).text().toLowerCase();
     let sizeText = temp.includes('mb') || temp.includes('gb') ? temp : '';
@@ -221,7 +235,7 @@ function extraSearch_match($, link, title) {
 function extraSearch_getFileSize($, link, type, sourceLinkData) {
     try {
         let linkHref = getDecodedLink($(link).attr('href').toLowerCase());
-        if (linkHref.match(/^\.+\/\.*$/g)) {
+        if (linkHref.match(/^\.+\/\.*$/g) || !linkHref.match(/\.(mkv|mp4|avi|mov|flv|wmv)$/g)) {
             return 'ignore';
         }
         let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : 'HardSub';

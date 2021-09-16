@@ -4,6 +4,7 @@ const {getEpisodeModel} = require("../models/episode");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
+const apiKeyArray = getApiKeys();
 let apiKeyCounter = -1;
 
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
@@ -13,11 +14,12 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
             .replace(' all seasons', '')
             .replace(' all', '')
             .replace(' full episodes', '');
+        title = replaceSpecialCharacters(title);
 
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
-        let url = `https://www.omdbapi.com/?t=${title}&type=${searchType}&plot=full`;
-        let data = await handle_OMDB_ApiKeys(url, title);
+        let url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${searchType}&plot=full`;
+        let data = await handle_OMDB_ApiKeys(url);
         if (data === null) {
             if (canRetry) {
                 let newTitle = getEditedTitle(title);
@@ -50,7 +52,7 @@ function getEditedTitle(title) {
     return title
         .replace('!', '')
         .replace('arc', 'ark')
-        .replace('5', 'go')
+        .replace('5 ', 'go ')
         .replace('hunter x hunter movie 1 phantom rouge', 'gekijouban hunter x hunter fantomu ruju')
         .replace('date a bullet dead or bullet', 'date a bullet zenpen dead or bullet')
         .replace('ookami', 'okami')
@@ -109,7 +111,7 @@ export function getOMDBApiFields(data, type) {
             summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
             genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()) : [],
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
-            omdbTitle: data.Title,
+            omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
             updateFields: {
                 imdbID: data.imdbID,
                 rawTitle: data.Title.trim(),
@@ -176,7 +178,7 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
                 }
             }
         }
-        await Promise.all(promiseArray);
+        await Promise.allSettled(promiseArray);
         seasons = seasons.sort((a, b) => (a.season > b.season ? 1 : -1));
         episodes = episodes.sort((a, b) => {
             return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
@@ -252,9 +254,8 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type
     );
 }
 
-async function handle_OMDB_ApiKeys(url, title = '') {
+async function handle_OMDB_ApiKeys(url) {
     try {
-        const apiKeyArray = getApiKeys();
         let startTime = new Date();
         let response;
         while (true) {
@@ -272,16 +273,6 @@ async function handle_OMDB_ApiKeys(url, title = '') {
                     let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
                     if (timeElapsed > 12) {
                         await Sentry.captureMessage('more omdb api keys are needed');
-                        return null;
-                    }
-                } else if (
-                    (error.response && error.response.status === 403) ||
-                    (error.message && error.message.includes('Request path contains unescaped characters'))
-                ) {
-                    let newTitle = replaceSpecialCharacters(title);
-                    if (newTitle !== title) {
-                        url = url.replace(title, newTitle);
-                    } else {
                         return null;
                     }
                 } else {
@@ -328,6 +319,12 @@ function getApiKeys() {
             '856f0de4', '930fe2e3', '390aedbb', '81fe29fc', '726e3575', //90
             '3a04471b', 'ea06efba', '98b427fe', '9b330979', 'ba299dd2',
             '742775ae', 'a0035fc1', '2700d178', '594f47cc', 'b014fdb6', //100
+            'fe432541', '1506db1d', 'aa6bea99', '27d3d10e', 'a3f6a70b',
+            '409b3313', '6aa8e964', 'ee416919', '55648b97', 'e26a6de2', //110
+            '59980ba5', '65e0c6c2', 'e6bfba0d', '273613f', '978e93e5',
+            '114613b3', '90394d7b', 'c8875658', '3b8624dd', '723d9b17', //120
+            'e776834', 'c25556f4', '34b5906d', '61f5d3c3', '100a3c4e',
+            '4b4aa804', '11164b7d', '222277fe', '7df25e0e', 'b39467bd', //130
         ]
     );
 }

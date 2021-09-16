@@ -6,7 +6,13 @@ export function purgeTitle(title, type) {
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
-    title = title.replace('شماره ۱', '').replace('دوبله فارسی انیمیشن 2 ', ' ').replace('فیلم 1', '').replace(/سینمایی \d/g, '');
+    title = title
+        .replace('شماره ۱', '')
+        .replace('دوبله فارسی انیمیشن 2 ', ' ')
+        .replace('فیلم 100', '100')
+        .replace('فیلم 1', '')
+        .replace(/سینمایی \d/g, '');
+
     let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
     if (title.includes('قسمت های ویژه') && !title.toLowerCase().includes('ova')) {
         title_array.push('OVA');
@@ -43,7 +49,7 @@ export function purgeTitle(title, type) {
 
     let firstPart = title_array[0];
     let thirdPart = title_array.length > 1 ? title_array[2] : '';
-    let lastPart = title_array[title_array.length - 1];
+    let lastPart = title_array.length > 2 ? title_array[title_array.length - 1] : '';
     if (
         (firstPart === lastPart && !isNaN(firstPart)) ||
         (thirdPart && firstPart === thirdPart && Number(firstPart) < 5)
@@ -56,20 +62,22 @@ export function purgeTitle(title, type) {
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;:…\/☆★♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
-        .replace(/["'’‘.:?!#,()~♥△Ωωψ]/g, '')
+        .replace(/[;:·\/☆★°♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
+        .replace(/["'’‘٫.:?¿!#%,()~♥△Ωωψ]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
+        .replace('½', ' 1/2')
         .replace(/&/g, 'and')
         .replace('∞', ' infinity')
-        .replace(/[áåä@]/g, 'a')
+        .replace(/[áåäà@æ]/g, 'a')
         .replace(/[éëèē]/g, 'e')
         .replace('†', 't')
         .replace(/[ß♭]/g, 'b')
-        .replace('ç', 'c')
-        .replace('ş', 's')
-        .replace(/[ôöøóō◯]/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/ş/g, 's')
+        .replace(/[ôöøóō◯õ]/g, 'o')
         .replace(/[üúû]/g, 'u')
+        .replace(/ñ/g, 'n')
         .replace(/[ıí]/g, 'i')
         .replace(/(^|\s)iii/gi, ' 3')
         .replace(' ii', ' 2')
@@ -119,6 +127,7 @@ export function checkDubbed(link, info = '') {
     return (
         link.includes('farsi') ||
         link.includes('dubbed') ||
+        link.includes('duble') ||
         link.includes('دوبله فارسی') ||
         link.includes('زبان : فارسی') ||
         link.includes('زبان فارسی') ||
@@ -341,6 +350,7 @@ export function purgeQualityText(qualityText) {
         .replace('فارسی', '')
         .replace('هاردساب', '')
         .replace('پخش آنلاین', '')
+        .replace('لينک مستقيم', '')
         .replace(/[)(:]/g, '')
         .replace(/web[-_]dl/gi, 'WEB-DL')
         .replace(/webrip/gi, 'WEB-RIP')
@@ -357,21 +367,24 @@ export function purgeSizeText(sizeText) {
         .replace('فایل', '')
         .replace('گیگابایت', 'GB')
         .replace('گیگا بایت', 'GB')
+        .replace('گیگابیت', 'GB')
         .replace('گیگ', 'GB')
         .replace('مگابایت', 'MB')
+        .replace('انکودر', '')
         .replace(/[\s:]/g, '')
         .toUpperCase();
 }
 
 export function purgeEncoderText(encoderText) {
     return encoderText
+        .replace('انتخاب انکودر', '')
         .replace('انکودر', '')
         .replace('انکدر', '')
         .replace('انکود', '')
+        .replace('موسسه', '')
         .replace('لینک های دانلود با زیرنویس فارسی چسبیده', '')
-        .replace(/encoder/gi, '')
-        .replace(':', '')
-        .trim()
+        .replace(/encoder|Unknown|:/gi, '')
+        .trim();
 }
 
 export function persianWordToNumber(text) {

@@ -209,29 +209,50 @@ export async function getCharacterInfo(jikanID) {
 }
 
 function getRelatedTitles(data) {
-    let temp = [];
+    let relatedTitles = [];
     if (data.related.Prequel) {
-        temp.push(...data.related.Prequel);
+        let temp = data.related.Prequel.map(item => {
+            item.relation = 'Prequel';
+            return item;
+        });
+        relatedTitles.push(...temp);
     }
     if (data.related.Sequel) {
-        temp.push(...data.related.Sequel);
+        let temp = data.related.Sequel.map(item => {
+            item.relation = 'Sequel';
+            return item;
+        });
+        relatedTitles.push(...temp);
     }
     if (data.related['Side story']) {
-        temp.push(...data.related['Side story']);
+        let temp = data.related['Side Story'].map(item => {
+            item.relation = 'Side Story';
+            return item;
+        });
+        relatedTitles.push(...temp);
     }
     if (data.related['Parent story']) {
-        temp.push(...data.related['Parent story']);
+        let temp = data.related['Parent story'].map(item => {
+            item.relation = 'Parent Story';
+            return item;
+        });
+        relatedTitles.push(...temp);
     }
     if (data.related['Spin-off']) {
-        temp.push(...data.related['Spin-off']);
+        let temp = data.related['Spin-off'].map(item => {
+            item.relation = 'Spin-off';
+            return item;
+        });
+        relatedTitles.push(...temp);
     }
-    temp = temp.filter(item => item.type === 'anime');
-    return temp.map(item => {
+    relatedTitles = relatedTitles.filter(item => item.type === 'anime');
+    return relatedTitles.map(item => {
         return ({
             _id: '',
             jikanID: item.mal_id,
             title: replaceSpecialCharacters(item.name.toLowerCase()),
             rawTitle: item.name,
+            relation: item.relation,
         });
     });
 }
@@ -271,7 +292,11 @@ async function handleApiCall(url) {
             } else {
                 if (
                     error.code === 'ECONNABORTED' ||
-                    (error.response && error.response.status !== 404)
+                    (error.response && (
+                        error.response.status !== 404 &&
+                        error.response.status !== 500 &&
+                        error.response.status !== 503
+                    ))
                 ) {
                     await saveError(error);
                 }

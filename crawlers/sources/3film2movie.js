@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {purgeTitle, replacePersianNumbers, getType, checkHardSub, checkDubbed} = require('../utils');
+const {purgeTitle, replacePersianNumbers, getType, checkHardSub, checkDubbed, purgeQualityText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -20,14 +20,17 @@ async function search_title(link, i) {
                 console.log(`film2movie/${type}/${i}/${title}  ========>  `);
             }
             title = purgeTitle(title, type);
+            if (title === 'planet earth 2' && type === 'movie') {
+                type = 'serial';
+            }
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
                 }
             }
         }
@@ -53,17 +56,17 @@ function get_persian_summary($) {
 
 function get_poster($) {
     try {
-        let imgs = $('img');
-        for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs.src;
-            let id = $(imgs[i]).attr('id');
+        let $imgs = $('img');
+        for (let i = 0; i < $imgs.length; i++) {
+            let src = $imgs[i].attribs.src;
+            let id = $($imgs[i]).attr('id');
             if (id && id === 'myimg') {
                 return src;
             }
         }
-        for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs.src;
-            let alt = imgs[i].attribs.alt;
+        for (let i = 0; i < $imgs.length; i++) {
+            let src = $imgs[i].attribs.src;
+            let alt = $imgs[i].attribs.alt;
             if (src.includes('.jpg') && alt.includes('دانلود')) {
                 return src;
             }
@@ -118,9 +121,10 @@ function get_file_size($, link, type) {
     //'480p.BluRay.F2M.HardSub.Censored'  //'720p.BluRay.F2M.Censored'
     try {
         if (type === 'serial') {
-            return get_file_size_serial($, link);
+            return purgeQualityText(get_file_size_serial($, link));
         }
-        return get_file_size_movie($, link)
+        let info = purgeQualityText(get_file_size_movie($, link));
+        return info.replace('BluRay.4K.2160p', '2160p.4K.BluRay');
     } catch (error) {
         saveError(error);
         return "";
@@ -132,9 +136,18 @@ function get_file_size_serial($, link) {
     text = replacePersianNumbers(text);
     let family = (text.includes('Family')) ? 'Censored' : '';
     let text_array = text.split(' ').filter((text) =>
-        !persianRex.hasLetter.test(text) && text !== '' && text !== 'Family');
+        text && text !== 'Family' && !persianRex.hasLetter.test(text));
     text_array.shift();
     let link_href = $(link).attr('href').toLowerCase();
+    if (text_array.length === 1 && text_array[0] === 'x265') {
+        let resolution = link_href.match(/\d\d\d+p/g);
+        if (resolution) {
+            text_array.unshift(resolution.pop());
+        }
+    }
+    if (!text_array.includes('BluRay') && link_href.includes('bluray')) {
+        text_array.push('BluRay');
+    }
     let HardSub = (checkHardSub(text) || checkHardSub(link_href)) ? 'HardSub' : '';
     let dubbed = checkDubbed(text, link_href) ? 'dubbed' : '';
     return [...text_array, HardSub, dubbed, family].filter(value => value !== '').join('.');

@@ -38,12 +38,12 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     save_link = sortLinks(save_link);
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     title = replaceShortTitleWithFull(title);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
                 }
             }
         }
@@ -103,7 +103,7 @@ function get_file_size($, link, type) {
 function get_file_size_serial($, link) {
     let parentNode = link;
     let counter = 0;
-    while (counter < 10) {
+    while (counter < 14) {
         if ($(parentNode).hasClass('dl-body')) {
             break;
         } else {
@@ -116,11 +116,58 @@ function get_file_size_serial($, link) {
     }
     let infoNodeChildren = $(parentNode.prev().children()[0]).children();
 
-    let linkHref = getDecodedLink($(link).attr('href')).toLowerCase();
+    let linkHref = getDecodedLink($(link).attr('href')).toLowerCase().replace(/\.\.+/g, '.');
+    let temp = linkHref.match(/\.mkv/g);
+    if (temp && temp.length > 1) {
+        return 'ignore';
+    }
     let linkText = $(link).text();
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
 
+    let seasonNumber = getSeasonNumber($, infoNodeChildren, linkHref);
+
+    let episodeMatch = linkHref
+        .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
+    if (!episodeMatch && linkHref.match(/\/movies\.\d\d\d+p\/|\.((ed|op) \d+|\d+\.ova)\.\d\d\d+p\./g)) {
+        return 'ignore';
+    }
+    if (episodeMatch && episodeMatch[0].match(/\.\d+\.(bitdownload\.ir|bia2anime)\.mkv/g)) {
+        episodeMatch[0] = episodeMatch[0]
+            .replace('.bitdownload', '.480p.bitdownload')
+            .replace('.bia2anime', '.480p.bia2anime');
+    }
+    let episodeNumber = episodeMatch[0]
+        .replace(/\s*(\.bd|\.10bit\.special)*\s*([.\[]+)[1-9]\d\d+p*([.\]])(?!(\d\d\d+p))|(\.web\.dual\.audio)*(bia2anime|bitdownload\.ir|\.\d\d\d+p|\.br|\.uncen)\.mkv|\s|^[.\-]|s\d+e|e/g, '')
+        .split(/([.\-])/g)[0];
+    let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
+
+    let seasonPart = '';
+    let seasonPartMatch = linkHref.match(/part\s*\d/g);
+    if (seasonPartMatch) {
+        let temp = seasonPartMatch.pop();
+        if (temp === 'part2' && linkHref.includes('shingeki.no.kyojin.s3.part2')) {
+            seasonEpisode = 'S' + seasonNumber + 'E' + (Number(episodeNumber) + 12);
+        } else {
+            seasonPart = temp;
+        }
+    }
+
+    let quality = getQuality($, infoNodeChildren, linkHref, linkText);
+
+    return [seasonEpisode, seasonPart, quality, dubbed].filter(value => value).join('.');
+}
+
+function sortLinks(links) {
+    return links.sort((a, b) => {
+        let a_SE = getSeasonEpisode(a.info);
+        let b_SE = getSeasonEpisode(b.info);
+        return ((a_SE.season > b_SE.season) || (a_SE.season === b_SE.season && a_SE.episode > b_SE.episode)) ? 1 : -1;
+    });
+}
+
+function getSeasonNumber($, infoNodeChildren, linkHref) {
     let seasonText = replacePersianNumbers($(infoNodeChildren[0]).text().toLowerCase());
+    seasonText = seasonText.replace(/[()]/g, '').replace('بخش اول', '').replace('بخش دوم', '');
     let seasonNumber = persianWordToNumber(seasonText);
     if (seasonNumber === 0) {
         if (seasonText.includes('فصل')) {
@@ -144,20 +191,13 @@ function get_file_size_serial($, link) {
             seasonNumber = 1;
         }
     }
+    return seasonNumber;
+}
 
-    let episodeMatch = linkHref
-        .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
-    if (!episodeMatch && linkHref.match(/\/movies\.\d\d\d+p\/|\.((ed|op) \d+|\d+\.ova)\.\d\d\d+p\./g)) {
-        return 'ignore';
-    }
-    let episodeNumber = episodeMatch[0]
-        .replace(/(\.v\d+)*(\.bd|\.10bit\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|(\.web\.dual\.audio)*(bia2anime|bitdownload\.ir|\.\d\d\d+p|\.br|\.uncen)\.mkv|\s|^[.\-]|s\d+e|e/g, '')
-        .split(/([.\-])/g)[0];
-    let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
-
+function getQuality($, infoNodeChildren, linkHref, linkText) {
     let quality;
-    if (linkText.match(/\d\d\d+p*/gi)) {
-        quality = purgeQualityText(linkText);
+    if (linkText.match(/\d\d\d+p/gi)) {
+        quality = purgeQualityText(linkText.match(/\d\d\d+p/gi).pop());
     } else {
         let qualityText = $(infoNodeChildren[1]).text();
         qualityText = qualityText.match(/\d\d\d+p*/gi) ? qualityText : $(infoNodeChildren[2]).text();
@@ -171,20 +211,11 @@ function get_file_size_serial($, link) {
         quality = purgeQualityText(qualityText);
     }
     quality = quality.includes('p') ? quality : quality !== '' ? quality + 'p' : '';
-    quality = replacePersianNumbers(quality);
+    quality = replacePersianNumbers(quality).replace(/\s+/g, '.');
     if (quality === '') {
         quality = '720p';
     }
-
-    return [seasonEpisode, quality, dubbed].filter(value => value).join('.');
-}
-
-function sortLinks(links) {
-    return links.sort((a, b) => {
-        let a_SE = getSeasonEpisode(a.info);
-        let b_SE = getSeasonEpisode(b.info);
-        return ((a_SE.season > b_SE.season) || (a_SE.season === b_SE.season && a_SE.episode > b_SE.episode)) ? 1 : -1;
-    });
+    return quality;
 }
 
 function replaceShortTitleWithFull(title, type) {

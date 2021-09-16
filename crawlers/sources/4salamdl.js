@@ -23,11 +23,11 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
                 }
             }
         }
@@ -147,7 +147,7 @@ function get_file_size_serial($, link) {
     if (filtered_text_array.length === 0) {
         let link_href = $(link).attr('href').toLowerCase().replace(/[/_\s]/g, '.');
         let link_href_array = link_href.split('.');
-        let seasonEpisode_match = link_href.match(/s\d\de\d\d/g);
+        let seasonEpisode_match = link_href.match(/s\d+e\d+/g);
         if (seasonEpisode_match) {
             let seasonEpisode = seasonEpisode_match.pop();
             let index = link_href_array.indexOf(seasonEpisode);
@@ -171,7 +171,10 @@ function get_file_size_serial($, link) {
             }
         }
     }
-    let info = [text_array[1], ...text_array.slice(2), bit10, text_array[0]].filter(value => value).join('.');
+    let info = text_array[0].match(/\d\d\d+p/g)
+        ? [...text_array, bit10].filter(value => value).join('.')
+        : [text_array[1], ...text_array.slice(2), bit10, text_array[0]].filter(value => value).join('.');
+    info = info.replace('WEB-DL.x265', 'x265.WEB-DL').replace('WEB-DL.10bit', '10bit.WEB-DL');
     return [info, size].filter(value => value).join(' - ');
 }
 

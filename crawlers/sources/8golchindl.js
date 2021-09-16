@@ -6,7 +6,8 @@ const {
     checkHardSub,
     purgeSizeText,
     purgeQualityText,
-    purgeEncoderText
+    purgeEncoderText,
+    getDecodedLink
 } = require('../utils');
 const persianRex = require('persian-rex');
 const save = require('../save_changes_db');
@@ -23,6 +24,12 @@ async function search_title(link, i) {
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
             let page_link = link.attr('href');
             let type = getType(title);
+            title = getDecodedLink(link.attr('href'))
+                .replace(/\/$/g, '')
+                .split('/')
+                .pop()
+                .replace(/-/g, ' ')
+                .trim();
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`golchindl/${type}/${i}/${title}  ========>  `);
             }
@@ -30,10 +37,10 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
                 }
             }
         }
@@ -92,35 +99,41 @@ function get_file_size($, link, type) {
 
 function get_file_size_serial($, link) {
     let infoText = $($(link).parent()[0]).text();
-    let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
+    let linkHref = $(link).attr('href');
+    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let splitInfoText = infoText.split(' – ');
     let quality, encoder;
     if (splitInfoText[0].includes('کیفیت')) {
         let qualityText = splitInfoText[0].split('کیفیت')[1].trim().split(' ');
         quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
+        quality = purgeQualityText(quality);
         encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
     } else if (splitInfoText[0].includes('«')) {
-        quality = splitInfoText[0]
-            .split('«')[1]
-            .replace('لينک مستقيم', '')
-            .replace('»:', '')
-            .trim()
-            .split(' ')
-            .join('.');
+        quality = splitInfoText[0].split('«')[1].replace('»:', '');
+        quality = purgeQualityText(quality).replace(/\s+/g, '.');
         encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
     } else {
         let linkHref = $(link).attr('href').split('.');
         linkHref.pop();
-        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/S\d\dE\d\d|S\dE\d\d/g)));
+        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/s\d+e\d+/gi)));
         quality = linkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
+        quality = purgeQualityText(quality);
         encoder = '';
+    }
+    let linkHrefQualityMatch = linkHref.match(/bluray|webdl|web-dl|webrip|web-rip/gi);
+    if (!quality.match(/bluray|webdl|web-dl|webrip|web-rip/gi) && linkHrefQualityMatch) {
+        quality = quality + '.' + linkHrefQualityMatch.pop();
+        quality = purgeQualityText(quality);
+    }
+    if (quality.includes('10bit')) {
+        bit10 = '';
     }
     return [quality, bit10, encoder, hardSub, dubbed]
         .filter(value => value)
         .join('.')
-        .replace('.x265.Web-dl.10bit', '.x265.10bit.Web-dl');
+        .replace('WEB-DL.10bit', '10bit.WEB-DL');
 }
 
 function get_file_size_movie($, link) {

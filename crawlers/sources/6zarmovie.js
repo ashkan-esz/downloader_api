@@ -31,11 +31,11 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, getQualitySample);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
                 }
             }
         }
@@ -134,24 +134,33 @@ function get_file_size_serial($, link) {
 
 function get_file_size_movie($, link) {
     let infoNodeChildren = $(link).parent().prev().children();
-    let hardSub = checkHardSub($(infoNodeChildren[0]).text()) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), $(infoNodeChildren[0]).text()) ? 'dubbed' : '';
-    if (hardSub || dubbed) {
+    let linkHref = $(link).attr('href');
+    let hardSub = (checkHardSub(linkHref) || checkHardSub($(infoNodeChildren[0]).text())) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, $(infoNodeChildren[0]).text()) ? 'dubbed' : '';
+    if (hardSub && dubbed) {
+        infoNodeChildren = infoNodeChildren.slice(2);
+    } else if (hardSub || dubbed) {
         infoNodeChildren = infoNodeChildren.slice(1);
     }
     let qualityText = purgeQualityText($(infoNodeChildren[0]).text()).split(' ');
     let quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
     if (!quality) {
-        let linkHref = $(link).attr('href').split('.');
-        linkHref.pop();
-        linkHref.pop();
-        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/\d\d\d\dp|\d\d\dp/g)));
-        quality = linkHref.slice(seasonEpisodeIndex).join('.').replace('.HardSub', '');
+        let splitLinkHref = linkHref.split('.');
+        splitLinkHref.pop();
+        splitLinkHref.pop();
+        let seasonEpisodeIndex = splitLinkHref.findIndex((value => value.match(/\d\d\d\dp|\d\d\dp/g)));
+        quality = splitLinkHref.slice(seasonEpisodeIndex).join('.').replace('.HardSub', '');
     }
     let size = purgeSizeText($(infoNodeChildren[1]).text());
     let encoder = purgeEncoderText($(infoNodeChildren[3]).text());
-    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.')
-        .replace('.MkvCage.MkvCage', '.MkvCage');
+    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
+    info = info.replace('.MkvCage.MkvCage', '.MkvCage');
+    if (info.startsWith('FULL-HD')) {
+        let resolution = linkHref.match(/\d\d\d+p/g);
+        if (resolution) {
+            info = resolution.pop() + '.' + info;
+        }
+    }
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -161,9 +170,11 @@ function getQualitySample($, link, type) {
             return '';
         }
         let nextNode = $(link).next()[0];
-        let sampleUrl = nextNode.attribs['data-imgqu'];
-        if (sampleUrl.includes('.jpg')) {
-            return sampleUrl;
+        if (nextNode) {
+            let sampleUrl = nextNode.attribs['data-imgqu'];
+            if (sampleUrl && sampleUrl.includes('.jpg')) {
+                return sampleUrl;
+            }
         }
         return '';
     } catch (error) {

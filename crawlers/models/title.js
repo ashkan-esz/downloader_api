@@ -28,7 +28,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'link,info'}]
         watchOnlineLinks: watchOnlineLinks,
-        subtitles: subtitles,
+        subtitles: [],
         latestData: {
             season: type.includes('movie') ? 0 : season,
             episode: type.includes('movie') ? 0 : episode,

@@ -17,6 +17,7 @@ axiosRetry(axios, {
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
         error.code === 'ETIMEDOUT' ||
+        error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -54,14 +55,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
-        await Sentry.captureMessage('------ here 1');
-        console.log('------ here 1');
-        await promiseQueue.onEmpty();
-        await Sentry.captureMessage('------ here 1.1');
-        console.log('------ here 1.1');
         await promiseQueue.onIdle();
-        console.log('------ here 2');
-        await Sentry.captureMessage('------ here 2');
     } catch (error) {
         saveError(error);
     }
@@ -70,7 +64,7 @@ export async function wrapper_module(url, page_count, searchCB) {
 export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null,
                                            extraSearch_match = null, extraSearch_getFileSize = null, sourceLinkData = null, extraChecker = null) {
     try {
-        let {$, links, subtitles} = await getLinks(page_link, sourceLinkData);
+        let {$, links, subtitles, cookies} = await getLinks(page_link, sourceLinkData);
         if ($ === null) {
             return null;
         }
@@ -88,7 +82,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
                 let link_info = get_file_size($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    save_link.push({link: link, info: link_info, qualitySample: qualitySample});
+                    save_link.push({link: link.trim(), info: link_info, qualitySample: qualitySample});
                 }
             } else if (link && !sourceLinkData && extraSearch_match && extraSearch_match($, links[j], title, type)) {
                 if (extraSearchLinks.includes(link)) {
@@ -116,13 +110,13 @@ export async function search_in_title_page(title, page_link, type, get_file_size
                 });
                 promiseArray.push(resultPromise);
                 if (promiseArray.length > 5) {
-                    await Promise.all(promiseArray);
+                    await Promise.allSettled(promiseArray);
                     promiseArray = [];
                 }
             }
         }
-        await Promise.all(promiseArray);
-        return {save_link: save_link, $2: $, subtitles};
+        await Promise.allSettled(promiseArray);
+        return {save_link: save_link, $2: $, subtitles, cookies};
     } catch (error) {
         saveError(error);
         return null;
@@ -133,8 +127,12 @@ async function getLinks(url, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let subtitles = [];
+    let cookies = {};
     try {
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
+        if (url.includes('/page/')) {
+            url = url + '/';
+        }
         let $, links = [];
         if (!_headLessBrowser || (sourceLinkData && sourceLinkData.sourceLink.includes('anime-list'))) {
             try {
@@ -154,6 +152,7 @@ async function getLinks(url, sourceLinkData = null) {
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     subtitles = pageData.subtitles;
+                    cookies = pageData.cookies;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
                 }
@@ -170,10 +169,10 @@ async function getLinks(url, sourceLinkData = null) {
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, subtitles, checkGoogleCache, responseUrl};
+        return {$, links, subtitles, cookies, checkGoogleCache, responseUrl};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: [], subtitles, checkGoogleCache, responseUrl};
+        return {$: null, links: [], subtitles, cookies, checkGoogleCache, responseUrl};
     }
 }
 

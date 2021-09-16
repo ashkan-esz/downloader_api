@@ -17,6 +17,7 @@ axiosRetry(axios, {
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
         error.code === 'ETIMEDOUT' ||
+        error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -234,9 +235,9 @@ async function updateValaMovieTrailers(valaMovieTrailerUrls) {
         }
 
         if (promiseArray.length === 100) {
-            await Promise.all(promiseArray);
+            await Promise.allSettled(promiseArray);
             promiseArray = [];
         }
     }
-    await Promise.all(promiseArray);
+    await Promise.allSettled(promiseArray);
 }

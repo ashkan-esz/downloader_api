@@ -4,6 +4,7 @@ const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
+const {getUploadedAnimeListSubtitles, handleSubtitleUpdate} = require("./subtitle");
 const {getTitleModel} = require("./models/title");
 const {getJikanApiData} = require("./3rdPartyApi/jikanApi");
 const {saveError} = require("../saveError");
@@ -13,7 +14,7 @@ const {saveError} = require("../saveError");
 //todo : handle insert_date - update_date for upcoming title
 
 
-module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, type) {
+module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
     try {
         let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
 
@@ -27,9 +28,11 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         }
 
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
+        let uploadedSubtitles = await getUploadedAnimeListSubtitles(page_link, subtitles, cookies);
 
         if (db_data === null) {//new title
             if (siteDownloadLinks.length > 0) {
+                titleModel.subtitles = uploadedSubtitles;
                 let result = await addApiData(titleModel, siteDownloadLinks);
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
@@ -54,10 +57,10 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
         let apiData = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
-            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData);
+            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData);
         } else if (siteDownloadLinks.length > 0) {
             //new source
-            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData);
+            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData);
         }
 
     } catch (error) {
@@ -167,7 +170,7 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, subtitles, type, apiData) {
+async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -201,14 +204,6 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             }
         }
 
-        if (subtitles.length > 0) {
-            let temp = [...db_data.subtitles, ...subtitles];
-            temp = temp.sort((a, b) =>
-                Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
-            );
-            updateFields.subtitles = temp;
-        }
-
         if (db_data.summary.persian.length < site_persianSummary.length) {
             let currentSummary = updateFields.summary;
             if (currentSummary === undefined) {
@@ -231,6 +226,13 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
             updateFields.update_date = new Date();
+        }
+
+        if (uploadedSubtitles.length > 0) {
+            let mergedSubtitles = handleSubtitleUpdate(db_data.subtitles, uploadedSubtitles);
+            if (db_data.subtitles.length !== mergedSubtitles.length) {
+                updateFields.subtitles = mergedSubtitles;
+            }
         }
 
         if (apiData) {

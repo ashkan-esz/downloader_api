@@ -5,6 +5,8 @@ const {
     checkDubbed,
     checkHardSub,
     removeDuplicateLinks,
+    replacePersianNumbers,
+    purgeQualityText,
     purgeSizeText,
     purgeEncoderText
 } = require('../utils');
@@ -30,12 +32,12 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles} = pageSearchResult;
+                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
                     let watchOnlineLinks = getWatchOnlineLinks($2);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, type);
+                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, cookies, type);
                 }
             }
         }
@@ -141,24 +143,32 @@ function get_file_size($, link, type) {
 }
 
 function get_file_size_serial($, link) {
-    let infoNodeChildren = $($(link).parent().parent().parent().prev().children()[0]).children();
+    let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
-    let quality = $(infoNodeChildren[1]).text()
+    let quality = $(infoNodeChildren[2]).text()
         .replace('کیفیت', '').trim()
         .replace(' x264', '')
         .replace(' -', '')
         .replace(/\s/g, '.');
+    quality = replacePersianNumbers(quality);
+    quality = purgeQualityText(quality);
     let qualitySplit = quality.split('.');
     if (qualitySplit.length > 1 &&
         qualitySplit[0] === 'x265' &&
-        qualitySplit[1].match(/\d\d\d\dp|\d\d\dp/g)) {
+        qualitySplit[1].match(/\d\d\d+p/g)) {
         quality = [qualitySplit[1], qualitySplit[0], ...qualitySplit.slice(2)].filter(value => value).join('.');
     }
     let size = '';
     if ($(link).parent()[0].name === 'div') {
         let sizeInfoNodeChildren = $($(link).parent().prev().children()[0]).children();
-        size = purgeSizeText($(sizeInfoNodeChildren[1]).text());
+        for (let i = 0; i < sizeInfoNodeChildren.length; i++) {
+            let sizeText = $(sizeInfoNodeChildren[1]).text();
+            if (sizeText.includes('حجم')) {
+                size = purgeSizeText(sizeText);
+                break;
+            }
+        }
     }
     let info = [quality, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
@@ -166,11 +176,21 @@ function get_file_size_serial($, link) {
 
 function get_file_size_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
-    let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
-    let quality = $(infoNodeChildren[0]).text().replace('#', '').replace('p', 'p.').replace('.x264', '').trim();
-    let size = purgeSizeText($(infoNodeChildren[1]).text());
-    let encoder = purgeEncoderText($(infoNodeChildren[2]).text());
+    let linkHref = $(link).attr('href');
+    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let quality = replacePersianNumbers($(infoNodeChildren[1]).text());
+    quality = quality.replace(/x264|-/g, '').replace(/\s\s+/g, ' ').trim();
+    let linkHrefQualityMatch = linkHref.match(/bluray|webdl|web-dl|webrip|web-rip/gi);
+    if (!quality.match(/bluray|webdl|web-dl|webrip|web-rip/gi) && linkHrefQualityMatch) {
+        quality = quality + ' ' + linkHrefQualityMatch.pop();
+    }
+    quality = purgeQualityText(quality).replace(/\s+/g, '.');
+    if (quality.startsWith('4K.')) {
+        quality = '2160p.' + quality;
+    }
+    let size = purgeSizeText($(infoNodeChildren[2]).text());
+    let encoder = purgeEncoderText($(infoNodeChildren[3]).text());
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     return [info, size].filter(value => value).join(' - ');
 }
