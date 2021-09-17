@@ -104,7 +104,7 @@ export function handleUrlUpdate(thiaSource, page_link) {
 }
 
 function sortPosters(posters) {
-    const posterSources = ['valamovie', 'digimovie', 'film2movie', 'film2media', 'salamdl', 'zar', 'golching', 'anime-list', 'animelist', 'nineanime', 'bia2anime', 'ba2hd'];
+    const posterSources = ['valamovie', 'digimovie', 'film2movie', 'film2media', 'salamdl', 'zar', 'golching', 'avamovie', 'anime-list', 'animelist', 'nineanime', 'bia2anime', 'ba2hd'];
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {
@@ -117,7 +117,7 @@ function sortPosters(posters) {
 }
 
 function sortTrailers(trailers) {
-    const trailerSources = ['valamovie', 'zar', 'digimovie', 'anime-list', 'film2movie', 'salamdl', 'ba2hd', 'animelist', 'nineanime', 'bia2anime', 'golching', 'film2media'];
+    const trailerSources = ['valamovie', 'zar', 'digimovie', 'avamovie', 'anime-list', 'animelist', 'film2movie', 'salamdl', 'ba2hd', 'nineanime', 'bia2anime', 'golching', 'film2media'];
     let trailerQualities = ['1080', '720', '360'];
     let sortedTrailers = [];
 

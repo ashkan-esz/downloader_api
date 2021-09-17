@@ -132,6 +132,9 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
 
     sourcesObject.animelist.movie_url = sourcesUrls[10];
     sourcesObject.animelist.serial_url = getNewURl(sourcesObject.animelist.serial_url, sourcesUrls[10]);
+
+    sourcesObject.avamovie.movie_url = sourcesUrls[11];
+    sourcesObject.avamovie.serial_url = getNewURl(sourcesObject.avamovie.serial_url, sourcesUrls[11]);
 }
 
 async function updateDownloadLinks(sourcesObj, pageCounter_time, changedDomains) {
@@ -201,6 +204,9 @@ function getSourceNameByDomain(domain) {
     }
     if (domain.includes('anime-list') || domain.includes('animelist')) {
         return 'animelist';
+    }
+    if (domain.includes('avamovie')) {
+        return 'avamovie';
     }
     return '';
 }

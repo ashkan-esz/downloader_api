@@ -9,6 +9,7 @@ const golchindl = require('./sources/8golchindl');
 const nineanime = require('./sources/9nineanime');
 const bia2anime = require('./sources/10bia2anime');
 const animelist = require('./sources/11animelist');
+const avamovie = require('./sources/12avamovie');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
@@ -166,6 +167,16 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                     ...sourcesObj.animelist,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.animelist.page_count + daysElapsed,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.animelist.serial_page_count + daysElapsed / 3,
+                });
+            }
+        },
+        {
+            name: 'avamovie',
+            starter: () => {
+                return avamovie({
+                    ...sourcesObj.avamovie,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.avamovie.page_count + daysElapsed,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.avamovie.serial_page_count + daysElapsed / 3,
                 });
             }
         },
