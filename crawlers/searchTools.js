@@ -55,6 +55,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                 saveError(error);
             }
         }
+        await promiseQueue.onEmpty();
         await promiseQueue.onIdle();
     } catch (error) {
         saveError(error);

@@ -224,7 +224,7 @@ function getRelatedTitles(data) {
         relatedTitles.push(...temp);
     }
     if (data.related['Side story']) {
-        let temp = data.related['Side Story'].map(item => {
+        let temp = data.related['Side story'].map(item => {
             item.relation = 'Side Story';
             return item;
         });

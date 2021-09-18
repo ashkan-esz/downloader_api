@@ -15,7 +15,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 .replace(' full episodes', '');
             title = replaceSpecialCharacters(title);
 
-            let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
+            let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
             let titleMatch = checkTitle(data, title, alternateTitles, titleSynonyms, imdbID);
             if (titleMatch) {
@@ -67,7 +67,7 @@ function getEditedTitle(title) {
 }
 
 async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID) {
-    let multiSearcheUrl = `https://api.tvmaze.com/search/shows?q=${title}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
+    let multiSearcheUrl = `https://api.tvmaze.com/search/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
     let data = await handleApiCall(multiSearcheUrl);
     if (!data) {
         return null;
