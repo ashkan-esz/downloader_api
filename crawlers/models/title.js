@@ -25,6 +25,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         seasons: [],
         episodes: [],
         posters: [poster],
+        poster_s3: '',
         summary: {
             persian: persianSummary,
             english: '',

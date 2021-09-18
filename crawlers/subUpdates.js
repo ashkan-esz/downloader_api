@@ -21,22 +21,27 @@ function handlePosterUpdate(db_data, poster) {
         return false;
     }
 
+    let posterExist = false;
+    let posterUpdated = false;
     for (let i = 0; i < db_data.posters.length; i++) {
         if (checkSource(db_data.posters[i], poster)) {//this poster exist
             if (db_data.posters[i] !== poster) { //replace link
                 db_data.posters[i] = poster;
-                db_data.posters = removeDuplicateElements(db_data.posters);
-                return true;
-            } else {
-                return false;
+                posterUpdated = true;
             }
+            posterExist = true;
+            break;
         }
     }
 
-    db_data.posters.push(poster); //new poster
+    if (!posterExist) {
+        db_data.posters.push(poster); //new poster
+    }
+    let prevLength = db_data.posters.length;
+    db_data.posters.push(db_data.poster_s3);
     db_data.posters = removeDuplicateElements(db_data.posters);
     db_data.posters = sortPosters(db_data.posters);
-    return true;
+    return (posterUpdated || !posterExist || prevLength !== db_data.posters.length);
 }
 
 function handleTrailerUpdate(db_data, site_trailers) {
@@ -103,8 +108,8 @@ export function handleUrlUpdate(thiaSource, page_link) {
     return false;
 }
 
-function sortPosters(posters) {
-    const posterSources = ['valamovie', 'digimovie', 'film2movie', 'film2media', 'salamdl', 'zar', 'golching', 'avamovie', 'anime-list', 'animelist', 'nineanime', 'bia2anime', 'ba2hd'];
+export function sortPosters(posters) {
+    const posterSources = ['valamovie', 'digimovie', 'film2movie', 'film2media', 'salamdl', 'zar', 'golching', 'https://poster.', 'avamovie', 'anime-list', 'animelist', 'nineanime', 'bia2anime', 'ba2hd'];
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {

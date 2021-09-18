@@ -53,8 +53,8 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
             return;
         }
 
-        let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         let apiData = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
+        let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
             await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData);

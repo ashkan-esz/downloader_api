@@ -4,7 +4,9 @@ const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const getCollection = require('../../mongoDB');
+const {uploadTitlePosterToS3, checkTitlePosterExist} = require('../../cloudStorage');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
+const {sortPosters} = require('../subUpdates');
 const {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} = require('../utils');
 const {saveError} = require('../../saveError');
 const {dataConfig} = require("../../routes/configs");
@@ -30,6 +32,17 @@ axiosRetry(axios, {
 
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
+
+    let s3poster = await checkTitlePosterExist(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
+    if (s3poster) {
+        titleModel.poster_s3 = s3poster;
+    } else {
+        titleModel.poster_s3 = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
+    }
+    if (titleModel.poster_s3) {
+        titleModel.posters.push(titleModel.poster_s3);
+        titleModel.posters = sortPosters(titleModel.posters);
+    }
 
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
@@ -97,6 +110,17 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
 
     let updateFields = {};
     updateFields.apiUpdateDate = now;
+
+    if (db_data.poster_s3 === '') {
+        let s3poster = await checkTitlePosterExist(db_data.title, db_data.type, db_data.year, db_data.posters);
+        if (s3poster) {
+            db_data.poster_s3 = s3poster
+            updateFields.poster_s3 = s3poster;
+        } else {
+            db_data.poster_s3 = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, db_data.posters);
+            updateFields.poster_s3 = db_data.poster_s3;
+        }
+    }
 
     let titleUpdateResult = handleTitleUpdate(db_data, updateFields, titleObj, siteType);
     db_data = titleUpdateResult.db_data;
