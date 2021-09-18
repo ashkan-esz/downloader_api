@@ -3,15 +3,14 @@ const {uploadCastImageToS3ByURl, checkCastImageExist} = require('../../cloudStor
 const {getCharactersStaff, getPersonInfo, getCharacterInfo} = require('./jikanApi');
 const {getPersonModel} = require('../models/person');
 const {getCharacterModel} = require('../models/character');
-const {replaceSpecialCharacters, removeDuplicateElements} = require('../utils');
+const {replaceSpecialCharacters, removeDuplicateElements, getDatesBetween} = require('../utils');
 const {saveError} = require('../../saveError');
 
 
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
     let now = new Date();
     let apiUpdateDate = new Date(castUpdateDate);
-    let daysBetween = (now.getTime() - apiUpdateDate.getTime()) / (24 * 3600 * 1000);
-    if (daysBetween < 10) {
+    if (getDatesBetween(now, apiUpdateDate).days < 10) {
         return null;
     }
 

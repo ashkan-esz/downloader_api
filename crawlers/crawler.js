@@ -10,6 +10,7 @@ const nineanime = require('./sources/9nineanime');
 const bia2anime = require('./sources/10bia2anime');
 const animelist = require('./sources/11animelist');
 const avamovie = require('./sources/12avamovie');
+const {getDatesBetween} = require('./utils');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
@@ -18,46 +19,66 @@ const {saveError} = require("../saveError");
 
 
 export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = true) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let time1 = new Date();
+    try {
+        let time1 = new Date();
+        resetJikanApiCache(time1);
+        await handleDataBaseStates();
 
-            resetJikanApiCache(time1);
+        let collection = await getCollection('sources');
+        let sourcesObj = await collection.findOne({title: 'sources'});
+        let valaMovieTrailerUrl = "";
 
-            let collection = await getCollection('sources');
-            let sourcesObj = await collection.findOne({title: 'sources'});
-            let valaMovieTrailerUrl = "";
+        let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
-            let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
-
-            if (sourceNumber === -1) {
-                //start from anime sources (11)
-                for (let i = sourcesArray.length - 1; i >= 0; i--) {
-                    let temp = await sourcesArray[i].starter();
-                    if (sourcesArray[i].name === 'valamovie') {
-                        valaMovieTrailerUrl = temp;
-                    }
-                }
-            } else if (sourceNumber <= sourcesArray.length) {
-                let temp = await sourcesArray[sourceNumber - 1].starter();
-                if (sourcesArray[sourceNumber - 1].name === 'valamovie') {
+        if (sourceNumber === -1) {
+            //start from anime sources (11)
+            for (let i = sourcesArray.length - 1; i >= 0; i--) {
+                let temp = await sourcesArray[i].starter();
+                if (sourcesArray[i].name === 'valamovie') {
                     valaMovieTrailerUrl = temp;
                 }
             }
-
-            if (handleDomainChange) {
-                await domainChangeHandler(sourcesObj, valaMovieTrailerUrl);
+        } else if (sourceNumber <= sourcesArray.length) {
+            let temp = await sourcesArray[sourceNumber - 1].starter();
+            if (sourcesArray[sourceNumber - 1].name === 'valamovie') {
+                valaMovieTrailerUrl = temp;
             }
-
-            let time2 = new Date();
-            let crawling_time = time2.getTime() - time1.getTime();
-            await Sentry.captureMessage(`crawling done in : ${crawling_time}ms`);
-            resolve();
-        } catch (error) {
-            await saveError(error);
-            reject();
         }
-    });
+
+        if (handleDomainChange) {
+            await domainChangeHandler(sourcesObj, valaMovieTrailerUrl);
+        }
+
+        let time2 = new Date();
+        await Sentry.captureMessage(`crawling done in : ${getDatesBetween(time2, time1).seconds}s`);
+    } catch (error) {
+        await saveError(error);
+    }
+}
+
+async function handleDataBaseStates() {
+    try {
+        let statesCollection = await getCollection('states');
+        let states = await statesCollection.findOne({name: 'states'});
+        let now = new Date();
+        let lastMonthlyResetDate = new Date(states.lastMonthlyResetDate);
+        if (now.getDate() === 1 && getDatesBetween(now, lastMonthlyResetDate).days > 29) {
+            let moviesCollection = await getCollection('movies');
+            await moviesCollection.updateMany({}, {
+                $set: {
+                    like_month: 0,
+                    view_month: 0,
+                }
+            });
+            await statesCollection.findOneAndUpdate({name: 'states'}, {
+                $set: {
+                    lastMonthlyResetDate: now,
+                }
+            });
+        }
+    } catch (error) {
+        saveError(error);
+    }
 }
 
 export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {

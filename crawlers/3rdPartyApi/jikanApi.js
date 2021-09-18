@@ -1,5 +1,5 @@
 const axios = require('axios').default;
-const {replaceSpecialCharacters, convertHourToMinute, purgeObjFalsyValues} = require("../utils");
+const {replaceSpecialCharacters, convertHourToMinute, purgeObjFalsyValues, getDatesBetween} = require("../utils");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
@@ -10,8 +10,7 @@ let jikanApiCache = [];
 
 
 export function resetJikanApiCache(now) {
-    let hoursBetween = (now.getTime() - jikanCacheStartDate.getTime()) / (3600 * 1000);
-    if (hoursBetween > 8) {
+    if (getDatesBetween(now, jikanCacheStartDate).hours > 8) {
         jikanApiCache404 = [];
         jikanApiCache = [];
         jikanCacheStartDate = now;

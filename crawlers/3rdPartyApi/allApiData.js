@@ -5,7 +5,7 @@ const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
 const getCollection = require('../../mongoDB');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
-const {removeDuplicateElements, replaceSpecialCharacters} = require('../utils');
+const {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} = require('../utils');
 const {saveError} = require('../../saveError');
 const {dataConfig} = require("../../routes/configs");
 
@@ -91,8 +91,7 @@ export async function addApiData(titleModel, site_links) {
 export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
-    let hoursBetween = (now.getTime() - apiUpdateDate.getTime()) / (3600 * 1000);
-    if (hoursBetween <= 6) {
+    if (getDatesBetween(now, apiUpdateDate).hours <= 6) {
         return null;
     }
 
