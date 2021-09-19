@@ -33,7 +33,7 @@ axiosRetry(axios, {
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let s3poster = await checkTitlePosterExist(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
+    let s3poster = await checkTitlePosterExist(titleModel.title, titleModel.type, titleModel.year);
     if (s3poster) {
         titleModel.poster_s3 = s3poster;
     } else {
@@ -112,7 +112,7 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     updateFields.apiUpdateDate = now;
 
     if (db_data.poster_s3 === '') {
-        let s3poster = await checkTitlePosterExist(db_data.title, db_data.type, db_data.year, db_data.posters);
+        let s3poster = await checkTitlePosterExist(db_data.title, db_data.type, db_data.year);
         if (s3poster) {
             db_data.poster_s3 = s3poster
             updateFields.poster_s3 = s3poster;

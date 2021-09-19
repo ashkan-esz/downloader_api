@@ -1,19 +1,29 @@
 const {handleLatestDataUpdate} = require("./latestData");
 const {checkSource, removeDuplicateLinks, removeDuplicateElements} = require('./utils');
-
+const {saveError} = require("../saveError");
 
 export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type) {
-    let posterChange = handlePosterUpdate(db_data, poster);
-    let trailerChange = handleTrailerUpdate(db_data, trailers);
-    let watchOnlineLinksChange = handleWatchOnlineLinksUpdate(db_data, watchOnlineLinks);
-    let latestDataChange = handleLatestDataUpdate(db_data, titleModel.latestData, type);
+    try {
+        let posterChange = handlePosterUpdate(db_data, poster);
+        let trailerChange = handleTrailerUpdate(db_data, trailers);
+        let watchOnlineLinksChange = handleWatchOnlineLinksUpdate(db_data, watchOnlineLinks);
+        let latestDataChange = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
-    return {
-        posterChange,
-        trailerChange,
-        watchOnlineLinksChange,
-        latestDataChange,
-    };
+        return {
+            posterChange,
+            trailerChange,
+            watchOnlineLinksChange,
+            latestDataChange,
+        };
+    } catch (error) {
+        saveError(error);
+        return {
+            posterChange: false,
+            trailerChange: false,
+            watchOnlineLinksChange: false,
+            latestDataChange: false,
+        };
+    }
 }
 
 function handlePosterUpdate(db_data, poster) {

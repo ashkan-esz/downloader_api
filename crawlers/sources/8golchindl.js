@@ -33,7 +33,7 @@ async function search_title(link, i) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`golchindl/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title.toLowerCase(), type);
+            title = purgeTitle(title.toLowerCase(), type, true);
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {

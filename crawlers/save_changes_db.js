@@ -16,7 +16,7 @@ const {saveError} = require("../saveError");
 
 module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
     try {
-        let year = (type.includes('movie')) ? getYear(page_link, siteDownloadLinks) : '';
+        let year = (type.includes('movie')) ? getYear(title, page_link, siteDownloadLinks) : '';
 
         let titleObj = await getTitleObj(title, type, false, 0);
         let db_data = await searchOnCollection(titleObj, year, type);
@@ -119,6 +119,7 @@ async function searchOnCollection(titleObj, year, type) {
         sources: 1,
         summary: 1,
         posters: 1,
+        poster_s3: 1,
         trailers: 1,
         watchOnlineLinks: 1,
         subtitles: 1,

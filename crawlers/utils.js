@@ -1,7 +1,7 @@
 const persianRex = require('persian-rex');
 const {saveError} = require("../saveError");
 
-export function purgeTitle(title, type) {
+export function purgeTitle(title, type, keepLastNumber = false) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
@@ -24,7 +24,7 @@ export function purgeTitle(title, type) {
     }
     if (title_array.length > 1) {
         let year = title_array[title_array.length - 1];
-        if (!isNaN(year) && Number(year) > 1000) {
+        if (!isNaN(year) && Number(year) > 1900 && !keepLastNumber) {
             title_array.pop();
         } else if (!isNaN(title_array[0]) && Number(title_array[0]) > 1000) {
             title_array.shift();
@@ -152,8 +152,10 @@ export function checkHardSub(input) {
     );
 }
 
-export function getYear(page_link, save_link) {
+export function getYear(title, page_link, save_link) {
     let url_array = page_link
+        .replace(title.replace(/\s+/g, '-'), '')
+        .replace(/\/\d\d\d\d\/[^$]/g, '/')
         .replace(/[-/]/g, ' ')
         .split(' ')
         .filter(value => Number(value) > 1800 && Number(value) < 2100);

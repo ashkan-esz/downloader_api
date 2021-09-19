@@ -77,6 +77,7 @@ export async function uploadTitlePosterToS3(title, type, year, posters, retryCou
             return '';
         }
         let fileName = type + '-' + title + '-' + year;
+        fileName = fileName.replace(/-$/g, '').trim().replace(/\s+/g, '-');
         let response = await axios.get(posters[0], {
             responseType: "arraybuffer",
             responseEncoding: "binary"
@@ -155,9 +156,10 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
     }
 }
 
-export async function checkTitlePosterExist(title, type, year, posters, retryCounter = 0) {
+export async function checkTitlePosterExist(title, type, year, retryCounter = 0) {
     try {
         let fileName = type + '-' + title + '-' + year;
+        fileName = fileName.replace(/-$/g, '').trim().replace(/\s+/g, '-');
         const params = {
             Bucket: 'poster',
             Key: fileName,
@@ -172,7 +174,7 @@ export async function checkTitlePosterExist(title, type, year, posters, retryCou
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkTitlePosterExist(title, type, year, posters, retryCounter);
+            return await checkTitlePosterExist(title, type, year, retryCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
