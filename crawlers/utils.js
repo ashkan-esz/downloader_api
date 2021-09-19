@@ -186,7 +186,7 @@ export function getSeasonEpisode(input) {
         }
         let season = 0;
         let episode = 0;
-        let case1 = input.toLowerCase().match(/s\d+e\d+/g);
+        let case1 = input.toLowerCase().replace(/1080p/g, '.1080p').match(/s\d+e\d+/g);
         if (case1) {
             let seasonEpisode = case1.pop();
             season = Number(seasonEpisode.split('e')[0].replace('s', ''));

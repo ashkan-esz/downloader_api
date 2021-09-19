@@ -39,6 +39,7 @@
     "words-to-numbers": "^1.5.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.6"
+    "nodemon": "^2.0.6",
+    "object-sizeof": "^1.6.1"
   }
 }

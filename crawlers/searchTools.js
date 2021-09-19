@@ -264,7 +264,7 @@ function getConcurrencyNumber(url) {
     if (process.env.CRAWLER_CONCURRENCY) {
         concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
     } else {
-        concurrencyNumber = (url.includes('anime')) ? 6 : 12;
+        concurrencyNumber = (url.includes('anime')) ? 6 : 9;
     }
     return concurrencyNumber;
 }
