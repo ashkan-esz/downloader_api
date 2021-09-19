@@ -251,6 +251,8 @@ function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber)
 export function checkNeedHeadlessBrowser(url) {
     return (
         url.includes('digimovie') ||
+        url.includes('film2media') ||
+        url.includes('f2m') ||
         url.includes('valamovie') ||
         url.includes('film2movie') ||
         url.includes('//zar') ||
@@ -264,7 +266,7 @@ function getConcurrencyNumber(url) {
     if (process.env.CRAWLER_CONCURRENCY) {
         concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
     } else {
-        concurrencyNumber = (url.includes('anime')) ? 6 : 9;
+        concurrencyNumber = (url.includes('anime')) ? 6 : _headLessBrowser ? 9 : 12;
     }
     return concurrencyNumber;
 }
