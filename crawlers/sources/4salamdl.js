@@ -53,24 +53,25 @@ function get_persian_summary($) {
 
 function get_poster($) {
     try {
-        let imgs = $('img');
-        for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs.src;
-            let parent = imgs[i].parent.name;
+        let badPoster = 'https://image.salamdl.shop/t/p/w440_and_h660_bestv2/';
+        let $img = $('img');
+        for (let i = 0; i < $img.length; i++) {
+            let src = $img[i].attribs.src;
+            let parent = $img[i].parent.name;
             if (parent === 'a') {
-                return src;
+                return src.includes(badPoster) ? '' : src;
             }
         }
-        for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs.src;
-            let parent = imgs[i].parent.name;
+        for (let i = 0; i < $img.length; i++) {
+            let src = $img[i].attribs.src;
+            let parent = $img[i].parent.name;
             if (parent === 'p') {
                 return src;
             }
         }
-        for (let i = 0; i < imgs.length; i++) {
-            let src = imgs[i].attribs.src;
-            let parent = imgs[i].parent.name;
+        for (let i = 0; i < $img.length; i++) {
+            let src = $img[i].attribs.src;
+            let parent = $img[i].parent.name;
             if (parent === 'div') {
                 return src;
             }
