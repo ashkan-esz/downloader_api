@@ -45,7 +45,7 @@ export async function wrapper_module(url, page_count, searchCB) {
                     if (process.env.NODE_ENV === 'dev') {
                         await searchCB($(links[j]), i, $, url);
                     } else {
-                        while (promiseQueue.size > 50) {
+                        while (promiseQueue.size > 24) {
                             await new Promise((resolve => setTimeout(resolve, 50)));
                         }
                         promiseQueue.add(() => searchCB($(links[j]), i, $, url));

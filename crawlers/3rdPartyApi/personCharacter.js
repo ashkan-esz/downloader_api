@@ -171,7 +171,7 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
             }
         });
         promiseArray.push(promise);
-        if (promiseArray.length > 20) {
+        if (promiseArray.length > 10) {
             await Promise.allSettled(promiseArray);
             promiseArray = [];
         }
@@ -193,7 +193,7 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
         for (let i = 0; i < updateStaffCharactersArray.length; i++) {
             let promise = updateByIdDB(type, updateStaffCharactersArray[i]._id, updateStaffCharactersArray[i]);
             promiseArray.push(promise);
-            if (promiseArray.length > 20) {
+            if (promiseArray.length > 10) {
                 await Promise.allSettled(promiseArray);
                 promiseArray = [];
             }
@@ -274,7 +274,7 @@ async function addImage(dataArray) {
                     dataArray[i].image = imageUrl;
                 });
                 promiseArray.push(promise);
-                if (promiseArray.length > 10) {
+                if (promiseArray.length > 5) {
                     await Promise.allSettled(promiseArray);
                     promiseArray = [];
                 }

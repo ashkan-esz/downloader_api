@@ -49,7 +49,7 @@ async function uploadNewSubtitlesToCloudStorage(subtitles, cookies) {
                     }
                 });
                 promiseArray.push(promise);
-                if (promiseArray.length > 10) {
+                if (promiseArray.length > 5) {
                     await Promise.allSettled(promiseArray);
                     promiseArray = [];
                 }
@@ -78,7 +78,7 @@ async function setSubtitlesFileName(subtitles, cookies) {
                 subtitles[i].fileName = `animelist-${fileName}`;
             });
             promiseArray.push(promise);
-            if (promiseArray.length > 20) {
+            if (promiseArray.length > 10) {
                 await Promise.allSettled(promiseArray);
                 promiseArray = [];
             }
@@ -101,7 +101,7 @@ async function addSubtitleDownloadLinkIfExist(subtitles) {
                 }
             });
             promiseArray.push(promise);
-            if (promiseArray.length > 20) {
+            if (promiseArray.length > 10) {
                 await Promise.allSettled(promiseArray);
                 promiseArray = [];
             }
