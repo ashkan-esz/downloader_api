@@ -3,7 +3,6 @@ const film2media = require('./sources/2film2media');
 const salamdl = require('./sources/4salamdl');
 const film2movie = require('./sources/3film2movie');
 const avamovie = require('./sources/5avamovie');
-const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
 const nineanime = require('./sources/9nineanime');
@@ -17,7 +16,7 @@ const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
 
-export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = true) {
+export async function crawler(sourceName, crawlMode = 0, handleDomainChange = true) {
     try {
         let time1 = new Date();
         resetJikanApiCache(time1);
@@ -28,13 +27,16 @@ export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = 
 
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
-        if (sourceNumber === -1) {
+        if (!sourceName) {
             //start from anime sources (11)
             for (let i = sourcesArray.length - 1; i >= 0; i--) {
                 await sourcesArray[i].starter();
             }
-        } else if (sourceNumber <= sourcesArray.length) {
-            await sourcesArray[sourceNumber - 1].starter();
+        } else {
+            let findSource = sourcesArray.find(x => x.name === sourceName);
+            if (findSource) {
+                await findSource.starter();
+            }
         }
 
         if (handleDomainChange) {
@@ -123,16 +125,6 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                     ...sourcesObj.avamovie,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.avamovie.page_count + daysElapsed,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.avamovie.serial_page_count + daysElapsed / 3,
-                });
-            }
-        },
-        {
-            name: 'zarmovie',
-            starter: () => {
-                return zarmovie({
-                    ...sourcesObj.zarmovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.zarmovie.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.zarmovie.serial_page_count + daysElapsed / 3,
                 });
             }
         },

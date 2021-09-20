@@ -254,7 +254,6 @@ export function checkNeedHeadlessBrowser(url) {
         url.includes('film2media') ||
         url.includes('f2m') ||
         url.includes('film2movie') ||
-        url.includes('//zar') ||
         url.includes('anime-list') ||
         url.includes('animelist')
     );

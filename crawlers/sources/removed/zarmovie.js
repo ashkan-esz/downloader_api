@@ -1,4 +1,4 @@
-const {search_in_title_page, wrapper_module} = require('../searchTools');
+const {search_in_title_page, wrapper_module} = require('../../searchTools');
 const {
     purgeTitle,
     getType,
@@ -8,9 +8,9 @@ const {
     purgeQualityText,
     purgeSizeText,
     purgeEncoderText
-} = require('../utils');
-const save = require('../save_changes_db');
-const {saveError} = require("../../saveError");
+} = require('../../utils');
+const save = require('../../save_changes_db');
+const {saveError} = require("../../../saveError");
 
 
 module.exports = async function zarmovie({movie_url, serial_url, page_count, serial_page_count}) {

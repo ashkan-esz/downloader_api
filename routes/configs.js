@@ -29,8 +29,3 @@ export const dataConfig = {
     },
     high: {}
 }
-
-export const extraInfo = {
-    onlineStreamingSources: ['film2movie', 'salamdl', 'film2media'],
-    sortPosters: ['salamdl', 'valamovie', 'film2media', 'film2movies'],
-}
