@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {purgeTitle, getType, purgeQualityText, purgeSizeText} = require('../utils');
+const {purgeTitle, getType, purgeQualityText, purgeSizeText, purgeEncoderText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -116,10 +116,11 @@ function get_file_size($, link, type) {
         }
 
         let text = $(link).text();
+        let linkHref = $(link).attr('href').toLowerCase();
         let dubbed = '';
         if (text.includes('(دوبله فارسی)') ||
             text.includes('(دو زبانه)') ||
-            $(link).attr('href').toLowerCase().includes('farsi')) {
+            linkHref.includes('farsi')) {
             dubbed = 'dubbed';
             text = text.replace('(دوبله فارسی)', '').replace('(دو زبانه)', '');
         }
@@ -128,7 +129,7 @@ function get_file_size($, link, type) {
         if (text.includes('لینک مستقیم')) {
             return get_file_size_extraLink($, link);
         }
-        return get_movie_size_info(text_array, dubbed);
+        return get_movie_size_info(text_array, dubbed, linkHref);
     } catch (error) {
         try {
             return checkTrailer_year($, link, text_array);
@@ -179,14 +180,12 @@ function get_file_size_serial($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_movie_size_info(text_array, dubbed) {
+function get_movie_size_info(text_array, dubbed, linkHref) {
     let encoder = '';
     let encoder_index = (text_array.length === 1) ? 0 :
         (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1 : '';
     if (encoder_index) {
-        encoder = text_array[encoder_index]
-            .replace('انکدر', '')
-            .replace('انکودر', '')
+        encoder = purgeEncoderText(text_array[encoder_index])
             .split(' ')
             .filter(value =>
                 value && !persianRex.hasLetter.test(value) &&
@@ -219,7 +218,19 @@ function get_movie_size_info(text_array, dubbed) {
     }
     quality = quality.split(' ').filter(value => value && !persianRex.hasLetter.test(value));
     if (quality.length === 1 && quality[0] === '--') {
-        quality[0] = 'unknown';
+        let resolution = linkHref.match(/[_.]\d\d\d\dp[_.]/g);
+        if (resolution) {
+            quality[0] = resolution.pop().replace(/[_.]/g, '');
+        } else {
+            quality[0] = 'unknown';
+        }
+    }
+
+    if (!quality.join('.').match(/\d\d\d\dp/g)) {
+        let resolution = linkHref.match(/[_.]\d\d\d\dp[_.]/g);
+        if (resolution) {
+            quality.unshift(resolution.pop().replace(/[_.]/g, ''));
+        }
     }
 
     let info = (quality[0].match(/\d\d\d+p/g)) ?

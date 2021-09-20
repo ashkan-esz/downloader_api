@@ -1,4 +1,4 @@
-const {search_in_title_page, wrapper_module} = require('../searchTools');
+const {search_in_title_page, wrapper_module} = require('../../searchTools');
 const {
     purgeTitle,
     checkDubbed,
@@ -7,10 +7,10 @@ const {
     purgeQualityText,
     purgeEncoderText,
     purgeSizeText
-} = require('../utils');
-const save = require('../save_changes_db');
+} = require('../../utils');
+const save = require('../../save_changes_db');
 const persianRex = require('persian-rex');
-const {saveError} = require("../../saveError");
+const {saveError} = require("../../../saveError");
 
 let valaMovieTrailerUrl = '';
 

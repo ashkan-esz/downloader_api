@@ -2,14 +2,13 @@ const digimoviez = require('./sources/1digimoviez');
 const film2media = require('./sources/2film2media');
 const salamdl = require('./sources/4salamdl');
 const film2movie = require('./sources/3film2movie');
-const valamovie = require('./sources/5valamovie');
+const avamovie = require('./sources/5avamovie');
 const zarmovie = require('./sources/6zarmovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
 const nineanime = require('./sources/9nineanime');
 const bia2anime = require('./sources/10bia2anime');
 const animelist = require('./sources/11animelist');
-const avamovie = require('./sources/12avamovie');
 const {getDatesBetween} = require('./utils');
 const getCollection = require("../mongoDB");
 const {domainChangeHandler} = require('./domainChangeHandler');
@@ -26,27 +25,20 @@ export async function crawler(sourceNumber, crawlMode = 0, handleDomainChange = 
 
         let collection = await getCollection('sources');
         let sourcesObj = await collection.findOne({title: 'sources'});
-        let valaMovieTrailerUrl = "";
 
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
         if (sourceNumber === -1) {
             //start from anime sources (11)
             for (let i = sourcesArray.length - 1; i >= 0; i--) {
-                let temp = await sourcesArray[i].starter();
-                if (sourcesArray[i].name === 'valamovie') {
-                    valaMovieTrailerUrl = temp;
-                }
+                await sourcesArray[i].starter();
             }
         } else if (sourceNumber <= sourcesArray.length) {
-            let temp = await sourcesArray[sourceNumber - 1].starter();
-            if (sourcesArray[sourceNumber - 1].name === 'valamovie') {
-                valaMovieTrailerUrl = temp;
-            }
+            await sourcesArray[sourceNumber - 1].starter();
         }
 
         if (handleDomainChange) {
-            await domainChangeHandler(sourcesObj, valaMovieTrailerUrl);
+            await domainChangeHandler(sourcesObj);
         }
 
         let time2 = new Date();
@@ -125,12 +117,12 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
             }
         },
         {
-            name: 'valamovie',
+            name: 'avamovie',
             starter: () => {
-                return valamovie({
-                    ...sourcesObj.valamovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.valamovie.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.valamovie.serial_page_count + daysElapsed / 3,
+                return avamovie({
+                    ...sourcesObj.avamovie,
+                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.avamovie.page_count + daysElapsed,
+                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.avamovie.serial_page_count + daysElapsed / 3,
                 });
             }
         },
@@ -188,16 +180,6 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                     ...sourcesObj.animelist,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.animelist.page_count + daysElapsed,
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.animelist.serial_page_count + daysElapsed / 3,
-                });
-            }
-        },
-        {
-            name: 'avamovie',
-            starter: () => {
-                return avamovie({
-                    ...sourcesObj.avamovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.avamovie.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.avamovie.serial_page_count + daysElapsed / 3,
                 });
             }
         },
