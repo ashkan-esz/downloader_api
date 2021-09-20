@@ -254,25 +254,28 @@ export function getNewURl(url, currentUrl) {
 }
 
 export function checkBetterQuality(quality, prevQuality) {
+    if (quality === prevQuality) {
+        return false;
+    }
     let x265 = quality.includes('x265');
     let prevX265 = prevQuality.includes('x265');
     quality = quality.split('- ')[0].toLowerCase()
-        .replace(/.x265|.10bit/g, '')
+        .replace(/\.x265|\.10bit/g, '')
         .replace(/[-._]/g, ' ');
     prevQuality = prevQuality.split('- ')[0].toLowerCase()
-        .replace(/.x265|.10bit/g, '')
+        .replace(/\.x265|\.10bit/g, '')
         .replace(/[-._]/g, ' ');
     const sortedQualities = ['cam', 'ts', 'tc', 'dvdscr', 'r6', 'r5',
-        'dvdrip', 'r2', 'webrip', 'hdrip', 'brrip', 'bdrip',
-        '720p webrip', '720p hdrip', '720p web dl',
-        '720p bluray', '1080p web dl', '1080p bluray',
+        'dvdrip', 'r2', 'web rip', 'hd rip', 'brrip', 'bdrip',
+        '720p web rip', '720p hd rip', '720p web dl',
+        '720p bluray', '1080p web rip', '1080p web dl', '1080p bluray',
         'imax', 'full hd', '2160p', '1080p ac3', '4k', '8k'];
     const encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
         'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
 
     let prevQualityIndex = -1;
     let prevEncodeIndex = -1;
-    let qualityIndex = 0;
+    let qualityIndex = -1;
     let encodeIndex = -1;
     let isBetter;
     for (let i = 0; i < sortedQualities.length; i++) {
@@ -356,6 +359,7 @@ export function purgeQualityText(qualityText) {
         .replace(/[)(:]/g, '')
         .replace(/web[-_]dl/gi, 'WEB-DL')
         .replace(/webrip/gi, 'WEB-RIP')
+        .replace(/hdrip/gi, 'HD-RIP')
         .replace(/full hd/gi, 'FULL-HD')
         .trim();
 }
@@ -372,6 +376,7 @@ export function purgeSizeText(sizeText) {
         .replace('گیگابیت', 'GB')
         .replace('گیگ', 'GB')
         .replace('مگابایت', 'MB')
+        .replace('bytes', 'b')
         .replace('انکودر', '')
         .replace(/[\s:]/g, '')
         .toUpperCase();
