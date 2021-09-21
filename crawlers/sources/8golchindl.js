@@ -34,6 +34,9 @@ async function search_title(link, i) {
                 console.log(`golchindl/${type}/${i}/${title}  ========>  `);
             }
             title = purgeTitle(title.toLowerCase(), type, true);
+            if (title === 'spongebob') {
+                return;
+            }
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
@@ -53,8 +56,20 @@ function get_persian_summary($) {
     try {
         let $div = $('div');
         for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('summary')) {
+            if ($($div[i]).hasClass('summary') && $($div[i]).text().includes('خلاصه')) {
                 return $($div[i]).text().replace('خلاصه داستان', '').replace(':', '').trim();
+            }
+        }
+        let $strong = $('strong');
+        for (let i = 0; i < $strong.length; i++) {
+            if ($($strong[i]).text().includes('خلاصه داستان')) {
+                return $($strong[i]).text().replace('خلاصه داستان', '').replace(':', '').trim();
+            }
+        }
+        let p = $('p');
+        for (let i = 0; i < p.length; i++) {
+            if ($(p[i]).text().includes('خلاصه فیلم')) {
+                return $(p[i]).text().split('–').pop().replace('خلاصه فیلم', '').replace(':', '').trim();
             }
         }
         return '';
@@ -93,7 +108,7 @@ function get_file_size($, link, type) {
         return get_file_size_movie($, link);
     } catch (error) {
         saveError(error);
-        return '';
+        return 'ignore';
     }
 }
 
@@ -130,6 +145,7 @@ function get_file_size_serial($, link) {
     if (quality.includes('10bit')) {
         bit10 = '';
     }
+    quality = quality.replace(/\.Www\.DownloadSpeed\.iR|-NEXT|-DEEP|\.subed|\.subdl|\.\[shahrdl.com]|\.NF|\.DDP2\.0|\.x264/gi, '').trim();
     return [quality, bit10, encoder, hardSub, dubbed]
         .filter(value => value)
         .join('.')
@@ -141,7 +157,14 @@ function get_file_size_movie($, link) {
     let infoNodeChildren = parentName !== 'p'
         ? $($(link).parent().parent().prev().children()[0]).children()[0]
         : $($(link).parent().prev().children()[0]).children()[0];
-    let infoText = $(infoNodeChildren).text();
+    let infoText = $(infoNodeChildren).text()
+        .replace('- 4K', '')
+        .replace('- اختصاصی گلچین دانلود', '')
+        .replace('زبان اصلی - ', '')
+        .trim();
+    if (infoText.includes('دانلود پشت صحنه')) {
+        return 'ignore';
+    }
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), infoText) ? 'dubbed' : '';
     let quality, encoder, size;
@@ -198,6 +221,20 @@ function get_file_size_movie($, link) {
         size = splitInfoText.length > 1 ? purgeSizeText(splitInfoText[1]) : '';
         encoder = '';
     }
+    let resolution = quality.match(/\d\d\d+p/g);
+    if (resolution) {
+        quality = quality
+            .replace(`x265.${resolution[0]}`, `${resolution[0]}.x265`)
+            .replace(`Dl.${resolution[0]}.Web`, `${resolution[0]}.WEB-DL`)
+            .replace(`BluRay.${resolution[0]}`, `${resolution[0]}.BluRay`);
+    }
+    if (quality === '') {
+        let resolution = $(link).attr('href').match(/\d\d\d+p/g);
+        if (resolution) {
+            quality = resolution.pop();
+        }
+    }
+    quality = quality.replace('BluRay.x265', 'x265.BluRay');
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.').replace('.دوبله فارسی', '');
     return [info, size].filter(value => value).join(' - ');
 }

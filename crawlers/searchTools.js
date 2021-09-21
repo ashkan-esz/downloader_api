@@ -57,6 +57,7 @@ export async function wrapper_module(url, page_count, searchCB) {
         }
         await promiseQueue.onEmpty();
         await promiseQueue.onIdle();
+        console.log('------------- end');
     } catch (error) {
         saveError(error);
     }
@@ -209,7 +210,9 @@ async function getFromGoogleCache(url) {
         await new Promise((resolve => setTimeout(resolve, 100)));
         return {$, links};
     } catch (error) {
-        saveError(error);
+        if (error.response.status !== 404) {
+            saveError(error);
+        }
         return {$: null, links: []};
     }
 }
