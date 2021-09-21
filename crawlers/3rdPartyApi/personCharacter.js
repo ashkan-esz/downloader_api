@@ -274,7 +274,7 @@ async function addImage(dataArray) {
                     dataArray[i].image = imageUrl;
                 });
                 promiseArray.push(promise);
-                if (promiseArray.length > 5) {
+                if (promiseArray.length > 10) {
                     await Promise.allSettled(promiseArray);
                     promiseArray = [];
                 }

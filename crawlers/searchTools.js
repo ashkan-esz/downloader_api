@@ -57,7 +57,6 @@ export async function wrapper_module(url, page_count, searchCB) {
         }
         await promiseQueue.onEmpty();
         await promiseQueue.onIdle();
-        console.log('------------- end');
     } catch (error) {
         saveError(error);
     }
@@ -267,9 +266,9 @@ function getConcurrencyNumber(url) {
     if (process.env.CRAWLER_CONCURRENCY) {
         concurrencyNumber = Number(process.env.CRAWLER_CONCURRENCY);
     } else {
-        concurrencyNumber = (url.includes('anime'))
-            ? 6
-            : (url.includes('golchin') || _headLessBrowser) ? 9 : 12;
+        concurrencyNumber = (url.includes('anime') || url.includes('golchin') || _headLessBrowser)
+            ? 9
+            : 12;
     }
     return concurrencyNumber;
 }
