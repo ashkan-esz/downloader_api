@@ -9,7 +9,7 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
         tvmazePersonID: tvmazePersonID,
         jikanPersonID: jikanPersonID,
         image: '',
-        originalImages: originalImages,
+        originalImages: originalImages.filter(value => value),
         credits: [{movieID, role, actorName}],
     }
 }

@@ -25,6 +25,16 @@ export async function searchTitleDB(titleObj, type, searchTypes, searchYears, da
     }
 }
 
+export async function searchOnMovieCollectionDB(searchQuery, projection = {}) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection.findOne(searchQuery, {projection: projection});
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
 export async function searchStaffAndCharactersDB(collectionName, searchName) {
     try {
         let collection = await getCollection(collectionName);

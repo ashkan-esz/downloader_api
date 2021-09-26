@@ -44,7 +44,7 @@ export async function crawler(sourceName, crawlMode = 0, handleDomainChange = tr
         }
 
         let time2 = new Date();
-        await Sentry.captureMessage(`crawling done in : ${getDatesBetween(time2, time1).seconds}s`);
+        Sentry.captureMessage(`crawling done in : ${getDatesBetween(time2, time1).seconds}s`);
     } catch (error) {
         await saveError(error);
     }

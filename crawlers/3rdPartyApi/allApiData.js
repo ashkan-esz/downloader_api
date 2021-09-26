@@ -3,7 +3,7 @@ const axiosRetry = require("axios-retry");
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
-const getCollection = require('../../mongoDB');
+const {searchOnMovieCollectionDB} = require('../../dbMethods');
 const {uploadTitlePosterToS3, checkTitlePosterExist} = require('../../cloudStorage');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
 const {sortPosters} = require('../subUpdates');
@@ -104,7 +104,7 @@ export async function addApiData(titleModel, site_links) {
 export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
-    if (getDatesBetween(now, apiUpdateDate).hours <= 6) {
+    if (getDatesBetween(now, apiUpdateDate).hours < 8) {
         return null;
     }
 
@@ -319,12 +319,14 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
 
 async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
     try {
-        let collection = await getCollection('movies');
+        //todo : change query to update relatedTitles if searching title added later
         let newRelatedTitles = [];
         for (let i = 0; i < jikanRelatedTitles.length; i++) {
-            let searchResult = await collection.findOne({
-                jikanID: jikanRelatedTitles[i].jikanID
-            }, {projection: dataConfig['medium']});
+            let searchResult = await searchOnMovieCollectionDB(
+                {jikanID: jikanRelatedTitles[i].jikanID},
+                dataConfig['medium']
+            );
+
             if (searchResult) {
                 let relatedTitleData = {
                     ...jikanRelatedTitles[i],

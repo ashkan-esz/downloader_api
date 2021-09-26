@@ -272,7 +272,7 @@ async function handle_OMDB_ApiKeys(url) {
                     let endTime = new Date();
                     let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
                     if (timeElapsed > 12) {
-                        await Sentry.captureMessage('more omdb api keys are needed');
+                        Sentry.captureMessage('more omdb api keys are needed');
                         return null;
                     }
                 } else {

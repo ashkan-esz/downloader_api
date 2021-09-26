@@ -128,7 +128,7 @@ function get_file_size_serial($, link) {
 
     let episodeMatch = linkHref
         .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
-    if (!episodeMatch && linkHref.match(/\/movies\.\d\d\d+p\/|\.((ed|op) \d+|\d+\.ova)\.\d\d\d+p\./g)) {
+    if (!episodeMatch) {
         return 'ignore';
     }
     if (episodeMatch && episodeMatch[0].match(/\.\d+\.(bitdownload\.ir|bia2anime)\.mkv/g)) {

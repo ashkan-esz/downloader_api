@@ -109,7 +109,7 @@ function get_file_size($, link, type) {
         return get_file_size_movie($, link);
     } catch (error) {
         saveError(error);
-        return '';
+        return 'ignore';
     }
 }
 

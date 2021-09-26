@@ -42,7 +42,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
             }
         }
     }
-    await Sentry.captureMessage('lots of tvmaze api call');
+    Sentry.captureMessage('lots of tvmaze api call');
     return null;
 }
 
@@ -137,7 +137,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    await Sentry.captureMessage(`lots of tvmaze api call: ${url}`);
+    Sentry.captureMessage(`lots of tvmaze api call: ${url}`);
     return null;
 }
 

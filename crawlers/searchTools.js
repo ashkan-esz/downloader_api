@@ -38,7 +38,7 @@ export async function wrapper_module(url, page_count, searchCB) {
             try {
                 let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}`);
                 if (checkLastPage($, links, checkGoogleCache, url, responseUrl, i)) {
-                    await Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
+                    Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
                 for (let j = 0; j < links.length; j++) {
@@ -199,7 +199,7 @@ async function getFromGoogleCache(url) {
         if (process.env.NODE_ENV === 'dev') {
             console.log('google cache: ', decodedLink);
         } else {
-            await Sentry.captureMessage(`google cache: ${decodedLink}`);
+            Sentry.captureMessage(`google cache: ${decodedLink}`);
         }
         let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
         let webCacheUrl = cacheUrl + decodedLink;

@@ -41,14 +41,14 @@ export async function domainChangeHandler(sourcesObj) {
 
         if (changedSources.length > 0) {
             updateSourceFields(sourcesObj, sourcesUrls);
-            await Sentry.captureMessage('start domain change handler (download links)');
+            Sentry.captureMessage('start domain change handler (download links)');
             await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources);
 
             let collection = await getCollection('sources');
             await collection.findOneAndUpdate({title: 'sources'}, {
                 $set: sourcesObj
             });
-            await Sentry.captureMessage('source domain changed');
+            Sentry.captureMessage('source domain changed');
         }
     } catch (error) {
         await saveError(error);
@@ -112,7 +112,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources)
         try {
             let startTime = new Date();
             let sourceName = changedSources[i].sourceName;
-            await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
+            Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
@@ -128,7 +128,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources)
 
             let endTime = new Date();
             let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
-            await Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl ended) in ${crawlingDuration} s`);
+            Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl ended) in ${crawlingDuration} s`);
         } catch (error) {
             saveError(error);
         }

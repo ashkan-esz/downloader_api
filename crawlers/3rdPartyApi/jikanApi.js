@@ -7,10 +7,12 @@ const Sentry = require('@sentry/node');
 let jikanCacheStartDate = new Date();
 let jikanApiCache404 = [];
 let jikanApiCache = [];
-
+let isRunning = false;
+let callTime = 0;
+let multiCounter = 0;
 
 export function resetJikanApiCache(now) {
-    if (getDatesBetween(now, jikanCacheStartDate).hours > 8) {
+    if (getDatesBetween(now, jikanCacheStartDate).hours > 12) {
         jikanApiCache404 = [];
         jikanApiCache = [];
         jikanCacheStartDate = now;
@@ -152,7 +154,7 @@ export function getJikanApiFields(data) {
     try {
         let apiFields = {
             jikanRelatedTitles: getRelatedTitles(data),
-            summary_en: data.synopsis || '',
+            summary_en: data.synopsis.replace('[Written by MAL Rewrite]').trim() || '',
             genres: data.genres.map(item => item.name.toLowerCase()) || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
@@ -278,17 +280,36 @@ async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID)
 }
 
 async function handleApiCall(url) {
+    while (isRunning) {
+        let now = new Date();
+        if (getDatesBetween(now, callTime).seconds > 4 && multiCounter < 10) {
+            break;
+        }
+        await new Promise((resolve => setTimeout(resolve, 100)));
+    }
+    multiCounter++;
     let waitCounter = 0;
-    while (waitCounter < 40) {
+    while (waitCounter < 20) {
         try {
+            isRunning = true;
+            callTime = new Date();
             let response = await axios.get(url);
+            if (multiCounter === 1) {
+                isRunning = false;
+            }
+            multiCounter--;
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 429) {
                 //too much request
-                await new Promise((resolve => setTimeout(resolve, 1100)));
+                let waitTime = 3000;
                 waitCounter++;
+                await new Promise((resolve => setTimeout(resolve, waitTime)));
             } else {
+                if (multiCounter === 1) {
+                    isRunning = false;
+                }
+                multiCounter--;
                 if (
                     error.code === 'ECONNABORTED' ||
                     (error.response && (
@@ -303,7 +324,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    await Sentry.captureMessage(`lots of jikan api call: ${url}`);
+    Sentry.captureMessage(`lots of jikan api call: ${url}`);
     return null;
 }
 

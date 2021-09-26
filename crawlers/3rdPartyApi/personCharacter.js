@@ -10,7 +10,7 @@ const {saveError} = require('../../saveError');
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
     let now = new Date();
     let apiUpdateDate = new Date(castUpdateDate);
-    if (getDatesBetween(now, apiUpdateDate).days < 10) {
+    if (getDatesBetween(now, apiUpdateDate).days < 15) {
         return null;
     }
 
@@ -414,61 +414,75 @@ async function getJikanStaff_voiceActors(movieID, jikanCharactersArray) {
 
 async function getJikanStaff(movieID, jikanStaffArray) {
     let result = [];
+    let promiseArray = [];
     for (let i = 0; i < jikanStaffArray.length; i++) {
-        let staffApiData = await getPersonInfo(jikanStaffArray[i].mal_id);
-        if (!staffApiData) {
-            continue;
+        let promise = getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
+            if (staffApiData) {
+                let gender = '';
+                if (staffApiData.about) {
+                    gender = staffApiData.about.match(/Gender:\s*Male/gi)
+                        ? 'Male'
+                        : staffApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
+                }
+                let originalImage = staffApiData.image_url.includes('/icon/') ? '' : staffApiData.image_url;
+                let person = getPersonModel(
+                    staffApiData.name, gender, staffApiData.about,
+                    0, staffApiData.mal_id,
+                    '', '', '',
+                    [originalImage],
+                    movieID, jikanStaffArray[i].positions, (jikanStaffArray[i].characterName || '')
+                );
+                result.push(person);
+            }
+        });
+        promiseArray.push(promise);
+        if (promiseArray.length > 5) {
+            await Promise.allSettled(promiseArray);
+            promiseArray = [];
         }
-        let gender = '';
-        if (staffApiData.about) {
-            gender = staffApiData.about.match(/Gender:\s*Male/gi)
-                ? 'Male'
-                : staffApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
-        }
-        let originalImage = staffApiData.image_url.includes('/icon/') ? '' : staffApiData.image_url;
-        let person = getPersonModel(
-            staffApiData.name, gender, staffApiData.about,
-            0, staffApiData.mal_id,
-            '', '', '',
-            [originalImage],
-            movieID, jikanStaffArray[i].positions, (jikanStaffArray[i].characterName || '')
-        );
-        result.push(person);
     }
+    await Promise.allSettled(promiseArray);
     return result;
 }
 
 async function getJikanCharaters(movieID, jikanCharatersArray) {
     let result = [];
+    let promiseArray = [];
     for (let i = 0; i < jikanCharatersArray.length; i++) {
-        let characterApiData = await getCharacterInfo(jikanCharatersArray[i].mal_id);
-        if (!characterApiData) {
-            continue;
-        }
-        let gender = '';
-        if (characterApiData.about) {
-            gender = characterApiData.about.match(/Gender:\s*Male/gi)
-                ? 'Male'
-                : characterApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
-        }
-        let originalImage = characterApiData.image_url.includes('/icon/') ? '' : characterApiData.image_url;
-        let voiceActors = jikanCharatersArray[i].voice_actors;
-        let voiceActorName = '';
-        for (let j = 0; j < voiceActors.length; j++) {
-            if (voiceActors[j].language.toLowerCase() === 'japanese') {
-                let temp = voiceActors[j].name.split(',').map(item => item.trim());
-                let name = [temp[1], temp[0]].join(' ');
-                voiceActorName = replaceSpecialCharacters(name.toLowerCase());
-                break;
+        let promise = getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {
+            if (characterApiData) {
+                let gender = '';
+                if (characterApiData.about) {
+                    gender = characterApiData.about.match(/Gender:\s*Male/gi)
+                        ? 'Male'
+                        : characterApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
+                }
+                let originalImage = characterApiData.image_url.includes('/icon/') ? '' : characterApiData.image_url;
+                let voiceActors = jikanCharatersArray[i].voice_actors;
+                let voiceActorName = '';
+                for (let j = 0; j < voiceActors.length; j++) {
+                    if (voiceActors[j].language.toLowerCase() === 'japanese') {
+                        let temp = voiceActors[j].name.split(',').map(item => item.trim());
+                        let name = [temp[1], temp[0]].join(' ');
+                        voiceActorName = replaceSpecialCharacters(name.toLowerCase());
+                        break;
+                    }
+                }
+                let character = getCharacterModel(
+                    characterApiData.name, gender, characterApiData.about,
+                    0, characterApiData.mal_id,
+                    [originalImage],
+                    movieID, jikanCharatersArray[i].role, voiceActorName,
+                );
+                result.push(character);
             }
+        });
+        promiseArray.push(promise);
+        if (promiseArray.length > 5) {
+            await Promise.allSettled(promiseArray);
+            promiseArray = [];
         }
-        let character = getCharacterModel(
-            characterApiData.name, gender, characterApiData.about,
-            0, characterApiData.mal_id,
-            [originalImage],
-            movieID, jikanCharatersArray[i].role, voiceActorName,
-        );
-        result.push(character);
     }
+    await Promise.allSettled(promiseArray);
     return result;
 }
