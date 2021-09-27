@@ -5,7 +5,6 @@ const film2movie = require('./sources/3film2movie');
 const avamovie = require('./sources/5avamovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
-const nineanime = require('./sources/9nineanime');
 const bia2anime = require('./sources/10bia2anime');
 const animelist = require('./sources/11animelist');
 const {getDatesBetween} = require('./utils');
@@ -144,15 +143,6 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                 return golchindl({
                     ...sourcesObj.golchindl,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.golchindl.page_count + daysElapsed,
-                });
-            }
-        },
-        {
-            name: 'nineanime',
-            starter: () => {
-                return nineanime({
-                    ...sourcesObj.nineanime,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.nineanime.page_count + daysElapsed,
                 });
             }
         },

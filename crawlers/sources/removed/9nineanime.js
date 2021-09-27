@@ -1,4 +1,4 @@
-const {search_in_title_page, wrapper_module} = require('../searchTools');
+const {search_in_title_page, wrapper_module} = require('../../searchTools');
 const {
     purgeTitle,
     getType,
@@ -8,10 +8,10 @@ const {
     purgeSizeText,
     persianWordToNumber,
     getDecodedLink
-} = require('../utils');
+} = require('../../utils');
 const persianRex = require('persian-rex');
-const save = require('../save_changes_db');
-const {saveError} = require("../../saveError");
+const save = require('../../save_changes_db');
+const {saveError} = require("../../../saveError");
 
 
 module.exports = async function nineanime({movie_url, page_count}) {
