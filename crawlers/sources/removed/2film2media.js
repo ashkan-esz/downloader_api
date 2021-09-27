@@ -1,8 +1,8 @@
-const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {purgeTitle, getType, checkDubbed, purgeQualityText} = require('../utils');
-const save = require('../save_changes_db');
+const {search_in_title_page, wrapper_module} = require('../../searchTools');
+const {purgeTitle, getType, checkDubbed, purgeQualityText} = require('../../utils');
+const save = require('../../save_changes_db');
 const persianRex = require('persian-rex');
-const {saveError} = require("../../saveError");
+const {saveError} = require("../../../saveError");
 
 let collection = '';
 let save_title = '';

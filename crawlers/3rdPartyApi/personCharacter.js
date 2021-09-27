@@ -10,7 +10,7 @@ const {saveError} = require('../../saveError');
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
     let now = new Date();
     let apiUpdateDate = new Date(castUpdateDate);
-    if (getDatesBetween(now, apiUpdateDate).days < 15) {
+    if (getDatesBetween(now, apiUpdateDate).days < 30) {
         return null;
     }
 

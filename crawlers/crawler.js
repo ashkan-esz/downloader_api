@@ -1,5 +1,4 @@
 const digimoviez = require('./sources/1digimoviez');
-const film2media = require('./sources/2film2media');
 const salamdl = require('./sources/4salamdl');
 const film2movie = require('./sources/3film2movie');
 const avamovie = require('./sources/5avamovie');
@@ -89,15 +88,6 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                     serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.digimoviez.serial_page_count + daysElapsed / 3,
                 })
             },
-        },
-        {
-            name: 'film2media',
-            starter: () => {
-                return film2media({
-                    ...sourcesObj.film2media,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.film2media.page_count + daysElapsed,
-                });
-            }
         },
         {
             name: 'film2movie',
