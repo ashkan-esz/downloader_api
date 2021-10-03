@@ -19,7 +19,7 @@ export function resetJikanApiCache(now) {
     }
 }
 
-function getFromJikanApiCache404(title, rawTitle, type) {
+function getFromJikanApiCache404(title, year, type) {
     let editedTitle = title.toLowerCase()
         .replace(' the', '')
         .replace('memories', 'memory')
@@ -27,6 +27,7 @@ function getFromJikanApiCache404(title, rawTitle, type) {
         .trim();
     for (let i = 0; i < jikanApiCache404.length; i++) {
         if (jikanApiCache404[i].type === type &&
+            jikanApiCache404[i].siteYear === year &&
             jikanApiCache404[i].title.toLowerCase() === editedTitle) {
             return '404';
         }
@@ -34,12 +35,13 @@ function getFromJikanApiCache404(title, rawTitle, type) {
     return null;
 }
 
-function getFromJikanApiCache(title, rawTitle, type) {
+function getFromJikanApiCache(title, rawTitle, year, type) {
     title = title.toLowerCase();
     rawTitle = rawTitle.toLowerCase();
     for (let i = 0; i < jikanApiCache.length; i++) {
         if (
             jikanApiCache[i].type.replace('anime_', '') === type.replace('anime_', '') &&
+            jikanApiCache[i].siteYear === year &&
             (
                 jikanApiCache[i].siteTitle.toLowerCase() === title ||
                 jikanApiCache[i].apiTitle.toLowerCase() === title ||
@@ -56,12 +58,12 @@ function getFromJikanApiCache(title, rawTitle, type) {
     return null;
 }
 
-export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheOnly) {
-    let jikanCacheResult404 = getFromJikanApiCache404(title, rawTitle, type);
+export async function getJikanApiData(title, rawTitle, year, type, jikanID, fromCacheOnly) {
+    let jikanCacheResult404 = getFromJikanApiCache404(title, year, type);
     if (jikanCacheResult404 === '404') {
         return null;
     }
-    let jikanCacheResult = getFromJikanApiCache(title, rawTitle, type);
+    let jikanCacheResult = getFromJikanApiCache(title, rawTitle, year, type);
     if (jikanCacheResult || fromCacheOnly) {
         return jikanCacheResult;
     }
@@ -72,7 +74,7 @@ export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheO
         if (fullData) {
             let allTitles = getTitlesFromData(title, fullData);
             if (checkTitle(title, type, allTitles)) {
-                let apiData = await getJikanApiData_simple(title, type, allTitles, fullData, jikanID);
+                let apiData = await getJikanApiData_simple(title, year, type, allTitles, fullData, jikanID);
                 jikanApiCache.push(apiData);
                 return apiData;
             }
@@ -81,12 +83,23 @@ export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheO
 
     let searchTitle = (title.match(/^\d+$/g) || title.length < 3) ? (' ' + title) : title;
     searchTitle = (searchTitle.length < 3) ? (' ' + searchTitle) : searchTitle;
+    let yearSearch = '';
+    if (year) {
+        let temp = Number(year);
+        yearSearch = `&start_date=${temp - 1}-01-01&end_date=${temp + 1}-01-01`;
+    }
     let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${searchTitle}&limit=10`;
+    if (yearSearch) {
+        animeSearchUrl += yearSearch;
+    }
     let data = await handleApiCall(animeSearchUrl);
     if (!data) {
         if (title.length === 2) {
             let searchTitle = title.split('').join('\'');
             let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${searchTitle}&limit=10`;
+            if (yearSearch) {
+                animeSearchUrl += yearSearch;
+            }
             data = await handleApiCall(animeSearchUrl);
             if (!data) {
                 return null;
@@ -106,7 +119,11 @@ export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheO
 
     for (let i = 0; i < data.results.length; i++) {
         if (
-            (type.includes('serial') && Number(data.results[i].episodes) === 0) ||
+            (
+                type.includes('serial') &&
+                data.results[i].start_date.split('-')[0] !== year &&
+                Number(data.results[i].episodes) === 0
+            ) ||
             (type.includes('movie') && Number(data.results[i].episodes) > 1)
         ) {
             continue;
@@ -122,7 +139,7 @@ export async function getJikanApiData(title, rawTitle, type, jikanID, fromCacheO
         let allTitles = getTitlesFromData(title, fullData);
 
         if (checkTitle(title, type, allTitles)) {
-            let apiData = await getJikanApiData_simple(title, type, allTitles, fullData, jikanID);
+            let apiData = await getJikanApiData_simple(title, year, type, allTitles, fullData, jikanID);
             jikanApiCache.push(apiData);
             return apiData;
         }
@@ -258,7 +275,7 @@ function getRelatedTitles(data) {
     });
 }
 
-async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID) {
+async function getJikanApiData_simple(title, year, type, allTitles, fullData, jikanID) {
     delete fullData.title;
     delete fullData.title_english;
     delete fullData.title_japanese;
@@ -269,6 +286,7 @@ async function getJikanApiData_simple(title, type, allTitles, fullData, jikanID)
         ...fullData,
         jikanID: jikanID,
         siteTitle: title,
+        siteYear: year,
         type: type,
         animeType: fullData.type,
         apiTitle_simple: allTitles.apiTitle_simple,

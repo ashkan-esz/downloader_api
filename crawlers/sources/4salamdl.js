@@ -1,5 +1,5 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {purgeTitle, getType, purgeQualityText, purgeSizeText, purgeEncoderText} = require('../utils');
+const {getTitleAndYear, validateYear, getType, purgeQualityText, purgeSizeText, purgeEncoderText} = require('../utils');
 const save = require('../save_changes_db');
 const persianRex = require('persian-rex');
 const {saveError} = require("../../saveError");
@@ -14,25 +14,48 @@ async function search_title(link, i) {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
             let title = link.text().toLowerCase();
+            let year;
             let type = getType(title);
             let page_link = link.attr('href');
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`salamdl/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title, type);
+            ({title, year} = getTitleAndYear(title, year, type));
+
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
                 if (pageSearchResult) {
                     let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    if (!year) {
+                        year = fixYear($2);
+                    }
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
+                    await save(title, year, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
                 }
             }
         }
     } catch (error) {
         saveError(error);
+    }
+}
+
+function fixYear($) {
+    try {
+        let postInfo = $('p:contains("تاریخ انتشار")');
+        if (postInfo.length === 1) {
+            let yearMatch = $(postInfo).text().match(/\d\d\d\d/g);
+            if (!yearMatch) {
+                return '';
+            }
+            yearMatch = yearMatch.sort((a, b) => Number(a) - Number(b));
+            return validateYear(yearMatch[0]);
+        }
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
     }
 }
 

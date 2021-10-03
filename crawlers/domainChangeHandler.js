@@ -2,8 +2,9 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const Sentry = require('@sentry/node');
 const getCollection = require("../mongoDB");
-const {checkNeedHeadlessBrowser, getPageData} = require("../crawlers/searchTools");
+const {checkNeedHeadlessBrowser} = require("../crawlers/searchTools");
 const {getSourcesArray} = require('./crawler');
+const {getPageData} = require('./remoteHeadlessBrowser');
 const {getNewURl} = require("./utils");
 const {saveError} = require("../saveError");
 

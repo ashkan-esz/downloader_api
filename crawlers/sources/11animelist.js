@@ -1,6 +1,7 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
 const {
-    purgeTitle,
+    getTitleAndYear,
+    validateYear,
     checkDubbed,
     replacePersianNumbers,
     purgeSizeText,
@@ -22,7 +23,7 @@ async function search_title(link, i, $, url) {
         let title = link.attr('title');
         if (title && title.includes('دانلود انیمه')) {
             let page_link = link.attr('href');
-
+            let year;
             let type = (url.toLowerCase().includes('movie-anime')) ? 'anime_movie' : 'anime_serial';
 
             let linksChildNode = $(link).children()[0];
@@ -34,7 +35,7 @@ async function search_title(link, i, $, url) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`animelist/${type}/${i}/${title}/empty:${isEmpty}  ========>  `);
             }
-            title = purgeTitle(title.toLowerCase(), type);
+            ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
@@ -42,6 +43,9 @@ async function search_title(link, i, $, url) {
 
                 if (pageSearchResult) {
                     let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    if (!year) {
+                        year = fixYear($2);
+                    }
                     save_link = removeDuplicateLinks(save_link);
                     if (type.includes('serial')) {
                         save_link = sortLinks(save_link, type);
@@ -49,12 +53,53 @@ async function search_title(link, i, $, url) {
                     }
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2, url);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    await save(title, year, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
                 }
             }
         }
     } catch (error) {
         saveError(error);
+    }
+}
+
+function fixYear($) {
+    try {
+        let postInfo = $('li:contains("پخش از")');
+        let text = '';
+        if (postInfo.length > 0) {
+            text = $(postInfo[0]).text().trim();
+        }
+        if (postInfo.length === 0) {
+            postInfo = $('li:contains("زمان پخش (ژاپن)")');
+            text = $(postInfo).text().trim();
+        }
+        if (postInfo.length === 0) {
+            postInfo = $('li:contains("فصل")');
+            for (let i = 0; i < postInfo.length; i++) {
+                let temp = $(postInfo[i]).text().trim();
+                if (
+                    temp.includes('بهار') || temp.includes('تابستان') ||
+                    temp.includes('پاییز') || temp.includes('زمستان') ||
+                    temp.match(/\d\d\d\d/g)
+                ) {
+                    postInfo = [postInfo[i]];
+                    text = temp;
+                    break;
+                }
+            }
+        }
+        if (postInfo.length !== 0) {
+            let yearMatch = text.match(/\d\d\d\d/g);
+            if (!yearMatch) {
+                return '';
+            }
+            yearMatch = yearMatch.sort((a, b) => Number(a) - Number(b));
+            return validateYear(yearMatch[0]);
+        }
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
     }
 }
 
@@ -172,7 +217,7 @@ function extraChecker($, link, title) {
 function extraSearch_match($, link) {
     try {
         let linkHref = replacePersianNumbers(getDecodedLink($(link).attr('href'))).toLowerCase();
-        if (linkHref.includes('/anime/sub/download/') || linkHref.match(/\/sub$|\.(mkv|zip)$/gi)) {
+        if (linkHref.includes('/anime/sub/download/') || linkHref.match(/\/sub$|\.(mkv|zip)$|\?(v-c=|comment=)\d$/gi)) {
             return false;
         }
         if (linkHref.match(/\/\d\d\d+p(\sbd)*$|\/special(s)*$/gi)) {

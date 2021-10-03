@@ -3,6 +3,7 @@ const axiosRetry = require("axios-retry");
 const cheerio = require('cheerio');
 const {default: pQueue} = require('p-queue');
 const {check_download_link, getMatchCases, check_format} = require('./link');
+const {getPageData} = require('./remoteHeadlessBrowser');
 const {getDecodedLink} = require('./utils');
 const {saveError} = require("../saveError");
 const Sentry = require('@sentry/node');
@@ -66,7 +67,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
                                            extraSearch_match = null, extraSearch_getFileSize = null, sourceLinkData = null, extraChecker = null) {
     try {
         let {$, links, subtitles, cookies} = await getLinks(page_link, sourceLinkData);
-        if ($ === null) {
+        if ($ === null || $ === undefined) {
             return null;
         }
         let matchCases = getMatchCases(title, type);
@@ -142,9 +143,12 @@ async function getLinks(url, sourceLinkData = null) {
                 $ = cheerio.load(response.data);
                 links = $('a');
             } catch (error) {
-                let cacheResult = await getFromGoogleCache(url);
-                $ = cacheResult.$;
-                links = cacheResult.links;
+                let pageNotFound = error.response && error.response.status === 404;
+                if (!pageNotFound) {
+                    let cacheResult = await getFromGoogleCache(url);
+                    $ = cacheResult.$;
+                    links = cacheResult.links;
+                }
                 checkGoogleCache = true;
             }
         } else {
@@ -177,22 +181,6 @@ async function getLinks(url, sourceLinkData = null) {
     }
 }
 
-export async function getPageData(url) {
-    try {
-        url = encodeURIComponent(url);
-        let remoteBrowserPassword = encodeURIComponent(process.env.REMOTE_BROWSER_PASSWORD);
-        let remoteBrowserEndPoint = process.env.REMOTE_BROWSER_ENDPOINT;
-        let response = await axios.get(
-            `${remoteBrowserEndPoint}/headlessBrowser/?password=${remoteBrowserPassword}&url=${url}`
-        );
-        let data = response.data;
-        return (!data || data.error) ? null : data;
-    } catch (error) {
-        await saveError(error);
-        return null;
-    }
-}
-
 async function getFromGoogleCache(url) {
     try {
         let decodedLink = getDecodedLink(url);
@@ -209,7 +197,7 @@ async function getFromGoogleCache(url) {
         await new Promise((resolve => setTimeout(resolve, 100)));
         return {$, links};
     } catch (error) {
-        if (error.response.status !== 404) {
+        if (error.response && error.response.status !== 404 && error.response.status !== 429) {
             saveError(error);
         }
         return {$: null, links: []};
@@ -218,6 +206,9 @@ async function getFromGoogleCache(url) {
 
 function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
     try {
+        if ($ === null || $ === undefined) {
+            return true;
+        }
         if (url.includes('digimovie')) {
             if (pageNumber > 1 && !responseUrl.includes('page')) {
                 return true;
@@ -253,8 +244,6 @@ function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber)
 export function checkNeedHeadlessBrowser(url) {
     return (
         url.includes('digimovie') ||
-        url.includes('film2media') ||
-        url.includes('f2m') ||
         url.includes('film2movie') ||
         url.includes('anime-list') ||
         url.includes('animelist')

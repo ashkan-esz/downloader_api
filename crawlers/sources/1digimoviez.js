@@ -1,12 +1,14 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
 const {
     purgeTitle,
+    getTitleAndYear,
     getType,
     removeDuplicateLinks,
     checkDubbed,
     purgeQualityText,
     purgeEncoderText,
-    purgeSizeText
+    purgeSizeText,
+    getYear
 } = require('../utils');
 const save = require('../save_changes_db');
 const {saveError} = require("../../saveError");
@@ -22,6 +24,7 @@ async function search_title(link, i, $, url) {
         let text = link.text();
         if (text && text.includes('دانلود') && text.includes('ادامه')) {
             let title = link.attr('title').toLowerCase();
+            let year;
             let type = getType(title);
             if (url.includes('serie')) {
                 type = type.replace('movie', 'serial');
@@ -30,11 +33,15 @@ async function search_title(link, i, $, url) {
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`digimovies/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title, type);
+            ({title, year} = getTitleAndYear(title, year, type));
+
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, getQualitySample);
                 if (pageSearchResult) {
                     let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    if (!year) {
+                        ({title, year} = fixTitleAndYear(title, year, type, page_link, save_link, $2));
+                    }
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     let trailers = getTrailers($2);
@@ -43,12 +50,38 @@ async function search_title(link, i, $, url) {
                     if (save_link.length > 0 && save_link[0].link.match(/s\d+e\d+/gi)) {
                         type = 'serial';
                     }
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, cookies, type);
+                    await save(title, year, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, cookies, type);
                 }
             }
         }
     } catch (error) {
         saveError(error);
+    }
+}
+
+function fixTitleAndYear(title, year, type, page_link, save_link, $2) {
+    try {
+        let titleHeader = $2('.head_meta');
+        if (titleHeader) {
+            let temp = $2($2($2(titleHeader).children()[1]).children()[0]).text().toLowerCase();
+            let splitTitle = purgeTitle(temp, type, true);
+            year = splitTitle[splitTitle.length - 1];
+            if (!isNaN(year) && Number(year) > 1900) {
+                splitTitle.pop();
+                title = splitTitle.join(" ");
+                if (year.length > 4) {
+                    year = year.slice(0, 4);
+                }
+            } else {
+                title = splitTitle.join(" ");
+                year = getYear(title, page_link, save_link);
+            }
+            return {title, year};
+        }
+        return {title, year: year || ''};
+    } catch (error) {
+        saveError(error);
+        return {title, year: year || ''};
     }
 }
 

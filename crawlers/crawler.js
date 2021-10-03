@@ -7,7 +7,7 @@ const golchindl = require('./sources/8golchindl');
 const bia2anime = require('./sources/10bia2anime');
 const animelist = require('./sources/11animelist');
 const {getDatesBetween} = require('./utils');
-const getCollection = require("../mongoDB");
+const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../dbMethods");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
 const Sentry = require('@sentry/node');
@@ -20,9 +20,11 @@ export async function crawler(sourceName, crawlMode = 0, handleDomainChange = tr
         resetJikanApiCache(time1);
         await handleDataBaseStates();
 
-        let collection = await getCollection('sources');
-        let sourcesObj = await collection.findOne({title: 'sources'});
-
+        let sourcesObj = await getSourcesObjDB();
+        if (!sourcesObj) {
+            Sentry.captureMessage('crawling cancelled : sourcesObj is null');
+            return;
+        }
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
         if (!sourceName) {
@@ -50,23 +52,18 @@ export async function crawler(sourceName, crawlMode = 0, handleDomainChange = tr
 
 async function handleDataBaseStates() {
     try {
-        let statesCollection = await getCollection('states');
-        let states = await statesCollection.findOne({name: 'states'});
+        let states = await getStatusObjDB();
+        if (!states) {
+            return;
+        }
         let now = new Date();
         let lastMonthlyResetDate = new Date(states.lastMonthlyResetDate);
         if (now.getDate() === 1 && getDatesBetween(now, lastMonthlyResetDate).days > 29) {
-            let moviesCollection = await getCollection('movies');
-            await moviesCollection.updateMany({}, {
-                $set: {
-                    like_month: 0,
-                    view_month: 0,
-                }
+            await updateMovieCollectionDB( {
+                like_month: 0,
+                view_month: 0,
             });
-            await statesCollection.findOneAndUpdate({name: 'states'}, {
-                $set: {
-                    lastMonthlyResetDate: now,
-                }
-            });
+            await updateStatusObjDB({lastMonthlyResetDate: now});
         }
     } catch (error) {
         saveError(error);

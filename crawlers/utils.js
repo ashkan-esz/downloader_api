@@ -1,7 +1,8 @@
 const persianRex = require('persian-rex');
 const {saveError} = require("../saveError");
 
-export function purgeTitle(title, type, keepLastNumber = false) {
+export function purgeTitle(title, type, keepLastNumber = true) {
+    let currentYear = new Date().getFullYear();
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     title = replaceSpecialCharacters(title.trim());
@@ -10,6 +11,7 @@ export function purgeTitle(title, type, keepLastNumber = false) {
         .replace('شماره ۱', '')
         .replace('دوبله فارسی انیمیشن 2 ', ' ')
         .replace('فیلم 100', '100')
+        .replace('فیلم 19', '19')
         .replace('فیلم 1', '')
         .replace(/سینمایی \d/g, '');
 
@@ -22,12 +24,19 @@ export function purgeTitle(title, type, keepLastNumber = false) {
         movieNumber = Number(movieNumber);
         title_array.push(movieNumber);
     }
+
     if (title_array.length > 1) {
+        if (!isNaN(title_array[0]) && Number(title_array[0]) < 5) {
+            title_array.shift();
+        }
         let year = title_array[title_array.length - 1];
         if (!isNaN(year) && Number(year) > 1900 && !keepLastNumber) {
             title_array.pop();
-        } else if (!isNaN(title_array[0]) && Number(title_array[0]) > 1000) {
-            title_array.shift();
+        } else if (!isNaN(title_array[0]) && Number(title_array[0]) > 1000 && Number(title_array[0]) <= (currentYear + 1)) {
+            let yearAtStart = title_array.shift();
+            if (isNaN(year)) {
+                title_array.push(yearAtStart);
+            }
         }
     }
 
@@ -41,7 +50,7 @@ export function purgeTitle(title, type, keepLastNumber = false) {
     if (title_array.length > 2) {
         let year = Number(title_array[title_array.length - 2]);
         let number = Number(title_array[title_array.length - 1]);
-        if (year > 1900 && year < 2100 && number < 10) {
+        if (year > 1900 && year <= (currentYear + 1) && number < 10) {
             title_array.pop();
             title_array.pop();
         }
@@ -49,7 +58,7 @@ export function purgeTitle(title, type, keepLastNumber = false) {
 
     let firstPart = title_array[0];
     let thirdPart = title_array.length > 1 ? title_array[2] : '';
-    let lastPart = title_array.length > 2 ? title_array[title_array.length - 1] : '';
+    let lastPart = title_array.length > 3 ? title_array[title_array.length - 2] : '';
     if (
         (firstPart === lastPart && !isNaN(firstPart)) ||
         (thirdPart && firstPart === thirdPart && Number(firstPart) < 5)
@@ -57,12 +66,12 @@ export function purgeTitle(title, type, keepLastNumber = false) {
         title_array.shift();
     }
 
-    return title_array.join(' ');
+    return title_array;
 }
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;:·\/☆★°♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
+        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
         .replace(/["'’‘٫.:?¿!#%,()~♥△Ωωψ]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
@@ -119,6 +128,46 @@ export function getType(title) {
         return 'movie';
     }
     return 'serial';
+}
+
+export function getTitleAndYear(title, year, type) {
+    try {
+        let splitTitle = purgeTitle(title.toLowerCase(), type);
+        year = splitTitle[splitTitle.length - 1];
+        if (!isNaN(year) && Number(year) > 1900) {
+            splitTitle.pop();
+            title = splitTitle.join(" ");
+            let currentYear = new Date().getFullYear();
+            if (Number(year) === currentYear + 1) {
+                year = currentYear.toString();
+            } else if (Number(year) > currentYear + 1) {
+                year = '';
+            }
+        } else {
+            title = splitTitle.join(" ");
+            year = '';
+        }
+        return {title, year: year || ''};
+    } catch (error) {
+        saveError(error);
+        return {title, year: year || ''};
+    }
+}
+
+export function validateYear(year) {
+    year = year.toString().trim().slice(0, 4);
+    let yearNumber = Number(year);
+    if (yearNumber > 1900) {
+        let currentYear = new Date().getFullYear();
+        if (yearNumber === currentYear + 1) {
+            year = currentYear.toString();
+        } else if (yearNumber > currentYear + 1) {
+            year = '';
+        }
+    } else {
+        year = '';
+    }
+    return year;
 }
 
 export function checkDubbed(link, info = '') {
@@ -368,6 +417,7 @@ export function purgeSizeText(sizeText) {
     return sizeText
         .trim()
         .replace('میانگین حجم', '')
+        .replace('حجم: نامشخص', '')
         .replace('حجم', '')
         .replace('میانگین', '')
         .replace('فایل', '')

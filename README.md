@@ -32,7 +32,7 @@ extraInfo = {
 }
 
 
-[types] => movie / serial
+[types] => movie / serial / anime_movie / anime_serial
 [dataLevel] => low/medium/high
 if page = 0 then return based on count value
 

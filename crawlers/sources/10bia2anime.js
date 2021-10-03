@@ -1,6 +1,7 @@
 const {search_in_title_page, wrapper_module} = require('../searchTools');
 const {
-    purgeTitle,
+    getTitleAndYear,
+    validateYear,
     checkDubbed,
     replacePersianNumbers,
     purgeQualityText,
@@ -21,34 +22,68 @@ async function search_title(link, i) {
         let text = link.text();
         if (text && text.includes('مطلب') && text.includes('ادامه')) {
             let title = link.attr('title').toLowerCase().split('|')[0];
+            let year;
             let page_link = link.attr('href');
             let type = title.includes('movie') ? 'anime_movie' : 'anime_serial';
             if (process.env.NODE_ENV === 'dev') {
                 console.log(`bia2anime/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title, type);
-
+            ({title, year} = getTitleAndYear(title, year, type));
             if (title === 'dota dragons blood' && type === 'anime_serial') {
                 type = 'serial';
             }
-
             if (title === 'kuroshitsuji') {
                 return;
             }
+
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null);
                 if (pageSearchResult) {
                     let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    if (!year) {
+                        year = fixYear($2);
+                    }
                     save_link = sortLinks(save_link);
                     let persian_summary = get_persian_summary($2);
                     let poster = get_poster($2);
                     title = replaceShortTitleWithFull(title);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    await save(title, year, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
                 }
             }
         }
     } catch (error) {
         saveError(error);
+    }
+}
+
+function fixYear($) {
+    try {
+        let state = 0;
+        let postInfo = $('li:contains("سال انتشار")');
+        if (postInfo.length === 0) {
+            state = 1;
+            postInfo = $('li:contains("سال های پخش")');
+        }
+        if (postInfo.length === 1) {
+            let temp = $(postInfo).text().replace('سال های پخش', '').replace('سال انتشار', '').toLowerCase().trim();
+            if (!temp && state === 0) {
+                postInfo = $('li:contains("سال های پخش")');
+                if (postInfo.length === 1) {
+                    temp = $(postInfo).text().replace('سال های پخش', '').replace('سال انتشار', '').toLowerCase().trim();
+                }
+            }
+            let yearArray = temp.split(/\s+|-|–/g)
+                .filter(item => item && !isNaN(item.trim()))
+                .sort((a, b) => Number(a) - Number(b));
+            if (yearArray.length === 0) {
+                return '';
+            }
+            return validateYear(yearArray[0]);
+        }
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
     }
 }
 

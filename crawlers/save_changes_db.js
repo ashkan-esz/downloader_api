@@ -1,5 +1,5 @@
 const {searchTitleDB, insertToDB, updateByIdDB, removeTitleByIdDB} = require('../dbMethods');
-const {checkSourceExist, checkSource, getYear, removeDuplicateElements} = require('./utils');
+const {checkSourceExist, checkSource, removeDuplicateElements} = require('./utils');
 const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
@@ -14,16 +14,14 @@ const {saveError} = require("../saveError");
 //todo : handle insert_date - update_date for upcoming title
 
 
-module.exports = async function save(title, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
+module.exports = async function save(title, year, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
     try {
-        let year = (type.includes('movie')) ? getYear(title, page_link, siteDownloadLinks) : '';
-
-        let titleObj = await getTitleObj(title, type, false, 0);
+        let titleObj = await getTitleObj(title, year, type, false, 0);
         let db_data = await searchOnCollection(titleObj, year, type);
         if (db_data) {
-            titleObj = await getTitleObj(title, type, true, db_data.jikanID);
+            titleObj = await getTitleObj(title, year, type, true, db_data.jikanID);
         } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
-            titleObj = await getTitleObj(title, type, true, 0); //get titles from jikan api
+            titleObj = await getTitleObj(title, year, type, true, 0); //get titles from jikan api
             db_data = await searchOnCollection(titleObj, year, type);
         }
 
@@ -68,7 +66,7 @@ module.exports = async function save(title, page_link, siteDownloadLinks, persia
     }
 }
 
-async function getTitleObj(title, type, useJikanApi, jikanID) {
+async function getTitleObj(title, year, type, useJikanApi, jikanID) {
     let rawTitle = title.split(' ').map(value => value.charAt(0).toUpperCase() + value.slice(1)).join(' ');
     let titleObj = {
         title: title,
@@ -79,7 +77,7 @@ async function getTitleObj(title, type, useJikanApi, jikanID) {
     }
 
     if (type.includes('anime') && (useJikanApi || jikanID)) {
-        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, type, jikanID, false);
+        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, year, type, jikanID, false);
         if (jikanApiData) {
             titleObj.title = jikanApiData.apiTitle_simple;
             titleObj.rawTitle = jikanApiData.apiTitle;
@@ -140,34 +138,17 @@ async function searchOnCollection(titleObj, year, type) {
         searchTypes.push(('anime_' + type));
     }
 
-    if (type.includes('serial')) {
-        let searchResults = await searchTitleDB(titleObj, type, searchTypes, [], dataConfig);
+    let searchResults = await searchTitleDB(titleObj, searchTypes, year, dataConfig);
 
-        A: for (let i = 0; i < searchTypes.length; i++) {
-            for (let j = 0; j < searchResults.length; j++) {
-                if (searchTypes[i] === searchResults[j].type) {
-                    db_data = searchResults[j];
-                    break A;
-                }
-            }
-        }
-    } else {
-        let YEAR = Number(year);
-        let searchYears = [year, (YEAR + 1).toString(), (YEAR - 1).toString()];
-        let searchResults = await searchTitleDB(titleObj, type, searchTypes, searchYears, dataConfig)
-
-        A: for (let i = 0; i < searchYears.length; i++) {
-            for (let j = 0; j < searchTypes.length; j++) {
-                for (let k = 0; k < searchResults.length; k++) {
-                    if (searchYears[i] === searchResults[k].premiered &&
-                        searchTypes[j] === searchResults[k].type) {
-                        db_data = searchResults[k];
-                        break A;
-                    }
-                }
+    A: for (let i = 0; i < searchTypes.length; i++) {
+        for (let j = 0; j < searchResults.length; j++) {
+            if (searchTypes[i] === searchResults[j].type) {
+                db_data = searchResults[j];
+                break A;
             }
         }
     }
+
     return db_data;
 }
 

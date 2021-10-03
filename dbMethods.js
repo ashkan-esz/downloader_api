@@ -2,7 +2,7 @@ const getCollection = require('./mongoDB');
 const {saveError} = require("./saveError");
 
 
-export async function searchTitleDB(titleObj, type, searchTypes, searchYears, dataConfig) {
+export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
     try {
         let collection = await getCollection('movies');
         let searchObj = {
@@ -15,8 +15,8 @@ export async function searchTitleDB(titleObj, type, searchTypes, searchYears, da
             ],
             type: {$in: searchTypes}
         };
-        if (type.includes('movie')) {
-            searchObj.premiered = {$in: searchYears};
+        if (year) {
+            searchObj.year = year;
         }
         return await collection.find(searchObj, {projection: dataConfig}).toArray();
     } catch (error) {
@@ -58,6 +58,17 @@ export async function insertToDB(collectionName, dataToInsert, isMany = false) {
     }
 }
 
+export async function updateMovieCollectionDB(updateFields) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.updateMany({}, {
+            $set: updateFields
+        });
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 export async function updateByIdDB(collectionName, id, updateFields) {
     try {
         let collection = await getCollection(collectionName);
@@ -75,5 +86,37 @@ export async function removeTitleByIdDB(id) {
         await collection.findOneAndDelete({_id: id});
     } catch (error) {
         saveError(error);
+    }
+}
+
+export async function getSourcesObjDB() {
+    try {
+        let collection = await getCollection('sources');
+        return await collection.findOne({title: 'sources'});
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function getStatusObjDB() {
+    try {
+        let statesCollection = await getCollection('states');
+        return await statesCollection.findOne({name: 'states'});
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function updateStatusObjDB(updateFields) {
+    try {
+        let statesCollection = await getCollection('states');
+        await statesCollection.findOneAndUpdate({name: 'states'}, {
+            $set: updateFields
+        });
+    } catch (error) {
+        saveError(error);
+        return null;
     }
 }
