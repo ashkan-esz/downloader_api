@@ -296,37 +296,17 @@ async function handle_OMDB_ApiKeys(url) {
 }
 
 function getApiKeys() {
-    return (
-        [
-            '48621e95', '4de5ec8d', '1bc90abf', '7c0fe6e', '16070419',
-            '8cf4fc9a', 'e42203dc', '25e38d4e', 'a3a8d729', '51f6c05a',
-            'b9a766e3', 'e0c9d334', '91a3f2ee', '88862eae', 'aa0723f2', //10
-            '20ccbf2b', 'aed32a13', 'f0bdcac7', '844e1160', '1c15c5bd',
-            '926ff44d', '2c76a960', '81ee4b8c', 'a7469a3b', '6e9a6749', //20
-            'c6de5a73', '68f6caf9', 'c9aec5c9', '76eb4d17', 'ba450d4d',
-            '4d77f7e2', '4d9852f0', 'cb4138ce', '1ac50e8f', 'e221e620', //30
-            '9821979c', 'b1e93bd1', 'fbfdd6b9', '263256ae', '8a3dcfd3',
-            '5d55fa67', 'd7173993', '8d943b26', 'e84d6d3f', 'bea91417', //40
-            '73c80ebd', '4ed35fd', 'b4d97241', '983b3335', '2724e93b',
-            'c98bd9c0', '5837c85', '80fca094', 'd2bbde1a', '2432c2d0', //50
-            '94fcccef', 'e28e2e3b', '3d58e8e4', '4af5698e', 'a3a36ebb',
-            '1f22f193', 'ba77978c', 'bbd390a6', '50527320', 'e3e67ddf', //60
-            'fcf7d223', '710829ae', '7e8d4f94', '8bc0f117', '3bb301a',
-            '15ab15a5', '8471f363', '5ad67ef6', 'cb646df1', '56f21919', //70
-            '7e1997fd', '57c7344d', '4d6afd7', '74960d2', '964dd637',
-            '3b0cc1e8', 'cf3efbaf', '7385ce05', 'cca2bd4a', '8f773fa0', //80
-            'e65a43b7', 'a6e35be3', '25e961cc', '449936a6', '2da97556',
-            '856f0de4', '930fe2e3', '390aedbb', '81fe29fc', '726e3575', //90
-            '3a04471b', 'ea06efba', '98b427fe', '9b330979', 'ba299dd2',
-            '742775ae', 'a0035fc1', '2700d178', '594f47cc', 'b014fdb6', //100
-            'fe432541', '1506db1d', 'aa6bea99', '27d3d10e', 'a3f6a70b',
-            '409b3313', '6aa8e964', 'ee416919', '55648b97', 'e26a6de2', //110
-            '59980ba5', '65e0c6c2', 'e6bfba0d', '273613f', '978e93e5',
-            '114613b3', '90394d7b', 'c8875658', '3b8624dd', '723d9b17', //120
-            'e776834', 'c25556f4', '34b5906d', '61f5d3c3', '100a3c4e',
-            '4b4aa804', '11164b7d', '222277fe', '7df25e0e', 'b39467bd', //130
-        ]
-    );
+    let allKeys = [];
+    let i = 1;
+    while (true) {
+        let keys = process.env[`OMDB_API_KEY${i}`];
+        if (!keys) {
+            break;
+        }
+        allKeys.push(...keys.split('-'));
+        i++;
+    }
+    return allKeys;
 }
 
 export function fixEpisodesZeroDuration(episodes, duration, type) {
