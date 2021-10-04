@@ -1,6 +1,6 @@
 const {searchTitleDB, insertToDB, updateByIdDB, removeTitleByIdDB} = require('../dbMethods');
 const {checkSourceExist, checkSource, removeDuplicateElements} = require('./utils');
-const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
+const {addApiData, apiDataUpdate, conectNewAnimeToRelatedTitles} = require('./3rdPartyApi/allApiData');
 const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
@@ -34,6 +34,9 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
                 let result = await addApiData(titleModel, siteDownloadLinks);
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
+                    if (type.includes('anime')) {
+                        await conectNewAnimeToRelatedTitles(titleModel, insertedId);
+                    }
                     let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
                     let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData, 0);
                     if (temp) {

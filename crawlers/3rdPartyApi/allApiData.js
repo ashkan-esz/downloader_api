@@ -3,7 +3,7 @@ const axiosRetry = require("axios-retry");
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
 const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
-const {searchOnMovieCollectionDB} = require('../../dbMethods');
+const {searchOnMovieCollectionDB, searchForAnimeTitlesByJikanID, updateByIdDB} = require('../../dbMethods');
 const {uploadTitlePosterToS3, checkTitlePosterExist} = require('../../cloudStorage');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
 const {sortPosters} = require('../subUpdates');
@@ -319,7 +319,6 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
 
 async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
     try {
-        //todo : change query to update relatedTitles if searching title added later
         let newRelatedTitles = [];
         for (let i = 0; i < jikanRelatedTitles.length; i++) {
             let searchResult = await searchOnMovieCollectionDB(
@@ -341,5 +340,35 @@ async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
     } catch (error) {
         saveError(error);
         return titleData.relatedTitles;
+    }
+}
+
+export async function conectNewAnimeToRelatedTitles(titleModel, titleID) {
+    let jikanID = titleModel.jikanID;
+    let mediumLevelDataKeys = Object.keys(dataConfig['medium']);
+    let mediumLevelData = Object.keys(titleModel)
+        .filter(key => mediumLevelDataKeys.includes(key))
+        .reduce((obj, key) => {
+            obj[key] = titleModel[key];
+            return obj;
+        }, {});
+    let searchResults = await searchForAnimeTitlesByJikanID(jikanID);
+    for (let i = 0; i < searchResults.length; i++) {
+        let thisTitleRelatedTitles = searchResults[i].relatedTitles;
+        for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
+            if (thisTitleRelatedTitles[j].jikanID === jikanID) {
+                thisTitleRelatedTitles[j] = {
+                    ...thisTitleRelatedTitles[j],
+                    ...mediumLevelData,
+                    _id: titleID,
+                }
+            }
+        }
+        await updateByIdDB(
+            'movies',
+            searchResults[i]._id,
+            {
+                relatedTitles: thisTitleRelatedTitles
+            });
     }
 }
