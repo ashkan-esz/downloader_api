@@ -13,9 +13,11 @@ const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
+export let _handleCastUpdate = true;
 
-export async function crawler(sourceName, crawlMode = 0, handleDomainChange = true) {
+export async function crawler(sourceName, crawlMode = 0, handleDomainChange = true, handleCastUpdate = true) {
     try {
+        _handleCastUpdate = handleCastUpdate;
         let time1 = new Date();
         resetJikanApiCache(time1);
         await handleDataBaseStates();
@@ -59,7 +61,7 @@ async function handleDataBaseStates() {
         let now = new Date();
         let lastMonthlyResetDate = new Date(states.lastMonthlyResetDate);
         if (now.getDate() === 1 && getDatesBetween(now, lastMonthlyResetDate).days > 29) {
-            await updateMovieCollectionDB( {
+            await updateMovieCollectionDB({
                 like_month: 0,
                 view_month: 0,
             });

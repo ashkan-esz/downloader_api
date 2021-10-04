@@ -217,7 +217,8 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             }
         }
 
-        if (apiData) {
+        const {_handleCastUpdate} = require('./crawler');
+        if (apiData && _handleCastUpdate) {
             let poster = db_data.posters.length > 0 ? db_data.posters[0] : '';
             let temp = await addStaffAndCharacters(db_data._id, db_data.rawTitle, poster, apiData.allApiData, db_data.castUpdateDate);
             if (temp) {

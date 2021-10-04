@@ -1,8 +1,27 @@
+const axios = require('axios').default;
+const axiosRetry = require("axios-retry");
 const getCollection = require("./mongoDB");
 const {dataConfig} = require("./routes/configs");
-const axios = require('axios').default;
 const {replaceSpecialCharacters} = require("./crawlers/utils");
 const {saveError} = require("./saveError");
+
+axiosRetry(axios, {
+    retries: 3, // number of retries
+    retryDelay: (retryCount) => {
+        return retryCount * 1000; // time interval between retries
+    },
+    retryCondition: (error) => (
+        error.code === 'ECONNRESET' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNABORTED' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'SlowDown' ||
+        (error.response &&
+            error.response.status !== 429 &&
+            error.response.status !== 404 &&
+            error.response.status !== 403)
+    ),
+});
 
 let news = []; //5 * 12 = 60
 let updates = []; //5 * 12 = 60
@@ -130,7 +149,6 @@ export async function setCache_popularIMDBShowsNames() {
         }
         popularIMDBShowsNames = temp;
     } catch (error) {
-        popularIMDBShowsNames = [];
         saveError(error);
     }
 }

@@ -11,12 +11,13 @@ router.post('/:password/', async (req, res) => {
     let sourceName = req.query.sourceName;
     let mode = req.query.mode ? Number(req.query.mode) : 0;
     let handleDomainChange = req.query.handleDomainChange === 'true' || req.query.handleDomainChange === undefined;
+    let handleCastUpdate = req.query.handleCastUpdate === 'true' || req.query.handleCastUpdate === undefined;
 
     if (!crawling_flag) {
         if (password === process.env["UPDATE_PASSWORD"]) {
             crawling_flag = true;
             let startTime = new Date();
-            await crawler(sourceName, mode, handleDomainChange);
+            await crawler(sourceName, mode, handleDomainChange, handleCastUpdate);
             await setCache_all();
             crawling_flag = false;
             let endTime = new Date();
