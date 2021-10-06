@@ -51,8 +51,8 @@ export async function setCache_all() {
                 setCache_SeriesOfDay(),
                 setCache_seriesOfWeek(),
             ]);
-            await setCache_popularIMDBShowsNames();
-            await setCache_popularIMDBShows();
+            // await setCache_popularIMDBShowsNames();
+            // await setCache_popularIMDBShows();
             resolve();
         } catch (error) {
             saveError(error);
@@ -136,6 +136,7 @@ export function getCache_TopLikes(types) {
 //----------------------------------
 //------------Tops_Popular----------
 export async function setCache_popularIMDBShowsNames() {
+    //todo : remove this section
     try {
         let temp = [];
         const pagesCounts = 5; // 5 * 20 = 100

@@ -117,7 +117,14 @@ export async function uploadTitleTrailerToS3(title, type, year, trailers, retryC
             .replace(/\s+/g, '-')
             .replace('-.', '.');
 
-        let videoReadStream = ytdl(trailers[0], {filter: 'audioandvideo', quality: "highestvideo"});
+        let videoReadStream = ytdl(trailers[0], {
+            filter: 'audioandvideo',
+            quality: "highestvideo",
+            highWaterMark: 1 << 25,
+        });
+        videoReadStream.on('error', (err) => {
+            saveError(err);
+        });
         const params = {
             Bucket: 'download-trailer',
             Body: videoReadStream,
