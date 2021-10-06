@@ -180,7 +180,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting'
         titleModel.poster_s3 = s3poster;
     }
 
-    let s3Trailer = await uploadTrailer(titleModel.title, titleModel.year, type, titleModel.imdbID);
+    let s3Trailer = await uploadTrailer(titleModel.title, titleModel.year, type, imdbData.id);
     if (s3Trailer) {
         titleModel.trailer_s3 = s3Trailer;
         titleModel.trailers = [s3Trailer];
