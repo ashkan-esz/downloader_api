@@ -10,6 +10,7 @@ export const dataConfig = {
         like: 1,
     },
     medium: {
+        releaseState: 1,
         title: 1,
         year: 1,
         premiered: 1,

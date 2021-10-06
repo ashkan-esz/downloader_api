@@ -4,6 +4,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
     let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);
     type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
     return {
+        releaseState: 'done',
         title: titleObj.title,
         type: type,
         rawTitle: titleObj.rawTitle,
@@ -26,6 +27,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         episodes: [],
         posters: [poster],
         poster_s3: '',
+        trailer_s3: '',
         summary: {
             persian: persianSummary,
             english: '',
@@ -49,6 +51,7 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
         officialSite: "",
         webChannel: "",
         nextEpisode: null,
+        duration: "0 min",
         totalDuration: '',
         //3rd party api data
         imdbID: "",
@@ -66,7 +69,6 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
             metacritic: 0,
             myAnimeList: 0
         },
-        duration: "0 min",
         staffAndCharactersData: [],
         actors: [],
         directors: [],

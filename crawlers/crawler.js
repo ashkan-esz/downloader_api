@@ -10,6 +10,7 @@ const {getDatesBetween} = require('./utils');
 const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../dbMethods");
 const {domainChangeHandler} = require('./domainChangeHandler');
 const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
+const {updateImdbData} = require('./3rdPartyApi/imdbApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
 
@@ -21,6 +22,7 @@ export async function crawler(sourceName, crawlMode = 0, handleDomainChange = tr
         let time1 = new Date();
         resetJikanApiCache(time1);
         await handleDataBaseStates();
+        await updateImdbData();
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
