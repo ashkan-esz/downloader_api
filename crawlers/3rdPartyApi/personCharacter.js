@@ -1,5 +1,5 @@
 const {searchStaffAndCharactersDB, insertToDB, updateByIdDB} = require('../../dbMethods');
-const {uploadCastImageToS3ByURl, checkCastImageExist} = require('../../cloudStorage');
+const {uploadCastImageToS3ByURl} = require('../../cloudStorage');
 const {getCharactersStaff, getPersonInfo, getCharacterInfo} = require('./jikanApi');
 const {getPersonModel} = require('../models/person');
 const {getCharacterModel} = require('../models/character');
@@ -155,13 +155,20 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
     let updateStaffCharactersArray = [];
     let promiseArray = [];
     for (let i = 0; i < staff_characters.length; i++) {
-        let promise = searchStaffAndCharactersDB(type, staff_characters[i].name).then(searchResult => {
+        let promise = searchStaffAndCharactersDB(type, staff_characters[i].name).then(async (searchResult) => {
             if (!searchResult) {
                 //new staff_character
                 newStaffCharactersArray.push(staff_characters[i]);
             } else {
                 let fieldsUpdateResult = updateStaffAndCharactersFields(searchResult, staff_characters[i], type);
                 searchResult = fieldsUpdateResult.newFields;
+                if (!searchResult.image && searchResult.originalImages.length > 0) {
+                    let temp = await addImage([searchResult]);
+                    searchResult = temp[0];
+                    if (searchResult.image) {
+                        fieldsUpdateResult.fieldsUpdated = true;
+                    }
+                }
                 let creditUpdateResult = updateCredits(searchResult.credits, staff_characters[i].credits, type);
                 searchResult.credits = creditUpdateResult.prevCredits;
                 if (fieldsUpdateResult.fieldsUpdated || creditUpdateResult.creditsUpdated) {
@@ -266,18 +273,13 @@ async function addImage(dataArray) {
     for (let i = 0; i < dataArray.length; i++) {
         if (dataArray[i].originalImages.length > 0) {
             let imageName = dataArray[i].name + '.jpg';
-            let checkImageExistResult = await checkCastImageExist(imageName);
-            if (checkImageExistResult) {
-                dataArray[i].image = checkImageExistResult;
-            } else {
-                let promise = uploadCastImageToS3ByURl(dataArray[i].originalImages[0], imageName).then(imageUrl => {
-                    dataArray[i].image = imageUrl;
-                });
-                promiseArray.push(promise);
-                if (promiseArray.length > 10) {
-                    await Promise.allSettled(promiseArray);
-                    promiseArray = [];
-                }
+            let promise = uploadCastImageToS3ByURl(dataArray[i].originalImages[0], imageName).then(imageUrl => {
+                dataArray[i].image = imageUrl;
+            });
+            promiseArray.push(promise);
+            if (promiseArray.length > 10) {
+                await Promise.allSettled(promiseArray);
+                promiseArray = [];
             }
         }
     }
@@ -295,7 +297,9 @@ function updateCredits(prevCredits, currentCredits, type) {
                 if (type === 'staff') {
                     if (
                         (prevCredits[k].positions.length < currentCredits[j].positions.length) ||
-                        (prevCredits[k].characterName !== currentCredits[j].characterName && currentCredits[j].characterName)
+                        (prevCredits[k].characterName !== currentCredits[j].characterName && currentCredits[j].characterName) ||
+                        (prevCredits[k].moviePoster !== currentCredits[j].moviePoster) ||
+                        (prevCredits[k].characterImage !== currentCredits[j].characterImage)
                     ) {
                         creditsUpdated = true;
                     }

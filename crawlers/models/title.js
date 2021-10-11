@@ -5,6 +5,14 @@ export function getTitleModel(titleObj, page_link, type, siteDownloadLinks, year
     type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
     return {
         releaseState: 'done',
+        rank: {
+            animeTopComingSoon: -1,
+            animeTopAiring: -1,
+            comingSoon: -1,
+            inTheaters: -1,
+            top: -1,
+            popular: -1,
+        },
         title: titleObj.title,
         type: type,
         rawTitle: titleObj.rawTitle,

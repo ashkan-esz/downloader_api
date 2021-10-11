@@ -9,7 +9,7 @@ const animelist = require('./sources/11animelist');
 const {getDatesBetween} = require('./utils');
 const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../dbMethods");
 const {domainChangeHandler} = require('./domainChangeHandler');
-const {resetJikanApiCache} = require('./3rdPartyApi/jikanApi');
+const {resetJikanApiCache, updateJikanData} = require('./3rdPartyApi/jikanApi');
 const {updateImdbData} = require('./3rdPartyApi/imdbApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
@@ -23,6 +23,7 @@ export async function crawler(sourceName, crawlMode = 0, handleDomainChange = tr
         resetJikanApiCache(time1);
         await handleDataBaseStates();
         await updateImdbData();
+        await updateJikanData();
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {

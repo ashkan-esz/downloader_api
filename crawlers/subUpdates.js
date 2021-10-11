@@ -131,8 +131,8 @@ export function sortPosters(posters) {
     return sortedPosters;
 }
 
-function sortTrailers(trailers) {
-    const trailerSources = ['digimovie', 'avamovie', 'anime-list', 'animelist', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
+export function sortTrailers(trailers) {
+    const trailerSources = ['digimovie', 'avamovie', 's3Trailer', 'anime-list', 'animelist', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
     let trailerQualities = ['1080', '720', '360'];
     let sortedTrailers = [];
 

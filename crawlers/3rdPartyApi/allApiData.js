@@ -2,14 +2,12 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
 const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
-const {getJikanApiData, getJikanApiFields} = require('./jikanApi');
-const {searchOnMovieCollectionDB, searchForAnimeTitlesByJikanID, updateByIdDB} = require('../../dbMethods');
-const {uploadTitlePosterToS3, checkTitlePosterExist} = require('../../cloudStorage');
+const {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} = require('./jikanApi');
+const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require('../../cloudStorage');
 const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
-const {sortPosters} = require('../subUpdates');
+const {sortPosters, sortTrailers} = require('../subUpdates');
 const {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} = require('../utils');
-const {saveError} = require('../../saveError');
-const {dataConfig} = require("../../routes/configs");
+
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -33,13 +31,9 @@ axiosRetry(axios, {
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let s3poster = await checkTitlePosterExist(titleModel.title, titleModel.type, titleModel.year);
+    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
     if (s3poster) {
         titleModel.poster_s3 = s3poster;
-    } else {
-        titleModel.poster_s3 = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
-    }
-    if (titleModel.poster_s3) {
         titleModel.posters.push(titleModel.poster_s3);
         titleModel.posters = sortPosters(titleModel.posters);
     }
@@ -74,6 +68,18 @@ export async function addApiData(titleModel, site_links) {
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
+                if (jikanApiFields.youtubeTrailer) {
+                    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, [jikanApiFields.youtubeTrailer]);
+                    if (s3Trailer) {
+                        titleModel.trailer_s3 = s3Trailer;
+                        titleModel.trailers.push({
+                            link: s3Trailer,
+                            info: 's3Trailer-720p'
+                        });
+                        titleModel.trailers = sortTrailers(titleModel.trailers);
+                    }
+                }
+
                 titleModel = {...titleModel, ...jikanApiFields.updateFields};
                 if (!titleModel.movieLang) {
                     titleModel.movieLang = 'japanese';
@@ -87,7 +93,7 @@ export async function addApiData(titleModel, site_links) {
                 }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
                 titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
-                titleModel.relatedTitles = getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
+                titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
             }
         }
     }
@@ -112,13 +118,10 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     updateFields.apiUpdateDate = now;
 
     if (db_data.poster_s3 === '') {
-        let s3poster = await checkTitlePosterExist(db_data.title, db_data.type, db_data.year);
+        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, db_data.posters);
         if (s3poster) {
             db_data.poster_s3 = s3poster
             updateFields.poster_s3 = s3poster;
-        } else {
-            db_data.poster_s3 = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, db_data.posters);
-            updateFields.poster_s3 = db_data.poster_s3;
         }
     }
 
@@ -157,13 +160,25 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
+                if (!db_data.trailer_s3 && !db_data.trailers && jikanApiFields.youtubeTrailer) {
+                    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(db_data.title, db_data.type, db_data.year, [jikanApiFields.youtubeTrailer]);
+                    if (s3Trailer) {
+                        db_data.trailer_s3 = s3Trailer;
+                        updateFields.trailer_s3 = s3Trailer;
+                        db_data.trailers = [{
+                            link: s3Trailer,
+                            info: 's3Trailer-720p'
+                        }];
+                        updateFields.trailers = db_data.trailers;
+                    }
+                }
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
                 let currentRating = updateFields.rating ? updateFields.rating : db_data.rating;
                 currentRating.myAnimeList = jikanApiFields.myAnimeListScore;
                 db_data.rating = currentRating;
                 updateFields.rating = currentRating;
-                let newRelatedTitles = getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
+                let newRelatedTitles = await getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
                 db_data.relatedTitles = newRelatedTitles;
                 updateFields.relatedTitles = newRelatedTitles;
             }
@@ -315,60 +330,4 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
         fields.nextEpisode = db_data.nextEpisode;
     }
     return fields;
-}
-
-async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
-    try {
-        let newRelatedTitles = [];
-        for (let i = 0; i < jikanRelatedTitles.length; i++) {
-            let searchResult = await searchOnMovieCollectionDB(
-                {jikanID: jikanRelatedTitles[i].jikanID},
-                dataConfig['medium']
-            );
-
-            if (searchResult) {
-                let relatedTitleData = {
-                    ...jikanRelatedTitles[i],
-                    ...searchResult
-                };
-                newRelatedTitles.push(relatedTitleData);
-            } else {
-                newRelatedTitles.push(jikanRelatedTitles[i]);
-            }
-        }
-        return newRelatedTitles;
-    } catch (error) {
-        saveError(error);
-        return titleData.relatedTitles;
-    }
-}
-
-export async function conectNewAnimeToRelatedTitles(titleModel, titleID) {
-    let jikanID = titleModel.jikanID;
-    let mediumLevelDataKeys = Object.keys(dataConfig['medium']);
-    let mediumLevelData = Object.keys(titleModel)
-        .filter(key => mediumLevelDataKeys.includes(key))
-        .reduce((obj, key) => {
-            obj[key] = titleModel[key];
-            return obj;
-        }, {});
-    let searchResults = await searchForAnimeTitlesByJikanID(jikanID);
-    for (let i = 0; i < searchResults.length; i++) {
-        let thisTitleRelatedTitles = searchResults[i].relatedTitles;
-        for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
-            if (thisTitleRelatedTitles[j].jikanID === jikanID) {
-                thisTitleRelatedTitles[j] = {
-                    ...thisTitleRelatedTitles[j],
-                    ...mediumLevelData,
-                    _id: titleID,
-                }
-            }
-        }
-        await updateByIdDB(
-            'movies',
-            searchResults[i]._id,
-            {
-                relatedTitles: thisTitleRelatedTitles
-            });
-    }
 }

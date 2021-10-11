@@ -1,8 +1,27 @@
 const axios = require('axios').default;
-const {replaceSpecialCharacters, convertHourToMinute, purgeObjFalsyValues, getDatesBetween} = require("../utils");
-const {saveError} = require("../../saveError");
+const {
+    getStatusObjDB,
+    updateStatusObjDB,
+    searchOnMovieCollectionDB,
+    updateByIdDB,
+    insertToDB,
+    searchForAnimeTitlesByJikanID,
+    updateMovieCollectionDB
+} = require("../../dbMethods");
+const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require("../../cloudStorage");
+const {
+    replaceSpecialCharacters,
+    convertHourToMinute,
+    purgeObjFalsyValues,
+    getDatesBetween,
+    removeDuplicateElements
+} = require("../utils");
+const {addStaffAndCharacters} = require("./personCharacter");
+const {getTitleModel} = require("../models/title");
+const {default: pQueue} = require('p-queue');
 const Sentry = require('@sentry/node');
-
+const {saveError} = require("../../saveError");
+const {dataConfig} = require("../../routes/configs");
 
 let jikanCacheStartDate = new Date();
 let jikanApiCache404 = [];
@@ -72,7 +91,7 @@ export async function getJikanApiData(title, rawTitle, year, type, jikanID, from
         let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
         let fullData = await handleApiCall(animeUrl);
         if (fullData) {
-            let allTitles = getTitlesFromData(title, fullData);
+            let allTitles = getTitlesFromData(fullData);
             if (checkTitle(title, type, allTitles)) {
                 let apiData = await getJikanApiData_simple(title, year, type, allTitles, fullData, jikanID);
                 jikanApiCache.push(apiData);
@@ -136,7 +155,7 @@ export async function getJikanApiData(title, rawTitle, year, type, jikanID, from
         }
         let jikanID = fullData.mal_id;
 
-        let allTitles = getTitlesFromData(title, fullData);
+        let allTitles = getTitlesFromData(fullData);
 
         if (checkTitle(title, type, allTitles)) {
             let apiData = await getJikanApiData_simple(title, year, type, allTitles, fullData, jikanID);
@@ -171,11 +190,12 @@ export function getJikanApiFields(data) {
     try {
         let apiFields = {
             jikanRelatedTitles: getRelatedTitles(data),
-            summary_en: data.synopsis.replace('[Written by MAL Rewrite]').trim() || '',
+            summary_en: data.synopsis ? data.synopsis.replace('[Written by MAL Rewrite]').trim() : '',
             genres: data.genres.map(item => item.name.toLowerCase()) || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
             myAnimeListScore: Number(data.score) || 0,
+            youtubeTrailer: data.trailer_url,
             updateFields: {
                 jikanID: data.jikanID,
                 rawTitle: data.apiTitle,
@@ -346,7 +366,7 @@ async function handleApiCall(url) {
     return null;
 }
 
-function getTitlesFromData(title, fullData) {
+function getTitlesFromData(fullData) {
     let apiTitle = fullData.title;
     let apiTitle_simple = replaceSpecialCharacters(apiTitle.toLowerCase());
     let apiTitleEnglish = (fullData.title_english || '').replace(/-....+-/g, '');
@@ -379,4 +399,294 @@ function getTitlesFromData(title, fullData) {
         apiTitleJapanese,
         titleSynonyms,
     };
+}
+
+export async function updateJikanData() {
+    let states = await getStatusObjDB();
+    if (!states) {
+        return;
+    }
+
+    //update data each 12 hour
+    let now = new Date();
+    let jikanDataUpdateDate = new Date(states.jikanDataUpdateDate);
+    if (getDatesBetween(now, jikanDataUpdateDate).hours < 12) {
+        return;
+    }
+    states.jikanDataUpdateDate = now;
+
+    //reset rank
+    await updateMovieCollectionDB({
+        'rank.animeTopComingSoon': -1,
+        'rank.animeTopAiring': -1,
+    });
+
+    await add_comingSoon_topAiring_Titles('comingSoon');
+    await add_comingSoon_topAiring_Titles('topAiring');
+
+    await updateStatusObjDB(states);
+}
+
+async function add_comingSoon_topAiring_Titles(mode) {
+    let url = (mode === 'comingSoon')
+        ? 'https://api.jikan.moe/v3/top/anime/1/upcoming'
+        : 'https://api.jikan.moe/v3/top/anime/1/airing';
+
+    let apiData = await handleApiCall(url);
+    if (!apiData) {
+        return;
+    }
+
+    let comingSoon_topAiring_titles = apiData.top;
+    const promiseQueue = new pQueue({concurrency: 2});
+    for (let i = 0; i < comingSoon_topAiring_titles.length && i < 50; i++) {
+        console.log(i, comingSoon_topAiring_titles[i].title);
+        let titleDataFromDB = await searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
+            ...dataConfig['medium'],
+            rank: 1,
+            title: 1,
+            rawTitle: 1,
+            type: 1,
+            year: 1,
+            jikanID: 1,
+            posters: 1,
+            trailers: 1,
+            castUpdateDate: 1,
+        });
+        if (titleDataFromDB) {
+            promiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode));
+        } else {
+            promiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode));
+        }
+    }
+    await promiseQueue.onEmpty();
+    await promiseQueue.onIdle();
+}
+
+async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData, mode) {
+    let updateFields = {};
+
+    if (mode === 'comingSoon') {
+        titleDataFromDB.rank.animeTopComingSoon = semiJikanData.rank;
+    } else {
+        titleDataFromDB.rank.animeTopAiring = semiJikanData.rank;
+    }
+    updateFields.rank = titleDataFromDB.rank;
+
+    if (titleDataFromDB.posters.length === 0) {
+        let jikanPoster = semiJikanData.image_url;
+        if (jikanPoster) {
+            let s3poster = await uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanPoster]);
+            if (s3poster) {
+                updateFields.posters = [s3poster];
+                updateFields.poster_s3 = s3poster;
+            }
+        }
+    }
+
+    if (!titleDataFromDB.trailers) {
+        let jikanID = semiJikanData.mal_id;
+        let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
+        let jikanData = await handleApiCall(animeUrl);
+        if (jikanData) {
+            let jikanTrailer = jikanData.trailer_url;
+            if (jikanTrailer) {
+                let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanTrailer]);
+                if (s3Trailer) {
+                    updateFields.trailer_s3 = s3Trailer;
+                    updateFields.trailers = [{
+                        link: s3Trailer,
+                        info: 's3Trailer-720p'
+                    }];
+                }
+            }
+        }
+    }
+
+    if (titleDataFromDB.castUpdateDate === 0) {
+        let allApiData = {
+            jikanApiFields: {
+                jikanID: titleDataFromDB.jikanID,
+            },
+        };
+        let castAndCharacters = await getCastAndCharacterFields(titleDataFromDB._id, titleDataFromDB, allApiData, titleDataFromDB.type);
+        if (castAndCharacters) {
+            updateFields = {...updateFields, ...castAndCharacters};
+        }
+    }
+
+    if (Object.keys(updateFields).length > 0) {
+        await updateByIdDB('movies', titleDataFromDB._id, updateFields);
+    }
+}
+
+async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
+    let jikanID = semiJikanData.mal_id;
+    let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
+    let thisTitleData = await handleApiCall(animeUrl);
+    if (thisTitleData) {
+        let titleObj = getTitleObjFromJikanData(thisTitleData);
+
+        let type = thisTitleData.type === 'Movie' ? 'anime_movie' : 'anime_serial';
+        let titleModel = getTitleModel(
+            titleObj, '', type, [],
+            '', '', '',
+            [], [], []
+        );
+        thisTitleData.jikanID = jikanID;
+        let jikanApiFields = getJikanApiFields(thisTitleData);
+        if (jikanApiFields) {
+            titleModel = {...titleModel, ...jikanApiFields.updateFields};
+        }
+
+        await uploadPosterAndTrailer(titleModel, thisTitleData);
+
+        titleModel.sources = [];
+        titleModel.posters = [];
+        titleModel.insert_date = 0;
+        titleModel.apiUpdateDate = 0;
+        titleModel.status = 'comingSoon';
+        titleModel.releaseState = 'comingSoon';
+        if (mode === 'comingSoon') {
+            titleModel.rank.animeTopComingSoon = semiJikanData.rank;
+        } else {
+            titleModel.rank.animeTopAiring = semiJikanData.rank;
+        }
+        titleModel.movieLang = 'japanese';
+        titleModel.country = 'japan';
+        titleModel.status = 'comingSoon';
+        titleModel.endYear = jikanApiFields.endYear;
+        titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
+        titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
+        titleModel.summary.english = jikanApiFields.summary_en;
+        titleModel.genres = jikanApiFields.genres;
+        let insertedId = await insertToDB('movies', titleModel);
+
+        if (insertedId) {
+            let allApiData = {
+                jikanApiFields,
+            };
+            let castAndCharacters = await getCastAndCharacterFields(insertedId, titleModel, allApiData, titleModel.type);
+            if (castAndCharacters) {
+                await updateByIdDB('movies', insertedId, castAndCharacters);
+            }
+        }
+    }
+}
+
+async function uploadPosterAndTrailer(titleModel, jikanData) {
+    let jikanPoster = jikanData.image_url;
+    if (jikanPoster) {
+        let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, [jikanPoster]);
+        if (s3poster) {
+            titleModel.poster_s3 = s3poster;
+            titleModel.posters = [s3poster];
+        }
+    }
+
+    let jikanTrailer = jikanData.trailer_url;
+    if (jikanTrailer) {
+        let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, [jikanTrailer]);
+        if (s3Trailer) {
+            titleModel.trailer_s3 = s3Trailer;
+            titleModel.trailers = [{
+                link: s3Trailer,
+                info: 's3Trailer-720p'
+            }];
+        }
+    }
+}
+
+function getTitleObjFromJikanData(thisTitleData) {
+    let allTitles = getTitlesFromData(thisTitleData);
+    let titleObj = {
+        title: allTitles.apiTitle_simple,
+        rawTitle: allTitles.apiTitle,
+        alternateTitles: [],
+        titleSynonyms: allTitles.titleSynonyms,
+    }
+    let temp = removeDuplicateElements(
+        [allTitles.apiTitleEnglish, allTitles.apiTitleJapanese]
+            .filter(value => value)
+            .map(value => value.toLowerCase())
+    );
+    if (temp.length > 1 && temp[1].includes(temp[0].replace('.', '')) && temp[1].match(/(\dth|2nd|3rd) season/gi)) {
+        temp.shift();
+    }
+    titleObj.alternateTitles = temp;
+    return titleObj;
+}
+
+export async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
+    try {
+        let newRelatedTitles = [];
+        for (let i = 0; i < jikanRelatedTitles.length; i++) {
+            let searchResult = await searchOnMovieCollectionDB(
+                {jikanID: jikanRelatedTitles[i].jikanID},
+                dataConfig['medium']
+            );
+
+            if (searchResult) {
+                let relatedTitleData = {
+                    ...jikanRelatedTitles[i],
+                    ...searchResult
+                };
+                newRelatedTitles.push(relatedTitleData);
+            } else {
+                newRelatedTitles.push(jikanRelatedTitles[i]);
+            }
+        }
+        return newRelatedTitles;
+    } catch (error) {
+        saveError(error);
+        return titleData.relatedTitles;
+    }
+}
+
+export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
+    let jikanID = titleModel.jikanID;
+    let mediumLevelDataKeys = Object.keys(dataConfig['medium']);
+    let mediumLevelData = Object.keys(titleModel)
+        .filter(key => mediumLevelDataKeys.includes(key))
+        .reduce((obj, key) => {
+            obj[key] = titleModel[key];
+            return obj;
+        }, {});
+    let searchResults = await searchForAnimeTitlesByJikanID(jikanID);
+    for (let i = 0; i < searchResults.length; i++) {
+        let thisTitleRelatedTitles = searchResults[i].relatedTitles;
+        for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
+            if (thisTitleRelatedTitles[j].jikanID === jikanID) {
+                thisTitleRelatedTitles[j] = {
+                    ...thisTitleRelatedTitles[j],
+                    ...mediumLevelData,
+                    _id: titleID,
+                }
+            }
+        }
+        await updateByIdDB(
+            'movies',
+            searchResults[i]._id,
+            {
+                relatedTitles: thisTitleRelatedTitles
+            });
+    }
+}
+
+async function getCastAndCharacterFields(insertedId, titleData, allApiData, type) {
+    if (type.includes('anime')) {
+        await connectNewAnimeToRelatedTitles(titleData, insertedId);
+    }
+    let poster = titleData.posters.length > 0 ? titleData.posters[0] : '';
+    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
+    if (temp) {
+        return {
+            staffAndCharactersData: temp.staffAndCharactersData,
+            actors: temp.actors,
+            directors: temp.directors,
+            writers: temp.writers,
+            castUpdateDate: new Date(),
+        }
+    }
+    return null;
 }

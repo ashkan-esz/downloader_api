@@ -1,26 +1,19 @@
-const {searchTitleDB, insertToDB, updateByIdDB, removeTitleByIdDB} = require('../dbMethods');
-const {deleteTrailerFromS3} = require('../cloudStorage');
+const {searchTitleDB, insertToDB, updateByIdDB} = require('../dbMethods');
+const {deleteTrailerFromS3, deletePosterFromS3} = require('../cloudStorage');
 const {checkSourceExist, checkSource, removeDuplicateElements} = require('./utils');
-const {addApiData, apiDataUpdate, conectNewAnimeToRelatedTitles} = require('./3rdPartyApi/allApiData');
+const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {getUploadedAnimeListSubtitles, handleSubtitleUpdate} = require("./subtitle");
 const {getTitleModel} = require("./models/title");
-const {getJikanApiData} = require("./3rdPartyApi/jikanApi");
+const {getJikanApiData, connectNewAnimeToRelatedTitles} = require("./3rdPartyApi/jikanApi");
 const {saveError} = require("../saveError");
 
 
 module.exports = async function save(title, year, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
     try {
-        let titleObj = await getTitleObj(title, year, type, false, 0);
-        let db_data = await searchOnCollection(titleObj, year, type);
-        if (db_data) {
-            titleObj = await getTitleObj(title, year, type, true, db_data.jikanID);
-        } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
-            titleObj = await getTitleObj(title, year, type, true, 0); //get titles from jikan api
-            db_data = await searchOnCollection(titleObj, year, type);
-        }
+        let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, siteDownloadLinks);
 
         let titleModel = getTitleModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
         let uploadedSubtitles = await getUploadedAnimeListSubtitles(page_link, subtitles, cookies);
@@ -32,19 +25,11 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
                     if (type.includes('anime')) {
-                        await conectNewAnimeToRelatedTitles(titleModel, insertedId);
+                        await connectNewAnimeToRelatedTitles(titleModel, insertedId);
                     }
-                    let poster = titleModel.posters.length > 0 ? titleModel.posters[0] : '';
-                    let temp = await addStaffAndCharacters(insertedId, titleModel.rawTitle, poster, result.allApiData, 0);
-                    if (temp) {
-                        let updateFields = {
-                            staffAndCharactersData: temp.staffAndCharactersData,
-                            actors: temp.actors,
-                            directors: temp.directors,
-                            writers: temp.writers,
-                            castUpdateDate: new Date(),
-                        }
-                        await updateByIdDB('movies', insertedId, updateFields);
+                    let castAndCharacters = await getCastAndCharactersFromApi(insertedId, titleModel, result.allApiData);
+                    if (castAndCharacters) {
+                        await updateByIdDB('movies', insertedId, castAndCharacters);
                     }
                 }
             }
@@ -64,6 +49,18 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
     } catch (error) {
         await saveError(error);
     }
+}
+
+async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
+    let titleObj = await getTitleObj(title, year, type, false, 0);
+    let db_data = await searchOnCollection(titleObj, year, type);
+    if (db_data) {
+        titleObj = await getTitleObj(title, year, type, true, db_data.jikanID);
+    } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
+        titleObj = await getTitleObj(title, year, type, true, 0); //get titles from jikan api
+        db_data = await searchOnCollection(titleObj, year, type);
+    }
+    return {titleObj, db_data};
 }
 
 async function getTitleObj(title, year, type, useJikanApi, jikanID) {
@@ -102,6 +99,7 @@ async function searchOnCollection(titleObj, year, type) {
     let db_data = null;
     let dataConfig = {
         releaseState: 1,
+        rank: 1,
         title: 1,
         type: 1,
         premiered: 1,
@@ -119,6 +117,7 @@ async function searchOnCollection(titleObj, year, type) {
         summary: 1,
         posters: 1,
         poster_s3: 1,
+        trailer_s3: 1,
         trailers: 1,
         watchOnlineLinks: 1,
         subtitles: 1,
@@ -186,8 +185,14 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             let newSources = db_data.sources.filter(item => item.links.length > 0);
             let newSize = newSources.length;
             if (newSize === 0 && db_data.releaseState === 'done') {
-                await removeTitleByIdDB(db_data._id);
-                return;
+                if (db_data.poster_s3) {
+                    let fileName = db_data.poster_s3.split('/').pop();
+                    await deletePosterFromS3(fileName);
+                }
+                if (db_data.trailer_s3) {
+                    let fileName = db_data.trailer_s3.split('/').pop();
+                    await deleteTrailerFromS3(fileName);
+                }
             } else if (prevSize !== newSize) {
                 db_data.sources = newSources;
                 updateFields.sources = newSources;
@@ -206,7 +211,7 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
         if (subUpdates.posterChange) {
             updateFields.posters = db_data.posters;
         }
-        if (subUpdates.trailerChange) {
+        if (subUpdates.trailerChange || updateFields.trailer_s3) {
             updateFields.trailers = db_data.trailers;
         }
         if (subUpdates.watchOnlineLinksChange) {
@@ -227,14 +232,21 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
 
         const {_handleCastUpdate} = require('./crawler');
         if (apiData && _handleCastUpdate) {
-            let poster = db_data.posters.length > 0 ? db_data.posters[0] : '';
-            let temp = await addStaffAndCharacters(db_data._id, db_data.rawTitle, poster, apiData.allApiData, db_data.castUpdateDate);
-            if (temp) {
-                updateFields.staffAndCharactersData = temp.staffAndCharactersData;
-                updateFields.actors = temp.actors;
-                updateFields.directors = temp.directors;
-                updateFields.writers = temp.writers;
-                updateFields.castUpdateDate = new Date();
+            let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
+            if (castAndCharacters) {
+                updateFields = {...updateFields, ...castAndCharacters};
+            }
+        }
+
+        if (db_data.trailer_s3 && db_data.trailers && db_data.trailers.length > 1) {
+            //remove trailer from s3
+            let fileName = db_data.trailer_s3.split('/').pop();
+            let removeS3Trailer = await deleteTrailerFromS3(fileName);
+            if (removeS3Trailer) {
+                db_data.trailer_s3 = '';
+                updateFields.trailer_s3 = '';
+                db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer'));
+                updateFields.trailers = db_data.trailers;
             }
         }
 
@@ -302,25 +314,27 @@ function checkEqualLinks(link1, link2) {
     );
 }
 
+async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
+    let poster = titleData.posters.length > 0 ? titleData.posters[0] : '';
+    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
+    if (temp) {
+        return {
+            staffAndCharactersData: temp.staffAndCharactersData,
+            actors: temp.actors,
+            directors: temp.directors,
+            writers: temp.writers,
+            castUpdateDate: new Date(),
+        }
+    }
+    return null;
+}
+
 async function convertUnReleasedTitleToNewTitle(db_data, updateFields, type) {
     db_data.releaseState = 'done';
     updateFields.releaseState = 'done';
     db_data.insert_date = new Date();
     updateFields.insert_date = new Date();
     if (type.includes('anime')) {
-        await conectNewAnimeToRelatedTitles(db_data, db_data._id);
-    }
-    //remove trailer from s3
-    let removeS3Trailer = await deleteTrailerFromS3(db_data.title, type, db_data.year);
-    if (removeS3Trailer) {
-        db_data.trailer_s3 = '';
-        updateFields.trailer_s3 = '';
-        if (db_data.trailers) {
-            db_data.trailers = db_data.trailers.filter(item => !item.includes('https://download-trailer.'));
-            if (db_data.trailers.length === 0) {
-                db_data.trailers = null;
-            }
-            updateFields.trailers = db_data.trailers;
-        }
+        await connectNewAnimeToRelatedTitles(db_data, db_data._id);
     }
 }

@@ -1,20 +1,31 @@
 const axios = require('axios').default;
 const {replaceSpecialCharacters, getDatesBetween} = require("../utils");
-const {getStatusObjDB, updateStatusObjDB, searchTitleDB, updateByIdDB, insertToDB} = require("../../dbMethods");
 const {
-    checkTitlePosterExist,
-    uploadTitlePosterToS3,
-    checkTitleTrailerExist,
-    uploadTitleTrailerToS3
-} = require("../../cloudStorage");
+    getStatusObjDB,
+    updateStatusObjDB,
+    searchTitleDB,
+    updateByIdDB,
+    insertToDB,
+    updateMovieCollectionDB
+} = require("../../dbMethods");
+const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require("../../cloudStorage");
 const {getTitleModel} = require("../models/title");
+const {default: pQueue} = require('p-queue');
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 
-let imdbApiKeys = process.env.IMDB_API_KEY.split('-');
+let imdbApiKeys = [];
 let apiKeyCounter = 0;
 
 export async function updateImdbData() {
+    imdbApiKeys = process.env.IMDB_API_KEY
+        .split('-')
+        .map(item => ({apikey: item.trim(), reachedMax: false}));
+    let checkApiLimit = await checkReachedMaxAllKeys(true);
+    if (checkApiLimit) {
+        return;
+    }
+
     let states = await getStatusObjDB();
     if (!states) {
         return;
@@ -27,10 +38,18 @@ export async function updateImdbData() {
     }
     states.imdbDataUpdateDate = now;
 
-    await add_Top_popular('movie', 'top', states.prevTop250_movie);
-    await add_Top_popular('serial', 'top', states.prevTop250_serial);
-    await add_Top_popular('movie', 'popular', states.popular100_movie);
-    await add_Top_popular('serial', 'popular', states.popular100_serial);
+    //reset rank
+    await updateMovieCollectionDB({
+        'rank.comingSoon': -1,
+        'rank.inTheaters': -1,
+        'rank.top': -1,
+        'rank.popular': -1,
+    });
+
+    await add_Top_popular('movie', 'top');
+    await add_Top_popular('serial', 'top');
+    await add_Top_popular('movie', 'popular');
+    await add_Top_popular('serial', 'popular');
 
     await add_inTheaters_comingSoon('movie', 'inTheaters');
     await add_inTheaters_comingSoon('movie', 'comingSoon');
@@ -40,7 +59,7 @@ export async function updateImdbData() {
     await updateStatusObjDB(states);
 }
 
-async function add_Top_popular(type, mode, prevTopPopular) {
+async function add_Top_popular(type, mode) {
     let url = '';
     if (mode === 'top') {
         url = type === 'movie'
@@ -56,44 +75,46 @@ async function add_Top_popular(type, mode, prevTopPopular) {
     if (!apiResult) {
         return;
     }
-    let top_popular = apiResult.items.map(item => {
-        delete item.fullTitle;
-        delete item.image;
-        delete item.crew;
-        delete item.imDbRatingCount;
-        return item;
-    });
+
+    let top_popular = apiResult.items;
+    const promiseQueue = new pQueue({concurrency: 2});
     for (let i = 0; i < top_popular.length; i++) {
-        if (prevTopPopular.length <= i) {
-            prevTopPopular.push(top_popular[i]);
-        } else if (
-            top_popular[i].title !== prevTopPopular[i].title ||
-            top_popular[i].imDbRating !== prevTopPopular[i].imDbRating
-        ) {
-            prevTopPopular[i] = top_popular[i];
-        } else {
-            continue;
-        }
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
         if (titleDataFromDB) {
-            //title exist in db , fix imdbID and imdb rating if needed
-            let updateFields = {};
-            if (!titleDataFromDB.imdbID) {
-                updateFields.imdbID = top_popular[i].id;
-            }
-            if (Number(top_popular[i].imDbRating) !== titleDataFromDB.rating.imdb) {
-                titleDataFromDB.rating.imdb = Number(top_popular[i].imDbRating);
-                updateFields.rating = titleDataFromDB.rating;
-            }
-            if (Object.keys(updateFields).length > 0) {
-                await updateByIdDB('movies', titleDataFromDB._id, updateFields);
-            }
+            await update_top_popular_title(titleDataFromDB, top_popular[i], type, mode, Number(top_popular[i].rank));
         } else {
             //title doesnt exist in db , add it
             let titleDataFromIMDB = await getTitleDataFromIMDB(top_popular[i].id);
-            let status = type.includes('movie') ? 'ended' : 'unknown';
-            await addImdbTitleToDB(titleDataFromIMDB, type, status);
+            if (titleDataFromIMDB) {
+                let status = type.includes('movie') ? 'ended' : 'unknown';
+                promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, status, 'waiting', mode, Number(top_popular[i].rank)));
+            }
         }
+    }
+    await promiseQueue.onEmpty();
+    await promiseQueue.onIdle();
+}
+
+async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mode, rank) {
+    let updateFields = {};
+
+    if (mode === 'top') {
+        titleDataFromDB.rank.top = rank;
+    } else {
+        titleDataFromDB.rank.popular = rank;
+    }
+    updateFields.rank = titleDataFromDB.rank;
+
+    //title exist in db , fix imdbID and imdb rating if needed
+    if (!titleDataFromDB.imdbID) {
+        updateFields.imdbID = semiImdbData.id;
+    }
+    if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
+        titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
+        updateFields.rating = titleDataFromDB.rating;
+    }
+    if (Object.keys(updateFields).length > 0) {
+        await updateByIdDB('movies', titleDataFromDB._id, updateFields);
     }
 }
 
@@ -107,51 +128,60 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
+    const promiseQueue = new pQueue({concurrency: 2});
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);
         if (titleDataFromDB) {
-            //title exist in db , fix imdbID and imdb rating if needed
-            let updateFields = {};
-            if (!titleDataFromDB.imdbID) {
-                updateFields.imdbID = theatres_soon[i].id;
-            }
-            if (Number(theatres_soon[i].imDbRating) !== titleDataFromDB.rating.imdb) {
-                titleDataFromDB.rating.imdb = Number(theatres_soon[i].imDbRating);
-                updateFields.rating = titleDataFromDB.rating;
-            }
-            if (titleDataFromDB.releaseState !== mode) {
-                updateFields.releaseState = mode;
-            }
-            let s3Trailer = await uploadTrailer(theatres_soon[i].title, theatres_soon[i].year, type, theatres_soon[i].id);
-            if (s3Trailer) {
-                updateFields.trailer_s3 = s3Trailer;
-                if (titleDataFromDB.trailers) {
-                    updateFields.trailers = [...titleDataFromDB.trailers, s3Trailer];
-                } else {
-                    updateFields.trailers = [s3Trailer];
-                }
-            }
-            if (Object.keys(updateFields).length > 0) {
-                await updateByIdDB('movies', titleDataFromDB._id, updateFields);
-            }
+            await update_inTheaters_comingSoon_title(titleDataFromDB, theatres_soon[i], type, mode, (i + 1));
         } else {
             //title doesnt exist in db , add it
             let titleDataFromIMDB = theatres_soon[i];
-            await addImdbTitleToDB(titleDataFromIMDB, type, 'unknown', mode);
+            promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, mode, mode, mode, (i + 1)));
         }
+    }
+    await promiseQueue.onEmpty();
+    await promiseQueue.onIdle();
+}
+
+async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData, type, mode, rank) {
+    let updateFields = {};
+
+    if (mode === 'inTheaters') {
+        titleDataFromDB.rank.inTheaters = rank;
+    } else {
+        titleDataFromDB.rank.comingSoon = rank;
+    }
+    updateFields.rank = titleDataFromDB.rank;
+
+    //title exist in db , fix imdbID and imdb rating if needed
+    if (!titleDataFromDB.imdbID) {
+        updateFields.imdbID = semiImdbData.id;
+    }
+    if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
+        titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
+        updateFields.rating = titleDataFromDB.rating;
+    }
+    if (titleDataFromDB.releaseState !== mode) {
+        updateFields.releaseState = mode;
+    }
+
+    if (!titleDataFromDB.trailers) {
+        let s3Trailer = await uploadTrailer(semiImdbData.title, semiImdbData.year, type, semiImdbData.id);
+        if (s3Trailer) {
+            updateFields.trailer_s3 = s3Trailer;
+            updateFields.trailers = [{
+                link: s3Trailer,
+                info: 's3Trailer-720p'
+            }];
+        }
+    }
+
+    if (Object.keys(updateFields).length > 0) {
+        await updateByIdDB('movies', titleDataFromDB._id, updateFields);
     }
 }
 
-async function getBoxOfficeData() {
-    let url = 'https://imdb-api.com/en/API/BoxOffice/$apikey$';
-    let boxOfficeData = await handleApiCall(url);
-    return boxOfficeData ? boxOfficeData.items.map(item => {
-        delete item.image;
-        return item;
-    }) : [];
-}
-
-async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting') {
+async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting', mode, rank) {
     let titleObj = {
         title: replaceSpecialCharacters(imdbData.title.toLowerCase()),
         rawTitle: imdbData.title,
@@ -169,22 +199,17 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting'
     titleModel.apiUpdateDate = 0;
     titleModel.status = status;
     titleModel.releaseState = releaseState;
+    if (mode === 'top') {
+        titleModel.rank.top = rank;
+    } else if (mode === 'popular') {
+        titleModel.rank.popular = rank;
+    } else if (mode === 'inTheaters') {
+        titleModel.rank.inTheaters = rank;
+    } else {
+        titleModel.rank.comingSoon = rank;
+    }
 
-    let imdbDataPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
-    let s3poster = await checkTitlePosterExist(titleModel.title, type, titleModel.year);
-    if (!s3poster) {
-        s3poster = await uploadTitlePosterToS3(titleModel.title, type, imdbData.year, [imdbDataPoster]);
-    }
-    if (s3poster) {
-        titleModel.posters = [s3poster];
-        titleModel.poster_s3 = s3poster;
-    }
-
-    let s3Trailer = await uploadTrailer(titleModel.title, titleModel.year, type, imdbData.id);
-    if (s3Trailer) {
-        titleModel.trailer_s3 = s3Trailer;
-        titleModel.trailers = [s3Trailer];
-    }
+    await uploadPosterAndTrailer(titleModel, imdbData, releaseState);
 
     titleModel.imdbID = imdbData.id;
     if (imdbData.releaseDate) {
@@ -209,6 +234,35 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting'
     await insertToDB('movies', titleModel);
 }
 
+async function getBoxOfficeData() {
+    let url = 'https://imdb-api.com/en/API/BoxOffice/$apikey$';
+    let boxOfficeData = await handleApiCall(url);
+    return boxOfficeData ? boxOfficeData.items.map(item => {
+        delete item.image;
+        return item;
+    }) : [];
+}
+
+async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
+    let imdbPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
+    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, [imdbPoster]);
+    if (s3poster) {
+        titleModel.posters = [s3poster];
+        titleModel.poster_s3 = s3poster;
+    }
+
+    if (releaseState !== 'waiting') {
+        let s3Trailer = await uploadTrailer(titleModel.title, titleModel.year, titleModel.type, imdbData.id);
+        if (s3Trailer) {
+            titleModel.trailer_s3 = s3Trailer;
+            titleModel.trailers = [{
+                link: s3Trailer,
+                info: 's3Trailer-720p'
+            }];
+        }
+    }
+}
+
 async function getTitleDataFromIMDB(id) {
     let url = `https://imdb-api.com/en/API/Title/$apikey$/${id}/Ratings`;
     return await handleApiCall(url);
@@ -222,6 +276,7 @@ async function getTitleDataFromDB(title, year, type) {
         titleSynonyms: [],
     }
     let temp = await searchTitleDB(titleObj, [type], year, {
+        rank: 1,
         imdbID: 1,
         rating: 1,
         releaseState: 1,
@@ -236,32 +291,40 @@ async function uploadTrailer(title, year, type, imdbID) {
     let trailerData = await handleApiCall(trailerDataUrl);
     if (trailerData) {
         let youtubeTrailer = trailerData.videoUrl;
-        let s3Trailer = await checkTitleTrailerExist(title, type, year);
-        if (!s3Trailer) {
-            s3Trailer = await uploadTitleTrailerToS3(title, type, year, [youtubeTrailer]);
+        if (youtubeTrailer) {
+            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, [youtubeTrailer]);
         }
-        return s3Trailer;
-    } else {
-        return '';
     }
+    return '';
 }
 
-async function handleApiCall(url, retryCount = 0) {
-    if (!url) {
+async function handleApiCall(url) {
+    let checkApiLimit = await checkReachedMaxAllKeys();
+    if (!url || checkApiLimit) {
         return null;
     }
     let waitCounter = 0;
     while (waitCounter < 10) {
         try {
-            let temp = url.replace('$apikey$', imdbApiKeys[apiKeyCounter]);
+            let temp = url.replace('$apikey$', imdbApiKeys[apiKeyCounter].apikey);
             let response = await axios.get(temp);
             let data = response.data;
-            if (data.errorMessage && data.errorMessage.includes('Maximum usage')) {
-                if (retryCount < 3 && imdbApiKeys.length > 1) {
-                    retryCount++;
-                    apiKeyCounter++;
-                    apiKeyCounter = apiKeyCounter % imdbApiKeys.length;
-                    return await handleApiCall(url, retryCount);
+            if (data.errorMessage &&
+                (
+                    data.errorMessage.includes('Maximum usage') ||
+                    data.errorMessage.includes('Invalid API Key')
+                )) {
+                imdbApiKeys[apiKeyCounter].reachedMax = true;
+                let index = -1;
+                for (let i = 0; i < imdbApiKeys.length; i++) {
+                    if (!imdbApiKeys[i].reachedMax) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index !== -1) {
+                    apiKeyCounter = index;
+                    return await handleApiCall(url);
                 } else {
                     Sentry.captureMessage(`need more imdb api key: ${url}`);
                     return null;
@@ -283,4 +346,20 @@ async function handleApiCall(url, retryCount = 0) {
     }
     Sentry.captureMessage(`lots of imdb api call: ${url}`);
     return null;
+}
+
+async function checkReachedMaxAllKeys(force = false) {
+    for (let i = 0; i < imdbApiKeys.length; i++) {
+        if (!imdbApiKeys[i].reachedMax) {
+            if (force) {
+                let testResult = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
+                if (testResult) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
 }
