@@ -121,8 +121,8 @@ export async function uploadTitlePosterToS3(title, type, year, posters, retryCou
                 return s3Poster;
             }
         }
-        let fileName = type + '-' + title + '-' + year;
-        fileName = fileName.replace(/-$/g, '').trim().replace(/\s+/g, '-');
+
+        let fileName = getFileName(title, type, year, 'jpg');
         let response = await axios.get(posters[0], {
             responseType: "arraybuffer",
             responseEncoding: "binary"
@@ -160,13 +160,8 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, trail
                 return s3Trailer;
             }
         }
-        let fileName = type + '-' + title + '-' + year + '.mp4';
-        fileName = fileName
-            .replace(/-$/g, '')
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace('-.', '.');
 
+        let fileName = getFileName(title, type, year, 'mp4');
         return await new Promise(async (resolve, reject) => {
             const abortController = new AbortController();
             let videoReadStream = null;
@@ -269,8 +264,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
 
 export async function checkTitlePosterExist(title, type, year, retryCounter = 0) {
     try {
-        let fileName = type + '-' + title + '-' + year;
-        fileName = fileName.replace(/-$/g, '').trim().replace(/\s+/g, '-');
+        let fileName = getFileName(title, type, year, 'jpg');
         const params = {
             Bucket: 'poster',
             Key: fileName,
@@ -297,12 +291,7 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0)
 
 export async function checkTitleTrailerExist(title, type, year, retryCounter = 0) {
     try {
-        let fileName = type + '-' + title + '-' + year + '.mp4';
-        fileName = fileName
-            .replace(/-$/g, '')
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace('-.', '.');
+        let fileName = getFileName(title, type, year, 'mp4');
         const params = {
             Bucket: 'download-trailer',
             Key: fileName,
@@ -368,4 +357,16 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0) {
         saveError(error);
         return false;
     }
+}
+
+function getFileName(title, titleType, year, fileType) {
+    let fileName = titleType + '-' + title + '-' + year + '.' + fileType;
+    fileName = fileName.trim()
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+        .replace('-.', '.');
+    if (year && title.endsWith(year)) {
+        fileName = fileName.replace(('-' + year), '');
+    }
+    return fileName;
 }

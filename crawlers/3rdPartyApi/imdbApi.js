@@ -1,5 +1,5 @@
 const axios = require('axios').default;
-const {replaceSpecialCharacters, getDatesBetween} = require("../utils");
+const {replaceSpecialCharacters, getDatesBetween, getMonthNumberByMonthName} = require("../utils");
 const {
     getStatusObjDB,
     updateStatusObjDB,
@@ -21,10 +21,6 @@ export async function updateImdbData() {
     imdbApiKeys = process.env.IMDB_API_KEY
         .split('-')
         .map(item => ({apikey: item.trim(), reachedMax: false}));
-    let checkApiLimit = await checkReachedMaxAllKeys(true);
-    if (checkApiLimit) {
-        return;
-    }
 
     let states = await getStatusObjDB();
     if (!states) {
@@ -37,6 +33,11 @@ export async function updateImdbData() {
         return;
     }
     states.imdbDataUpdateDate = now;
+
+    let checkApiLimit = await checkReachedMaxAllKeys(true);
+    if (checkApiLimit) {
+        return;
+    }
 
     //reset rank
     await updateMovieCollectionDB({
@@ -113,6 +114,18 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
         titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
         updateFields.rating = titleDataFromDB.rating;
     }
+
+    if (titleDataFromDB.posters.length === 0) {
+        let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
+        if (imdbPoster) {
+            let s3poster = await uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [imdbPoster]);
+            if (s3poster) {
+                updateFields.posters = [s3poster];
+                updateFields.poster_s3 = s3poster;
+            }
+        }
+    }
+
     if (Object.keys(updateFields).length > 0) {
         await updateByIdDB('movies', titleDataFromDB._id, updateFields);
     }
@@ -163,6 +176,26 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
     }
     if (titleDataFromDB.releaseState !== mode) {
         updateFields.releaseState = mode;
+    }
+
+    if (semiImdbData.releaseState) {
+        let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
+        let monthNumber = getMonthNumberByMonthName(monthAndDay[0].trim());
+        let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+        if (titleDataFromDB.premiered !== temp) {
+            updateFields.premiered = temp;
+        }
+    }
+
+    if (titleDataFromDB.posters.length === 0) {
+        let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
+        if (imdbPoster) {
+            let s3poster = await uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [imdbPoster]);
+            if (s3poster) {
+                updateFields.posters = [s3poster];
+                updateFields.poster_s3 = s3poster;
+            }
+        }
     }
 
     if (!titleDataFromDB.trailers) {
@@ -216,6 +249,11 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting'
         titleModel.premiered = imdbData.releaseDate;
         titleModel.year = imdbData.releaseDate.split('-')[0];
     }
+    if (imdbData.releaseState) {
+        let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
+        let monthNumber = getMonthNumberByMonthName(monthAndDay[0].trim());
+        titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+    }
     titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
     titleModel.summary.english = imdbData.plot;
     titleModel.awards = imdbData.awards || '';
@@ -245,10 +283,12 @@ async function getBoxOfficeData() {
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
     let imdbPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
-    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, [imdbPoster]);
-    if (s3poster) {
-        titleModel.posters = [s3poster];
-        titleModel.poster_s3 = s3poster;
+    if (imdbPoster) {
+        let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, [imdbPoster]);
+        if (s3poster) {
+            titleModel.posters = [s3poster];
+            titleModel.poster_s3 = s3poster;
+        }
     }
 
     if (releaseState !== 'waiting') {
@@ -276,11 +316,16 @@ async function getTitleDataFromDB(title, year, type) {
         titleSynonyms: [],
     }
     let temp = await searchTitleDB(titleObj, [type], year, {
+        title: 1,
+        type: 1,
+        premiered: 1,
+        year: 1,
         rank: 1,
         imdbID: 1,
         rating: 1,
         releaseState: 1,
         trailers: 1,
+        posters: 1,
     });
     return temp.length > 0 ? temp[0] : null;
 }

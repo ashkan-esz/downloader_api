@@ -5,7 +5,7 @@ const {
     searchOnMovieCollectionDB,
     updateByIdDB,
     insertToDB,
-    searchForAnimeTitlesByJikanID,
+    searchForAnimeRelatedTitlesByJikanID,
     updateMovieCollectionDB
 } = require("../../dbMethods");
 const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require("../../cloudStorage");
@@ -440,13 +440,13 @@ async function add_comingSoon_topAiring_Titles(mode) {
     let comingSoon_topAiring_titles = apiData.top;
     const promiseQueue = new pQueue({concurrency: 2});
     for (let i = 0; i < comingSoon_topAiring_titles.length && i < 50; i++) {
-        console.log(i, comingSoon_topAiring_titles[i].title);
         let titleDataFromDB = await searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
             ...dataConfig['medium'],
             rank: 1,
             title: 1,
             rawTitle: 1,
             type: 1,
+            premiered: 1,
             year: 1,
             jikanID: 1,
             posters: 1,
@@ -484,21 +484,33 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         }
     }
 
-    if (!titleDataFromDB.trailers) {
+    let jikanData = null;
+    if (!titleDataFromDB.trailers || !titleDataFromDB.premiered) {
         let jikanID = semiJikanData.mal_id;
         let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
-        let jikanData = await handleApiCall(animeUrl);
-        if (jikanData) {
-            let jikanTrailer = jikanData.trailer_url;
-            if (jikanTrailer) {
-                let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanTrailer]);
-                if (s3Trailer) {
-                    updateFields.trailer_s3 = s3Trailer;
-                    updateFields.trailers = [{
-                        link: s3Trailer,
-                        info: 's3Trailer-720p'
-                    }];
-                }
+        jikanData = await handleApiCall(animeUrl);
+    }
+
+    if (jikanData && !titleDataFromDB.premiered) {
+        let jikanApiFields = getJikanApiFields(titleDataFromDB);
+        if (jikanApiFields) {
+            let premiered = jikanApiFields.updateFields.premiered;
+            if (premiered) {
+                updateFields.premiered = premiered;
+            }
+        }
+    }
+
+    if (jikanData && !titleDataFromDB.trailers) {
+        let jikanTrailer = jikanData.trailer_url;
+        if (jikanTrailer) {
+            let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanTrailer]);
+            if (s3Trailer) {
+                updateFields.trailer_s3 = s3Trailer;
+                updateFields.trailers = [{
+                    link: s3Trailer,
+                    info: 's3Trailer-720p'
+                }];
             }
         }
     }
@@ -506,6 +518,9 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     if (titleDataFromDB.castUpdateDate === 0) {
         let allApiData = {
             jikanApiFields: {
+                updateFields: {
+                    jikanID: titleDataFromDB.jikanID,
+                },
                 jikanID: titleDataFromDB.jikanID,
             },
         };
@@ -562,7 +577,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.genres = jikanApiFields.genres;
         let insertedId = await insertToDB('movies', titleModel);
 
-        if (insertedId) {
+        if (insertedId && jikanApiFields) {
             let allApiData = {
                 jikanApiFields,
             };
@@ -652,7 +667,7 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
             obj[key] = titleModel[key];
             return obj;
         }, {});
-    let searchResults = await searchForAnimeTitlesByJikanID(jikanID);
+    let searchResults = await searchForAnimeRelatedTitlesByJikanID(jikanID);
     for (let i = 0; i < searchResults.length; i++) {
         let thisTitleRelatedTitles = searchResults[i].relatedTitles;
         for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
