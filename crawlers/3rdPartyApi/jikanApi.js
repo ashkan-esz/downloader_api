@@ -442,6 +442,7 @@ async function add_comingSoon_topAiring_Titles(mode) {
     for (let i = 0; i < comingSoon_topAiring_titles.length && i < 50; i++) {
         let titleDataFromDB = await searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
             ...dataConfig['medium'],
+            releaseState: 1,
             rank: 1,
             title: 1,
             rawTitle: 1,
@@ -468,8 +469,14 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
 
     if (mode === 'comingSoon') {
         titleDataFromDB.rank.animeTopComingSoon = semiJikanData.rank;
+        if (titleDataFromDB.releaseState !== 'comingSoon') {
+            updateFields.releaseState = mode;
+        }
     } else {
         titleDataFromDB.rank.animeTopAiring = semiJikanData.rank;
+        if (titleDataFromDB.releaseState === 'comingSoon') {
+            updateFields.releaseState = 'waiting';
+        }
     }
     updateFields.rank = titleDataFromDB.rank;
 
@@ -552,6 +559,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         let jikanApiFields = getJikanApiFields(thisTitleData);
         if (jikanApiFields) {
             titleModel = {...titleModel, ...jikanApiFields.updateFields};
+            titleModel.status = jikanApiFields.status;
         }
 
         await uploadPosterAndTrailer(titleModel, thisTitleData);
@@ -560,16 +568,15 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.posters = [];
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
-        titleModel.status = 'comingSoon';
-        titleModel.releaseState = 'comingSoon';
         if (mode === 'comingSoon') {
             titleModel.rank.animeTopComingSoon = semiJikanData.rank;
+            titleModel.releaseState = 'comingSoon';
         } else {
             titleModel.rank.animeTopAiring = semiJikanData.rank;
+            titleModel.releaseState = 'waiting';
         }
         titleModel.movieLang = 'japanese';
         titleModel.country = 'japan';
-        titleModel.status = 'comingSoon';
         titleModel.endYear = jikanApiFields.endYear;
         titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
         titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);

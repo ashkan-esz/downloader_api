@@ -149,7 +149,7 @@ async function add_inTheaters_comingSoon(type, mode) {
         } else {
             //title doesnt exist in db , add it
             let titleDataFromIMDB = theatres_soon[i];
-            promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, mode, mode, mode, (i + 1)));
+            promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, 'unknown', mode, mode, (i + 1)));
         }
     }
     await promiseQueue.onEmpty();
@@ -214,7 +214,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
     }
 }
 
-async function addImdbTitleToDB(imdbData, type, status, releaseState = 'waiting', mode, rank) {
+async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank) {
     let titleObj = {
         title: replaceSpecialCharacters(imdbData.title.toLowerCase()),
         rawTitle: imdbData.title,
