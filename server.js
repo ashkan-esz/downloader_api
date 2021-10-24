@@ -51,8 +51,8 @@ app.use('/timeLine', timeLine);
 
 app.use(Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
-        // Capture all 404 and 500 errors
-        return error.status === 404 || error.status === 500;
+        // Capture all 404 and 500+ errors
+        return error.status === 404 || error.status >= 500;
     },
 }));
 
@@ -61,8 +61,8 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
-    res.status(500);
-    res.send('Internal Server Error');
+    res.statusCode = 500;
+    res.send(`Internal Server Error (${res.sentry})`);
 });
 
 app.listen(port, () => {
