@@ -6,7 +6,7 @@ const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
 const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
 const {getUploadedAnimeListSubtitles, handleSubtitleUpdate} = require("./subtitle");
-const {getTitleModel} = require("./models/title");
+const {getTitleModel} = require("./dataModels/title");
 const {getJikanApiData, connectNewAnimeToRelatedTitles} = require("./3rdPartyApi/jikanApi");
 const {saveError} = require("../saveError");
 

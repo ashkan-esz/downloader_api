@@ -1,8 +1,8 @@
 const {searchStaffAndCharactersDB, insertToDB, updateByIdDB} = require('../../dbMethods');
 const {uploadCastImageToS3ByURl} = require('../../cloudStorage');
 const {getCharactersStaff, getPersonInfo, getCharacterInfo} = require('./jikanApi');
-const {getPersonModel} = require('../models/person');
-const {getCharacterModel} = require('../models/character');
+const {getPersonModel} = require('../dataModels/person');
+const {getCharacterModel} = require('../dataModels/character');
 const {replaceSpecialCharacters, removeDuplicateElements, getDatesBetween} = require('../utils');
 const {saveError} = require('../../saveError');
 

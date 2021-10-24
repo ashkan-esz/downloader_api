@@ -9,7 +9,7 @@ const {
     updateMovieCollectionDB
 } = require("../../dbMethods");
 const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require("../../cloudStorage");
-const {getTitleModel} = require("../models/title");
+const {getTitleModel} = require("../dataModels/title");
 const {default: pQueue} = require('p-queue');
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');

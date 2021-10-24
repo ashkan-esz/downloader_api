@@ -1,6 +1,6 @@
 const axios = require('axios').default;
 const {replaceSpecialCharacters, purgeObjFalsyValues} = require("../utils");
-const {getEpisodeModel} = require("../models/episode");
+const {getEpisodeModel} = require("../dataModels/episode");
 const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
 

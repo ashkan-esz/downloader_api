@@ -17,7 +17,7 @@ const {
     removeDuplicateElements
 } = require("../utils");
 const {addStaffAndCharacters} = require("./personCharacter");
-const {getTitleModel} = require("../models/title");
+const {getTitleModel} = require("../dataModels/title");
 const {default: pQueue} = require('p-queue');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../../saveError");
