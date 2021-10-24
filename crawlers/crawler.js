@@ -5,7 +5,6 @@ const avamovie = require('./sources/5avamovie');
 const bia2hd = require('./sources/7bia2hd');
 const golchindl = require('./sources/8golchindl');
 const bia2anime = require('./sources/10bia2anime');
-const animelist = require('./sources/11animelist');
 const {getDatesBetween} = require('./utils');
 const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../dbMethods");
 const {domainChangeHandler} = require('./domainChangeHandler');
@@ -144,16 +143,6 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
                 return bia2anime({
                     ...sourcesObj.bia2anime,
                     page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.bia2anime.page_count + daysElapsed,
-                });
-            }
-        },
-        {
-            name: 'animelist',
-            starter: () => {
-                return animelist({
-                    ...sourcesObj.animelist,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.animelist.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.animelist.serial_page_count + daysElapsed / 3,
                 });
             }
         },

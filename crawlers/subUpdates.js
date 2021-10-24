@@ -119,7 +119,7 @@ export function handleUrlUpdate(thiaSource, page_link) {
 }
 
 export function sortPosters(posters) {
-    const posterSources = ['digimovie', 'film2movie', 'salamdl', 'golchin', 'https://poster.', 'avamovie', 'anime-list', 'animelist', 'bia2anime', 'ba2hd'];
+    const posterSources = ['digimovie', 'film2movie', 'salamdl', 'golchin', 'https://poster.', 'avamovie', 'bia2anime', 'ba2hd'];
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {
@@ -132,7 +132,7 @@ export function sortPosters(posters) {
 }
 
 export function sortTrailers(trailers) {
-    const trailerSources = ['digimovie', 'avamovie', 's3Trailer', 'anime-list', 'animelist', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
+    const trailerSources = ['digimovie', 'avamovie', 's3Trailer', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
     let trailerQualities = ['1080', '720', '360'];
     let sortedTrailers = [];
 
