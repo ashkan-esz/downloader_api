@@ -248,6 +248,9 @@ export async function getCharacterInfo(jikanID) {
 
 function getRelatedTitles(data) {
     let relatedTitles = [];
+    if (!data.related) {
+        return [];
+    }
     if (data.related.Prequel) {
         let temp = data.related.Prequel.map(item => {
             item.relation = 'Prequel';
@@ -496,10 +499,13 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         let jikanID = semiJikanData.mal_id;
         let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
         jikanData = await handleApiCall(animeUrl);
+        if (jikanData) {
+            jikanData.jikanID = jikanID;
+        }
     }
 
     if (jikanData && !titleDataFromDB.premiered) {
-        let jikanApiFields = getJikanApiFields(titleDataFromDB);
+        let jikanApiFields = getJikanApiFields(jikanData);
         if (jikanApiFields) {
             let premiered = jikanApiFields.updateFields.premiered;
             if (premiered) {
