@@ -419,7 +419,7 @@ async function getJikanStaff_voiceActors(movieID, jikanCharactersArray) {
 async function getJikanStaff(movieID, jikanStaffArray) {
     let result = [];
     let promiseArray = [];
-    for (let i = 0; i < jikanStaffArray.length; i++) {
+    for (let i = 0; i < jikanStaffArray.length && i < 30; i++) {
         let promise = getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
             if (staffApiData) {
                 let gender = '';
@@ -452,7 +452,7 @@ async function getJikanStaff(movieID, jikanStaffArray) {
 async function getJikanCharaters(movieID, jikanCharatersArray) {
     let result = [];
     let promiseArray = [];
-    for (let i = 0; i < jikanCharatersArray.length; i++) {
+    for (let i = 0; i < jikanCharatersArray.length && i < 30; i++) {
         let promise = getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {
             if (characterApiData) {
                 let gender = '';
