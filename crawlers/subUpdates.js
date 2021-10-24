@@ -119,7 +119,8 @@ export function handleUrlUpdate(thiaSource, page_link) {
 }
 
 export function sortPosters(posters) {
-    const posterSources = ['digimovie', 'film2movie', 'salamdl', 'golchin', 'https://poster.', 'avamovie', 'bia2anime', 'ba2hd'];
+    let s3PosterUrl = 'poster.' + process.env.CLOUAD_STORAGE_WEBSITE_ENDPOINT;
+    const posterSources = ['digimovie', 'film2movie', 'salamdl', 'golchin', s3PosterUrl, 'avamovie', 'bia2anime', 'ba2hd'];
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {
