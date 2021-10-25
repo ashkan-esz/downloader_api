@@ -21,7 +21,7 @@ export async function crawler(sourceName, crawlMode = 0, {
     handleDomainChangeOnly = false,
     handleDomainChange = true,
     handleCastUpdate = true
-}) {
+} = {}) {
     try {
         _handleCastUpdate = handleCastUpdate;
         if (isCrawling) {

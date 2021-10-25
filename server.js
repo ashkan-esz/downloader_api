@@ -9,6 +9,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 // const jwt = require('express-jwt');
 // const jwksRsa = require('jwks-rsa');
+const cron = require('node-cron');
+const {crawler} = require('./crawlers/crawler');
 const port = process.env.PORT || 3000;
 const {setCache_all} = require("./cache");
 //---------------Routes-----------------
@@ -38,8 +40,6 @@ app.use(compression());
 //--------------------------------------
 //--------------------------------------
 
-setCache_all();
-
 app.use('/crawler', crawling);
 app.use('/search', search);
 app.use('/news', news);
@@ -47,6 +47,16 @@ app.use('/updates', update);
 app.use('/tops', tops);
 app.use('/trailers', trailers);
 app.use('/timeLine', timeLine);
+
+
+setCache_all();
+
+cron.schedule('0 */3 * * *', async () => {
+    await crawler('', 0);
+}, {
+    scheduled: true,
+    timezone: "Asia/Tehran",
+});
 
 
 app.use(Sentry.Handlers.errorHandler({
