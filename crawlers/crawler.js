@@ -12,45 +12,64 @@ const {resetJikanApiCache, updateJikanData} = require('./3rdPartyApi/jikanApi');
 const {updateImdbData} = require('./3rdPartyApi/imdbApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../saveError");
+const {setCache_all} = require("../cache");
 
 export let _handleCastUpdate = true;
+let isCrawling = false;
 
-export async function crawler(sourceName, crawlMode = 0, handleDomainChange = true, handleCastUpdate = true) {
+export async function crawler(sourceName, crawlMode = 0, {
+    handleDomainChangeOnly = false,
+    handleDomainChange = true,
+    handleCastUpdate = true
+}) {
     try {
         _handleCastUpdate = handleCastUpdate;
-        let time1 = new Date();
-        resetJikanApiCache(time1);
+        if (isCrawling) {
+            return 'another crawling is running';
+        }
+        isCrawling = true;
+        let startTime = new Date();
+        resetJikanApiCache(startTime);
         await handleDataBaseStates();
         await updateImdbData();
         await updateJikanData();
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
+            isCrawling = false;
             Sentry.captureMessage('crawling cancelled : sourcesObj is null');
-            return;
+            return 'crawling cancelled : sourcesObj is null';
         }
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
-        if (!sourceName) {
-            //start from anime sources (11)
-            for (let i = sourcesArray.length - 1; i >= 0; i--) {
-                await sourcesArray[i].starter();
-            }
-        } else {
-            let findSource = sourcesArray.find(x => x.name === sourceName);
-            if (findSource) {
-                await findSource.starter();
+        if (!handleDomainChangeOnly) {
+            if (!sourceName) {
+                //start from anime sources (11)
+                for (let i = sourcesArray.length - 1; i >= 0; i--) {
+                    await sourcesArray[i].starter();
+                }
+            } else {
+                let findSource = sourcesArray.find(x => x.name === sourceName);
+                if (findSource) {
+                    await findSource.starter();
+                }
             }
         }
 
-        if (handleDomainChange) {
+        if (handleDomainChangeOnly || handleDomainChange) {
             await domainChangeHandler(sourcesObj);
         }
 
-        let time2 = new Date();
-        Sentry.captureMessage(`crawling done in : ${getDatesBetween(time2, time1).seconds}s`);
+        isCrawling = false;
+        let endTime = new Date();
+        let message = `crawling done in : ${getDatesBetween(endTime, startTime).seconds}s`;
+        Sentry.captureMessage(message);
+        await setCache_all();
+        return message;
     } catch (error) {
         await saveError(error);
+        isCrawling = false;
+        return 'error';
     }
 }
 
