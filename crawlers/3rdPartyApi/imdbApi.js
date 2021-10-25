@@ -6,13 +6,14 @@ const {
     searchTitleDB,
     updateByIdDB,
     insertToDB,
-    updateMovieCollectionDB
+    updateMovieCollectionDB,
+    findOneAndUpdateMovieCollection
 } = require("../../dbMethods");
 const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require("../../cloudStorage");
 const {getTitleModel} = require("../dataModels/title");
 const {default: pQueue} = require('p-queue');
-const {saveError} = require("../../saveError");
 const Sentry = require('@sentry/node');
+const {saveError} = require("../../saveError");
 
 let imdbApiKeys = [];
 let apiKeyCounter = 0;
@@ -40,22 +41,24 @@ export async function updateImdbData() {
     }
 
     //reset rank
-    await updateMovieCollectionDB({
-        'rank.comingSoon': -1,
-        'rank.inTheaters': -1,
-        'rank.top': -1,
-        'rank.popular': -1,
-    });
-
+    await updateMovieCollectionDB({'rank.top': -1});
     await add_Top_popular('movie', 'top');
     await add_Top_popular('serial', 'top');
+    //reset rank
+    await updateMovieCollectionDB({'rank.popular': -1});
     await add_Top_popular('movie', 'popular');
     await add_Top_popular('serial', 'popular');
 
+    //reset rank
+    await updateMovieCollectionDB({'rank.inTheaters': -1});
     await add_inTheaters_comingSoon('movie', 'inTheaters');
+    //reset rank
+    await updateMovieCollectionDB({'rank.comingSoon': -1});
     await add_inTheaters_comingSoon('movie', 'comingSoon');
 
-    states.boxOffice = await getBoxOfficeData();
+    //reset rank
+    await updateMovieCollectionDB({'rank.boxOffice': -1});
+    await addBoxOfficeData();
 
     await updateStatusObjDB(states);
 }
@@ -272,13 +275,26 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
     await insertToDB('movies', titleModel);
 }
 
-async function getBoxOfficeData() {
+async function addBoxOfficeData() {
     let url = 'https://imdb-api.com/en/API/BoxOffice/$apikey$';
     let boxOfficeData = await handleApiCall(url);
-    return boxOfficeData ? boxOfficeData.items.map(item => {
-        delete item.image;
-        return item;
-    }) : [];
+    let promiseArray = [];
+    for (let i = 0; i < boxOfficeData.items.length; i++) {
+        let updateFields = {
+            'rank.boxOffice': Number(boxOfficeData.items[i].rank),
+            boxOfficeData: {
+                weekend: boxOfficeData.items[i].weekend || '',
+                gross: boxOfficeData.items[i].gross || '',
+                weeks: Number(boxOfficeData.items[i].weeks),
+            }
+        };
+        let updatePromise = findOneAndUpdateMovieCollection(
+            {imdbID: boxOfficeData.items[i].id},
+            updateFields
+        );
+        promiseArray.push(updatePromise);
+    }
+    await Promise.allSettled(promiseArray);
 }
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {

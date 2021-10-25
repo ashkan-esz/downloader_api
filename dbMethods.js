@@ -92,6 +92,17 @@ export async function updateByIdDB(collectionName, id, updateFields) {
     }
 }
 
+export async function findOneAndUpdateMovieCollection(searchQuery, updateFields) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.findOneAndUpdate(searchQuery, {
+            $set: updateFields
+        });
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 export async function removeTitleByIdDB(id) {
     try {
         let collection = await getCollection('movies');

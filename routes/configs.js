@@ -28,6 +28,7 @@ export const dataConfig = {
         nextEpisode: 1,
         releaseDay: 1,
         status: 1,
+        boxOfficeData: 1,
     },
     high: {}
 }
