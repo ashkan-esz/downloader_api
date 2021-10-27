@@ -6,13 +6,13 @@
     "node": "16.x"
   },
   "scripts": {
-    "start": "node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm server.js",
-    "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc -r esm server.js",
-    "start_dev": "NODE_ENV=dev nodemon -r esm server.js",
+    "start": "node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm src/server.js",
+    "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc -r esm src/server.js",
+    "start_dev": "NODE_ENV=dev nodemon -r dotenv/config -r esm src/server.js",
     "test": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm test.js",
     "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 -r esm test.js",
     "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc -r esm test.js",
-    "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm server.js"
+    "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm src/server.js"
   },
   "dependencies": {
     "@aws-sdk/abort-controller": "^3.36.0",
