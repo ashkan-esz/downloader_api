@@ -40,8 +40,7 @@ dataConfig = {
 
 //movies/trailers/:types/:dataLevel/:page
 
-//timeLine/day/:spacing/:types/:page
-//timeLine/week/:weekCounter/:types
+//seriesOfDay/:dayNumber/:types/:page
 
 //movies/searchByTitle/:title/:types/:dataLevel/:page
 //movies/searchByID/:id/:dataLevel

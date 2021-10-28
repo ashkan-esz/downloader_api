@@ -1,7 +1,7 @@
-const getCollection = require('./mongoDB');
-const {saveError} = require("../error/saveError");
+import getCollection from './mongoDB';
+import {ObjectId} from 'mongodb';
+import {saveError} from "../error/saveError";
 
-//todo : refactor
 
 export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
     try {
@@ -58,18 +58,8 @@ export async function searchStaffAndCharactersDB(collectionName, searchName) {
     }
 }
 
-export async function insertToDB(collectionName, dataToInsert, isMany = false) {
-    try {
-        let collection = await getCollection(collectionName);
-        let result = (isMany)
-            ? await collection.insertMany(dataToInsert)
-            : await collection.insertOne(dataToInsert);
-        return (result.insertedId || result.insertedIds);
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
+//-----------------------------------
+//-----------------------------------
 
 export async function updateMovieCollectionDB(updateFields) {
     try {
@@ -104,6 +94,22 @@ export async function findOneAndUpdateMovieCollection(searchQuery, updateFields)
     }
 }
 
+//-----------------------------------
+//-----------------------------------
+
+export async function insertToDB(collectionName, dataToInsert, isMany = false) {
+    try {
+        let collection = await getCollection(collectionName);
+        let result = (isMany)
+            ? await collection.insertMany(dataToInsert)
+            : await collection.insertOne(dataToInsert);
+        return (result.insertedId || result.insertedIds);
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
 export async function removeTitleByIdDB(id) {
     try {
         let collection = await getCollection('movies');
@@ -112,6 +118,9 @@ export async function removeTitleByIdDB(id) {
         saveError(error);
     }
 }
+
+//-----------------------------------
+//-----------------------------------
 
 export async function getSourcesObjDB() {
     try {
@@ -139,6 +148,152 @@ export async function updateStatusObjDB(updateFields) {
         await statesCollection.findOneAndUpdate({name: 'states'}, {
             $set: updateFields
         });
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function getNewMovies(types, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection
+            .find({
+                releaseState: 'done',
+                type: {$in: types},
+            }, {projection: projection})
+            .sort({year: -1, insert_date: -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getUpdateMovies(types, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection
+            .find({
+                releaseState: 'done',
+                type: {$in: types},
+            }, {projection: projection})
+            .sort({update_date: -1, year: -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getTopsByLikesMovies(types, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection
+            .find({
+                releaseState: 'done',
+                type: {$in: types},
+            }, {projection: projection})
+            .sort({like: -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getNewTrailers(types, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection
+            .find({
+                releaseState: {$ne: "done"},
+                type: {$in: types},
+                trailers: {$ne: null},
+            }, {projection: projection})
+            .sort({year: -1, insert_date: -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getSeriesOfDay(dayNumber, types, skip, limit, projection) {
+    try {
+        dayNumber = dayNumber % 7;
+        let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        let collection = await getCollection('movies');
+        return await collection
+            .find({
+                type: {$in: types},
+                status: {$ne: "ended"},
+                releaseDay: daysOfWeek[dayNumber],
+                nextEpisode: {$ne: null},
+            }, {projection: projection})
+            .sort({'rating.imdb': -1, 'rating.myAnimeList': -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function searchOnMovieCollectionByTitle(title, types, skip, limit, projection) {
+    try {
+        //todo : query on alternateTitles and titleSynonyms
+        let collection = await getCollection('movies');
+        let aggregationPipeline = [
+            {
+                $search: {
+                    index: 'default',
+                    text: {
+                        query: title,
+                        path: 'title'
+                    }
+                }
+            },
+            {
+                $match: {
+                    type: {$in: types},
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            }
+        ];
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: projection,
+            });
+        }
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function searchOnMovieCollectionById(id, projection) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection.findOne({_id: new ObjectId(id)}, {projection: projection});
     } catch (error) {
         saveError(error);
         return null;

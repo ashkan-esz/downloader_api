@@ -42,31 +42,13 @@ export async function getTrailers(req, res) {
     return res.sendStatus(404);
 }
 
-export async function getTimelineDay(req, res) {
+export async function getSeriesOfDay(req, res) {
     let types = JSON.parse(req.params.types);
     let page = Number(req.params.page);
-    let spacing = Number(req.params.spacing);
+    let dayNumber = Number(req.params.dayNumber);
 
-    let timelineDay = await moviesServices.getTimelineDay(spacing, types, page);
-    if (timelineDay.length > 0) {
-        return res.json(timelineDay);
-    }
-    return res.sendStatus(404);
-}
-
-export async function getTimelineWeek(req, res) {
-    let types = JSON.parse(req.params.types);
-    let weekCounter = Number(req.params.weekCounter);
-
-    let timelineWeek = await moviesServices.getTimelineWeek(weekCounter, types);
-    if (timelineWeek.length > 0) {
-        let groupSearchResult = timelineWeek.reduce((r, a) => {
-            r[a.releaseDay] = [...r[a.releaseDay] || [], a];
-            return r;
-        }, {});
-        return res.json(groupSearchResult);
-    }
-    return res.sendStatus(404);
+    let seriesOfDay = await moviesServices.getSeriesOfDay(dayNumber, types, page);
+    return res.json(seriesOfDay);
 }
 
 export async function searchByTitle(req, res) {

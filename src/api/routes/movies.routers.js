@@ -14,11 +14,8 @@ router.get('/tops/byLikes/:types/:dataLevel/:page', moviesControllers.getTopsByL
 //movies/trailers/:types/:dataLevel/:page
 router.get('/trailers/:types/:dataLevel/:page', moviesControllers.getTrailers);
 
-//movies/timeline/day/:spacing/:types/:page
-router.get('/timeline/day/:spacing/:types/:page', moviesControllers.getTimelineDay);
-
-//movies/timeline/week/:spacing/:types/:page
-router.get('/timeline/week/:weekCounter/:types', moviesControllers.getTimelineWeek);
+//movies/seriesOfDay/:dayNumber/:types/:page
+router.get('/seriesOfDay/:dayNumber/:types/:page', moviesControllers.getSeriesOfDay);
 
 //movies/searchByTitle/:title/:types/:dataLevel/:page
 router.get('/searchByTitle/:title/:types/:dataLevel/:page', moviesControllers.searchByTitle);
