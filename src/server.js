@@ -11,16 +11,9 @@ const compression = require('compression');
 // const jwksRsa = require('jwks-rsa');
 const cron = require('node-cron');
 const {crawler} = require('./crawlers/crawler');
-const {setCache_all} = require("./data/cache");
+const {setCacheAll} = require("./data/cache");
 //---------------Routes-----------------
 import routes from './api/routes';
-import crawling from './api/routes/crawling';
-import search from './api/routes/search';
-import news from './api/routes/news';
-import update from './api/routes/update';
-import tops from './api/routes/tops';
-import trailers from './api/routes/trailers';
-import timeLine from './api/routes/timeLine';
 //--------------middleware--------------
 Sentry.init({
     dsn: config.sentryDns,
@@ -40,17 +33,11 @@ app.use(compression());
 //--------------------------------------
 //--------------------------------------
 
-app.use('/crawler', crawling);
+app.use('/crawler', routes.crawlersRouters);
 app.use('/movies', routes.moviesRouters);
-app.use('/search', search);
-app.use('/news', news);
-app.use('/updates', update);
-app.use('/tops', tops);
-app.use('/trailers', trailers);
-app.use('/timeLine', timeLine);
 
 
-setCache_all();
+setCacheAll();
 
 cron.schedule('0 */3 * * *', async () => {
     await crawler('', 0);
@@ -77,5 +64,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(config.port, () => {
-    console.log(`http://localhost:${port}`)
+    console.log(`http://localhost:${config.port}`)
 });

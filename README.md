@@ -25,31 +25,23 @@ dataConfig = {
     high: {* all *}
 }
 
-extraInfo = {
-    onlineStreamingSources: ['film2movie', 'salamdl', 'film2media'],
-    highQualityPosters: ['salamdl', 'valamovie', 'film2media'],
-    lowQualityPosters: ['digimovies', 'topmovie', 'film2movies'],
-}
 
-
-[types] => movie / serial / anime_movie / anime_serial
-[dataLevel] => low/medium/high
-if page = 0 then return based on count value
+[types] => []: movie | serial | anime_movie | anime_serial
+[dataLevel] => low|medium|high
 
 //crawler/:password/?mode&sourceNumber&handleDomainChange
 //crawler/domainChange/:password
 
-//search/searchByTitle/:title/:types/:dataLevel/:page/:count?
-//search/searchByID/:id/:dataLevel
+//movies/news/:types/:dataLevel/:page
 
-//news/:types/:dataLevel/:page/:count?
+//movies/updates/:types/:dataLevel/:page
 
-//updates/:types/:dataLevel/:page:/:count?
+//movies/tops/byLikes/:types/:dataLevel/:page
 
-//tops/byLikes/:types/:dataLevel/:page/:count?
-//tops/IMDBShows/:dataLevel/:page/:count?
+//movies/trailers/:types/:dataLevel/:page
 
-//trailers/:types/:page/:count?
+//timeLine/day/:spacing/:types/:page
+//timeLine/week/:weekCounter/:types
 
-//timeLine/day/:spacing/:page/:count?
-//timeLine/week/:weekCounter
+//movies/searchByTitle/:title/:types/:dataLevel/:page
+//movies/searchByID/:id/:dataLevel

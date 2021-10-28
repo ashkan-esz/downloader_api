@@ -1,39 +1,29 @@
 const router = require('express').Router();
-const getCollection = require("../../data/mongoDB");
-const {dataLevelConfig} = require("../../models/movie");
-const {getCache_news} = require("../../data/cache");
+import {moviesControllers} from '../../controllers';
 
 
-//movies/news/:types/:dataLevel/:page/:count?
-router.get('/:types/:dataLevel/:page/:count?', async (req, res) => {
-    let types = JSON.parse(req.params.types);
-    let dataLevel = req.params.dataLevel;
-    let page = Number(req.params.page);
-    let count = Number(req.params.count) || 1;
+//movies/news/:types/:dataLevel/:page
+router.get('/news/:types/:dataLevel/:page', moviesControllers.getNews);
 
-    let skip = (page === 0) ? 0 : 12 * (page - 1);
-    let limit = (page === 0) ? count : 12;
+//movies/updates/:types/:dataLevel/:page
+router.get('/updates/:types/:dataLevel/:page', moviesControllers.getUpdates);
 
-    //cache
-    if (dataLevel === 'low' && page <= 5) {
-        let cacheResult = getCache_news(types);
-        let result = cacheResult.slice(skip, skip + limit);
-        if (result.length === 12) {
-            return res.json(result);
-        }
-    }
-    //database
-    let collection = await getCollection('movies');
-    let searchResults = await collection
-        .find({
-            type: {$in: types},
-        }, {projection: dataLevelConfig[dataLevel]})
-        .sort({year: -1, insert_date: -1})
-        .skip(skip)
-        .limit(limit)
-        .toArray();
-    return res.json(searchResults);
-});
+//movies/tops/byLikes/:types/:dataLevel/:page
+router.get('/tops/byLikes/:types/:dataLevel/:page', moviesControllers.getTopsByLikes);
 
+//movies/trailers/:types/:dataLevel/:page
+router.get('/trailers/:types/:dataLevel/:page', moviesControllers.getTrailers);
+
+//movies/timeline/day/:spacing/:types/:page
+router.get('/timeline/day/:spacing/:types/:page', moviesControllers.getTimelineDay);
+
+//movies/timeline/week/:spacing/:types/:page
+router.get('/timeline/week/:weekCounter/:types', moviesControllers.getTimelineWeek);
+
+//movies/searchByTitle/:title/:types/:dataLevel/:page
+router.get('/searchByTitle/:title/:types/:dataLevel/:page', moviesControllers.searchByTitle);
+
+//movies/searchById/:id/:dataLevel
+router.get('/searchById/:id/:dataLevel', moviesControllers.searchById);
 
 export default router;

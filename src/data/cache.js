@@ -2,7 +2,6 @@ const axios = require('axios').default;
 const axiosRetry = require("axios-retry");
 const getCollection = require("./mongoDB");
 const {dataLevelConfig} = require("../models/movie");
-const {replaceSpecialCharacters} = require("../crawlers/utils");
 const {saveError} = require("../error/saveError");
 
 axiosRetry(axios, {
@@ -23,12 +22,11 @@ axiosRetry(axios, {
     ),
 });
 
+//todo : check mem-cache
+
 let news = []; //5 * 12 = 60
 let updates = []; //5 * 12 = 60
 let topLikes = []; //5 * 12 = 60
-
-let popularIMDBShowsNames = []; //5 * 20 = 100;
-let popularIMDBShows = []; //4 * 12 = 48
 
 let trailers = []; //6 * 6 = 36
 
@@ -38,7 +36,7 @@ let seriesOfWeek1 = null; // 1 * ~100
 
 //-------------------------------
 //-------------------------------
-export async function setCache_all() {
+export async function setCacheAll() {
     return new Promise(async (resolve, reject) => {
         try {
             await Promise.allSettled([
@@ -51,8 +49,6 @@ export async function setCache_all() {
                 setCache_SeriesOfDay(),
                 setCache_seriesOfWeek(),
             ]);
-            // await setCache_popularIMDBShowsNames();
-            // await setCache_popularIMDBShows();
             resolve();
         } catch (error) {
             saveError(error);
@@ -134,51 +130,6 @@ export function getCache_TopLikes(types) {
 }
 
 //----------------------------------
-//------------Tops_Popular----------
-export async function setCache_popularIMDBShowsNames() {
-    //todo : remove this section
-    try {
-        let temp = [];
-        const pagesCounts = 5; // 5 * 20 = 100
-        for (let i = 1; i <= pagesCounts; i++) {
-            let response = await axios.get(`https://www.episodate.com/api/most-popular?page=${i}`);
-            let data = response.data;
-            if (data) {
-                let showsNames = data.tv_shows.map(value => replaceSpecialCharacters(value.name.toLowerCase()));
-                temp.push(...showsNames);
-            }
-        }
-        popularIMDBShowsNames = temp;
-    } catch (error) {
-        saveError(error);
-    }
-}
-
-export function getCache_popularIMDBShowsNames() {
-    return popularIMDBShowsNames;
-}
-
-async function setCache_popularIMDBShows() {
-    try {
-        let collection = await getCollection('movies');
-        let searchNames = popularIMDBShowsNames.slice(0, 48);
-        if (searchNames.length > 0) {
-            let serialSearch = await collection
-                .find({title: {$in: searchNames}}, {projection: dataLevelConfig["low"]})
-                .toArray();
-            popularIMDBShows = serialSearch.sort((a, b) => searchNames.indexOf(a.title) - searchNames.indexOf(b.title));
-        }
-    } catch (error) {
-        popularIMDBShows = [];
-        saveError(error);
-    }
-}
-
-export function getCache_popularIMDBShows() {
-    return popularIMDBShows;
-}
-
-//----------------------------------
 //-------------Trailers-------------
 async function setCache_Trailers() {
     try {
@@ -216,7 +167,7 @@ async function setCache_SeriesOfDay() {
             let collection = await getCollection('movies');
             let result = await collection
                 .find({
-                    type: 'serial',
+                    type: ['movie', 'serial', 'anime_movie', 'anime_serial'],
                     status: 'running',
                     releaseDay: daysOfWeek[dayNumber],
                     nextEpisode: {$ne: null},

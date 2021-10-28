@@ -12,7 +12,7 @@ const {resetJikanApiCache, updateJikanData} = require('./3rdPartyApi/jikanApi');
 const {updateImdbData} = require('./3rdPartyApi/imdbApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../error/saveError");
-const {setCache_all} = require("../data/cache");
+const {setCacheAll} = require("../data/cache");
 
 export let _handleCastUpdate = true;
 let isCrawling = false;
@@ -64,7 +64,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         let endTime = new Date();
         let message = `crawling done in : ${getDatesBetween(endTime, startTime).seconds}s`;
         Sentry.captureMessage(message);
-        await setCache_all();
+        await setCacheAll();
         return message;
     } catch (error) {
         await saveError(error);
