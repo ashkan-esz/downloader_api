@@ -11,7 +11,7 @@ const compression = require('compression');
 // const jwksRsa = require('jwks-rsa');
 const cron = require('node-cron');
 const {crawler} = require('./crawlers/crawler');
-const {setCacheAll} = require("./data/cache");
+import {flushCachedData} from "./api/middlewares/moviesCache";
 //---------------Routes-----------------
 import routes from './api/routes';
 //--------------middleware--------------
@@ -37,7 +37,7 @@ app.use('/crawler', routes.crawlersRouters);
 app.use('/movies', routes.moviesRouters);
 
 
-setCacheAll();
+flushCachedData();
 
 cron.schedule('0 */3 * * *', async () => {
     await crawler('', 0);

@@ -1,88 +1,81 @@
-import {cachedData} from "../data/cache";
 import * as dbMethods from '../data/dbMethods';
+import {setCache} from "../api/middlewares/moviesCache";
 import {dataLevelConfig} from "../models/movie";
 
-
-export async function getNews(types, dataLevel, page) {
+export async function getNews(types, dataLevel, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    //cache
-    if (dataLevel === 'medium') {
-        let cacheResult = cachedData.newMovies.filter(item => types.includes(item.type));
-        let result = cacheResult.slice(skip, skip + limit);
-        if (result.length === 12) {
-            return result;
-        }
+    let newMovies = await dbMethods.getNewMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    if (newMovies.length > 0) {
+        setCache(routeUrl, newMovies);
     }
-    //database
-    return await dbMethods.getNewMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+
+    return newMovies;
 }
 
-export async function getUpdates(types, dataLevel, page) {
+export async function getUpdates(types, dataLevel, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    //cache
-    if (dataLevel === 'medium') {
-        let cacheResult = cachedData.updateMovies.filter(item => types.includes(item.type));
-        let result = cacheResult.slice(skip, skip + limit);
-        if (result.length === 12) {
-            return result;
-        }
+    let updateMovies = await dbMethods.getUpdateMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    if (updateMovies.length > 0) {
+        setCache(routeUrl, updateMovies);
     }
-    //database
-    return await dbMethods.getUpdateMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+
+    return updateMovies;
 }
 
-export async function getTopsByLikes(types, dataLevel, page) {
+export async function getTopsByLikes(types, dataLevel, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    //cache
-    if (dataLevel === 'medium') {
-        let cacheResult = cachedData.topsByLikes.filter(item => types.includes(item.type));
-        let result = cacheResult.slice(skip, skip + limit);
-        if (result.length === 12) {
-            return result;
-        }
+    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    if (topsByLikesMovies.length > 0) {
+        setCache(routeUrl, topsByLikesMovies);
     }
-    //database
-    return await dbMethods.getTopsByLikesMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+
+    return topsByLikesMovies;
 }
 
-export async function getTrailers(types, dataLevel, page) {
+export async function getTrailers(types, dataLevel, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    //cache
-    if (dataLevel === 'medium') {
-        let cacheResult = cachedData.newTrailers.filter(item => types.includes(item.type));
-        let result = cacheResult.slice(skip, skip + limit);
-        if (result.length === 12) {
-            return result;
-        }
+    let trailersData = await dbMethods.getNewTrailers(types, skip, limit, dataLevelConfig[dataLevel]);
+    if (trailersData.length > 0) {
+        setCache(routeUrl, trailersData);
     }
-    //database
-    return await dbMethods.getNewTrailers(types, skip, limit, dataLevelConfig[dataLevel]);
+
+    return trailersData;
 }
 
-export async function getSeriesOfDay(dayNumber, types, page) {
+export async function getSeriesOfDay(dayNumber, types, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    //cache
-    let cacheResult = cachedData.seriesOfDay[dayNumber].filter(item => types.includes(item.type));
-    let result = cacheResult.slice(skip, skip + limit);
-    if (result.length === 12) {
-        return result;
+    let seriesOfDay = await dbMethods.getSeriesOfDay(dayNumber, types, skip, limit, dataLevelConfig["medium"]);
+    if (seriesOfDay.length > 0) {
+        setCache(routeUrl, seriesOfDay);
     }
-    //database
-    return await dbMethods.getSeriesOfDay(dayNumber, types, skip, limit, dataLevelConfig["medium"]);
+
+    return seriesOfDay;
 }
 
-export async function searchByTitle(title, types, dataLevel, page) {
+export async function searchByTitle(title, types, dataLevel, page, routeUrl) {
+    //todo : advanced search
     let {skip, limit} = getSkipLimit(page, 12);
-    return await dbMethods.searchOnMovieCollectionByTitle(title, types, skip, limit, dataLevelConfig[dataLevel]);
+
+    let movieSearchData = await dbMethods.searchOnMovieCollectionByTitle(title, types, skip, limit, dataLevelConfig[dataLevel]);
+    if (movieSearchData.length > 0) {
+        setCache(routeUrl, movieSearchData);
+    }
+
+    return movieSearchData;
 }
 
-export async function searchById(id, dataLevel) {
-    return await dbMethods.searchOnMovieCollectionById(id, dataLevelConfig[dataLevel]);
+export async function searchById(id, dataLevel, routeUrl) {
+    let movieData = await dbMethods.searchOnMovieCollectionById(id, dataLevelConfig[dataLevel]);
+    if (movieData) {
+        setCache(routeUrl, movieData);
+    }
+
+    return movieData;
 }
 
 function getSkipLimit(page, limit) {
