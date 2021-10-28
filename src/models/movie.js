@@ -28,6 +28,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         view: 0,
         like_month: 0,
         view_month: 0,
+        add_date: new Date(),
         insert_date: new Date(),
         update_date: 0,
         apiUpdateDate: new Date(),

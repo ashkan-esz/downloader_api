@@ -220,7 +220,7 @@ export async function getNewTrailers(types, skip, limit, projection) {
                 type: {$in: types},
                 trailers: {$ne: null},
             }, {projection: projection})
-            .sort({year: -1, insert_date: -1})
+            .sort({year: -1, add_date: -1})
             .skip(skip)
             .limit(limit)
             .toArray();
@@ -254,7 +254,6 @@ export async function getSeriesOfDay(dayNumber, types, skip, limit, projection) 
 
 export async function searchOnMovieCollectionByTitle(title, types, skip, limit, projection) {
     try {
-        //todo : query on alternateTitles and titleSynonyms
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {
@@ -262,7 +261,7 @@ export async function searchOnMovieCollectionByTitle(title, types, skip, limit, 
                     index: 'default',
                     text: {
                         query: title,
-                        path: 'title'
+                        path: ['title', 'alternateTitles', 'titleSynonyms'],
                     }
                 }
             },
