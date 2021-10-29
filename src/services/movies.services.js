@@ -2,10 +2,10 @@ import * as dbMethods from '../data/dbMethods';
 import {setCache} from "../api/middlewares/moviesCache";
 import {dataLevelConfig} from "../models/movie";
 
-export async function getNews(types, dataLevel, page, routeUrl) {
+export async function getNews(types, dataLevel, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await dbMethods.getNewMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    let newMovies = await dbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (newMovies.length > 0) {
         setCache(routeUrl, newMovies);
     }
@@ -13,10 +13,10 @@ export async function getNews(types, dataLevel, page, routeUrl) {
     return newMovies;
 }
 
-export async function getUpdates(types, dataLevel, page, routeUrl) {
+export async function getUpdates(types, dataLevel, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await dbMethods.getUpdateMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    let updateMovies = await dbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies.length > 0) {
         setCache(routeUrl, updateMovies);
     }
@@ -24,10 +24,10 @@ export async function getUpdates(types, dataLevel, page, routeUrl) {
     return updateMovies;
 }
 
-export async function getTopsByLikes(types, dataLevel, page, routeUrl) {
+export async function getTopsByLikes(types, dataLevel, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(types, skip, limit, dataLevelConfig[dataLevel]);
+    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (topsByLikesMovies.length > 0) {
         setCache(routeUrl, topsByLikesMovies);
     }
@@ -35,10 +35,10 @@ export async function getTopsByLikes(types, dataLevel, page, routeUrl) {
     return topsByLikesMovies;
 }
 
-export async function getTrailers(types, dataLevel, page, routeUrl) {
+export async function getTrailers(types, dataLevel, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let trailersData = await dbMethods.getNewTrailers(types, skip, limit, dataLevelConfig[dataLevel]);
+    let trailersData = await dbMethods.getNewTrailers(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (trailersData.length > 0) {
         setCache(routeUrl, trailersData);
     }
@@ -46,10 +46,10 @@ export async function getTrailers(types, dataLevel, page, routeUrl) {
     return trailersData;
 }
 
-export async function getSeriesOfDay(dayNumber, types, page, routeUrl) {
+export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let seriesOfDay = await dbMethods.getSeriesOfDay(dayNumber, types, skip, limit, dataLevelConfig["medium"]);
+    let seriesOfDay = await dbMethods.getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
     if (seriesOfDay.length > 0) {
         setCache(routeUrl, seriesOfDay);
     }
@@ -57,11 +57,11 @@ export async function getSeriesOfDay(dayNumber, types, page, routeUrl) {
     return seriesOfDay;
 }
 
-export async function searchByTitle(title, types, dataLevel, page, routeUrl) {
-    //todo : advanced search
+export async function searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, routeUrl) {
+    //todo : also search in cast/characters
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let movieSearchData = await dbMethods.searchOnMovieCollectionByTitle(title, types, skip, limit, dataLevelConfig[dataLevel]);
+    let movieSearchData = await dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (movieSearchData.length > 0) {
         setCache(routeUrl, movieSearchData);
     }

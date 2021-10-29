@@ -32,15 +32,15 @@ dataConfig = {
 //crawler/:password/?mode&sourceNumber&handleDomainChange
 //crawler/domainChange/:password
 
-//movies/news/:types/:dataLevel/:page
+//movies/news/:types/:dataLevel/:imdbScores/:malScores/:page
 
-//movies/updates/:types/:dataLevel/:page
+//movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
 
-//movies/tops/byLikes/:types/:dataLevel/:page
+//movies/tops/byLikes/:types/:dataLevel/:imdbScores/:malScores/:page
 
-//movies/trailers/:types/:dataLevel/:page
+//movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
 
-//seriesOfDay/:dayNumber/:types/:page
+//seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 
-//movies/searchByTitle/:title/:types/:dataLevel/:page
+//movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page
 //movies/searchByID/:id/:dataLevel

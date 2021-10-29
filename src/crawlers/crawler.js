@@ -26,6 +26,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         if (isCrawling) {
             return 'another crawling is running';
         }
+        flushCachedData();
         isCrawling = true;
         let startTime = new Date();
         resetJikanApiCache(startTime);

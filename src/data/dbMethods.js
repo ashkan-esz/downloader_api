@@ -157,13 +157,21 @@ export async function updateStatusObjDB(updateFields) {
 //-----------------------------------
 //-----------------------------------
 
-export async function getNewMovies(types, skip, limit, projection) {
+export async function getNewMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         return await collection
             .find({
                 releaseState: 'done',
                 type: {$in: types},
+                "rating.imdb": {
+                    $gte: imdbScores[0],
+                    $lte: imdbScores[1],
+                },
+                "rating.myAnimeList": {
+                    $gte: malScores[0],
+                    $lte: malScores[1],
+                },
             }, {projection: projection})
             .sort({year: -1, insert_date: -1})
             .skip(skip)
@@ -175,13 +183,21 @@ export async function getNewMovies(types, skip, limit, projection) {
     }
 }
 
-export async function getUpdateMovies(types, skip, limit, projection) {
+export async function getUpdateMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         return await collection
             .find({
                 releaseState: 'done',
                 type: {$in: types},
+                "rating.imdb": {
+                    $gte: imdbScores[0],
+                    $lte: imdbScores[1],
+                },
+                "rating.myAnimeList": {
+                    $gte: malScores[0],
+                    $lte: malScores[1],
+                },
             }, {projection: projection})
             .sort({update_date: -1, year: -1})
             .skip(skip)
@@ -193,13 +209,21 @@ export async function getUpdateMovies(types, skip, limit, projection) {
     }
 }
 
-export async function getTopsByLikesMovies(types, skip, limit, projection) {
+export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         return await collection
             .find({
                 releaseState: 'done',
                 type: {$in: types},
+                "rating.imdb": {
+                    $gte: imdbScores[0],
+                    $lte: imdbScores[1],
+                },
+                "rating.myAnimeList": {
+                    $gte: malScores[0],
+                    $lte: malScores[1],
+                },
             }, {projection: projection})
             .sort({like: -1})
             .skip(skip)
@@ -211,13 +235,21 @@ export async function getTopsByLikesMovies(types, skip, limit, projection) {
     }
 }
 
-export async function getNewTrailers(types, skip, limit, projection) {
+export async function getNewTrailers(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         return await collection
             .find({
                 releaseState: {$ne: "done"},
                 type: {$in: types},
+                "rating.imdb": {
+                    $gte: imdbScores[0],
+                    $lte: imdbScores[1],
+                },
+                "rating.myAnimeList": {
+                    $gte: malScores[0],
+                    $lte: malScores[1],
+                },
                 trailers: {$ne: null},
             }, {projection: projection})
             .sort({year: -1, add_date: -1})
@@ -230,7 +262,7 @@ export async function getNewTrailers(types, skip, limit, projection) {
     }
 }
 
-export async function getSeriesOfDay(dayNumber, types, skip, limit, projection) {
+export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, projection) {
     try {
         dayNumber = dayNumber % 7;
         let daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -241,6 +273,14 @@ export async function getSeriesOfDay(dayNumber, types, skip, limit, projection) 
                 status: {$ne: "ended"},
                 releaseDay: daysOfWeek[dayNumber],
                 nextEpisode: {$ne: null},
+                "rating.imdb": {
+                    $gte: imdbScores[0],
+                    $lte: imdbScores[1],
+                },
+                "rating.myAnimeList": {
+                    $gte: malScores[0],
+                    $lte: malScores[1],
+                },
             }, {projection: projection})
             .sort({'rating.imdb': -1, 'rating.myAnimeList': -1})
             .skip(skip)
@@ -252,7 +292,7 @@ export async function getSeriesOfDay(dayNumber, types, skip, limit, projection) 
     }
 }
 
-export async function searchOnMovieCollectionByTitle(title, types, skip, limit, projection) {
+export async function searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
@@ -268,6 +308,14 @@ export async function searchOnMovieCollectionByTitle(title, types, skip, limit, 
             {
                 $match: {
                     type: {$in: types},
+                    "rating.imdb": {
+                        $gte: imdbScores[0],
+                        $lte: imdbScores[1],
+                    },
+                    "rating.myAnimeList": {
+                        $gte: malScores[0],
+                        $lte: malScores[1],
+                    },
                 }
             },
             {
@@ -277,6 +325,12 @@ export async function searchOnMovieCollectionByTitle(title, types, skip, limit, 
                 $limit: limit,
             }
         ];
+        if (years !== '0-0') {
+            aggregationPipeline[1]['$match']['year'] = {
+                $gte: years[0],
+                $lte: years[1],
+            };
+        }
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
                 $project: projection,
