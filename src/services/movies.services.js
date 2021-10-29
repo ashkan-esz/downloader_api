@@ -58,15 +58,28 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, pa
 }
 
 export async function searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, routeUrl) {
-    //todo : also search in cast/characters
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let movieSearchData = await dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (movieSearchData.length > 0) {
-        setCache(routeUrl, movieSearchData);
+    let staffAndCharactersProjection = dataLevel === 'high'
+        ? {}
+        : {
+            name: 1,
+            rawName: 1,
+            gender: 1,
+            image: 1,
+            modelName: 1,
+        };
+    let searchData = await Promise.allSettled([
+        dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.searchOnCollectionByName('staff', title, skip, limit, staffAndCharactersProjection),
+        dbMethods.searchOnCollectionByName('characters', title, skip, limit, staffAndCharactersProjection),
+    ]);
+    searchData = searchData.map(item => item.value).flat(1);
+    if (searchData.length > 0) {
+        setCache(routeUrl, searchData);
     }
 
-    return movieSearchData;
+    return searchData;
 }
 
 export async function searchById(id, dataLevel, routeUrl) {

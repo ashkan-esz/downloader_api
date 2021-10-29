@@ -65,7 +65,7 @@ export async function searchByTitle(req, res) {
     let title = req.params.title;
     let types = req.params.types.split('-');
     let dataLevel = req.params.dataLevel;
-    let years = req.params.year.split('-');
+    let years = req.params.years.split('-');
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);

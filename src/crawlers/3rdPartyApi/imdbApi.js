@@ -278,6 +278,9 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
 async function addBoxOfficeData() {
     let url = 'https://imdb-api.com/en/API/BoxOffice/$apikey$';
     let boxOfficeData = await handleApiCall(url);
+    if (!boxOfficeData) {
+        return;
+    }
     let promiseArray = [];
     for (let i = 0; i < boxOfficeData.items.length; i++) {
         let updateFields = {

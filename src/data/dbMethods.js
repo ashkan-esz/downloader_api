@@ -308,6 +308,10 @@ export async function searchOnMovieCollectionByTitle(title, types, years, imdbSc
             {
                 $match: {
                     type: {$in: types},
+                    year: {
+                        $gte: years[0],
+                        $lte: years[1],
+                    },
                     "rating.imdb": {
                         $gte: imdbScores[0],
                         $lte: imdbScores[1],
@@ -325,12 +329,6 @@ export async function searchOnMovieCollectionByTitle(title, types, years, imdbSc
                 $limit: limit,
             }
         ];
-        if (years !== '0-0') {
-            aggregationPipeline[1]['$match']['year'] = {
-                $gte: years[0],
-                $lte: years[1],
-            };
-        }
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
                 $project: projection,
@@ -350,5 +348,37 @@ export async function searchOnMovieCollectionById(id, projection) {
     } catch (error) {
         saveError(error);
         return null;
+    }
+}
+
+export async function searchOnCollectionByName(collectionName, name, skip, limit, projection) {
+    try {
+        let collection = await getCollection(collectionName);
+        let aggregationPipeline = [
+            {
+                $search: {
+                    index: 'default',
+                    text: {
+                        query: name,
+                        path: ['name'],
+                    }
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            }
+        ];
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: projection,
+            });
+        }
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }

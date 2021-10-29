@@ -1,5 +1,6 @@
 export function getEpisodeModel(title, released, releaseStamp, duration, season, episode, imdbRating, imdbID) {
     return {
+        modelName: 'episode',
         title: title || 'unknown',
         released: released || '',
         releaseStamp: releaseStamp || '',
