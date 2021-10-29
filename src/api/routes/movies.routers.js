@@ -9,11 +9,14 @@ router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.m
 //movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/updates/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getUpdates);
 
-//movies/tops/byLikes/:types/:dataLevel/:imdbScores/:malScores/:page
-router.get('/tops/byLikes/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getTopsByLikes);
+//movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getTopsByLikes);
 
 //movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/trailers/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getTrailers);
+
+//movies/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getSortedMovies);
 
 //movies/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getSeriesOfDay);
@@ -22,6 +25,13 @@ router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page', middle
 router.get('/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.searchByTitle);
 
 //movies/searchById/:id/:dataLevel
-router.get('/searchById/:id/:dataLevel', middlewares.moviesCache, moviesControllers.searchById);
+router.get('/searchById/:id/:dataLevel', middlewares.moviesCache, moviesControllers.searchMovieById);
+
+//movies/staff/searchById/:id
+router.get('/staff/searchById/:id', middlewares.moviesCache, moviesControllers.searchStaffById);
+
+//movies/characters/searchById/:id
+router.get('/character/searchById/:id', middlewares.moviesCache, moviesControllers.searchCharacterById);
+
 
 export default router;

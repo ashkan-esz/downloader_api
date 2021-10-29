@@ -50,6 +50,21 @@ export async function getTrailers(req, res) {
     return res.sendStatus(404);
 }
 
+export async function getSortedMovies(req, res) {
+    let sortBase = req.params.sortBase.toLowerCase();
+    let types = req.params.types.split('-');
+    let dataLevel = req.params.dataLevel;
+    let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
+    let malScores = req.params.malScores.split('-').map(item => Number(item));
+    let page = Number(req.params.page);
+
+    let trailers = await moviesServices.getSortedMovies(sortBase, types, dataLevel, imdbScores, malScores, page, req.url);
+    if (trailers.length > 0) {
+        return res.json(trailers);
+    }
+    return res.sendStatus(404);
+}
+
 export async function getSeriesOfDay(req, res) {
     let dayNumber = Number(req.params.dayNumber);
     let types = req.params.types.split('-');
@@ -77,10 +92,30 @@ export async function searchByTitle(req, res) {
     return res.sendStatus(404);
 }
 
-export async function searchById(req, res) {
+export async function searchMovieById(req, res) {
     let {id, dataLevel} = req.params;
 
-    let titleData = await moviesServices.searchById(id, dataLevel, req.url);
+    let titleData = await moviesServices.searchMovieById(id, dataLevel, req.url);
+    if (titleData) {
+        return res.json(titleData);
+    }
+    return res.sendStatus(404);
+}
+
+export async function searchStaffById(req, res) {
+    let {id} = req.params;
+
+    let titleData = await moviesServices.searchStaffById(id, req.url);
+    if (titleData) {
+        return res.json(titleData);
+    }
+    return res.sendStatus(404);
+}
+
+export async function searchCharacterById(req, res) {
+    let {id} = req.params;
+
+    let titleData = await moviesServices.searchCharacterById(id, req.url);
     if (titleData) {
         return res.json(titleData);
     }

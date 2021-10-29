@@ -163,15 +163,7 @@ export async function getNewMovies(types, imdbScores, malScores, skip, limit, pr
         return await collection
             .find({
                 releaseState: 'done',
-                type: {$in: types},
-                "rating.imdb": {
-                    $gte: imdbScores[0],
-                    $lte: imdbScores[1],
-                },
-                "rating.myAnimeList": {
-                    $gte: malScores[0],
-                    $lte: malScores[1],
-                },
+                ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
             .sort({year: -1, insert_date: -1})
             .skip(skip)
@@ -189,15 +181,7 @@ export async function getUpdateMovies(types, imdbScores, malScores, skip, limit,
         return await collection
             .find({
                 releaseState: 'done',
-                type: {$in: types},
-                "rating.imdb": {
-                    $gte: imdbScores[0],
-                    $lte: imdbScores[1],
-                },
-                "rating.myAnimeList": {
-                    $gte: malScores[0],
-                    $lte: malScores[1],
-                },
+                ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
             .sort({update_date: -1, year: -1})
             .skip(skip)
@@ -215,15 +199,7 @@ export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, l
         return await collection
             .find({
                 releaseState: 'done',
-                type: {$in: types},
-                "rating.imdb": {
-                    $gte: imdbScores[0],
-                    $lte: imdbScores[1],
-                },
-                "rating.myAnimeList": {
-                    $gte: malScores[0],
-                    $lte: malScores[1],
-                },
+                ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
             .sort({like: -1})
             .skip(skip)
@@ -241,18 +217,52 @@ export async function getNewTrailers(types, imdbScores, malScores, skip, limit, 
         return await collection
             .find({
                 releaseState: {$ne: "done"},
-                type: {$in: types},
-                "rating.imdb": {
-                    $gte: imdbScores[0],
-                    $lte: imdbScores[1],
-                },
-                "rating.myAnimeList": {
-                    $gte: malScores[0],
-                    $lte: malScores[1],
-                },
+                ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
                 trailers: {$ne: null},
             }, {projection: projection})
             .sort({year: -1, add_date: -1})
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, projection) {
+    try {
+        let searchBase;
+        if (sortBase === 'animetopcomingsoon') {
+            searchBase = "rank.animeTopComingSoon";
+        } else if (sortBase === 'animetopairing') {
+            searchBase = "rank.animeTopAiring";
+        } else if (sortBase === 'comingsoon') {
+            searchBase = "rank.comingSoon";
+        } else if (sortBase === 'intheaters') {
+            searchBase = "rank.inTheaters";
+        } else if (sortBase === 'boxoffice') {
+            searchBase = "rank.boxOffice";
+        } else if (sortBase === 'top') {
+            searchBase = "rank.top";
+        } else if (sortBase === 'popular') {
+            searchBase = "rank.popular";
+        }
+        let query = {
+            releaseState: {$ne: "done"},
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }
+        query[searchBase] = {$ne: -1};
+        let sortConfig = {};
+        sortConfig[searchBase] = 1;
+
+        let collection = await getCollection('movies');
+        return await collection
+            .find(query, {projection: projection})
+            .sort(sortConfig)
             .skip(skip)
             .limit(limit)
             .toArray();
@@ -269,18 +279,10 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, sk
         let collection = await getCollection('movies');
         return await collection
             .find({
-                type: {$in: types},
                 status: {$ne: "ended"},
                 releaseDay: daysOfWeek[dayNumber],
                 nextEpisode: {$ne: null},
-                "rating.imdb": {
-                    $gte: imdbScores[0],
-                    $lte: imdbScores[1],
-                },
-                "rating.myAnimeList": {
-                    $gte: malScores[0],
-                    $lte: malScores[1],
-                },
+                ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
             .sort({'rating.imdb': -1, 'rating.myAnimeList': -1})
             .skip(skip)
@@ -291,6 +293,9 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, sk
         return [];
     }
 }
+
+//-----------------------------------
+//-----------------------------------
 
 export async function searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, projection) {
     try {
@@ -341,9 +346,9 @@ export async function searchOnMovieCollectionByTitle(title, types, years, imdbSc
     }
 }
 
-export async function searchOnMovieCollectionById(id, projection) {
+export async function searchOnCollectionById(collectionName, id, projection) {
     try {
-        let collection = await getCollection('movies');
+        let collection = await getCollection(collectionName);
         return await collection.findOne({_id: new ObjectId(id)}, {projection: projection});
     } catch (error) {
         saveError(error);
@@ -381,4 +386,18 @@ export async function searchOnCollectionByName(collectionName, name, skip, limit
         saveError(error);
         return [];
     }
+}
+
+function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
+    return {
+        type: {$in: types},
+        "rating.imdb": {
+            $gte: imdbScores[0],
+            $lte: imdbScores[1],
+        },
+        "rating.myAnimeList": {
+            $gte: malScores[0],
+            $lte: malScores[1],
+        },
+    };
 }

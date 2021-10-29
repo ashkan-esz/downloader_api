@@ -36,11 +36,16 @@ dataConfig = {
 
 //movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
 
-//movies/tops/byLikes/:types/:dataLevel/:imdbScores/:malScores/:page
+//movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
 
 //movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
+
+//movies/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page
 
 //seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 
 //movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page
 //movies/searchByID/:id/:dataLevel
+
+//movies/staff/searchById/:id
+//movies/characters/searchById/:id

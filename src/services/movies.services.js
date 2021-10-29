@@ -46,6 +46,16 @@ export async function getTrailers(types, dataLevel, imdbScores, malScores, page,
     return trailersData;
 }
 
+export async function getSortedMovies(sortBase, types, dataLevel, imdbScores, malScores, page, routeUrl) {
+    let {skip, limit} = getSkipLimit(page, 12);
+    let sortedData = await dbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (sortedData.length > 0) {
+        setCache(routeUrl, sortedData);
+    }
+
+    return sortedData;
+}
+
 export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 
@@ -82,8 +92,26 @@ export async function searchByTitle(title, types, dataLevel, years, imdbScores, 
     return searchData;
 }
 
-export async function searchById(id, dataLevel, routeUrl) {
-    let movieData = await dbMethods.searchOnMovieCollectionById(id, dataLevelConfig[dataLevel]);
+export async function searchMovieById(id, dataLevel, routeUrl) {
+    let movieData = await dbMethods.searchOnCollectionById("movies", id, dataLevelConfig[dataLevel]);
+    if (movieData) {
+        setCache(routeUrl, movieData);
+    }
+
+    return movieData;
+}
+
+export async function searchStaffById(id, routeUrl) {
+    let movieData = await dbMethods.searchOnCollectionById("staff", id, {});
+    if (movieData) {
+        setCache(routeUrl, movieData);
+    }
+
+    return movieData;
+}
+
+export async function searchCharacterById(id, routeUrl) {
+    let movieData = await dbMethods.searchOnCollectionById("characters", id, {});
     if (movieData) {
         setCache(routeUrl, movieData);
     }
