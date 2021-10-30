@@ -1,4 +1,4 @@
-const config = require('../config');
+const {sortPostersOrder, sortTrailersOrder} = require('./sourcesArray');
 const {handleLatestDataUpdate} = require("./latestData");
 const {checkSource, removeDuplicateLinks, removeDuplicateElements} = require('./utils');
 const {saveError} = require("../error/saveError");
@@ -120,9 +120,7 @@ export function handleUrlUpdate(thiaSource, page_link) {
 }
 
 export function sortPosters(posters) {
-    //todo : move
-    let s3PosterUrl = 'poster.' + config.cloudStorage.websiteEndPoint;
-    const posterSources = ['digimovie', 'film2movie', 'salamdl', 'golchin', s3PosterUrl, 'avamovie', 'bia2anime', 'ba2hd'];
+    const posterSources = sortPostersOrder;
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {
@@ -135,7 +133,7 @@ export function sortPosters(posters) {
 }
 
 export function sortTrailers(trailers) {
-    const trailerSources = ['digimovie', 'avamovie', 's3Trailer', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
+    const trailerSources = sortTrailersOrder;
     let trailerQualities = ['1080', '720', '360'];
     let sortedTrailers = [];
 

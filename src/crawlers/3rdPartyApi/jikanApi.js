@@ -418,12 +418,10 @@ export async function updateJikanData() {
     states.jikanDataUpdateDate = now;
 
     //reset rank
-    await updateMovieCollectionDB({
-        'rank.animeTopComingSoon': -1,
-        'rank.animeTopAiring': -1,
-    });
-
+    await updateMovieCollectionDB({'rank.animeTopComingSoon': -1});
     await add_comingSoon_topAiring_Titles('comingSoon');
+    //reset rank
+    await updateMovieCollectionDB({'rank.animeTopAiring': -1});
     await add_comingSoon_topAiring_Titles('topAiring');
 
     await updateStatusObjDB(states);
@@ -502,7 +500,8 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             jikanData.jikanID = jikanID;
         }
     }
-
+    //todo : update releaseDay
+    //todo : add update
     if (jikanData && !titleDataFromDB.premiered) {
         let jikanApiFields = getJikanApiFields(jikanData);
         if (jikanApiFields) {
