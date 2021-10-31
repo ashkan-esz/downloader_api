@@ -6,6 +6,8 @@ const {getCharacterModel} = require('../../models/character');
 const {replaceSpecialCharacters, removeDuplicateElements, getDatesBetween} = require('../utils');
 const {saveError} = require('../../error/saveError');
 
+//todo : check cast data in movie / cast data / character data
+//todo : add id to embedded data
 
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
     let now = new Date();
@@ -57,6 +59,7 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
 }
 
 function extractActorsAndDirectorsAndWriters(staffAndCharacters) {
+    //todo : check
     let staffAndCharactersData = [];
     let actors = [];
     let directors = [];

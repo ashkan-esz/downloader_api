@@ -1,7 +1,8 @@
-const router = require('express').Router();
+import {Router} from 'express';
 import {moviesControllers} from '../../controllers';
 import middlewares from '../middlewares';
 
+const router = Router();
 
 //movies/news/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getNews);

@@ -1,8 +1,8 @@
 import {moviesServices} from '../services';
 
 export async function getNews(req, res) {
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -13,8 +13,8 @@ export async function getNews(req, res) {
 }
 
 export async function getUpdates(req, res) {
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -25,8 +25,8 @@ export async function getUpdates(req, res) {
 }
 
 export async function getTopsByLikes(req, res) {
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -37,8 +37,8 @@ export async function getTopsByLikes(req, res) {
 }
 
 export async function getTrailers(req, res) {
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -51,9 +51,9 @@ export async function getTrailers(req, res) {
 }
 
 export async function getSortedMovies(req, res) {
-    let sortBase = req.params.sortBase.toLowerCase();
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let sortBase = req.params.sortBase.toLowerCase().trim();
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -67,7 +67,7 @@ export async function getSortedMovies(req, res) {
 
 export async function getSeriesOfDay(req, res) {
     let dayNumber = Number(req.params.dayNumber);
-    let types = req.params.types.split('-');
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page);
@@ -78,8 +78,8 @@ export async function getSeriesOfDay(req, res) {
 
 export async function searchByTitle(req, res) {
     let title = req.params.title;
-    let types = req.params.types.split('-');
-    let dataLevel = req.params.dataLevel;
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let years = req.params.years.split('-');
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
@@ -93,8 +93,8 @@ export async function searchByTitle(req, res) {
 }
 
 export async function searchMovieById(req, res) {
-    let {id, dataLevel} = req.params;
-
+    let id = req.params.id;
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let titleData = await moviesServices.searchMovieById(id, dataLevel, req.url);
     if (titleData) {
         return res.json(titleData);
@@ -103,7 +103,7 @@ export async function searchMovieById(req, res) {
 }
 
 export async function searchStaffById(req, res) {
-    let {id} = req.params;
+    let id = req.params.id;
 
     let titleData = await moviesServices.searchStaffById(id, req.url);
     if (titleData) {
@@ -113,7 +113,7 @@ export async function searchStaffById(req, res) {
 }
 
 export async function searchCharacterById(req, res) {
-    let {id} = req.params;
+    let id = req.params.id;
 
     let titleData = await moviesServices.searchCharacterById(id, req.url);
     if (titleData) {
