@@ -1,63 +1,70 @@
-dataConfig = {
-    low: {
-        title: 1,
-        rawTitle: 1,
-        year: 1,
-        premiered: 1,
-        posters: 1,
-        type: 1,
-        rating: 1,
-        like: 1,
-    },
-    medium: {
-        releaseState: 1,
-        rank: 1,
-        title: 1,
-        rawTitle: 1,
-        alternateTitles: 1,
-        premiered: 1,
-        year: 1,
-        posters: 1,
-        type: 1,
-        rating: 1,
-        like: 1,
-        genres: 1,
-        dislike: 1,
-        trailers: 1,
-        latestData: 1,
-        nextEpisode: 1,
-        releaseDay: 1,
-        status: 1,
-        boxOfficeData: 1,
-    },
-    high: {* all *}
-}
+
+# downloader api
+
+A webcrawler based movie/anime data provider with rest api's
 
 
-[types] => movie | serial | anime_movie | anime_serial join with '-' , like movie-anime_serial
-[dataLevel] => low|medium|high
-[sortBase] => animeTopComingSoon|animeTopAiring|comingSoon|inTheaters|boxOffice|top|popular
-[imdbScores] => range: 0-10 , like 5-9
-[malScores] => range: 0-10 , like 5-9
-[years] => range: like 2005-2015
+## Motivation
+There is lots of movie sources to download from and also they change url frequently , so i made this to collect them all in one place and handle url changes.
 
-/crawler/:password/?mode&sourceNumber&handleDomainChange
-//crawler/domainChange/:password
+## How to use
+First install and start remote headless browser from [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/) .  
+then use command `npm install` and then `npm run start`.
 
-/movies/news/:types/:dataLevel/:imdbScores/:malScores/:page
 
-/movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
+> you may want to change `--max_old_space_size` and `--gc_interval` values in start script.
 
-/movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
+## Environment Variables
 
-/movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
+To run this project, you will need to add the following environment variables to your .env file
 
-/movies/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page
+| Prop                       | Description                                          | Required |
+| -------------------------- | ---------------------------------------------------- | -------- |
+| **`PORT`**                 | server port  | `false (default:3000)` |
+| **`UPDATE_PASSWORD`**         | password to start web crawler if needed. | `true` |
+| **`REMOTE_BROWSER_PASSWORD`** | password of remote headless browser (puppeteer) | `true` |
+| **`REMOTE_BROWSER_ENDPOINT`** | end point of remote headless browser (puppeteer) | `true` |
+| **`DATABASE_URL`**            | mongodb url | `true` |
+| **`SENTRY_DNS`** |  | `false` |
+| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url | `true` |
+| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix | `true` |
+| **`CLOUAD_STORAGE_ACCESS_KEY`**        |  | `true` |
+| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |  | `true` |
+| **`IMDB_API_KEY`**        |  | `true` |
+| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinit. like OMDB_API_KEY1 | `true` |
+| **`PRINT_ERRORS`**        |  | `false (default:false)` |
+| **`CRAWLER_CONCURRENCY`** |  | `false` |
 
-/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 
-/movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page
-/movies/searchByID/:id/:dataLevel
+## Future updates
+- [x]  Direct download link.
+- [x]  Serve local poster/trailer.
+- [x]  Efficient and low memory usage web crawler.
+- [x]  Handle sources url changes.
+- [ ]  Authentication.
+- [ ]  Movie suggestion.
+- [ ]  Clustring.
+- [ ]  Documentation.
+- [ ]  Write test.
 
-/movies/staff/searchById/:id
-/movies/characters/searchById/:id
+## Api routes
+Open [api routes](API.README.md) for api docs.
+
+## Contributing
+
+Contributions are always welcome!
+
+See `contributing.md` for ways to get started.
+
+Please adhere to this project's `code of conduct`.
+
+##  Support
+Contributions, issues, and feature requests are welcome!
+Give a ⭐️ if you like this project!
+
+## Author
+
+**Ashkan Esz**
+
+- [Profile](https://github.com/ashkan-esz "Ashkan esz")
+- [Email](mailto:ashkanaz2828@gmail.com?subject=Hi "Hi!")
