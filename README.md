@@ -1,6 +1,5 @@
 dataConfig = {
     low: {
-        modelName: 1,
         title: 1,
         rawTitle: 1,
         year: 1,
@@ -13,7 +12,6 @@ dataConfig = {
     medium: {
         releaseState: 1,
         rank: 1,
-        modelName: 1,
         title: 1,
         rawTitle: 1,
         alternateTitles: 1,

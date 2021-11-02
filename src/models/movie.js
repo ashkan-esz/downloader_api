@@ -4,7 +4,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
     let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);
     type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
     return {
-        modelName: 'movie',
         releaseState: 'done',
         rank: {
             animeTopComingSoon: -1,
@@ -99,7 +98,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
 
 export const dataLevelConfig = {
     low: {
-        modelName: 1,
         title: 1,
         year: 1,
         premiered: 1,
@@ -110,7 +108,6 @@ export const dataLevelConfig = {
         like: 1,
     },
     medium: {
-        modelName: 1,
         releaseState: 1,
         rank: 1,
         title: 1,

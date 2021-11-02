@@ -389,6 +389,12 @@ export async function searchOnCollectionByName(collectionName, name, skip, limit
 }
 
 function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
+    if (imdbScores.length === 1) {
+        imdbScores[1] = 10;
+    }
+    if (malScores.length === 1) {
+        malScores[1] = 10;
+    }
     return {
         type: {$in: types},
         "rating.imdb": {

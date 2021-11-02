@@ -32,7 +32,7 @@ router.get('/searchById/:id/:dataLevel', middlewares.moviesCache, moviesControll
 router.get('/staff/searchById/:id', middlewares.moviesCache, moviesControllers.searchStaffById);
 
 //movies/characters/searchById/:id
-router.get('/character/searchById/:id', middlewares.moviesCache, moviesControllers.searchCharacterById);
+router.get('/characters/searchById/:id', middlewares.moviesCache, moviesControllers.searchCharacterById);
 
 
 export default router;

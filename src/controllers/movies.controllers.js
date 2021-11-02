@@ -5,7 +5,7 @@ export async function getNews(req, res) {
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let news = await moviesServices.getNews(types, dataLevel, imdbScores, malScores, page, req.url);
 
@@ -17,7 +17,7 @@ export async function getUpdates(req, res) {
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let updates = await moviesServices.getUpdates(types, dataLevel, imdbScores, malScores, page, req.url);
 
@@ -29,7 +29,7 @@ export async function getTopsByLikes(req, res) {
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let topsByLikes = await moviesServices.getTopsByLikes(types, dataLevel, imdbScores, malScores, page, req.url);
 
@@ -41,7 +41,7 @@ export async function getTrailers(req, res) {
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let trailers = await moviesServices.getTrailers(types, dataLevel, imdbScores, malScores, page, req.url);
     if (trailers.length > 0) {
@@ -56,7 +56,7 @@ export async function getSortedMovies(req, res) {
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let trailers = await moviesServices.getSortedMovies(sortBase, types, dataLevel, imdbScores, malScores, page, req.url);
     if (trailers.length > 0) {
@@ -70,7 +70,7 @@ export async function getSeriesOfDay(req, res) {
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let seriesOfDay = await moviesServices.getSeriesOfDay(dayNumber, types, imdbScores, malScores, page, req.url);
     return res.json(seriesOfDay);
@@ -83,7 +83,7 @@ export async function searchByTitle(req, res) {
     let years = req.params.years.split('-');
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
-    let page = Number(req.params.page);
+    let page = Number(req.params.page) || 1;
 
     let titles = await moviesServices.searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, req.url);
     if (titles.length > 0) {

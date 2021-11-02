@@ -77,17 +77,19 @@ export async function searchByTitle(title, types, dataLevel, years, imdbScores, 
             rawName: 1,
             gender: 1,
             image: 1,
-            modelName: 1,
         };
-    let searchData = await Promise.allSettled([
+    let searchDataArray = await Promise.allSettled([
         dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
         dbMethods.searchOnCollectionByName('staff', title, skip, limit, staffAndCharactersProjection),
         dbMethods.searchOnCollectionByName('characters', title, skip, limit, staffAndCharactersProjection),
     ]);
-    searchData = searchData.map(item => item.value).flat(1);
-    if (searchData.length > 0) {
-        setCache(routeUrl, searchData);
+    let searchData = {
+        movies: searchDataArray[0].value || [],
+        staff: searchDataArray[1].value || [],
+        characters: searchDataArray[2].value || [],
     }
+
+    setCache(routeUrl, searchData);
 
     return searchData;
 }
