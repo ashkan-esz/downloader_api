@@ -16,13 +16,10 @@ const {default: pQueue} = require('p-queue');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../../error/saveError");
 
-let imdbApiKeys = [];
-let apiKeyCounter = 0;
+let imdbApiKey = [];
 
 export async function updateImdbData() {
-    imdbApiKeys = config.imdbApiKey
-        .split('-')
-        .map(item => ({apikey: item.trim(), reachedMax: false}));
+    imdbApiKey = {apikey: config.imdbApiKey.trim(), reachedMax: false};
 
     let states = await getStatusObjDB();
     if (!states) {
@@ -36,7 +33,7 @@ export async function updateImdbData() {
     }
     states.imdbDataUpdateDate = now;
 
-    let checkApiLimit = await checkReachedMaxAllKeys(true);
+    let checkApiLimit = await checkReachedMaxUsage(true);
     if (checkApiLimit) {
         return;
     }
@@ -363,14 +360,14 @@ async function uploadTrailer(title, year, type, imdbID) {
 }
 
 async function handleApiCall(url) {
-    let checkApiLimit = await checkReachedMaxAllKeys();
+    let checkApiLimit = await checkReachedMaxUsage();
     if (!url || checkApiLimit) {
         return null;
     }
     let waitCounter = 0;
     while (waitCounter < 10) {
         try {
-            let temp = url.replace('$apikey$', imdbApiKeys[apiKeyCounter].apikey);
+            let temp = url.replace('$apikey$', imdbApiKey.apikey);
             let response = await axios.get(temp);
             let data = response.data;
             if (data.errorMessage &&
@@ -378,21 +375,9 @@ async function handleApiCall(url) {
                     data.errorMessage.includes('Maximum usage') ||
                     data.errorMessage.includes('Invalid API Key')
                 )) {
-                imdbApiKeys[apiKeyCounter].reachedMax = true;
-                let index = -1;
-                for (let i = 0; i < imdbApiKeys.length; i++) {
-                    if (!imdbApiKeys[i].reachedMax) {
-                        index = i;
-                        break;
-                    }
-                }
-                if (index !== -1) {
-                    apiKeyCounter = index;
-                    return await handleApiCall(url);
-                } else {
-                    Sentry.captureMessage(`need more imdb api key: ${url}`);
-                    return null;
-                }
+                imdbApiKey.reachedMax = true;
+                Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                return null;
             }
             return data;
         } catch (error) {
@@ -412,18 +397,14 @@ async function handleApiCall(url) {
     return null;
 }
 
-async function checkReachedMaxAllKeys(force = false) {
-    for (let i = 0; i < imdbApiKeys.length; i++) {
-        if (!imdbApiKeys[i].reachedMax) {
-            if (force) {
-                let testResult = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
-                if (testResult) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+async function checkReachedMaxUsage(force = false) {
+    if (imdbApiKey.reachedMax) {
+        return true;
+    } else {
+        if (force) {
+            let testResult = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
+            return testResult === null;
         }
+        return false;
     }
-    return true;
 }

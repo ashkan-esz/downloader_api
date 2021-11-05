@@ -62,6 +62,10 @@ Please adhere to this project's `code of conduct`.
 Contributions, issues, and feature requests are welcome!
 Give a ⭐️ if you like this project!
 
+## Related
+
+- [downloader_app](https://github.com/ashkan-esz/downloader_app/)
+
 ## Author
 
 **Ashkan Esz**
