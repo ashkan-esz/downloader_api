@@ -86,7 +86,7 @@ export async function searchByTitle(req, res) {
     let page = Number(req.params.page) || 1;
 
     let titles = await moviesServices.searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, req.url);
-    if (titles.length > 0) {
+    if (titles.movies.length > 0 || titles.staff.length > 0 || titles.characters.length > 0) {
         return res.json(titles);
     }
     return res.sendStatus(404);
