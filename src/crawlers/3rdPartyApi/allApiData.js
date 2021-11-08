@@ -64,20 +64,13 @@ export async function addApiData(titleModel, site_links) {
     }
 
     if (titleModel.type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.rawTitle, titleModel.year, titleModel.type, 0, true);
+        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.jikanID);
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (jikanApiFields.youtubeTrailer) {
-                    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, [jikanApiFields.youtubeTrailer]);
-                    if (s3Trailer) {
-                        titleModel.trailer_s3 = s3Trailer;
-                        titleModel.trailers.push({
-                            link: s3Trailer,
-                            info: 's3Trailer-720p'
-                        });
-                        titleModel.trailers = sortTrailers(titleModel.trailers);
-                    }
+                    let trailerUploadFields = await handleTrailerUpload(titleModel, jikanApiFields.youtubeTrailer);
+                    titleModel = {...titleModel, ...trailerUploadFields};
                 }
 
                 titleModel = {...titleModel, ...jikanApiFields.updateFields};
@@ -107,7 +100,7 @@ export async function addApiData(titleModel, site_links) {
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
+export async function apiDataUpdate(db_data, site_links, siteType) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (getDatesBetween(now, apiUpdateDate).hours < 8) {
@@ -124,10 +117,6 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
             updateFields.poster_s3 = s3poster;
         }
     }
-
-    let titleUpdateResult = handleTitleUpdate(db_data, updateFields, titleObj, siteType);
-    db_data = titleUpdateResult.db_data;
-    updateFields = titleUpdateResult.updateFields;
 
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(db_data);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
@@ -155,23 +144,20 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
-    if (db_data.type.includes('anime')) {
-        let jikanApiData = await getJikanApiData(db_data.title, db_data.rawTitle, db_data.year, db_data.type, 0, true);
+    if (db_data.type.includes('anime') || siteType.includes('anime')) {
+        let jikanApiData = await getJikanApiData(db_data.title, db_data.year, db_data.type, db_data.jikanID);
         if (jikanApiData) {
+            let temp = handleTypeAndTitleUpdate(db_data, jikanApiData.titleObj, siteType);
+            db_data = {...db_data, ...temp};
+            updateFields = {...updateFields, ...temp};
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (!db_data.trailer_s3 && !db_data.trailers && jikanApiFields.youtubeTrailer) {
-                    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(db_data.title, db_data.type, db_data.year, [jikanApiFields.youtubeTrailer]);
-                    if (s3Trailer) {
-                        db_data.trailer_s3 = s3Trailer;
-                        updateFields.trailer_s3 = s3Trailer;
-                        db_data.trailers = [{
-                            link: s3Trailer,
-                            info: 's3Trailer-720p'
-                        }];
-                        updateFields.trailers = db_data.trailers;
-                    }
+                    let trailerUploadFields = await handleTrailerUpload(db_data, jikanApiFields.youtubeTrailer);
+                    db_data = {...db_data, ...trailerUploadFields};
+                    updateFields = {...updateFields, ...trailerUploadFields};
                 }
+
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
                 let currentRating = updateFields.rating ? updateFields.rating : db_data.rating;
@@ -193,29 +179,32 @@ export async function apiDataUpdate(db_data, site_links, titleObj, siteType) {
     };
 }
 
-function handleTitleUpdate(db_data, updateFields, titleObj, siteType) {
-    if (!db_data.type.includes('anime') &&
-        (siteType.includes('anime') || titleObj.jikanFound)) {
-        if (titleObj.jikanFound) {
-            delete titleObj.jikanFound;
-            db_data = {...db_data, ...titleObj};
-            updateFields = {...updateFields, ...titleObj};
-        }
-        let type = siteType.includes('anime') ? siteType : 'anime_' + siteType;
-        db_data.type = type;
-        updateFields.type = type;
-    } else if (
-        titleObj.jikanFound &&
-        (
-            db_data.rawTitle !== titleObj.rawTitle ||
-            db_data.alternateTitles.length < titleObj.alternateTitles.length
-        )
-    ) {
-        delete titleObj.jikanFound;
-        db_data = {...db_data, ...titleObj};
-        updateFields = {...updateFields, ...titleObj};
+function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
+    let temp = {
+        type: siteType,
+        ...titleObj,
+    };
+    //if this anime detected as movie before , add alternate title if needed.
+    if (db_data.title !== titleObj.title) {
+        temp.alternateTitles.push(db_data.title);
+        temp.alternateTitles = removeDuplicateElements(temp.alternateTitles);
     }
-    return {db_data, updateFields};
+    return temp;
+}
+
+async function handleTrailerUpload(titleData, youtubeTrailer) {
+    let temp = {};
+    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleData.title, titleData.type, titleData.year, [youtubeTrailer]);
+    if (s3Trailer) {
+        temp.trailer_s3 = s3Trailer;
+        let trailers = titleData.trailers ? titleData.trailers : [];
+        trailers.push({
+            link: s3Trailer,
+            info: 's3Trailer-720p'
+        });
+        temp.trailers = sortTrailers(trailers);
+    }
+    return temp;
 }
 
 async function handleApiCalls(titleData) {

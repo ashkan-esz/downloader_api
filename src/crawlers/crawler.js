@@ -2,7 +2,7 @@ const {getDatesBetween} = require('./utils');
 const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../data/dbMethods");
 const {getSourcesArray} = require('./sourcesArray');
 const {domainChangeHandler} = require('./domainChangeHandler');
-const {resetJikanApiCache, updateJikanData} = require('./3rdPartyApi/jikanApi');
+const {updateJikanData} = require('./3rdPartyApi/jikanApi');
 const {updateImdbData} = require('./3rdPartyApi/imdbApi');
 const Sentry = require('@sentry/node');
 const {saveError} = require("../error/saveError");
@@ -23,7 +23,6 @@ export async function crawler(sourceName, crawlMode = 0, {
         flushCachedData();
         isCrawling = true;
         let startTime = new Date();
-        resetJikanApiCache(startTime);
         await handleDataBaseStates();
         await updateImdbData();
         await updateJikanData();

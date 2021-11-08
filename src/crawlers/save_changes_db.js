@@ -1,6 +1,6 @@
 const {searchTitleDB, insertToDB, updateByIdDB} = require('../data/dbMethods');
-const {deleteTrailerFromS3, deletePosterFromS3} = require('../data/cloudStorage');
-const {checkSourceExist, checkSource, removeDuplicateElements} = require('./utils');
+const {deleteTrailerFromS3} = require('../data/cloudStorage');
+const {checkSourceExist, checkSource} = require('./utils');
 const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
 const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
 const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
@@ -36,7 +36,7 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
             return;
         }
 
-        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, titleObj, type);
+        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, type);
         let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
@@ -52,43 +52,38 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
 }
 
 async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
-    let titleObj = await getTitleObj(title, year, type, false, 0);
+    let titleObj = await getTitleObj(title, year, type, false);
     let db_data = await searchOnCollection(titleObj, year, type);
     if (db_data) {
-        titleObj = await getTitleObj(title, year, type, true, db_data.jikanID);
+        titleObj = {
+            title: db_data.title,
+            rawTitle: db_data.rawTitle,
+            alternateTitles: db_data.alternateTitles,
+            titleSynonyms: db_data.titleSynonyms,
+            jikanID: db_data.jikanID,
+        }
     } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
-        titleObj = await getTitleObj(title, year, type, true, 0); //get titles from jikan api
+        titleObj = await getTitleObj(title, year, type, true);
         db_data = await searchOnCollection(titleObj, year, type);
     }
     return {titleObj, db_data};
 }
 
-async function getTitleObj(title, year, type, useJikanApi, jikanID) {
+async function getTitleObj(title, year, type, useJikanApi) {
     let rawTitle = title.split(' ').map(value => value.charAt(0).toUpperCase() + value.slice(1)).join(' ');
     let titleObj = {
         title: title,
         rawTitle: rawTitle,
         alternateTitles: [],
         titleSynonyms: [],
-        jikanFound: false,
+        jikanID: 0,
     }
 
-    if (type.includes('anime') && (useJikanApi || jikanID)) {
-        let jikanApiData = await getJikanApiData(titleObj.title, titleObj.rawTitle, year, type, jikanID, false);
+    if (useJikanApi) {
+        let jikanApiData = await getJikanApiData(titleObj.title, year, type, 0);
         if (jikanApiData) {
-            titleObj.title = jikanApiData.apiTitle_simple;
-            titleObj.rawTitle = jikanApiData.apiTitle;
-            let temp = removeDuplicateElements(
-                [jikanApiData.apiTitleEnglish, title, jikanApiData.apiTitleJapanese]
-                    .filter(value => value)
-                    .map(value => value.toLowerCase())
-            );
-            if (temp.length > 1 && temp[1].includes(temp[0].replace('.', '')) && temp[1].match(/(\dth|2nd|3rd) season/gi)) {
-                temp.shift();
-            }
-            titleObj.alternateTitles = temp;
-            titleObj.titleSynonyms = jikanApiData.titleSynonyms;
-            titleObj.jikanFound = true;
+            titleObj = jikanApiData.titleObj;
+            titleObj.jikanID = jikanApiData.mal_id;
         }
     }
 
@@ -185,13 +180,20 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             let newSources = db_data.sources.filter(item => item.links.length > 0);
             let newSize = newSources.length;
             if (newSize === 0 && db_data.releaseState === 'done') {
-                if (db_data.poster_s3) {
-                    let fileName = db_data.poster_s3.split('/').pop();
-                    await deletePosterFromS3(fileName);
-                }
                 if (db_data.trailer_s3) {
                     let fileName = db_data.trailer_s3.split('/').pop();
-                    await deleteTrailerFromS3(fileName);
+                    let trailerRemoved = await deleteTrailerFromS3(fileName);
+                    if (trailerRemoved) {
+                        if (db_data.trailers) {
+                            db_data.trailers = db_data.trailers.filter(item => item.link !== db_data.trailer_s3);
+                        }
+                        if (db_data.trailers && db_data.trailers.length === 0) {
+                            db_data.trailers = null;
+                        }
+                        updateFields.trailers = db_data.trailers;
+                        db_data.trailer_s3 = '';
+                        updateFields.trailer_s3 = '';
+                    }
                 }
             } else if (prevSize !== newSize) {
                 db_data.sources = newSources;

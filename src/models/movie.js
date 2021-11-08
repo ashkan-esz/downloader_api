@@ -2,7 +2,7 @@ const {getLatestData} = require("../crawlers/latestData");
 
 export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
     let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);
-    type = (!type.includes('anime') && titleObj.jikanFound) ? 'anime_' + type : type;
+
     return {
         releaseState: 'done',
         rank: {
@@ -22,7 +22,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         sources: [{
             url: page_link,
             links: siteDownloadLinks //[{link,info,qualitySample}]
-        }],
+        }].filter(item => item.url !== ''),
         like: 0,
         dislike: 0,
         view: 0,
@@ -35,7 +35,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         castUpdateDate: 0,
         seasons: [],
         episodes: [],
-        posters: [poster],
+        posters: [poster].filter(item => item),
         poster_s3: '',
         trailer_s3: '',
         summary: {
@@ -66,7 +66,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         //3rd party api data
         imdbID: "",
         tvmazeID: 0,
-        jikanID: 0,
+        jikanID: titleObj.jikanID || 0,
         totalSeasons: 0,
         boxOffice: "",
         boxOfficeData: {
