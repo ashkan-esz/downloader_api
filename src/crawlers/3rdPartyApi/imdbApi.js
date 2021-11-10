@@ -23,7 +23,6 @@ export async function updateImdbData() {
     if (utils.getDatesBetween(now, imdbDataUpdateDate).hours < 12) {
         return;
     }
-    states.imdbDataUpdateDate = now;
 
     // check reached daily limit
     let testApiLimit = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
@@ -63,7 +62,7 @@ export async function updateImdbData() {
         await addBoxOfficeData();
     }
 
-    await dbMethods.updateStatusObjDB(states);
+    await dbMethods.updateStatusObjDB({imdbDataUpdateDate: now});
 }
 
 async function add_Top_popular(type, mode) {
@@ -84,7 +83,7 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const promiseQueue = new pQueue({concurrency: 2});
+    const promiseQueue = new pQueue({concurrency: 3});
     for (let i = 0; i < top_popular.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
         if (titleDataFromDB) {
@@ -132,9 +131,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
         }
     }
 
-    if (Object.keys(updateFields).length > 0) {
-        await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
-    }
+    await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
 }
 
 async function add_inTheaters_comingSoon(type, mode) {
@@ -147,7 +144,7 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const promiseQueue = new pQueue({concurrency: 2});
+    const promiseQueue = new pQueue({concurrency: 3});
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);
         if (titleDataFromDB) {
@@ -215,9 +212,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
         }
     }
 
-    if (Object.keys(updateFields).length > 0) {
-        await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
-    }
+    await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
 }
 
 async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank, semiImdbData) {
