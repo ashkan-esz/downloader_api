@@ -48,10 +48,16 @@ export async function searchForAnimeRelatedTitlesByJikanID(jikanID) {
     }
 }
 
-export async function searchStaffAndCharactersDB(collectionName, searchName) {
+export async function searchStaffAndCharactersDB(collectionName, searchName, tvmazePersonID, jikanPersonID) {
     try {
         let collection = await getCollection(collectionName);
-        return await collection.findOne({name: searchName});
+        return await collection.findOne({
+            name: searchName,
+            $or: [
+                {tvmazePersonID: tvmazePersonID},
+                {jikanPersonID: jikanPersonID},
+            ],
+        });
     } catch (error) {
         saveError(error);
         return null;

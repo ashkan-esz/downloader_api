@@ -5,13 +5,13 @@ export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPers
         name: replaceSpecialCharacters(rawName.toLowerCase()),
         rawName: rawName,
         gender: gender,
-        about: (about || '').trim().replace(/\n/g, ' | '),
+        about: (about || '').trim().replace(/\n|\s\|\s+\|\s/g, ' | '),
         tvmazePersonID: tvmazePersonID,
         jikanPersonID: jikanPersonID,
         country: country || '',
         birthday: birthday || '',
         deathday: deathday || '',
-        image: '',
+        imageData: null, // {url,originalUrl,size}
         originalImages: originalImages.filter(item => item),
         credits: [{
             movieID,

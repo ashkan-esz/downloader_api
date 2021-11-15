@@ -76,7 +76,7 @@ export async function searchByTitle(title, types, dataLevel, years, imdbScores, 
             name: 1,
             rawName: 1,
             gender: 1,
-            image: 1,
+            imageData: 1,
         };
     let searchDataArray = await Promise.allSettled([
         dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),

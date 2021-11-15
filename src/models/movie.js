@@ -36,8 +36,8 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         seasons: [],
         episodes: [],
         posters: [poster].filter(item => item),
-        poster_s3: '',
-        trailer_s3: '',
+        poster_s3: null, // {url,originalUrl,size}
+        trailer_s3: null, // {url,originalUrl,size}
         summary: {
             persian: persianSummary,
             english: '',

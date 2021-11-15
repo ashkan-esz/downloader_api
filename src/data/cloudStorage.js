@@ -1,10 +1,16 @@
-const config = require('../config');
-const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
-const {AbortController} = require("@aws-sdk/abort-controller");
-const {S3Client, PutObjectCommand, HeadObjectCommand, DeleteObjectCommand} = require('@aws-sdk/client-s3');
-const ytdl = require('ytdl-core');
-const {saveError} = require("../error/saveError");
+import config from "../config";
+import axios from "axios";
+import axiosRetry from "axios-retry";
+import {AbortController} from "@aws-sdk/abort-controller";
+import {
+    S3Client,
+    PutObjectCommand,
+    HeadObjectCommand,
+    DeleteObjectCommand,
+    ListObjectsCommand
+} from "@aws-sdk/client-s3";
+import ytdl from "ytdl-core";
+import {saveError} from "../error/saveError";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -34,21 +40,27 @@ const s3 = new S3Client({
     },
 });
 
-export async function uploadCastImageToS3ByURl(url, fileName, retryCounter = 0) {
+export async function uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0) {
     try {
-        if (!url) {
-            return ''
+        if (!originalUrl) {
+            return null;
         }
         if (retryCounter === 0) {
-            let s3CastImage = await checkCastImageExist(fileName);
+            let s3CastImage = await checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID);
             if (s3CastImage) {
-                return s3CastImage;
+                return {
+                    url: s3CastImage,
+                    originalUrl: "",
+                    size: await getFileSize(s3CastImage),
+                };
             }
         }
-        let response = await axios.get(url, {
+        let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
+        let fileName = getFileName(name, gender, tvmazePersonID, jikanPersonID, 'jpg');
+        let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
         const params = {
             ContentType: response.headers["content-type"],
             ContentLength: response.data.length.toString(),
@@ -59,30 +71,38 @@ export async function uploadCastImageToS3ByURl(url, fileName, retryCounter = 0) 
         };
         let command = new PutObjectCommand(params);
         await s3.send(command);
-        return `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        return {
+            url: fileUrl,
+            originalUrl: originalUrl,
+            size: Number(response.data.length.toString()),
+        };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadCastImageToS3ByURl(url, fileName, retryCounter);
+            return await uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jikanPersonID, retryCounter);
         }
         saveError(error);
-        return '';
+        return null;
     }
 }
 
-export async function uploadSubtitleToS3ByURl(url, fileName, cookie, retryCounter = 0) {
+export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, retryCounter = 0) {
     try {
-        if (!url) {
-            return ''
+        if (!originalUrl) {
+            return null;
         }
         if (retryCounter === 0) {
             let s3Subtitle = await checkSubtitleExist(fileName);
             if (s3Subtitle) {
-                return s3Subtitle;
+                return {
+                    url: s3Subtitle,
+                    originalUrl: "",
+                    size: await getFileSize(s3Subtitle),
+                };
             }
         }
-        let response = await axios.get(url, {
+        let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary",
             headers: {
@@ -99,33 +119,41 @@ export async function uploadSubtitleToS3ByURl(url, fileName, cookie, retryCounte
         };
         let command = new PutObjectCommand(params);
         await s3.send(command);
-        return `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        return {
+            url: `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`,
+            originalUrl: originalUrl,
+            size: Number(response.data.length.toString()),
+        };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadSubtitleToS3ByURl(url, fileName, cookie, retryCounter);
+            return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter);
         }
         saveError(error);
-        return '';
+        return null;
     }
 }
 
-export async function uploadTitlePosterToS3(title, type, year, posters, retryCounter = 0) {
+export async function uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter = 0, forceUpload = false) {
     try {
-        if (posters.length === 0 || !posters[0]) {
-            return '';
+        if (!originalUrl) {
+            return null;
         }
-        if (retryCounter === 0) {
+        if (retryCounter === 0 && !forceUpload) {
             let s3Poster = await checkTitlePosterExist(title, type, year);
             if (s3Poster) {
-                return s3Poster;
+                return {
+                    url: s3Poster,
+                    originalUrl: "",
+                    size: await getFileSize(s3Poster),
+                };
             }
         }
 
-        let fileName = getFileName(title, type, year, 'jpg');
-        let url = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
-        let response = await axios.get(posters[0], {
+        let fileName = getFileName(title, type, year, '', 'jpg');
+        let fileUrl = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
@@ -139,37 +167,45 @@ export async function uploadTitlePosterToS3(title, type, year, posters, retryCou
         };
         let command = new PutObjectCommand(params);
         await s3.send(command);
-        return url;
+        return {
+            url: fileUrl,
+            originalUrl: originalUrl,
+            size: Number(response.data.length.toString()),
+        };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadTitlePosterToS3(title, type, year, posters, retryCounter);
+            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload);
         }
         saveError(error);
-        return '';
+        return null;
     }
 }
 
-export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, trailers, retryCounter = 0) {
+export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter = 0) {
     try {
-        if (trailers.length === 0 || !trailers[0]) {
-            return '';
+        if (!originalUrl) {
+            return null;
         }
         if (retryCounter === 0) {
             let s3Trailer = await checkTitleTrailerExist(title, type, year);
             if (s3Trailer) {
-                return s3Trailer;
+                return {
+                    url: s3Trailer,
+                    originalUrl: "",
+                    size: await getFileSize(s3Trailer),
+                };
             }
         }
 
-        let fileName = getFileName(title, type, year, 'mp4');
-        let url = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let fileName = getFileName(title, type, year, '', 'mp4');
+        let fileUrl = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
         return await new Promise(async (resolve, reject) => {
             const abortController = new AbortController();
             let videoReadStream = null;
             try {
-                videoReadStream = ytdl(trailers[0], {
+                videoReadStream = ytdl(originalUrl, {
                     filter: 'audioandvideo',
                     quality: "highestvideo",
                     highWaterMark: 1 << 25,
@@ -190,7 +226,11 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, trail
                 };
                 let command = new PutObjectCommand(params);
                 await s3.send(command, {abortSignal: abortController.signal});
-                resolve(url);
+                resolve({
+                    url: fileUrl,
+                    originalUrl: originalUrl,
+                    size: await getFileSize(fileUrl),
+                });
             } catch (error2) {
                 if (videoReadStream) {
                     videoReadStream.destroy();
@@ -203,17 +243,18 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, trail
         if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.statusCode === 410) && retryCounter < 4) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, trailers, retryCounter);
+            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter);
         }
         if (error.name !== "AbortError") {
             saveError(error);
         }
-        return '';
+        return null;
     }
 }
 
-export async function checkCastImageExist(fileName, retryCounter = 0) {
-    let url = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+export async function checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID, retryCounter = 0) {
+    let fileName = getFileName(name, gender, tvmazePersonID, jikanPersonID, 'jpg');
+    let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
             Bucket: 'cast',
@@ -222,25 +263,25 @@ export async function checkCastImageExist(fileName, retryCounter = 0) {
         let command = new HeadObjectCommand(params);
         let result = await s3.send(command);
         if (result['$metadata'].httpStatusCode === 200) {
-            return url;
+            return fileUrl;
         }
         return '';
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkCastImageExist(fileName, retryCounter);
+            return await checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID, retryCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
             saveError(error);
         }
-        return statusCode !== 404 ? url : '';
+        return statusCode !== 404 ? fileUrl : '';
     }
 }
 
 export async function checkSubtitleExist(fileName, retryCounter = 0) {
-    let url = `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileUrl = `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
             Bucket: 'download-subtitle',
@@ -249,7 +290,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
         let command = new HeadObjectCommand(params);
         let result = await s3.send(command);
         if (result['$metadata'].httpStatusCode === 200) {
-            return url;
+            return fileUrl;
         }
         return '';
     } catch (error) {
@@ -262,13 +303,13 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
         if (statusCode !== 404 && statusCode !== 200) {
             saveError(error);
         }
-        return statusCode !== 404 ? url : '';
+        return statusCode !== 404 ? fileUrl : '';
     }
 }
 
 export async function checkTitlePosterExist(title, type, year, retryCounter = 0) {
-    let fileName = getFileName(title, type, year, 'jpg');
-    let url = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileName = getFileName(title, type, year, '', 'jpg');
+    let fileUrl = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
             Bucket: 'poster',
@@ -277,7 +318,7 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0)
         let command = new HeadObjectCommand(params);
         let result = await s3.send(command);
         if (result['$metadata'].httpStatusCode === 200) {
-            return url;
+            return fileUrl;
         }
         return '';
     } catch (error) {
@@ -290,13 +331,13 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0)
         if (statusCode !== 404 && statusCode !== 200) {
             saveError(error);
         }
-        return statusCode !== 404 ? url : '';
+        return statusCode !== 404 ? fileUrl : '';
     }
 }
 
 export async function checkTitleTrailerExist(title, type, year, retryCounter = 0) {
-    let fileName = getFileName(title, type, year, 'mp4');
-    let url = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileName = getFileName(title, type, year, '', 'mp4');
+    let fileUrl = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
             Bucket: 'download-trailer',
@@ -305,7 +346,7 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
         let command = new HeadObjectCommand(params);
         let result = await s3.send(command);
         if (result['$metadata'].httpStatusCode === 200) {
-            return url;
+            return fileUrl;
         }
         if (year) {
             return await checkTitleTrailerExist(title, type, '');
@@ -321,7 +362,7 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
         if (statusCode !== 404 && statusCode !== 200) {
             saveError(error);
         }
-        return statusCode !== 404 ? url : '';
+        return statusCode !== 404 ? fileUrl : '';
     }
 }
 
@@ -365,8 +406,8 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0) {
     }
 }
 
-function getFileName(title, titleType, year, fileType) {
-    let fileName = titleType + '-' + title + '-' + year + '.' + fileType;
+function getFileName(title, titleType, year, extra, fileType) {
+    let fileName = titleType + '-' + title + '-' + year + '-' + extra + '.' + fileType;
     fileName = fileName.trim()
         .replace(/\s+/g, '-')
         .replace(/--+/g, '-')
@@ -375,4 +416,43 @@ function getFileName(title, titleType, year, fileType) {
         fileName = fileName.replace(('-' + year), '');
     }
     return fileName;
+}
+
+export async function resetBucket(bucketName) {
+    const params = {
+        Bucket: bucketName,
+    };
+    let command = new ListObjectsCommand(params);
+    while (true) {
+        try {
+            let response = await s3.send(command);
+            let files = response.Contents;
+            if (!files || files.length === 0) {
+                return true;
+            }
+            let promiseArray = [];
+            for (let i = 0; i < files.length; i++) {
+                let deleteCommand = new DeleteObjectCommand({
+                    Bucket: bucketName,
+                    Key: files[i].Key,
+                })
+                let deletePromise = s3.send(deleteCommand);
+                promiseArray.push(deletePromise);
+            }
+            await Promise.allSettled(promiseArray);
+        } catch (error) {
+            saveError(error);
+            return false;
+        }
+    }
+}
+
+async function getFileSize(url) {
+    try {
+        let response = await axios.head(url);
+        return Number(response.headers['content-length']) || 0;
+    } catch (error) {
+        saveError(error);
+        return 0;
+    }
 }

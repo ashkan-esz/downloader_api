@@ -1,13 +1,13 @@
-const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
-const {getOMDBApiData, getOMDBApiFields} = require('./omdbApi');
-const {getTvMazeApiData, getTvMazeApiFields} = require("./tvmazeApi");
-const {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} = require('./jikanApi');
-const {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} = require('../../data/cloudStorage');
-const {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} = require('../seasonEpisode');
-const {sortPosters, sortTrailers} = require('../subUpdates');
-const {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} = require('../utils');
-
+import axios from "axios";
+import axiosRetry from "axios-retry";
+import {getOMDBApiData, getOMDBApiFields} from "./omdbApi";
+import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi";
+import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi";
+import {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} from "../../data/cloudStorage";
+import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} from "../seasonEpisode";
+import {sortPosters, sortTrailers} from "../subUpdates";
+import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils";
+import {saveError} from "../../error/saveError";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -31,10 +31,10 @@ axiosRetry(axios, {
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters);
+    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0]);
     if (s3poster) {
         titleModel.poster_s3 = s3poster;
-        titleModel.posters.push(titleModel.poster_s3);
+        titleModel.posters.push(s3poster.url);
         titleModel.posters = sortPosters(titleModel.posters);
     }
 
@@ -100,20 +100,22 @@ export async function addApiData(titleModel, site_links) {
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteType) {
+export async function apiDataUpdate(db_data, site_links, siteType, sitePoster) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (getDatesBetween(now, apiUpdateDate).hours < 8) {
         return null;
     }
 
-    let updateFields = {};
-    updateFields.apiUpdateDate = now;
+    let updateFields = {
+        apiUpdateDate: now,
+    };
 
-    if (db_data.poster_s3 === '') {
-        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, db_data.posters);
+    if (db_data.poster_s3 === null || (db_data.posters.length < 4 && await checkBetterS3Poster(sitePoster, db_data.poster_s3))) {
+        let selectedPoster = sitePoster || db_data.posters[0];
+        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, selectedPoster, 0, true);
         if (s3poster) {
-            db_data.poster_s3 = s3poster
+            db_data.poster_s3 = s3poster;
             updateFields.poster_s3 = s3poster;
         }
     }
@@ -179,6 +181,32 @@ export async function apiDataUpdate(db_data, site_links, siteType) {
     };
 }
 
+async function checkBetterS3Poster(newPosterUrl, prevPoster) {
+    try {
+        //replace low quality poster of myAnimeList
+        if (newPosterUrl && prevPoster.originalUrl.includes('cdn.myanimelist.net')) {
+            return true;
+        }
+        let prevSourceName = prevPoster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        let newSourceName = prevPoster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        if (!newPosterUrl || prevSourceName === newSourceName || prevPoster.size > 100 * 1024) {
+            return false;
+        }
+        let response = await axios.head(newPosterUrl);
+        let newPosterSize = Number(response.headers['content-length']) || 0;
+        if (newPosterSize > 0) {
+            let diff = ((newPosterSize - prevPoster.size) / prevPoster.size) * 100;
+            if (diff > 25 && newPosterSize < 500 * 1024) {
+                return true;
+            }
+        }
+        return false;
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
+}
+
 function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
     let temp = {
         type: siteType,
@@ -194,12 +222,12 @@ function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
 
 async function handleTrailerUpload(titleData, youtubeTrailer) {
     let temp = {};
-    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleData.title, titleData.type, titleData.year, [youtubeTrailer]);
+    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleData.title, titleData.type, titleData.year, youtubeTrailer);
     if (s3Trailer) {
         temp.trailer_s3 = s3Trailer;
         let trailers = titleData.trailers ? titleData.trailers : [];
         trailers.push({
-            link: s3Trailer,
+            link: s3Trailer.url,
             info: 's3Trailer-720p'
         });
         temp.trailers = sortTrailers(trailers);

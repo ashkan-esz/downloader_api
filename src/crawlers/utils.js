@@ -85,7 +85,7 @@ export function replaceSpecialCharacters(input) {
         .replace(/ç/g, 'c')
         .replace(/ş/g, 's')
         .replace(/[ôöøóō◯õ]/g, 'o')
-        .replace(/[üúû]/g, 'u')
+        .replace(/[üúûù]/g, 'u')
         .replace(/ñ/g, 'n')
         .replace(/[ıí]/g, 'i')
         .replace(/(^|\s)iii/gi, ' 3')

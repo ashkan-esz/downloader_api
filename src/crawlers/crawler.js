@@ -37,8 +37,7 @@ export async function crawler(sourceName, crawlMode = 0, {
 
         if (!handleDomainChangeOnly) {
             if (!sourceName) {
-                //start from anime sources (11)
-                for (let i = sourcesArray.length - 1; i >= 0; i--) {
+                for (let i = 0; i < sourcesArray.length; i++) {
                     await sourcesArray[i].starter();
                 }
             } else {
@@ -67,6 +66,7 @@ export async function crawler(sourceName, crawlMode = 0, {
 }
 
 async function handleDataBaseStates() {
+    //todo : check agenda
     try {
         let states = await getStatusObjDB();
         if (!states) {

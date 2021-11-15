@@ -1,10 +1,11 @@
-const {searchStaffAndCharactersDB, insertToDB, updateByIdDB} = require('../../data/dbMethods');
-const {uploadCastImageToS3ByURl} = require('../../data/cloudStorage');
-const {getCharactersStaff, getPersonInfo, getCharacterInfo} = require('./jikanApi');
-const {getPersonModel} = require('../../models/person');
-const {getCharacterModel} = require('../../models/character');
-const {replaceSpecialCharacters, removeDuplicateElements, getDatesBetween} = require('../utils');
-const {saveError} = require('../../error/saveError');
+import * as dbMethods from "../../data/dbMethods";
+import * as cloudStorage from "../../data/cloudStorage";
+import * as utils from "../utils";
+import {getCharactersStaff, getPersonInfo, getCharacterInfo} from "./jikanApi";
+import {getPersonModel} from "../../models/person";
+import {getCharacterModel} from "../../models/character";
+import {saveError} from "../../error/saveError";
+
 
 //todo : check cast data in movie / cast data / character data
 //todo : add id to embedded data
@@ -12,7 +13,7 @@ const {saveError} = require('../../error/saveError');
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
     let now = new Date();
     let apiUpdateDate = new Date(castUpdateDate);
-    if (getDatesBetween(now, apiUpdateDate).days < 30) {
+    if (utils.getDatesBetween(now, apiUpdateDate).days < 30) {
         return null;
     }
 
@@ -60,6 +61,7 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
 
 function extractActorsAndDirectorsAndWriters(staffAndCharacters) {
     //todo : check
+    //todo : rename
     let staffAndCharactersData = [];
     let actors = [];
     let directors = [];
@@ -96,7 +98,7 @@ function getStaffAndCharactersData(staff, characters, movieID) {
                     name: character.name,
                     rawName: character.rawName,
                     gender: character.gender,
-                    image: character.image,
+                    image: character.imageData ? character.imageData.url : '',
                     role: character.credits.find(x => x.movieID.toString() === movieID.toString()).role,
                 }
             }
@@ -107,7 +109,7 @@ function getStaffAndCharactersData(staff, characters, movieID) {
             rawName: item.rawName,
             gender: item.gender,
             country: item.country,
-            image: item.image,
+            image: item.imageData ? item.imageData.url : '',
             positions: thisMovieCredit.positions,
             characterData: characterData,
         }
@@ -117,7 +119,7 @@ function getStaffAndCharactersData(staff, characters, movieID) {
 function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) {
     for (let i = 0; i < omdbApiFields.directorsNames.length; i++) {
         staffAndCharactersData.push({
-            name: replaceSpecialCharacters(omdbApiFields.directorsNames[i].toLowerCase()),
+            name: utils.replaceSpecialCharacters(omdbApiFields.directorsNames[i].toLowerCase()),
             rawName: omdbApiFields.directorsNames[i],
             gender: '',
             country: '',
@@ -128,7 +130,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     }
     for (let i = 0; i < omdbApiFields.writersNames.length; i++) {
         staffAndCharactersData.push({
-            name: replaceSpecialCharacters(omdbApiFields.writersNames[i].toLowerCase()),
+            name: utils.replaceSpecialCharacters(omdbApiFields.writersNames[i].toLowerCase()),
             rawName: omdbApiFields.writersNames[i],
             gender: '',
             country: '',
@@ -140,7 +142,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     if (!tvmazeApiFields) {
         for (let i = 0; i < omdbApiFields.actorsNames.length; i++) {
             staffAndCharactersData.push({
-                name: replaceSpecialCharacters(omdbApiFields.actorsNames[i].toLowerCase()),
+                name: utils.replaceSpecialCharacters(omdbApiFields.actorsNames[i].toLowerCase()),
                 rawName: omdbApiFields.actorsNames[i],
                 gender: '',
                 country: '',
@@ -158,17 +160,21 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
     let updateStaffCharactersArray = [];
     let promiseArray = [];
     for (let i = 0; i < staff_characters.length; i++) {
-        let promise = searchStaffAndCharactersDB(type, staff_characters[i].name).then(async (searchResult) => {
+        let promise = dbMethods.searchStaffAndCharactersDB(
+            type, staff_characters[i].name,
+            staff_characters[i].tvmazePersonID,
+            staff_characters[i].jikanPersonID
+        ).then(async (searchResult) => {
             if (!searchResult) {
                 //new staff_character
                 newStaffCharactersArray.push(staff_characters[i]);
             } else {
                 let fieldsUpdateResult = updateStaffAndCharactersFields(searchResult, staff_characters[i], type);
                 searchResult = fieldsUpdateResult.newFields;
-                if (!searchResult.image && searchResult.originalImages.length > 0) {
+                if (!searchResult.imageData && searchResult.originalImages.length > 0) {
                     let temp = await addImage([searchResult]);
                     searchResult = temp[0];
-                    if (searchResult.image) {
+                    if (searchResult.imageData) {
                         fieldsUpdateResult.fieldsUpdated = true;
                     }
                 }
@@ -193,7 +199,7 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
         if (type === 'staff') {
             newStaffCharactersArray = addCharacterDataToStaffData(movieID, movieName, moviePoster, newStaffCharactersArray, characters);
         }
-        await insertToDB(type, newStaffCharactersArray, true);
+        await dbMethods.insertToDB(type, newStaffCharactersArray, true);
     }
     if (updateStaffCharactersArray.length > 0) {
         if (type === 'staff') {
@@ -201,7 +207,7 @@ async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, sta
         }
         let promiseArray = [];
         for (let i = 0; i < updateStaffCharactersArray.length; i++) {
-            let promise = updateByIdDB(type, updateStaffCharactersArray[i]._id, updateStaffCharactersArray[i]);
+            let promise = dbMethods.updateByIdDB(type, updateStaffCharactersArray[i]._id, updateStaffCharactersArray[i]);
             promiseArray.push(promise);
             if (promiseArray.length > 10) {
                 await Promise.allSettled(promiseArray);
@@ -222,7 +228,7 @@ function addCharacterDataToStaffData(movieID, movieName, moviePoster, staff, cha
                 thisMovieCredit.movieName = movieName;
                 thisMovieCredit.moviePoster = moviePoster || '';
                 thisMovieCredit.characterRole = thisCharacter.role || '';
-                thisMovieCredit.characterImage = thisCharacter.image || '';
+                thisMovieCredit.characterImage = thisCharacter.imageData ? thisCharacter.imageData.url : '';
             }
         }
     }
@@ -263,7 +269,7 @@ function updateStaffAndCharactersFields(prevFields, currentFields, type) {
         }
     }
     let prevLength = newFields.originalImages.length;
-    newFields.originalImages = removeDuplicateElements([...newFields.originalImages, ...currentFields.originalImages]);
+    newFields.originalImages = utils.removeDuplicateElements([...newFields.originalImages, ...currentFields.originalImages]);
     let newLength = newFields.originalImages.length;
     if (prevLength !== newLength) {
         fieldsUpdated = true;
@@ -275,9 +281,11 @@ async function addImage(dataArray) {
     let promiseArray = [];
     for (let i = 0; i < dataArray.length; i++) {
         if (dataArray[i].originalImages.length > 0) {
-            let imageName = dataArray[i].name + '.jpg';
-            let promise = uploadCastImageToS3ByURl(dataArray[i].originalImages[0], imageName).then(imageUrl => {
-                dataArray[i].image = imageUrl;
+            let promise = cloudStorage.uploadCastImageToS3ByURl(
+                dataArray[i].name, dataArray[i].gender,
+                dataArray[i].tvmazePersonID, dataArray[i].jikanPersonID,
+                dataArray[i].originalImages[0]).then(s3ImageData => {
+                dataArray[i].imageData = s3ImageData;
             });
             promiseArray.push(promise);
             if (promiseArray.length > 10) {
@@ -357,12 +365,12 @@ function getTvMazeActorsAndCharacters(movieID, tvmazeCast) {
 
         let exist = false;
         for (let j = 0; j < tvmazeActors.length; j++) {
-            if (replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()) === tvmazeActors[j].name) {
+            if (utils.replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()) === tvmazeActors[j].name) {
                 exist = true;
                 let newCredit = {
                     movieID: movieID,
                     positions: ['Actor'],
-                    actorName: replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
+                    actorName: utils.replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
                 };
                 tvmazeActors[j].credits.push(newCredit);
                 break;
@@ -379,7 +387,7 @@ function getTvMazeActorsAndCharacters(movieID, tvmazeCast) {
                 tvmazeCast[i].person.id, 0,
                 countryName, tvmazeCast[i].person.birthday, tvmazeCast[i].person.deathday,
                 originalImages,
-                movieID, ['Actor'], replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
+                movieID, ['Actor'], utils.replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
             );
             tvmazeActors.push(person);
         }
@@ -395,7 +403,7 @@ function getTvMazeActorsAndCharacters(movieID, tvmazeCast) {
             tvmazeCast[i].character.name, '', '',
             tvmazeCast[i].character.id, 0,
             originalImages,
-            movieID, '', replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()),
+            movieID, '', utils.replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()),
         );
         tvmazeCharacters.push(character);
     }
@@ -411,7 +419,7 @@ async function getJikanStaff_voiceActors(movieID, jikanCharactersArray) {
                 thisCharacterVoiceActors[j].positions = ['Voice Actor'];
                 let temp = jikanCharactersArray[i].name.split(',').map(item => item.trim());
                 let characterName = [temp[1], temp[0]].join(' ').toLowerCase();
-                thisCharacterVoiceActors[j].characterName = replaceSpecialCharacters(characterName);
+                thisCharacterVoiceActors[j].characterName = utils.replaceSpecialCharacters(characterName);
                 voiceActors.push(thisCharacterVoiceActors[j]);
             }
         }
@@ -471,7 +479,7 @@ async function getJikanCharaters(movieID, jikanCharatersArray) {
                     if (voiceActors[j].language.toLowerCase() === 'japanese') {
                         let temp = voiceActors[j].name.split(',').map(item => item.trim());
                         let name = [temp[1], temp[0]].join(' ');
-                        voiceActorName = replaceSpecialCharacters(name.toLowerCase());
+                        voiceActorName = utils.replaceSpecialCharacters(name.toLowerCase());
                         break;
                     }
                 }

@@ -5,10 +5,10 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
         name: replaceSpecialCharacters(rawName.toLowerCase()),
         rawName: rawName,
         gender: gender,
-        about: (about || '').trim().replace(/\n/g, ' | '),
+        about: (about || '').trim().replace(/\n|\s\|\s+\|\s/g, ' | '),
         tvmazePersonID: tvmazePersonID,
         jikanPersonID: jikanPersonID,
-        image: '',
+        imageData: null, // {url,originalUrl,size}
         originalImages: originalImages.filter(value => value),
         credits: [{movieID, role, actorName}],
     }

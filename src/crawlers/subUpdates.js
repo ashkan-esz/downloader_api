@@ -49,7 +49,9 @@ function handlePosterUpdate(db_data, poster) {
         db_data.posters.push(poster); //new poster
     }
     let prevLength = db_data.posters.length;
-    db_data.posters.push(db_data.poster_s3);
+    if (db_data.poster_s3) {
+        db_data.posters.push(db_data.poster_s3.url);
+    }
     db_data.posters = removeDuplicateElements(db_data.posters);
     db_data.posters = sortPosters(db_data.posters);
     return (posterUpdated || !posterExist || prevLength !== db_data.posters.length);

@@ -36,7 +36,7 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
             return;
         }
 
-        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, type);
+        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, type, poster);
         let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
         if (checkSourceExist(db_data.sources, page_link)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);

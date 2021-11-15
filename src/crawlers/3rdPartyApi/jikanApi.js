@@ -444,10 +444,10 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     if (titleDataFromDB.posters.length === 0) {
         let jikanPoster = semiJikanData.image_url;
         if (jikanPoster) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanPoster]);
+            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanPoster);
             if (s3poster) {
-                updateFields.posters = [s3poster];
                 updateFields.poster_s3 = s3poster;
+                updateFields.posters = [s3poster.url];
             }
         }
     }
@@ -455,11 +455,11 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     if (jikanData && !titleDataFromDB.trailers) {
         let jikanTrailer = jikanData.trailer_url;
         if (jikanTrailer) {
-            let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [jikanTrailer]);
+            let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanTrailer);
             if (s3Trailer) {
                 updateFields.trailer_s3 = s3Trailer;
                 updateFields.trailers = [{
-                    link: s3Trailer,
+                    link: s3Trailer.url,
                     info: 's3Trailer-720p'
                 }];
             }
@@ -534,20 +534,20 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
 async function uploadPosterAndTrailer(titleModel, jikanData) {
     let jikanPoster = jikanData.image_url;
     if (jikanPoster) {
-        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, [jikanPoster]);
+        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, jikanPoster);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
-            titleModel.posters = [s3poster];
+            titleModel.posters = [s3poster.url];
         }
     }
 
     let jikanTrailer = jikanData.trailer_url;
     if (jikanTrailer) {
-        let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, [jikanTrailer]);
+        let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, jikanTrailer);
         if (s3Trailer) {
             titleModel.trailer_s3 = s3Trailer;
             titleModel.trailers = [{
-                link: s3Trailer,
+                link: s3Trailer.url,
                 info: 's3Trailer-720p'
             }];
         }

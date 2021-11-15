@@ -123,10 +123,10 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
     if (titleDataFromDB.posters.length === 0) {
         let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
         if (imdbPoster) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [imdbPoster]);
+            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
             if (s3poster) {
-                updateFields.posters = [s3poster];
                 updateFields.poster_s3 = s3poster;
+                updateFields.posters = [s3poster.url];
             }
         }
     }
@@ -193,10 +193,10 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
     if (titleDataFromDB.posters.length === 0) {
         let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
         if (imdbPoster) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, [imdbPoster]);
+            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
             if (s3poster) {
-                updateFields.posters = [s3poster];
                 updateFields.poster_s3 = s3poster;
+                updateFields.posters = [s3poster.url];
             }
         }
     }
@@ -206,7 +206,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
         if (s3Trailer) {
             updateFields.trailer_s3 = s3Trailer;
             updateFields.trailers = [{
-                link: s3Trailer,
+                link: s3Trailer.url,
                 info: 's3Trailer-720p'
             }];
         }
@@ -299,10 +299,10 @@ async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
     //todo : fix error : Cannot read properties of null (reading 'replace')
     let imdbPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
     if (imdbPoster) {
-        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, [imdbPoster]);
+        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
         if (s3poster) {
-            titleModel.posters = [s3poster];
             titleModel.poster_s3 = s3poster;
+            titleModel.posters = [s3poster.url];
         }
     }
 
@@ -311,7 +311,7 @@ async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
         if (s3Trailer) {
             titleModel.trailer_s3 = s3Trailer;
             titleModel.trailers = [{
-                link: s3Trailer,
+                link: s3Trailer.url,
                 info: 's3Trailer-720p'
             }];
         }
@@ -352,7 +352,7 @@ async function uploadTrailer(title, year, type, imdbID) {
     if (trailerData) {
         let youtubeTrailer = trailerData.videoUrl;
         if (youtubeTrailer) {
-            return await cloudStorage.uploadTitleTrailerFromYoutubeToS3(title, type, year, [youtubeTrailer]);
+            return await cloudStorage.uploadTitleTrailerFromYoutubeToS3(title, type, year, youtubeTrailer);
         }
     }
     return '';
