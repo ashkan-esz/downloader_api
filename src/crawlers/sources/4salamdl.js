@@ -1,13 +1,14 @@
-const config = require('../../config');
-const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {getTitleAndYear, validateYear, getType, purgeQualityText, purgeSizeText, purgeEncoderText} = require('../utils');
-const save = require('../save_changes_db');
-const persianRex = require('persian-rex');
-const {saveError} = require("../../error/saveError");
+import config from "../../config";
+import {search_in_title_page, wrapper_module} from "../searchTools";
+import {getTitleAndYear, validateYear, getType, purgeQualityText, purgeSizeText, purgeEncoderText} from "../utils";
+import save from "../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../error/saveError";
 
+const sourceName = "salamdl";
 
-module.exports = async function salamdl({movie_url, page_count}) {
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function salamdl({movie_url, page_count}) {
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -17,23 +18,31 @@ async function search_title(link, i) {
             let title = link.text().toLowerCase();
             let year;
             let type = getType(title);
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`salamdl/${type}/${i}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    let trailers = getTrailers($2);
-                    await save(title, year, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: getTrailers($2),
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -60,7 +69,7 @@ function fixYear($) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let paragraphs = $('p');
         for (let i = 0; i < paragraphs.length; i++) {
@@ -75,7 +84,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let badPoster = 'https://image.salamdl.shop/t/p/w440_and_h660_bestv2/';
         let $img = $('img');
@@ -130,13 +139,13 @@ function getTrailers($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'720p.x265.WEB-DL - 200MB'    //'480p.WEB-DL - 150MB'
     //'720p.WEB-DL.YTS - 848.85MB'  //'1080p.x265.10bit.WEB-DL.PSA - 1.98GB'
     let text_array = [];
     try {
         if (type === 'serial') {
-            return get_file_size_serial($, link);
+            return getFileData_serial($, link);
         }
 
         let text = $(link).text();
@@ -151,9 +160,9 @@ function get_file_size($, link, type) {
         text_array = text.split('|');
 
         if (text.includes('لینک مستقیم')) {
-            return get_file_size_extraLink($, link);
+            return getFileData_extraLink($, link);
         }
-        return get_movie_size_info(text_array, dubbed, linkHref);
+        return getFileData_movie(text_array, dubbed, linkHref);
     } catch (error) {
         try {
             return checkTrailer_year($, link, text_array);
@@ -164,7 +173,7 @@ function get_file_size($, link, type) {
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let prevNodeChildren = $(link).parent().parent().parent().prev().children();
     let text_array = purgeQualityText($(prevNodeChildren[3]).text()).split(' ');
     let bit10 = $(link).attr('href').toLowerCase().includes('10bit') ? '10bit' : '';
@@ -204,7 +213,7 @@ function get_file_size_serial($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_movie_size_info(text_array, dubbed, linkHref) {
+function getFileData_movie(text_array, dubbed, linkHref) {
     let encoder = '';
     let encoder_index = (text_array.length === 1) ? 0 :
         (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1 : '';
@@ -264,7 +273,7 @@ function get_movie_size_info(text_array, dubbed, linkHref) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_file_size_extraLink($, link) {
+function getFileData_extraLink($, link) {
     let link_href = $(link).attr('href');
     let link_href_array = link_href.split('.');
     let quality_match = link_href.match(/\d\d\d+p/g);

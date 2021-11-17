@@ -1,4 +1,4 @@
-const {getSeasonEpisode, checkBetterQuality, checkHardSub, checkDubbed} = require("./utils");
+import {getSeasonEpisode, checkBetterQuality, checkHardSub, checkDubbed} from "./utils";
 
 export function handleLatestDataUpdate(db_data, latestData, type) {
     let changed = false;

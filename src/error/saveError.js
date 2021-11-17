@@ -1,5 +1,5 @@
-const config = require('../config');
-const Sentry = require('@sentry/node');
+import config from "../config";
+import * as Sentry from "@sentry/node";
 
 export async function saveError(error) {
     if (config.nodeEnv === 'production') {

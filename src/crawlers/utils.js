@@ -1,5 +1,5 @@
-const persianRex = require('persian-rex');
-const {saveError} = require("../error/saveError");
+import * as persianRex from "persian-rex";
+import {saveError} from "../error/saveError";
 
 export function purgeTitle(title, type, keepLastNumber = true) {
     let currentYear = new Date().getFullYear();
@@ -201,7 +201,7 @@ export function checkHardSub(input) {
     );
 }
 
-export function getYear(title, page_link, save_link) {
+export function getYear(title, page_link, downloadLinks) {
     let url_array = page_link
         .replace(title.replace(/\s+/g, '-'), '')
         .replace(/\/\d\d\d\d\/[^$]/g, '/')
@@ -214,8 +214,8 @@ export function getYear(title, page_link, save_link) {
             return lastPart;
     }
 
-    for (let i = 0; i < save_link.length; i++) {
-        let link = save_link[i].link;
+    for (let i = 0; i < downloadLinks.length; i++) {
+        let link = downloadLinks[i].link;
         let link_array = link.replace(/[-_()]/g, '.').split('.')
             .filter(value => Number(value) > 1800 && Number(value) < 2100);
         if (link_array.length > 0) {
@@ -252,54 +252,6 @@ export function getSeasonEpisode(input) {
             episode: 0
         }
     }
-}
-
-export function checkSourceExist(db_sources, pageLink) {
-    for (let i = 0; i < db_sources.length; i++) {
-        if (checkSource(db_sources[i].url, pageLink)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-export function checkSource(case1, case2) {
-    let source_name = case1
-        .replace('https://', '')
-        .replace('http://', '')
-        .replace('www.', '')
-        .replace('image.', '')
-        .replace(/\d/g, '')
-        .replace(/s/g, '')
-        .split('.')[0];
-    let new_source_name = case2
-        .replace('https://', '')
-        .replace('http://', '')
-        .replace('www.', '')
-        .replace('image.', '')
-        .replace(/\d/g, '')
-        .replace(/s/g, '')
-        .split('.')[0];
-    let isZarmovie = checkSourceNameAlternative(case1, case2, 'zar', 'zar');
-    let isGolchindl = checkSourceNameAlternative(case1, case2, 'golchin', 'golchin');
-    let film2media = checkSourceNameAlternative(case1, case2, 'film2media', 'f2m');
-    return source_name === new_source_name || isZarmovie || isGolchindl || film2media;
-}
-
-function checkSourceNameAlternative(link1, link2, name1, name2) {
-    let case1Match = link1.includes(name1) || link1.includes(name2);
-    let case2Match = link2.includes(name1) || link2.includes(name2);
-    return case1Match && case2Match;
-}
-
-export function getNewURl(url, currentUrl) {
-    let domain = url
-        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
-        .split('/')[0];
-    let currentDomain = currentUrl
-        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
-        .split('/')[0];
-    return url.replace(domain, currentDomain);
 }
 
 export function checkBetterQuality(quality, prevQuality) {

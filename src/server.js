@@ -1,16 +1,16 @@
-const config = require('./config');
-const Sentry = require('@sentry/node');
-const Tracing = require('@sentry/tracing');
-const express = require('express');
+import config from "./config";
+import * as Sentry from "@sentry/node";
+import Tracing from "@sentry/tracing";
+import express from "express";
 const app = express();
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-// const jwt = require('express-jwt');
-// const jwksRsa = require('jwks-rsa');
-const cron = require('node-cron');
-const {crawler} = require('./crawlers/crawler');
+import bodyParser from "body-parser";
+import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+// import jwt from "express-jwt";
+// import jwksRsa from "jwks-rsa";
+import cron from "node-cron";
+import {crawler} from "./crawlers/crawler";
 //---------------Routes-----------------
 import routes from './api/routes';
 //--------------middleware--------------

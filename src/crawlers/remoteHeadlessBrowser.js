@@ -1,7 +1,7 @@
-const config = require('../config');
-const axios = require('axios').default;
-const {getDecodedLink} = require("./utils");
-const {saveError} = require("../error/saveError");
+import config from "../config";
+import axios from "axios";
+import {getDecodedLink} from "./utils"
+import {saveError} from "../error/saveError";
 
 let apiCallCount = 0;
 

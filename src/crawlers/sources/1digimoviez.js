@@ -1,6 +1,6 @@
-const config = require('../../config');
-const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {
+import config from "../../config";
+import {search_in_title_page, wrapper_module} from "../searchTools";
+import {
     purgeTitle,
     getTitleAndYear,
     getType,
@@ -10,14 +10,15 @@ const {
     purgeEncoderText,
     purgeSizeText,
     getYear
-} = require('../utils');
-const save = require('../save_changes_db');
-const {saveError} = require("../../error/saveError");
+} from "../utils";
+import save from "../save_changes_db";
+import {saveError} from "../../error/saveError";
 
+const sourceName = "digimoviez";
 
-module.exports = async function digimovies({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function digimoviez({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i, $, url) {
@@ -30,28 +31,35 @@ async function search_title(link, i, $, url) {
             if (url.includes('serie')) {
                 type = type.replace('movie', 'serial');
             }
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`digimovies/${type}/${i}/${title}  ========>  `);
+                console.log(`digimoviez/${type}/${i}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, getQualitySample);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, getQualitySample);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
-                        ({title, year} = fixTitleAndYear(title, year, type, page_link, save_link, $2));
+                        ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
                     }
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    let trailers = getTrailers($2);
-                    let watchOnlineLinks = getWatchOnlineLinks($2);
-                    save_link = removeDuplicateLinks(save_link);
-                    if (save_link.length > 0 && save_link[0].link.match(/s\d+e\d+/gi)) {
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    if (downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = 'serial';
                     }
-                    await save(title, year, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: getWatchOnlineLinks($2),
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: getTrailers($2),
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -60,7 +68,7 @@ async function search_title(link, i, $, url) {
     }
 }
 
-function fixTitleAndYear(title, year, type, page_link, save_link, $2) {
+function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
     try {
         let titleHeader = $2('.head_meta');
         if (titleHeader) {
@@ -75,7 +83,7 @@ function fixTitleAndYear(title, year, type, page_link, save_link, $2) {
                 }
             } else {
                 title = splitTitle.join(" ");
-                year = getYear(title, page_link, save_link);
+                year = getYear(title, page_link, downloadLinks);
             }
             return {title, year};
         }
@@ -86,7 +94,7 @@ function fixTitleAndYear(title, year, type, page_link, save_link, $2) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let divs = $('div');
         for (let i = 0; i < divs.length; i++) {
@@ -100,7 +108,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let $img = $('img');
         for (let i = 0; i < $img.length; i++) {
@@ -129,7 +137,7 @@ function getTrailers($) {
                 if (href && href.toLowerCase().includes('trailer')) {
                     result.push({
                         link: href,
-                        info: 'digimovie-720p'
+                        info: 'digimoviez-720p'
                     });
                 }
             }
@@ -153,7 +161,7 @@ function getWatchOnlineLinks($) {
                 let href = $($a[i]).attr('href');
                 result.push({
                     link: href,
-                    info: 'digimovie-720p',
+                    info: 'digimoviez-720p',
                 });
             }
         }
@@ -166,7 +174,7 @@ function getWatchOnlineLinks($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
     try {

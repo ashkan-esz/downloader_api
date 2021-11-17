@@ -1,13 +1,13 @@
-const config = require('../config');
-const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
-const cheerio = require('cheerio');
-const {default: pQueue} = require('p-queue');
-const {check_download_link, getMatchCases, check_format} = require('./link');
-const {getPageData} = require('./remoteHeadlessBrowser');
-const {getDecodedLink} = require('./utils');
-const {saveError} = require("../error/saveError");
-const Sentry = require('@sentry/node');
+import config from "../config";
+import axios from "axios";
+import axiosRetry from "axios-retry";
+import * as cheerio from 'cheerio';
+import {default as pQueue} from "p-queue";
+import {check_download_link, getMatchCases, check_format} from "./link";
+import {getPageData} from "./remoteHeadlessBrowser";
+import {getDecodedLink} from "./utils";
+import {saveError} from "../error/saveError";
+import * as Sentry from "@sentry/node";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -29,17 +29,16 @@ axiosRetry(axios, {
 
 let _headLessBrowser = false;
 
-
-export async function wrapper_module(url, page_count, searchCB) {
+export async function wrapper_module(sourceName, url, page_count, searchCB) {
     try {
-        _headLessBrowser = checkNeedHeadlessBrowser(url);
+        _headLessBrowser = checkNeedHeadlessBrowser(sourceName);
 
-        const concurrencyNumber = getConcurrencyNumber(url);
-        const promiseQueue = new pQueue({concurrency: concurrencyNumber});
+        const concurrencyNumber = getConcurrencyNumber(sourceName);
+        const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
                 let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}`);
-                if (checkLastPage($, links, checkGoogleCache, url, responseUrl, i)) {
+                if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
@@ -64,17 +63,17 @@ export async function wrapper_module(url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(title, page_link, type, get_file_size, getQualitySample = null,
-                                           extraSearch_match = null, extraSearch_getFileSize = null, sourceLinkData = null, extraChecker = null) {
+export async function search_in_title_page(title, page_link, type, getFileData, getQualitySample = null,
+                                           extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null, extraChecker = null) {
     try {
-        let {$, links, subtitles, cookies} = await getLinks(page_link, sourceLinkData);
+        let {$, links, cookies} = await getLinks(page_link, sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
         }
         let matchCases = getMatchCases(title, type);
         let extraSearchLinks = [];
         let promiseArray = [];
-        let save_link = [];
+        let downloadLinks = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
 
@@ -82,24 +81,24 @@ export async function search_in_title_page(title, page_link, type, get_file_size
                 (sourceLinkData || (extraChecker && extraChecker($, links[j], title, type))) ||
                 (check_format(link, type) && check_download_link(link, matchCases, type)))
             ) {
-                let link_info = get_file_size($, links[j], type, sourceLinkData, title);
+                let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    save_link.push({link: link.trim(), info: link_info, qualitySample: qualitySample});
+                    downloadLinks.push({link: link.trim(), info: link_info, qualitySample: qualitySample});
                 }
-            } else if (link && !sourceLinkData && extraSearch_match && extraSearch_match($, links[j], title, type)) {
+            } else if (link && !sourceLinkData && extraSearchMatch && extraSearchMatch($, links[j], title, type)) {
                 if (extraSearchLinks.includes(link)) {
                     continue;
                 }
                 extraSearchLinks.push(link);
-                let resultPromise = search_in_title_page(title, link, type, extraSearch_getFileSize, getQualitySample,
-                    extraSearch_match, extraSearch_getFileSize, {
+                let resultPromise = search_in_title_page(title, link, type, extraSearch_getFileData, getQualitySample,
+                    extraSearchMatch, extraSearch_getFileData, {
                         $,
                         link: links[j],
                         sourceLink: page_link
                     }).then(result => {
                     if (result) {
-                        let resultLinks = result.save_link;
+                        let resultLinks = result.downloadLinks;
                         let linkPrefix = link;
                         if (page_link.includes('anime-list')) {
                             let temp = link.replace(/(https|http):\/\//g, '').split('/')[0];
@@ -108,7 +107,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
                         for (let i = 0; i < resultLinks.length; i++) {
                             resultLinks[i].link = linkPrefix + resultLinks[i].link;
                         }
-                        save_link.push(...resultLinks);
+                        downloadLinks.push(...resultLinks);
                     }
                 });
                 promiseArray.push(resultPromise);
@@ -119,7 +118,7 @@ export async function search_in_title_page(title, page_link, type, get_file_size
             }
         }
         await Promise.allSettled(promiseArray);
-        return {save_link: save_link, $2: $, subtitles, cookies};
+        return {downloadLinks: downloadLinks, $2: $, cookies};
     } catch (error) {
         saveError(error);
         return null;
@@ -129,7 +128,6 @@ export async function search_in_title_page(title, page_link, type, get_file_size
 async function getLinks(url, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
-    let subtitles = [];
     let cookies = {};
     try {
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
@@ -157,7 +155,6 @@ async function getLinks(url, sourceLinkData = null) {
                 let pageData = await getPageData(url);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
-                    subtitles = pageData.subtitles;
                     cookies = pageData.cookies;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
@@ -175,10 +172,10 @@ async function getLinks(url, sourceLinkData = null) {
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, subtitles, cookies, checkGoogleCache, responseUrl};
+        return {$, links, cookies, checkGoogleCache, responseUrl};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: [], subtitles, cookies, checkGoogleCache, responseUrl};
+        return {$: null, links: [], cookies, checkGoogleCache, responseUrl};
     }
 }
 
@@ -205,12 +202,12 @@ async function getFromGoogleCache(url) {
     }
 }
 
-function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber) {
+function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageNumber) {
     try {
         if ($ === null || $ === undefined) {
             return true;
         }
-        if (url.includes('digimovie')) {
+        if (sourceName === "digimoviez") {
             if (pageNumber > 1 && !responseUrl.includes('page')) {
                 return true;
             }
@@ -222,7 +219,7 @@ function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber)
                     return false;
                 }
             }
-        } else if (url.includes('anime-list') || url.includes('animelist')) {
+        } else if (sourceName === "animelist") {
             let $div = $('div');
             for (let i = 0; i < $div.length; i++) {
                 if ($($div[i]).hasClass('character-movie')) {
@@ -242,21 +239,20 @@ function checkLastPage($, links, checkGoogleCache, url, responseUrl, pageNumber)
     }
 }
 
-export function checkNeedHeadlessBrowser(url) {
+export function checkNeedHeadlessBrowser(sourceName) {
     return (
-        url.includes('digimovie') ||
-        url.includes('film2movie') ||
-        url.includes('anime-list') ||
-        url.includes('animelist')
+        sourceName === "digimoviez" ||
+        sourceName === "film2movie" ||
+        sourceName === "animelist"
     );
 }
 
-function getConcurrencyNumber(url) {
+function getConcurrencyNumber(sourceName) {
     let concurrencyNumber;
     if (config.crawlerConcurrency) {
         concurrencyNumber = Number(config.crawlerConcurrency);
     } else {
-        concurrencyNumber = (url.includes('anime') || url.includes('golchin') || _headLessBrowser)
+        concurrencyNumber = (sourceName === "animelist" || sourceName === "golchindl" || _headLessBrowser)
             ? 9
             : 12;
     }

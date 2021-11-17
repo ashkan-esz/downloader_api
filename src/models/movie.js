@@ -1,6 +1,6 @@
-const {getLatestData} = require("../crawlers/latestData");
+import {getLatestData} from "../crawlers/latestData";
 
-export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
+export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
     let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);
 
     return {
@@ -20,6 +20,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         alternateTitles: titleObj.alternateTitles,
         titleSynonyms: titleObj.titleSynonyms,
         sources: [{
+            sourceName: sourceName,
             url: page_link,
             links: siteDownloadLinks //[{link,info,qualitySample}]
         }].filter(item => item.url !== ''),
@@ -35,7 +36,11 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, year
         castUpdateDate: 0,
         seasons: [],
         episodes: [],
-        posters: [poster].filter(item => item),
+        posters: [{
+            link: poster,
+            info: sourceName,
+            size: 0,
+        }].filter(item => item.link),
         poster_s3: null, // {url,originalUrl,size}
         trailer_s3: null, // {url,originalUrl,size}
         summary: {

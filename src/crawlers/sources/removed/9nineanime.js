@@ -1,36 +1,34 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module} = require('../../searchTools');
-const {
-    purgeTitle,
+import config from "../../../config";
+import {search_in_title_page, wrapper_module} from "../../searchTools";
+import {
+    getTitleAndYear,
     getType,
     checkDubbed,
     replacePersianNumbers,
     purgeQualityText,
     purgeSizeText,
     persianWordToNumber,
-    getDecodedLink
-} = require('../../utils');
-const persianRex = require('persian-rex');
-const save = require('../../save_changes_db');
-const {saveError} = require("../../../error/saveError");
+    getDecodedLink,
+} from "../../utils";
+import save from "../../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../../error/saveError";
 
+const sourceName = "nineanime";
 
-module.exports = async function nineanime({movie_url, page_count}) {
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function nineanime({movie_url, page_count}) {
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
-            let page_link = link.attr('href');
-
-            let type;
-            if (title.includes('انیمه')) {
-                type = title.includes('سینمایی') ? 'anime_movie' : 'anime_serial';
-            } else {
-                type = getType(title);
-            }
+            let pageLink = link.attr('href');
+            let year;
+            let type = title.includes('انیمه')
+                ? title.includes('سینمایی') ? 'anime_movie' : 'anime_serial'
+                : getType(title);
 
             if (config.nodeEnv === 'dev') {
                 console.log(`nineanime/${type}/${i}/${title}  ========>  `);
@@ -41,22 +39,31 @@ async function search_title(link, i) {
             if (title.toLowerCase().includes('قسمت های سینمایی') && !type.includes('anime')) {
                 type = 'anime_' + type;
             }
-            title = purgeTitle(title.toLowerCase(), type);
+            ({title, year} = getTitleAndYear(title, year, type));
             if (title.toLowerCase().includes('ova') && !type.includes('anime')) {
                 type = 'anime_' + type;
             }
 
             if (title !== '') {
                 type = fixWrongType(title, type);
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
-                    extraSearch_match, extraSearch_getFileSize);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, null,
+                    extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     title = replaceShortTitleWithFull(title, type);
                     type = fixWrongType2(title, type);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: [],
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -65,7 +72,7 @@ async function search_title(link, i) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
@@ -81,7 +88,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let $img = $('img');
         for (let i = 0; i < $img.length; i++) {
@@ -100,21 +107,20 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     // '480p.HardSub - 520MB'  //
     // 'S1E03.480p.HardSub' // S5E08.720p.HardSub
     try {
-        if (type.includes('serial')) {
-            return get_file_size_serial($, link);
-        }
-        return get_file_size_movie($, link);
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return 'ignore';
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let infoNodeChildren = $($(link).parent().prev()).hasClass('download-info')
         ? $($(link).parent().prev().children()[0]).children()
         : $($(link).parent().parent().parent().parent().prev().children()[0]).children();
@@ -180,7 +186,7 @@ function get_file_size_serial($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_file_size_movie($, link) {
+function getFileData_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
     let topBoxText = $(link).parent().parent().parent().parent().prev().text();
     let dubbed = checkDubbed($(link).attr('href'), topBoxText) ? 'dubbed' : 'HardSub';
@@ -213,7 +219,7 @@ function get_file_size_movie($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function extraSearch_match($, link, title) {
+function extraSearchMatch($, link, title) {
     let linkHref = $(link).attr('href');
     let linkTitle = $(link).attr('title');
     let splitLinkHref = linkHref.split('/');
@@ -233,7 +239,7 @@ function extraSearch_match($, link, title) {
     );
 }
 
-function extraSearch_getFileSize($, link, type, sourceLinkData) {
+function extraSearch_getFileData($, link, type, sourceLinkData) {
     try {
         let linkHref = getDecodedLink($(link).attr('href').toLowerCase());
         if (linkHref.match(/^\.+\/\.*$/g) || !linkHref.match(/\.(mkv|mp4|avi|mov|flv|wmv)$/g)) {

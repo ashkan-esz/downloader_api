@@ -26,10 +26,7 @@ export function handleSubtitleUpdate(prevSubtitles, uploadedSubtitles) {
     return mergedSubtitles;
 }
 
-export async function getUploadedAnimeListSubtitles(pageLink, subtitles, cookies) {
-    if (!pageLink.match(/animelist|anime-list/gi)) {
-        return [];
-    }
+export async function getUploadedAnimeListSubtitles(subtitles, cookies) {
     await setSubtitlesFileName(subtitles, cookies);
     subtitles = await uploadNewSubtitlesToCloudStorage(subtitles, cookies);
     subtitles = subtitles.sort((a, b) =>

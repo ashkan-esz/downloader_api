@@ -1,15 +1,17 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module} = require('../../searchTools');
-const {purgeTitle, getType, checkDubbed, purgeQualityText} = require('../../utils');
-const save = require('../../save_changes_db');
-const persianRex = require('persian-rex');
-const {saveError} = require("../../../error/saveError");
+import config from "../../../config";
+import {search_in_title_page, wrapper_module} from "../../searchTools";
+import {getType, checkDubbed, purgeQualityText, getTitleAndYear} from "../../utils";
+import save from "../../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../../error/saveError";
 
 let collection = '';
 let save_title = '';
 
-module.exports = async function film2media({movie_url, page_count}) {
-    await wrapper_module(movie_url, page_count, search_title);
+const sourceName = "film2media";
+
+export default async function film2media({movie_url, page_count}) {
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -17,24 +19,35 @@ async function search_title(link, i) {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
             let title = link.text().toLowerCase();
+            let year;
             let type = getType(title);
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`film2media/${type}/${i}/${title}  ========>  `);
             }
             if (type === 'serial' && !title.includes('فیلم') && !title.includes('سریال')) {
                 type = 'movie';
             }
-            title = purgeTitle(title, type);
+            ({title, year} = getTitleAndYear(title, year, type));
             save_title = title.replace(/\s/g, '.');
-            collection = (page_link.includes('collection')) ? 'collection' : '';
+            collection = (pageLink.includes('collection')) ? 'collection' : '';
+
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    await save(title, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: [],
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -43,7 +56,7 @@ async function search_title(link, i) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let divs = $('div');
         for (let i = 0; i < divs.length; i++) {
@@ -58,7 +71,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let imgs = $('img');
         for (let i = 0; i < imgs.length; i++) {
@@ -75,21 +88,20 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'480p.WEB-DL'  //'720p.x265.WEB-DL'
     //'1080p.BluRay.dubbed - 1.8GB'  //'1080p.WEB-DL - 1.9GB'
     try {
-        if (type === 'serial') {
-            return get_file_size_serial($, link);
-        }
-        return get_file_size_movie($, link);
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return "";
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     if ($(link).text().includes('قسمت ویژه')) {
         return 'ignore';
     }
@@ -111,7 +123,7 @@ function get_file_size_serial($, link) {
     return purgeQualityText(info);
 }
 
-function get_file_size_movie($, link) {
+function getFileData_movie($, link) {
     let link_href = $(link).attr('href').toLowerCase();
     if (link_href.includes('extras')) {
         return 'extras';
@@ -123,7 +135,7 @@ function get_file_size_movie($, link) {
     let text = purgeQualityText($(parent).prev().text());
 
     if (persianRex.hasLetter.test(text)) {
-        text = remove_persian_from_info(text, $, parent);
+        text = removePersianWordsFromInfo(text, $, parent);
     }
 
     let text_array = text.split(' – ');
@@ -133,13 +145,13 @@ function get_file_size_movie($, link) {
         text_array[1] = "";
     }
 
-    let {dubbed, movie_title, quality_release_array, release} = extract_info(link_href, text_array);
+    let {dubbed, movie_title, quality_release_array, release} = extractInfo(link_href, text_array);
     text_array[0] = [movie_title, ...quality_release_array, release, extra, dubbed]
         .filter(value => value !== '' && !persianRex.hasLetter.test(value)).join('.');
     return text_array.filter(value => value !== '').join(' - ');
 }
 
-function remove_persian_from_info(text, $, parent) {
+function removePersianWordsFromInfo(text, $, parent) {
     let temp = text.replace(/[()]/g, '')
         .split(' ').filter((value) => value && !persianRex.hasText.test(value));
     if (temp.length === 0) {
@@ -153,7 +165,7 @@ function remove_persian_from_info(text, $, parent) {
     return text;
 }
 
-function extract_info(link_href, text_array) {
+function extractInfo(link_href, text_array) {
     let dubbed = checkDubbed(link_href) ? 'dubbed' : '';
     let match_year = link_href.replace(/_/g, '.').match(/\.\d\d\d\d\./g);
     let year = match_year ? match_year.pop().replace(/\./g, '') : '';

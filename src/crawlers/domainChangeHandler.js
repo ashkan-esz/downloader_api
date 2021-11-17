@@ -1,12 +1,12 @@
-const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
-const Sentry = require('@sentry/node');
-const getCollection = require("../data/mongoDB");
-const {checkNeedHeadlessBrowser} = require("./searchTools");
-const {getSourcesArray} = require('./sourcesArray');
-const {getPageData} = require('./remoteHeadlessBrowser');
-const {getNewURl} = require("./utils");
-const {saveError} = require("../error/saveError");
+import axios from "axios";
+import axiosRetry from "axios-retry";
+import * as Sentry from "@sentry/node";
+import {updateSourcesObjDB} from "../data/dbMethods";
+import {checkNeedHeadlessBrowser} from "./searchTools";
+import {getSourcesArray} from "./sourcesArray";
+import {getPageData} from "./remoteHeadlessBrowser";
+import {getDatesBetween} from "./utils";
+import {saveError} from "../error/saveError";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -41,14 +41,9 @@ export async function domainChangeHandler(sourcesObj) {
         let changedSources = await checkSourcesUrl(sourcesUrls);
 
         if (changedSources.length > 0) {
+            Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
-            Sentry.captureMessage('start domain change handler (download links)');
             await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources);
-
-            let collection = await getCollection('sources');
-            await collection.findOneAndUpdate({title: 'sources'}, {
-                $set: sourcesObj
-            });
             Sentry.captureMessage('source domain changed');
         }
     } catch (error) {
@@ -60,7 +55,7 @@ async function checkSourcesUrl(sourcesUrls) {
     let changedSources = [];
     try {
         for (let i = 0; i < sourcesUrls.length; i++) {
-            let headLessBrowser = checkNeedHeadlessBrowser(sourcesUrls[i].url);
+            let headLessBrowser = checkNeedHeadlessBrowser(sourcesUrls[i].sourceName);
 
             let responseUrl;
             try {
@@ -97,11 +92,11 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     let sourcesNames = Object.keys(sourcesObject);
     for (let i = 0; i < sourcesNames.length; i++) {
         let thisSource = sourcesObject[sourcesNames[i]];
-        let thisSourceUrl = sourcesUrls.find(x => x.sourceName === sourcesNames[i]).url;
-        if (thisSourceUrl) {
-            thisSource.movie_url = thisSourceUrl;
+        let currentUrl = sourcesUrls.find(x => x.sourceName === sourcesNames[i]).url;
+        if (currentUrl) {
+            thisSource.movie_url = currentUrl;
             if (thisSource.serial_url) {
-                thisSource.serial_url = getNewURl(thisSource.serial_url, thisSourceUrl);
+                thisSource.serial_url = getNewURl(thisSource.serial_url, currentUrl);
             }
         }
     }
@@ -113,7 +108,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources)
         try {
             let startTime = new Date();
             let sourceName = changedSources[i].sourceName;
-            Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl start)`);
+            Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl start)`);
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
@@ -121,17 +116,22 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources)
                 //update source data
                 let updateSourceField = {};
                 updateSourceField[sourceName] = sourcesObj[sourceName];
-                let collection = await getCollection('sources');
-                await collection.findOneAndUpdate({title: 'sources'}, {
-                    $set: updateSourceField
-                });
+                await updateSourcesObjDB(updateSourceField);
             }
 
-            let endTime = new Date();
-            let crawlingDuration = (endTime.getTime() - startTime.getTime()) / 1000;
-            Sentry.captureMessage(`start domain change handler (${sourceName} reCrawl ended) in ${crawlingDuration} s`);
+            Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
         } catch (error) {
             saveError(error);
         }
     }
+}
+
+function getNewURl(url, currentUrl) {
+    let domain = url
+        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
+        .split('/')[0];
+    let currentDomain = currentUrl
+        .replace(/www\.|https:\/\/|http:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '')
+        .split('/')[0];
+    return url.replace(domain, currentDomain);
 }

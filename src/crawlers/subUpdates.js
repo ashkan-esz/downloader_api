@@ -1,11 +1,12 @@
-const {sortPostersOrder, sortTrailersOrder} = require('./sourcesArray');
-const {handleLatestDataUpdate} = require("./latestData");
-const {checkSource, removeDuplicateLinks, removeDuplicateElements} = require('./utils');
-const {saveError} = require("../error/saveError");
+import axios from "axios";
+import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray";
+import {handleLatestDataUpdate} from "./latestData";
+import {removeDuplicateLinks} from "./utils";
+import {saveError} from "../error/saveError";
 
-export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type) {
+export async function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName) {
     try {
-        let posterChange = handlePosterUpdate(db_data, poster);
+        let posterChange = await handlePosterUpdate(db_data, poster, sourceName);
         let trailerChange = handleTrailerUpdate(db_data, trailers);
         let watchOnlineLinksChange = handleWatchOnlineLinksUpdate(db_data, watchOnlineLinks);
         let latestDataChange = handleLatestDataUpdate(db_data, titleModel.latestData, type);
@@ -27,7 +28,7 @@ export function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, ti
     }
 }
 
-function handlePosterUpdate(db_data, poster) {
+async function handlePosterUpdate(db_data, poster, sourceName) {
     if (poster === '') {
         return false;
     }
@@ -35,9 +36,12 @@ function handlePosterUpdate(db_data, poster) {
     let posterExist = false;
     let posterUpdated = false;
     for (let i = 0; i < db_data.posters.length; i++) {
-        if (checkSource(db_data.posters[i], poster)) {//this poster exist
-            if (db_data.posters[i] !== poster) { //replace link
-                db_data.posters[i] = poster;
+        if (db_data.posters[i].info.includes(sourceName)) {//this poster source exist
+            if (db_data.posters[i].link !== poster) { //replace link
+                db_data.posters[i].link = poster;
+                if (db_data.posters[i].size === 0) {
+                    db_data.posters[i].size = await getFileSize(poster);
+                }
                 posterUpdated = true;
             }
             posterExist = true;
@@ -45,14 +49,22 @@ function handlePosterUpdate(db_data, poster) {
         }
     }
 
-    if (!posterExist) {
-        db_data.posters.push(poster); //new poster
+    if (!posterExist) {  //new poster
+        db_data.posters.push({
+            link: poster,
+            info: sourceName,
+            size: await getFileSize(poster),
+        });
     }
     let prevLength = db_data.posters.length;
     if (db_data.poster_s3) {
-        db_data.posters.push(db_data.poster_s3.url);
+        db_data.posters.push({
+            link: db_data.poster_s3.url,
+            info: 's3Poster',
+            size: db_data.poster_s3.size,
+        });
     }
-    db_data.posters = removeDuplicateElements(db_data.posters);
+    db_data.posters = removeDuplicateLinks(db_data.posters);
     db_data.posters = sortPosters(db_data.posters);
     return (posterUpdated || !posterExist || prevLength !== db_data.posters.length);
 }
@@ -110,23 +122,12 @@ function handleWatchOnlineLinksUpdate(db_data, siteWatchOnlineLinks) {
     return onlineLinkChanged;
 }
 
-export function handleUrlUpdate(thiaSource, page_link) {
-    if (page_link.includes('webcache')) {
-        return false;
-    }
-    if (thiaSource.url !== page_link) {
-        thiaSource.url = page_link;
-        return true;
-    }
-    return false;
-}
-
 export function sortPosters(posters) {
     const posterSources = sortPostersOrder;
     let sortedPosters = [];
     for (let i = 0; i < posterSources.length; i++) {
         for (let j = 0; j < posters.length; j++) {
-            if (posters[j].includes(posterSources[i])) {
+            if (posters[j].info.includes(posterSources[i])) {
                 sortedPosters.push(posters[j]);
             }
         }
@@ -150,4 +151,14 @@ export function sortTrailers(trailers) {
         }
     }
     return sortedTrailers;
+}
+
+async function getFileSize(url) {
+    try {
+        let response = await axios.head(url);
+        return Number(response.headers['content-length']) || 0;
+    } catch (error) {
+        saveError(error);
+        return 0;
+    }
 }

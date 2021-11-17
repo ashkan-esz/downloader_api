@@ -1,8 +1,8 @@
-const axios = require('axios').default;
-const {replaceSpecialCharacters, purgeObjFalsyValues} = require("../utils");
-const {getEpisodeModel} = require("../../models/episode");
-const {saveError} = require("../../error/saveError");
-const Sentry = require('@sentry/node');
+import axios from "axios";
+import {replaceSpecialCharacters, purgeObjFalsyValues} from "../utils";
+import {getEpisodeModel} from "../../models/episode";
+import * as Sentry from "@sentry/node";
+import {saveError} from "../../error/saveError";
 
 
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, type, canReTry = true) {

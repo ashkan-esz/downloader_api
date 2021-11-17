@@ -5,14 +5,15 @@
   "engines": {
     "node": "16.x"
   },
+  "type": "module",
   "scripts": {
-    "start": "node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm src/server.js",
-    "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc -r esm src/server.js",
-    "start_dev": "NODE_ENV=dev nodemon -r dotenv/config -r esm src/server.js",
-    "test": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm test.js",
-    "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 -r esm test.js",
-    "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc -r esm test.js",
-    "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node -r esm src/server.js"
+    "start": "node --optimize_for_size --max_old_space_size=460 --gc_interval=100 --experimental-specifier-resolution=node src/server.js",
+    "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc --experimental-specifier-resolution=node src/server.js",
+    "start_dev": "NODE_ENV=dev nodemon -r dotenv/config --experimental-specifier-resolution=node src/server.js",
+    "test": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=460 --gc_interval=100 --experimental-specifier-resolution=node test.js",
+    "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --experimental-specifier-resolution=node test.js",
+    "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc --experimental-specifier-resolution=node test.js",
+    "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node --experimental-specifier-resolution=node src/server.js"
   },
   "dependencies": {
     "@aws-sdk/abort-controller": "^3.36.0",
@@ -28,7 +29,6 @@
     "cors": "^2.8.5",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
-    "esm": "^3.2.25",
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
     "helmet": "^4.2.0",

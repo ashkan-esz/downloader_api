@@ -31,11 +31,20 @@ axiosRetry(axios, {
 export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
-    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0]);
-    if (s3poster) {
-        titleModel.poster_s3 = s3poster;
-        titleModel.posters.push(s3poster.url);
-        titleModel.posters = sortPosters(titleModel.posters);
+    if (titleModel.posters.length > 0) {
+        let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0].link);
+        if (s3poster) {
+            titleModel.poster_s3 = s3poster;
+            if (s3poster.originalUrl) {
+                titleModel.posters[0].size = s3poster.size;
+            }
+            titleModel.posters.push({
+                link: s3poster.url,
+                info: 's3Poster',
+                size: s3poster.size,
+            });
+            titleModel.posters = sortPosters(titleModel.posters);
+        }
     }
 
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
@@ -100,7 +109,7 @@ export async function addApiData(titleModel, site_links) {
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteType, sitePoster) {
+export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, sourceName) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (getDatesBetween(now, apiUpdateDate).hours < 8) {
@@ -111,8 +120,8 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster) {
         apiUpdateDate: now,
     };
 
-    if (db_data.poster_s3 === null || (db_data.posters.length < 4 && await checkBetterS3Poster(sitePoster, db_data.poster_s3))) {
-        let selectedPoster = sitePoster || db_data.posters[0];
+    if (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3)) {
+        let selectedPoster = sitePoster || (db_data.posters.length > 0 ? db_data.posters[0].link : '');
         let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, selectedPoster, 0, true);
         if (s3poster) {
             db_data.poster_s3 = s3poster;
@@ -181,21 +190,30 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster) {
     };
 }
 
-async function checkBetterS3Poster(newPosterUrl, prevPoster) {
+async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster) {
     try {
         //replace low quality poster of myAnimeList
-        if (newPosterUrl && prevPoster.originalUrl.includes('cdn.myanimelist.net')) {
+        if (newPosterUrl && prevS3Poster.originalUrl.includes('cdn.myanimelist.net')) {
             return true;
         }
-        let prevSourceName = prevPoster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
-        let newSourceName = prevPoster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
-        if (!newPosterUrl || prevSourceName === newSourceName || prevPoster.size > 100 * 1024) {
+        let prevS3SourceName = prevS3Poster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        let newSourceName = newPosterUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        if (!newPosterUrl || prevS3SourceName === newSourceName || prevS3Poster.size > 100 * 1024) {
             return false;
         }
-        let response = await axios.head(newPosterUrl);
-        let newPosterSize = Number(response.headers['content-length']) || 0;
+
+        let newPosterSize = 0;
+        for (let i = 0; i < prevPosters.length; i++) {
+            if (prevPosters[i].info.includes(sourceName)) {
+                newPosterSize = prevPosters[i].size;
+            }
+        }
+        if (newPosterSize === 0) {
+            let response = await axios.head(newPosterUrl);
+            newPosterSize = Number(response.headers['content-length']) || 0;
+        }
         if (newPosterSize > 0) {
-            let diff = ((newPosterSize - prevPoster.size) / prevPoster.size) * 100;
+            let diff = ((newPosterSize - prevS3Poster.size) / prevS3Poster.size) * 100;
             if (diff > 25 && newPosterSize < 500 * 1024) {
                 return true;
             }

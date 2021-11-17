@@ -4,7 +4,7 @@ import * as dbMethods from "../../data/dbMethods";
 import * as utils from "../utils";
 import * as cloudStorage from "../../data/cloudStorage";
 import {getMovieModel} from "../../models/movie";
-import pQueue from "p-queue";
+import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
 
@@ -83,7 +83,7 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const promiseQueue = new pQueue({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 3});
     for (let i = 0; i < top_popular.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
         if (titleDataFromDB) {
@@ -126,7 +126,11 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
             let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
             if (s3poster) {
                 updateFields.poster_s3 = s3poster;
-                updateFields.posters = [s3poster.url];
+                updateFields.posters = [{
+                    link: s3poster.url,
+                    info: 's3Poster',
+                    size: s3poster.size,
+                }];
             }
         }
     }
@@ -144,7 +148,7 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const promiseQueue = new pQueue({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 3});
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);
         if (titleDataFromDB) {
@@ -196,7 +200,11 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
             let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
             if (s3poster) {
                 updateFields.poster_s3 = s3poster;
-                updateFields.posters = [s3poster.url];
+                updateFields.posters = [{
+                    link: s3poster.url,
+                    info: 's3Poster',
+                    size: s3poster.size,
+                }];
             }
         }
     }
@@ -224,7 +232,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
     }
     let titleModel = getMovieModel(
         titleObj, '', type, [],
-        imdbData.year, '', '',
+        '', imdbData.year, '', '',
         [], [], []
     );
     titleModel.insert_date = 0;
@@ -302,7 +310,11 @@ async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
-            titleModel.posters = [s3poster.url];
+            titleModel.posters = [{
+                link: s3poster.url,
+                info: 's3Poster',
+                size: s3poster.size,
+            }];
         }
     }
 

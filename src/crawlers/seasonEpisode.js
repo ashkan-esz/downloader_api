@@ -1,6 +1,6 @@
-const {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} = require("./3rdPartyApi/omdbApi");
-const {getSeasonEpisode} = require("./utils");
-const {getEpisodeModel} = require("../models/episode");
+import {get_OMDB_seasonEpisode_info, fixEpisodesZeroDuration} from "./3rdPartyApi/omdbApi";
+import {getSeasonEpisode} from "./utils";
+import {getEpisodeModel} from "../models/episode";
 
 export async function handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
     let links_seasons = getSeasonsFromLinks(site_links);

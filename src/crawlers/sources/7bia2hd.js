@@ -1,6 +1,6 @@
-const config = require('../../config');
-const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {
+import config from "../../config";
+import {search_in_title_page, wrapper_module} from "../searchTools";
+import {
     getTitleAndYear,
     validateYear,
     getType,
@@ -11,14 +11,15 @@ const {
     purgeQualityText,
     purgeSizeText,
     purgeEncoderText
-} = require('../utils');
-const save = require('../save_changes_db');
-const {saveError} = require("../../error/saveError");
+} from "../utils";
+import save from "../save_changes_db";
+import {saveError} from "../../error/saveError";
 
+const sourceName = "bia2hd";
 
-module.exports = async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -26,7 +27,7 @@ async function search_title(link, i) {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
             let year;
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             let type = getType(title);
             if (config.nodeEnv === 'dev') {
                 console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
@@ -34,17 +35,24 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !checkPersianSerial(title)) {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    let trailers = getTrailers($2);
-                    let watchOnlineLinks = getWatchOnlineLinks($2);
-                    await save(title, year, page_link, save_link, persian_summary, poster, trailers, watchOnlineLinks, subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: getWatchOnlineLinks($2),
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: getTrailers($2),
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -84,7 +92,7 @@ function fixYear($) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
@@ -99,7 +107,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let $img = $('img');
         for (let i = 0; i < $img.length; i++) {
@@ -149,7 +157,7 @@ function getWatchOnlineLinks($) {
             let text = $(a[i]).text();
             if (text && text.toLowerCase().includes('پخش آنلاین')) {
                 let href = $(a[i]).attr('href');
-                let info = get_file_size_movie($, a[i]);
+                let info = getFileData_movie($, a[i]);
                 let quality = info.includes('1080') ? '1080p' : info.includes('720') ? '720p' : '480p';
                 result.push({
                     link: href,
@@ -166,21 +174,20 @@ function getWatchOnlineLinks($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     // '720p.x265 - 249.5MB'  // '720p.x265.dubbed - 249.5MB'
     // '1080p.x265.YIFY - 1.6GB'  // '1080p.x265.YIFY - 1.6GB'
     try {
-        if (type === 'serial') {
-            return get_file_size_serial($, link);
-        }
-        return get_file_size_movie($, link);
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return '';
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
     let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
     let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
@@ -212,7 +219,7 @@ function get_file_size_serial($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_file_size_movie($, link) {
+function getFileData_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
     let linkHref = $(link).attr('href');
     let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';

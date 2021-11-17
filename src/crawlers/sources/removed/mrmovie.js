@@ -1,43 +1,49 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module} = require('../../searchTools');
-const {purgeTitle, getType} = require('../../utils');
-const save = require('../../save_changes_db');
-const persianRex = require('persian-rex');
-const {saveError} = require("../../../error/saveError");
+import config from "../../../config";
+import {search_in_title_page, wrapper_module} from "../../searchTools";
+import {getTitleAndYear, getType} from "../../utils";
+import save from "../../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../../error/saveError";
 
+const sourceName = "mrmovie";
 
-module.exports = async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title),
-        wrapper_module(movie_url, page_count, search_title)
-    ]);
+export default async function mrmovie({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
     try {
         if (link.hasClass('reade_more')) {
             let title = link.parent().parent().prev().prev().text().toLowerCase();
+            let year;
             let type = getType(title);
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`mrmovie/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title, type);
+            ({title, year} = getTitleAndYear(title, year, type));
+
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    if (save_link.length > 0) {
-                        if (type === "serial") {
-                            await save(title, page_link, save_link, persian_summary, poster, [], 'serial');
-                        } else {
-                            save_link = remove_duplicate(save_link);
-                            if (save_link.length > 0) {
-                                await save(title, page_link, save_link, persian_summary, poster, [], 'movie');
-                            }
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    if (downloadLinks.length > 0) {
+                        if (!type.includes('serial')) {
+                            downloadLinks = removeDuplicates(downloadLinks);
                         }
+                        let sourceData = {
+                            sourceName,
+                            pageLink,
+                            downloadLinks,
+                            watchOnlineLinks: [],
+                            persianSummary: getPersianSummary($2),
+                            poster: getPoster($2),
+                            trailers: [],
+                            subtitles: [],
+                            cookies
+                        };
+                        await save(title, type, year, sourceData);
                     }
                 }
             }
@@ -47,7 +53,7 @@ async function search_title(link, i) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let paragraphs = $('p');
         for (let i = 0; i < paragraphs.length; i++) {
@@ -62,7 +68,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let imgs = $('img');
         for (let i = 0; i < imgs.length; i++) {
@@ -79,7 +85,7 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'480p.WEB-DL.RMT - 80MB'  //'720p.x265.WEB-DL.RMT - 129MB'
     //'1080p.x265.WEB-DL.10bit.RARBG - 1.43GB' //'1080p.WEB-DL.RARBG - 1.76GB'
     try {
@@ -89,7 +95,7 @@ function get_file_size($, link, type) {
             parent = $(parent).parent();
         }
         if (type === 'serial') {
-            text_array = get_serial_textArray($, link, parent);
+            text_array = getSerialTextArray($, link, parent);
             if (text_array === 'ignore') {
                 return text_array;
             }
@@ -115,7 +121,7 @@ function get_file_size($, link, type) {
     }
 }
 
-function get_serial_textArray($, link, parent) {
+function getSerialTextArray($, link, parent) {
     let episode = $(link).text().split(' ').filter((text) => text && text !== '|' && !persianRex.hasLetter.test(text));
     if (episode.length === 0) {
         return 'ignore';
@@ -158,7 +164,7 @@ function extracted(text_array) {
     return {quality, x265, bit10, bit12, size, encoder};
 }
 
-function remove_duplicate(input) {
+function removeDuplicates(input) {
     let result = [];
     let indexes = [];
     for (let i = 0; i < input.length; i++) {

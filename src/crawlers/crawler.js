@@ -1,12 +1,13 @@
-const {getDatesBetween} = require('./utils');
-const {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} = require("../data/dbMethods");
-const {getSourcesArray} = require('./sourcesArray');
-const {domainChangeHandler} = require('./domainChangeHandler');
-const {updateJikanData} = require('./3rdPartyApi/jikanApi');
-const {updateImdbData} = require('./3rdPartyApi/imdbApi');
-const Sentry = require('@sentry/node');
-const {saveError} = require("../error/saveError");
-const {flushCachedData} = require('../api/middlewares/moviesCache');
+import {getDatesBetween} from "./utils";
+import {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} from "../data/dbMethods";
+import {getSourcesArray} from "./sourcesArray";
+import {domainChangeHandler} from "./domainChangeHandler";
+import {updateJikanData} from "./3rdPartyApi/jikanApi";
+import {updateImdbData} from "./3rdPartyApi/imdbApi";
+import Sentry from "@sentry/node";
+import {saveError} from "../error/saveError";
+import {flushCachedData} from "../api/middlewares/moviesCache";
+
 export let _handleCastUpdate = true;
 let isCrawling = false;
 

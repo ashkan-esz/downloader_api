@@ -1,6 +1,6 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module} = require('../../searchTools');
-const {
+import config from "../../../config";
+import {search_in_title_page, wrapper_module} from "../../searchTools";
+import {
     getTitleAndYear,
     validateYear,
     checkDubbed,
@@ -9,21 +9,22 @@ const {
     removeDuplicateLinks,
     getDecodedLink,
     sortLinks
-} = require('../../utils');
-const save = require('../../save_changes_db');
-const {saveError} = require("../../../error/saveError");
+} from "../../utils";
+import save from "../../save_changes_db";
+import {saveError} from "../../../error/saveError";
 
+const sourceName = "animelist";
 
-module.exports = async function animelist({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title);
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function animelist({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i, $, url) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود انیمه')) {
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             let year;
             let type = (url.toLowerCase().includes('movie-anime')) ? 'anime_movie' : 'anime_serial';
 
@@ -39,22 +40,31 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null,
-                    extraSearch_match, extraSearch_getFileSize, null, extraChecker);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, null,
+                    extraSearchMatch, extraSearch_getFileData, null, extraChecker);
 
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
-                    save_link = removeDuplicateLinks(save_link);
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
                     if (type.includes('serial')) {
-                        save_link = sortLinks(save_link, type);
-                        save_link = removeSpecialFlagsIfAllHave(save_link);
+                        downloadLinks = sortLinks(downloadLinks, type);
+                        downloadLinks = removeSpecialFlagsIfAllHave(downloadLinks);
                     }
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2, url);
-                    await save(title, year, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: [],
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -104,7 +114,7 @@ function fixYear($) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
@@ -119,7 +129,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($, url) {
+function getPoster($, url) {
     try {
         url = url.replace('https://', '').split('/')[0];
         let $img = $('img');
@@ -138,22 +148,21 @@ function get_poster($, url) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     // 'S4E18.1080p.x265'  // 'ED.S1E01.1080p.BD.DA - 20.79MB'
     // 'S1E01.1080p.x265.10BIT.DUAL.AUDIO - 233.04MB'  // 'S1E02.1080p.BD.10BIT - 204.64MB'
     //   //
     try {
-        if (type.includes('serial')) {
-            return get_file_size_serial($, link);
-        }
-        return get_file_size_movie($, link);
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return 'ignore';
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let decodedLink = getDecodedLink($(link).attr('href'));
     let linkHref = replacePersianNumbers(decodedLink).toLowerCase().split('/').pop();
     let linkText = replacePersianNumbers($(link).text()).toLowerCase();
@@ -172,7 +181,7 @@ function get_file_size_serial($, link) {
     return [seasonEpisode, quality, dubbed, uncensored].filter(value => value).join('.');
 }
 
-function get_file_size_movie($, link) {
+function getFileData_movie($, link) {
     let decodedLink = getDecodedLink($(link).attr('href'));
     let linkHref = replacePersianNumbers(decodedLink).toLowerCase().split('/').pop();
     let linkText = replacePersianNumbers($(link).text()).toLowerCase().trim();
@@ -215,7 +224,7 @@ function extraChecker($, link, title) {
     }
 }
 
-function extraSearch_match($, link) {
+function extraSearchMatch($, link) {
     try {
         let linkHref = replacePersianNumbers(getDecodedLink($(link).attr('href'))).toLowerCase();
         if (linkHref.includes('/anime/sub/download/') || linkHref.match(/\/sub$|\.(mkv|zip)$|\?(v-c=|comment=)\d$/gi)) {
@@ -244,7 +253,7 @@ function extraSearch_match($, link) {
     }
 }
 
-function extraSearch_getFileSize($, link, type, sourceLinkData, title) {
+function extraSearch_getFileData($, link, type, sourceLinkData, title) {
     try {
         let decodedLink = getDecodedLink($(link).attr('href'));
         let linkHref = replacePersianNumbers(decodedLink).toLowerCase().split('/').pop();

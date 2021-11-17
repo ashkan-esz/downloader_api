@@ -1,6 +1,8 @@
-const config = require('../../config');
-const router = require('express').Router();
-const {crawler} = require("../../crawlers/crawler");
+import config from "../../config";
+import {Router} from "express";
+import {crawler} from "../../crawlers/crawler";
+
+const router = Router();
 
 router.post('/:password/', async (req, res) => {
     let password = req.params.password;

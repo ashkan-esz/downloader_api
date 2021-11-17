@@ -1,9 +1,9 @@
-const config = require('../../config');
-const axios = require('axios').default;
-const {replaceSpecialCharacters, purgeObjFalsyValues} = require("../utils");
-const {getEpisodeModel} = require("../../models/episode");
-const {saveError} = require("../../error/saveError");
-const Sentry = require('@sentry/node');
+import config from "../../config";
+import axios from "axios";
+import {replaceSpecialCharacters, purgeObjFalsyValues} from "../utils";
+import {getEpisodeModel} from "../../models/episode";
+import * as Sentry from "@sentry/node";
+import {saveError} from "../../error/saveError";
 
 const apiKeyArray = config.omdbApiKeys;
 let apiKeyCounter = -1;

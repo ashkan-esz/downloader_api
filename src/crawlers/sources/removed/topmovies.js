@@ -1,16 +1,15 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module,} = require('../../searchTools');
-const {purgeTitle, getType} = require('../../utils');
-const save = require('../../save_changes_db');
-const persianRex = require('persian-rex');
-const {saveError} = require("../../../error/saveError");
+import config from "../../../config";
+import {search_in_title_page, wrapper_module,} from "../../searchTools";
+import {getTitleAndYear, getType} from "../../utils";
+import save from "../../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../../error/saveError";
 
+const sourceName = "topmovies";
 
-module.exports = async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
-    await Promise.all([
-        wrapper_module(serial_url, serial_page_count, search_title),
-        wrapper_module(movie_url, page_count, search_title)
-    ]);
+export default async function topmovies({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -19,20 +18,31 @@ async function search_title(link, i) {
         if (title && title.includes('دانلود') && link.children().length === 0 &&
             title.toLowerCase().replace(/\s/g, '') ===
             link.text().toLowerCase().replace(/\s/g, '')) {
+            let year;
             let type = getType(title);
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`topmovie/${type}/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title.toLowerCase(), type);
+            ({title, year} = getTitleAndYear(title, year, type));
+
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    if (save_link.length > 0) {
-                        await save(title, page_link, save_link, persian_summary, poster, [], type);
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    if (downloadLinks.length > 0) {
+                        let sourceData = {
+                            sourceName,
+                            pageLink,
+                            downloadLinks,
+                            watchOnlineLinks: [],
+                            persianSummary: getPersianSummary($2),
+                            poster: getPoster($2),
+                            trailers: [],
+                            subtitles: [],
+                            cookies
+                        };
+                        await save(title, type, year, sourceData);
                     }
                 }
             }
@@ -42,7 +52,7 @@ async function search_title(link, i) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let divs = $('div');
         for (let i = 0; i < divs.length; i++) {
@@ -58,7 +68,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let imgs = $('img');
         for (let i = 0; i < imgs.length; i++) {
@@ -77,11 +87,11 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'480p.WEBRip.HardSub - 180MB'  //'720p.WEB-DL.dubbed - 911.9M'
     //'1080p.BluRay.YTS.HardSub - 1.65G' //'720p.WEB-DL.HardSub - 802.3M'
     try {
-        let HardSub = check_hardSub($);
+        let HardSub = checkHardSub($);
         let link_href = $(link).attr('href').toLowerCase();
         let dubbed = (link_href.includes('farsi.dub') ||
             link_href.includes('duble') ||
@@ -117,7 +127,7 @@ function get_file_size($, link, type) {
     }
 }
 
-function check_hardSub($) {
+function checkHardSub($) {
     let HardSub = "";
     let divs = $('div');
     for (let i = 0; i < divs.length; i++) {

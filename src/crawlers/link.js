@@ -1,6 +1,6 @@
-const {wordsToNumbers} = require('words-to-numbers');
-const {getDecodedLink} = require('./utils');
-const {saveError} = require("../error/saveError");
+import {wordsToNumbers} from "words-to-numbers";
+import {getDecodedLink} from "./utils";
+import {saveError} from "../error/saveError";
 
 
 export function check_download_link(original_link, matchCases, type) {

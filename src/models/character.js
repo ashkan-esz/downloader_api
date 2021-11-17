@@ -1,4 +1,4 @@
-const {replaceSpecialCharacters} = require('../crawlers/utils');
+import {replaceSpecialCharacters} from "../crawlers/utils";
 
 export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanPersonID, originalImages, movieID, role, actorName) {
     return {

@@ -411,6 +411,7 @@ function getFileName(title, titleType, year, extra, fileType) {
     fileName = fileName.trim()
         .replace(/\s+/g, '-')
         .replace(/--+/g, '-')
+        .replace(/^-/g, '')
         .replace('-.', '.');
     if (year && title.endsWith(year)) {
         fileName = fileName.replace(('-' + year), '');

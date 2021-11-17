@@ -1,48 +1,52 @@
-const config = require('../../../config');
-const {search_in_title_page, wrapper_module} = require('../../searchTools');
-const {
-    purgeTitle,
+import config from "../../../config";
+import {search_in_title_page, wrapper_module} from "../../searchTools";
+import {
+    getTitleAndYear,
     checkDubbed,
     checkHardSub,
     removeDuplicateLinks,
     purgeQualityText,
     purgeEncoderText,
-    purgeSizeText
-} = require('../../utils');
-const save = require('../../save_changes_db');
-const persianRex = require('persian-rex');
-const {saveError} = require("../../../error/saveError");
+    purgeSizeText,
+} from "../../utils";
+import save from "../../save_changes_db";
+import * as persianRex from "persian-rex";
+import {saveError} from "../../../error/saveError";
 
-let valaMovieTrailerUrl = '';
+const sourceName = "valamovie";
 
-module.exports = async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(serial_url, serial_page_count, search_title_serial);
-    await wrapper_module(movie_url, page_count, search_title_movie);
-    return valaMovieTrailerUrl;
+export default async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
+    await wrapper_module(sourceName, serial_url, serial_page_count, search_title_serial);
+    await wrapper_module(sourceName, movie_url, page_count, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
     try {
         if (link.hasClass('product-title')) {
             let title = link.text();
-            let page_link = link.attr('href');
+            let year;
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`valamovie/serial/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title.toLowerCase(), 'serial');
+            ({title, year} = getTitleAndYear(title, year, 'serial'));
+
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, 'serial', get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, 'serial', getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    let trailers = getTrailers($2);
-
-                    if (!valaMovieTrailerUrl && trailers.length > 0) {
-                        valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
-                    }
-
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, 'serial');
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: getTrailers($2),
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, 'serial', year, sourceData);
                 }
             }
         }
@@ -55,25 +59,30 @@ async function search_title_movie(link, i) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && title.toLowerCase() === link.text().toLowerCase()) {
-            let page_link = link.attr('href');
+            let year;
+            let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
                 console.log(`valamovie/movie/${i}/${title}  ========>  `);
             }
-            title = purgeTitle(title.toLowerCase(), 'movie');
+            ({title, year} = getTitleAndYear(title, year, 'movie'));
+
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, 'movie', get_file_size);
+                let pageSearchResult = await search_in_title_page(title, pageLink, 'movie', getFileData);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
-                    let trailers = getTrailers($2);
-
-                    if (!valaMovieTrailerUrl && trailers.length > 0) {
-                        valaMovieTrailerUrl = trailers[0].link.replace(/www\.|https:\/\/|\/page\/|\/(movie-)*anime\?page=/g, '').split('/')[0];
-                    }
-
-                    save_link = removeDuplicateLinks(save_link);
-                    await save(title, page_link, save_link, persian_summary, poster, trailers, [], subtitles, cookies, 'movie');
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: getTrailers($2),
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, 'movie', year, sourceData);
                 }
             }
         }
@@ -82,7 +91,7 @@ async function search_title_movie(link, i) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let paragraphs = $('p');
         for (let i = 0; i < paragraphs.length; i++) {
@@ -98,7 +107,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let links = $('a');
         for (let i = 0; i < links.length; i++) {
@@ -146,21 +155,20 @@ function getTrailers($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     //'1080p.WEB-DL.SoftSub - 750MB' //'720p.x265.WEB-DL - 230MB'
     //'1080p.BluRay.dubbed - 1.77GB' //'1080p.x265.BluRay.RMTeam - 1.17GB'
     try {
-        if (type === 'serial') {
-            return get_file_size_serial($, link);
-        }
-        return get_file_size_movie($, link)
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return "";
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let text_array = $(link).parent().parent().parent().parent().prev().text().trim().split('/');
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let quality, dubbed, size, link_quality;
@@ -191,7 +199,7 @@ function get_file_size_serial($, link) {
     return [info, size].filter(value => value).join(' - ');
 }
 
-function get_file_size_movie($, link) {
+function getFileData_movie($, link) {
     let bit10 = $(link).attr('href').includes('10bit') ? '10bit' : '';
     let prevNode = $(link).parent().parent().parent().prev();
     if ($(prevNode)[0].name === 'br') {

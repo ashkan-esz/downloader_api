@@ -1,4 +1,3 @@
-import config from '../config';
 import digimoviez from "./sources/1digimoviez";
 import film2movie from "./sources/3film2movie";
 import salamdl from "./sources/4salamdl";
@@ -83,6 +82,5 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
 }
 
 
-let s3PosterUrl = 'poster.' + config.cloudStorage.websiteEndPoint;
-export const sortPostersOrder = ['digimovie', 'film2movie', 'salamdl', 'golchin', s3PosterUrl, 'avamovie', 'bia2anime', 'ba2hd'];
-export const sortTrailersOrder = ['digimovie', 'avamovie', 's3Trailer', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];
+export const sortPostersOrder = ['digimoviez', 'film2movie', 'salamdl', 'golchin', 's3Poster', 'avamovie', 'bia2anime', 'ba2hd'];
+export const sortTrailersOrder = ['digimoviez', 'avamovie', 's3Trailer', 'film2movie', 'salamdl', 'ba2hd', 'bia2anime', 'golchin'];

@@ -5,7 +5,7 @@ import * as cloudStorage from "../../data/cloudStorage";
 import * as utils from "../utils";
 import {addStaffAndCharacters} from "./personCharacter";
 import {dataLevelConfig, getMovieModel} from "../../models/movie";
-import pQueue from "p-queue";
+import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
 
@@ -375,7 +375,7 @@ export async function updateJikanData() {
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
-    const promiseQueue = new pQueue({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 3});
 
     for (let k = 1; k <= numberOfPage; k++) {
         let url = (mode === 'comingSoon')
@@ -447,7 +447,11 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanPoster);
             if (s3poster) {
                 updateFields.poster_s3 = s3poster;
-                updateFields.posters = [s3poster.url];
+                updateFields.posters = [{
+                    link: s3poster.url,
+                    info: 's3Poster',
+                    size: s3poster.size,
+                }];
             }
         }
     }
@@ -489,7 +493,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
     if (jikanApiData) {
         let titleModel = getMovieModel(
             jikanApiData.titleObj, '', type, [],
-            '', '', '',
+            '', '', '', '',
             [], [], []
         );
 
@@ -537,7 +541,11 @@ async function uploadPosterAndTrailer(titleModel, jikanData) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, jikanPoster);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
-            titleModel.posters = [s3poster.url];
+            titleModel.posters = [{
+                link: s3poster.url,
+                info: 's3Poster',
+                size: s3poster.size,
+            }];
         }
     }
 
@@ -614,7 +622,7 @@ async function getCastAndCharacterFields(insertedId, titleData, allApiData, type
     if (type.includes('anime')) {
         await connectNewAnimeToRelatedTitles(titleData, insertedId);
     }
-    let poster = titleData.posters.length > 0 ? titleData.posters[0] : '';
+    let poster = titleData.posters.length > 0 ? titleData.posters[0].link : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {

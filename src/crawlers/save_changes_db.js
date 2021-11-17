@@ -1,27 +1,36 @@
-const {searchTitleDB, insertToDB, updateByIdDB} = require('../data/dbMethods');
-const {deleteTrailerFromS3} = require('../data/cloudStorage');
-const {checkSourceExist, checkSource} = require('./utils');
-const {addApiData, apiDataUpdate} = require('./3rdPartyApi/allApiData');
-const {addStaffAndCharacters} = require('./3rdPartyApi/personCharacter');
-const {handleSiteSeasonEpisodeUpdate, getTotalDuration} = require("./seasonEpisode");
-const {handleSubUpdates, handleUrlUpdate} = require("./subUpdates");
-const {getUploadedAnimeListSubtitles, handleSubtitleUpdate} = require("./subtitle");
-const {getMovieModel} = require("../models/movie");
-const {getJikanApiData, connectNewAnimeToRelatedTitles} = require("./3rdPartyApi/jikanApi");
-const {saveError} = require("../error/saveError");
+import {searchTitleDB, insertToDB, updateByIdDB} from "../data/dbMethods";
+import {deleteTrailerFromS3} from "../data/cloudStorage";
+import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData";
+import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter";
+import {handleSiteSeasonEpisodeUpdate, getTotalDuration} from "./seasonEpisode";
+import {handleSubUpdates} from "./subUpdates";
+import {getUploadedAnimeListSubtitles, handleSubtitleUpdate} from "./subtitle";
+import {getMovieModel} from "../models/movie";
+import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi";
+import {saveError} from "../error/saveError";
 
 
-module.exports = async function save(title, year, page_link, siteDownloadLinks, persianSummary, poster, trailers, watchOnlineLinks, subtitles, cookies, type) {
+export default async function save(title, type, year, sourceData) {
     try {
-        let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, siteDownloadLinks);
+        let {
+            sourceName,
+            pageLink,
+            downloadLinks,
+            watchOnlineLinks,
+            persianSummary,
+            poster, trailers,
+            subtitles,
+            cookies
+        } = sourceData;
+        let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
-        let titleModel = getMovieModel(titleObj, page_link, type, siteDownloadLinks, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
-        let uploadedSubtitles = await getUploadedAnimeListSubtitles(page_link, subtitles, cookies);
+        let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
+        let uploadedSubtitles = sourceName === "animelist" ? await getUploadedAnimeListSubtitles(subtitles, cookies) : [];
 
         if (db_data === null) {//new title
-            if (siteDownloadLinks.length > 0) {
+            if (downloadLinks.length > 0) {
                 titleModel.subtitles = uploadedSubtitles;
-                let result = await addApiData(titleModel, siteDownloadLinks);
+                let result = await addApiData(titleModel, downloadLinks);
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
                     if (type.includes('anime')) {
@@ -36,14 +45,14 @@ module.exports = async function save(title, year, page_link, siteDownloadLinks, 
             return;
         }
 
-        let apiData = await apiDataUpdate(db_data, siteDownloadLinks, type, poster);
-        let subUpdates = handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type);
-        if (checkSourceExist(db_data.sources, page_link)) {
-            let linkUpdate = handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks);
-            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData);
-        } else if (siteDownloadLinks.length > 0) {
+        let apiData = await apiDataUpdate(db_data, downloadLinks, type, poster, sourceName);
+        let subUpdates = await handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName);
+        if (db_data.sources.find((item) => item.sourceName === sourceName) !== -1) {
+            let linkUpdate = handleDownloadLinksUpdate(db_data, pageLink, persianSummary, type, downloadLinks, sourceName);
+            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData);
+        } else if (downloadLinks.length > 0) {
             //new source
-            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData);
+            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData);
         }
 
     } catch (error) {
@@ -150,7 +159,7 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, subUpdates, siteDownloadLinks, uploadedSubtitles, type, apiData) {
+async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -159,7 +168,7 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
         }
 
         if (type.includes('serial')) {
-            let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, siteDownloadLinks, true);
+            let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, downloadLinks, true);
             if (seasonsUpdate) {
                 updateFields.seasons = db_data.seasons;
             }
@@ -201,12 +210,12 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             }
         }
 
-        if (db_data.summary.persian.length < site_persianSummary.length) {
+        if (db_data.summary.persian.length < persianSummary.length) {
             let currentSummary = updateFields.summary;
             if (currentSummary === undefined) {
                 currentSummary = db_data.summary;
             }
-            currentSummary.persian = site_persianSummary;
+            currentSummary.persian = persianSummary;
             updateFields.summary = currentSummary;
         }
 
@@ -232,7 +241,7 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
             }
         }
 
-        const {_handleCastUpdate} = require('./crawler');
+        let {_handleCastUpdate} = await import("./crawler");
         if (apiData && _handleCastUpdate) {
             let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
             if (castAndCharacters) {
@@ -261,14 +270,17 @@ async function handleUpdate(db_data, linkUpdate, result, site_persianSummary, su
     }
 }
 
-function handleDownloadLinksUpdate(db_data, page_link, persian_summary, type, siteDownloadLinks) {
+function handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks, sourceName) {
     for (let j = 0; j < db_data.sources.length; j++) {//check source exist
-        if (checkSource(db_data.sources[j].url, page_link)) { // this source exist
+        if (db_data.sources[j].sourceName === sourceName) { // this source exist
             let shouldUpdate = checkDownloadLinksUpdate(siteDownloadLinks, db_data.sources[j].links, type);
             if (shouldUpdate) {
                 db_data.sources[j].links = siteDownloadLinks;
             }
-            shouldUpdate = handleUrlUpdate(db_data.sources[j], page_link) || shouldUpdate;
+            if (!page_link.includes('webcache') && db_data.sources[j].url !== page_link) {
+                db_data.sources[j].url = page_link;
+                shouldUpdate = true;
+            }
             return shouldUpdate;
         }
     }
@@ -317,7 +329,7 @@ function checkEqualLinks(link1, link2) {
 }
 
 async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
-    let poster = titleData.posters.length > 0 ? titleData.posters[0] : '';
+    let poster = titleData.posters.length > 0 ? titleData.posters[0].link : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {

@@ -1,5 +1,5 @@
 import getCollection from './mongoDB';
-import {ObjectId} from 'mongodb';
+import mongodb from 'mongodb';
 import {saveError} from "../error/saveError";
 
 
@@ -132,6 +132,18 @@ export async function getSourcesObjDB() {
     try {
         let collection = await getCollection('sources');
         return await collection.findOne({title: 'sources'});
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function updateSourcesObjDB(updateFields) {
+    try {
+        let collection = await getCollection('sources');
+        await collection.findOneAndUpdate({title: 'sources'}, {
+            $set: updateFields
+        });
     } catch (error) {
         saveError(error);
         return null;
@@ -355,7 +367,7 @@ export async function searchOnMovieCollectionByTitle(title, types, years, imdbSc
 export async function searchOnCollectionById(collectionName, id, projection) {
     try {
         let collection = await getCollection(collectionName);
-        return await collection.findOne({_id: new ObjectId(id)}, {projection: projection});
+        return await collection.findOne({_id: new mongodb.ObjectId(id)}, {projection: projection});
     } catch (error) {
         saveError(error);
         return null;

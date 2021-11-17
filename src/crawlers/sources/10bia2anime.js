@@ -1,6 +1,6 @@
-const config = require('../../config');
-const {search_in_title_page, wrapper_module} = require('../searchTools');
-const {
+import config from "../../config";
+import {search_in_title_page, wrapper_module} from "../searchTools";
+import {
     getTitleAndYear,
     validateYear,
     checkDubbed,
@@ -9,13 +9,14 @@ const {
     persianWordToNumber,
     getSeasonEpisode,
     getDecodedLink
-} = require('../utils');
-const save = require('../save_changes_db');
-const {saveError} = require("../../error/saveError");
+} from "../utils";
+import save from "../save_changes_db";
+import {saveError} from "../../error/saveError";
 
+const sourceName = "bia2anime";
 
-module.exports = async function bia2anime({movie_url, page_count}) {
-    await wrapper_module(movie_url, page_count, search_title);
+export default async function bia2anime({movie_url, page_count}) {
+    await wrapper_module(sourceName, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -24,7 +25,7 @@ async function search_title(link, i) {
         if (text && text.includes('مطلب') && text.includes('ادامه')) {
             let title = link.attr('title').toLowerCase().split('|')[0];
             let year;
-            let page_link = link.attr('href');
+            let pageLink = link.attr('href');
             let type = title.includes('movie') ? 'anime_movie' : 'anime_serial';
             if (config.nodeEnv === 'dev') {
                 console.log(`bia2anime/${type}/${i}/${title}  ========>  `);
@@ -38,17 +39,26 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, page_link, type, get_file_size, null);
+                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, null);
                 if (pageSearchResult) {
-                    let {save_link, $2, subtitles, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
-                    save_link = sortLinks(save_link);
-                    let persian_summary = get_persian_summary($2);
-                    let poster = get_poster($2);
+                    downloadLinks = sortLinks(downloadLinks);
                     title = replaceShortTitleWithFull(title);
-                    await save(title, year, page_link, save_link, persian_summary, poster, [], [], subtitles, cookies, type);
+                    let sourceData = {
+                        sourceName,
+                        pageLink,
+                        downloadLinks,
+                        watchOnlineLinks: [],
+                        persianSummary: getPersianSummary($2),
+                        poster: getPoster($2),
+                        trailers: [],
+                        subtitles: [],
+                        cookies
+                    };
+                    await save(title, type, year, sourceData);
                 }
             }
         }
@@ -88,7 +98,7 @@ function fixYear($) {
     }
 }
 
-function get_persian_summary($) {
+function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
@@ -104,7 +114,7 @@ function get_persian_summary($) {
     }
 }
 
-function get_poster($) {
+function getPoster($) {
     try {
         let $div = $('div');
         for (let i = 0; i < $div.length; i++) {
@@ -123,20 +133,19 @@ function get_poster($) {
     }
 }
 
-function get_file_size($, link, type) {
+function getFileData($, link, type) {
     // 'S1E01.720p'  //
     try {
-        if (type.includes('serial')) {
-            return get_file_size_serial($, link);
-        }
-        return '';
+        return type.includes('serial')
+            ? getFileData_serial($, link)
+            : '';
     } catch (error) {
         saveError(error);
         return 'ignore';
     }
 }
 
-function get_file_size_serial($, link) {
+function getFileData_serial($, link) {
     let parentNode = link;
     let counter = 0;
     while (counter < 14) {
