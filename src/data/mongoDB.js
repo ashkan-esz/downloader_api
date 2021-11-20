@@ -6,7 +6,7 @@ let database = null;
 
 async function startDatabase() {
     const uri = config.databaseURL;
-    const connection = await mongodb.MongoClient.connect(uri, {useUnifiedTopology: true, useNewUrlParser: true});
+    const connection = await mongodb.MongoClient.connect(uri);
     database = connection.db();
 }
 

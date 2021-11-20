@@ -83,7 +83,7 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const promiseQueue = new pQueue.default({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 5});
     for (let i = 0; i < top_popular.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
         if (titleDataFromDB) {
@@ -148,7 +148,7 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const promiseQueue = new pQueue.default({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 5});
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);
         if (titleDataFromDB) {

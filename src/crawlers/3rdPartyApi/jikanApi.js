@@ -375,7 +375,7 @@ export async function updateJikanData() {
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
-    const promiseQueue = new pQueue.default({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 5});
 
     for (let k = 1; k <= numberOfPage; k++) {
         let url = (mode === 'comingSoon')
