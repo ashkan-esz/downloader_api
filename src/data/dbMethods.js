@@ -54,8 +54,18 @@ export async function searchStaffAndCharactersDB(collectionName, searchName, tvm
         return await collection.findOne({
             name: searchName,
             $or: [
-                {tvmazePersonID: tvmazePersonID},
-                {jikanPersonID: jikanPersonID},
+                {
+                    $and: [
+                        {tvmazePersonID: {$ne: 0}},
+                        {tvmazePersonID: tvmazePersonID}
+                    ]
+                },
+                {
+                    $and: [
+                        {jikanPersonID: {$ne: 0}},
+                        {jikanPersonID: jikanPersonID}
+                    ]
+                },
             ],
         });
     } catch (error) {
@@ -106,10 +116,16 @@ export async function findOneAndUpdateMovieCollection(searchQuery, updateFields)
 export async function insertToDB(collectionName, dataToInsert, isMany = false) {
     try {
         let collection = await getCollection(collectionName);
-        let result = (isMany)
-            ? await collection.insertMany(dataToInsert)
-            : await collection.insertOne(dataToInsert);
-        return (result.insertedId || result.insertedIds);
+        if (isMany) {
+            if (dataToInsert.length === 0) {
+                return [];
+            }
+            let result = await collection.insertMany(dataToInsert);
+            return result.ops;
+        } else {
+            let result = await collection.insertOne(dataToInsert);
+            return result.insertedId;
+        }
     } catch (error) {
         saveError(error);
         return null;

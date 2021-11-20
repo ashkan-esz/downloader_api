@@ -1,15 +1,23 @@
-import {replaceSpecialCharacters} from "../crawlers/utils";
+import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils";
 
-export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanPersonID, originalImages, movieID, role, actorName) {
+export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanPersonID, originalImages, movieID, movieName, moviePoster, role, actorName) {
     return {
-        name: replaceSpecialCharacters(rawName.toLowerCase()),
-        rawName: rawName,
+        name: replaceSpecialCharacters(fixJapaneseCharacter(rawName).toLowerCase()),
+        rawName: fixJapaneseCharacter(rawName),
         gender: gender,
-        about: (about || '').trim().replace(/\n|\s\|\s+\|\s/g, ' | '),
+        about: (about || '').trim().replace(/\n\s*\n/g, '\n').replace(/\s\s+/g, ' '),
         tvmazePersonID: tvmazePersonID,
         jikanPersonID: jikanPersonID,
         imageData: null, // {url,originalUrl,size}
         originalImages: originalImages.filter(value => value),
-        credits: [{movieID, role, actorName}],
+        credits: [{
+            movieID,
+            movieName: movieName,
+            moviePoster: moviePoster,
+            role,
+            actorID: '',
+            actorName: fixJapaneseCharacter(actorName),
+            actorImage: '',
+        }],
     }
 }

@@ -84,8 +84,8 @@ export function replaceSpecialCharacters(input) {
         .replace(/[ß♭]/g, 'b')
         .replace(/ç/g, 'c')
         .replace(/ş/g, 's')
-        .replace(/[ôöøóō◯õ]/g, 'o')
-        .replace(/[üúûù]/g, 'u')
+        .replace(/[ôöøóō◯õ]|ö/g, 'o')
+        .replace(/[üúûùū]/g, 'u')
         .replace(/ñ/g, 'n')
         .replace(/[ıí]/g, 'i')
         .replace(/(^|\s)iii/gi, ' 3')
@@ -94,6 +94,13 @@ export function replaceSpecialCharacters(input) {
         .replace('marvels', '')
         .replace(/\s\s+/g, ' ')
         .trim();
+}
+
+export function fixJapaneseCharacter(input) {
+    return input
+        .replace(/[ū]/g, 'uu')
+        .replace(/ō/g, 'ou')
+        .replace('Yuichi', 'Yuuichi');
 }
 
 export function replacePersianNumbers(input) {

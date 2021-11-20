@@ -626,10 +626,7 @@ async function getCastAndCharacterFields(insertedId, titleData, allApiData, type
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
-            staffAndCharactersData: temp.staffAndCharactersData,
-            actors: temp.actors,
-            directors: temp.directors,
-            writers: temp.writers,
+            ...temp,
             castUpdateDate: new Date(),
         }
     }

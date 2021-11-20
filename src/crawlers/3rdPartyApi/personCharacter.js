@@ -1,19 +1,18 @@
 import * as dbMethods from "../../data/dbMethods";
 import * as cloudStorage from "../../data/cloudStorage";
 import * as utils from "../utils";
-import {getCharactersStaff, getPersonInfo, getCharacterInfo} from "./jikanApi";
+import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "./jikanApi";
 import {getPersonModel} from "../../models/person";
 import {getCharacterModel} from "../../models/character";
+import isEqual from 'lodash.isequal';
+import isEmpty from 'lodash.isempty';
+import {default as pQueue} from "p-queue";
 import {saveError} from "../../error/saveError";
 
-
-//todo : check cast data in movie / cast data / character data
-//todo : add id to embedded data
+const maxStaffOrCharacterSize = 30;
 
 export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
-    let now = new Date();
-    let apiUpdateDate = new Date(castUpdateDate);
-    if (utils.getDatesBetween(now, apiUpdateDate).days < 30) {
+    if (utils.getDatesBetween(new Date(), new Date(castUpdateDate)).days < 30) {
         return null;
     }
 
@@ -23,8 +22,10 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
         let characters = [];
 
         if (tvmazeApiFields) {
-            let tvmazeCast = tvmazeApiFields.cast;
-            let {tvmazeActors, tvmazeCharacters} = getTvMazeActorsAndCharacters(movieID, tvmazeCast);
+            let {
+                tvmazeActors,
+                tvmazeCharacters
+            } = getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeApiFields.cast);
             staff = tvmazeActors;
             characters = tvmazeCharacters;
         }
@@ -32,94 +33,123 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
         if (jikanApiFields) {
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
-                let jikanStaff = await getJikanStaff(movieID, jikanCharatersStaff.staff);
-                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, jikanCharatersStaff.characters);
-                let jikanCharacters = await getJikanCharaters(movieID, jikanCharatersStaff.characters);
+                let jikanStaff = await getJikanStaff(movieID, movieName, moviePoster, jikanCharatersStaff.staff, staff);
+                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanCharatersStaff.characters, staff);
+                let jikanCharacters = await getJikanCharaters(movieID, movieName, moviePoster, jikanCharatersStaff.characters, characters);
                 staff = [...staff, ...jikanStaff, ...jikanVoiceActors];
-                if (tvmazeApiFields) {
-                    characters = mergeCharactersInfo(characters, jikanCharacters);
-                } else {
-                    characters = jikanCharacters;
-                }
+                characters = [...characters, ...jikanCharacters];
             }
         }
 
-        characters = await addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, characters, 'characters', []);
-        staff = await addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, staff, 'staff', characters);
+        staff = await fetchDataFromDB(staff, 'staff');
+        characters = await fetchDataFromDB(characters, 'characters');
+
+        staff = await addImageToStaffAndCharacters(staff);
+        characters = await addImageToStaffAndCharacters(characters);
+
+        ({staff, characters} = await insertData(staff, characters));
+
+        ({staff, characters} = embedStaffAndCharacters(movieID, staff, characters));
+
+        ({staff, characters} = await updateData(staff, characters));
 
         let staffAndCharactersData = getStaffAndCharactersData(staff, characters, movieID);
         if (omdbApiFields) {
             staffAndCharactersData = addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields);
         }
-
-        return extractActorsAndDirectorsAndWriters(staffAndCharactersData);
+        return extractActorsCharactersAndStaff(staffAndCharactersData);
     } catch (error) {
         saveError(error);
         return null;
     }
 }
 
-function extractActorsAndDirectorsAndWriters(staffAndCharacters) {
-    //todo : check
-    //todo : rename
-    let staffAndCharactersData = [];
-    let actors = [];
-    let directors = [];
-    let writers = [];
+function extractActorsCharactersAndStaff(staffAndCharacters) {
+    let actorsAndCharacters = [];
+    let staff = {
+        directors: [],
+        writers: [],
+        others: [],
+    };
 
     for (let i = 0; i < staffAndCharacters.length; i++) {
         let positions = staffAndCharacters[i].positions.map(item => item.toLowerCase()).join(' , ');
         if (positions.includes('actor') || positions.includes('voice actor')) {
-            actors.push(staffAndCharacters[i]);
+            actorsAndCharacters.push(staffAndCharacters[i]);
         } else if (positions.includes('director')) {
-            directors.push(staffAndCharacters[i]);
+            staff.directors.push(staffAndCharacters[i]);
         } else if (positions.includes('writer')) {
-            writers.push(staffAndCharacters[i]);
+            staff.writers.push(staffAndCharacters[i]);
         } else {
-            staffAndCharactersData.push(staffAndCharacters[i]);
+            staff.others.push(staffAndCharacters[i]);
         }
     }
     return {
-        staffAndCharactersData,
-        actors,
-        directors,
-        writers
+        actorsAndCharacters,
+        staff,
     };
 }
 
 function getStaffAndCharactersData(staff, characters, movieID) {
-    return staff.map(item => {
-        let thisMovieCredit = item.credits.find(x => x.movieID.toString() === movieID.toString());
-        let characterData = null;
-        if (thisMovieCredit.characterName) {
-            let character = characters.find(char => char.name === thisMovieCredit.characterName);
-            if (character) {
-                characterData = {
-                    name: character.name,
-                    rawName: character.rawName,
-                    gender: character.gender,
-                    image: character.imageData ? character.imageData.url : '',
-                    role: character.credits.find(x => x.movieID.toString() === movieID.toString()).role,
+    let result = [];
+    for (let i = 0; i < staff.length; i++) {
+        for (let j = 0; j < staff[i].credits.length; j++) {
+            let thisMovieCredit = staff[i].credits[j];
+            if (thisMovieCredit.movieID.toString() === movieID.toString()) {
+                let characterData = null;
+                if (thisMovieCredit.characterName) {
+                    let character = characters.find(char => char.rawName === thisMovieCredit.characterName);
+                    if (character) {
+                        characterData = {
+                            id: character._id,
+                            name: character.rawName,
+                            gender: character.gender,
+                            image: character.imageData ? character.imageData.url : '',
+                            role: character.credits.find(x => x.movieID.toString() === movieID.toString()).role,
+                        }
+                    }
                 }
+
+                result.push({
+                    id: staff[i]._id,
+                    name: staff[i].rawName,
+                    gender: staff[i].gender,
+                    country: staff[i].country,
+                    image: staff[i].imageData ? staff[i].imageData.url : '',
+                    positions: thisMovieCredit.positions,
+                    characterData: characterData,
+                });
             }
         }
+    }
 
-        return {
-            name: item.name,
-            rawName: item.rawName,
-            gender: item.gender,
-            country: item.country,
-            image: item.imageData ? item.imageData.url : '',
-            positions: thisMovieCredit.positions,
-            characterData: characterData,
+    for (let i = 0; i < characters.length; i++) {
+        if (!result.find(item => item.characterData && item.characterData.name === characters[i].rawName)) {
+            result.push({
+                id: '',
+                name: '',
+                gender: '',
+                country: '',
+                image: '',
+                positions: ['Voice Actor'],
+                characterData: {
+                    id: characters[i]._id,
+                    name: characters[i].rawName,
+                    gender: characters[i].gender,
+                    image: characters[i].imageData ? characters[i].imageData.url : '',
+                    role: characters[i].credits.find(x => x.movieID.toString() === movieID.toString()).role,
+                },
+            });
         }
-    });
+    }
+
+    return result;
 }
 
 function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) {
     for (let i = 0; i < omdbApiFields.directorsNames.length; i++) {
         staffAndCharactersData.push({
-            name: utils.replaceSpecialCharacters(omdbApiFields.directorsNames[i].toLowerCase()),
+            name: utils.replaceSpecialCharacters(omdbApiFields.directorsNames[i]),
             rawName: omdbApiFields.directorsNames[i],
             gender: '',
             country: '',
@@ -130,7 +160,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     }
     for (let i = 0; i < omdbApiFields.writersNames.length; i++) {
         staffAndCharactersData.push({
-            name: utils.replaceSpecialCharacters(omdbApiFields.writersNames[i].toLowerCase()),
+            name: utils.replaceSpecialCharacters(omdbApiFields.writersNames[i]),
             rawName: omdbApiFields.writersNames[i],
             gender: '',
             country: '',
@@ -142,7 +172,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     if (!tvmazeApiFields) {
         for (let i = 0; i < omdbApiFields.actorsNames.length; i++) {
             staffAndCharactersData.push({
-                name: utils.replaceSpecialCharacters(omdbApiFields.actorsNames[i].toLowerCase()),
+                name: utils.replaceSpecialCharacters(omdbApiFields.actorsNames[i]),
                 rawName: omdbApiFields.actorsNames[i],
                 gender: '',
                 country: '',
@@ -155,241 +185,167 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     return staffAndCharactersData;
 }
 
-async function addOrUpdateStaffOrCharacters(movieID, movieName, moviePoster, staff_characters, type, characters) {
-    let newStaffCharactersArray = [];
-    let updateStaffCharactersArray = [];
-    let promiseArray = [];
-    for (let i = 0; i < staff_characters.length; i++) {
-        let promise = dbMethods.searchStaffAndCharactersDB(
-            type, staff_characters[i].name,
-            staff_characters[i].tvmazePersonID,
-            staff_characters[i].jikanPersonID
-        ).then(async (searchResult) => {
-            if (!searchResult) {
-                //new staff_character
-                newStaffCharactersArray.push(staff_characters[i]);
-            } else {
-                let fieldsUpdateResult = updateStaffAndCharactersFields(searchResult, staff_characters[i], type);
-                searchResult = fieldsUpdateResult.newFields;
-                if (!searchResult.imageData && searchResult.originalImages.length > 0) {
-                    let temp = await addImage([searchResult]);
-                    searchResult = temp[0];
-                    if (searchResult.imageData) {
-                        fieldsUpdateResult.fieldsUpdated = true;
-                    }
-                }
-                let creditUpdateResult = updateCredits(searchResult.credits, staff_characters[i].credits, type);
-                searchResult.credits = creditUpdateResult.prevCredits;
-                if (fieldsUpdateResult.fieldsUpdated || creditUpdateResult.creditsUpdated) {
-                    staff_characters[i] = searchResult;
-                    updateStaffCharactersArray.push(searchResult);
-                }
-            }
-        });
-        promiseArray.push(promise);
-        if (promiseArray.length > 10) {
-            await Promise.allSettled(promiseArray);
-            promiseArray = [];
-        }
-    }
-    await Promise.allSettled(promiseArray);
-
-    if (newStaffCharactersArray.length > 0) {
-        newStaffCharactersArray = await addImage(newStaffCharactersArray);
-        if (type === 'staff') {
-            newStaffCharactersArray = addCharacterDataToStaffData(movieID, movieName, moviePoster, newStaffCharactersArray, characters);
-        }
-        await dbMethods.insertToDB(type, newStaffCharactersArray, true);
-    }
-    if (updateStaffCharactersArray.length > 0) {
-        if (type === 'staff') {
-            updateStaffCharactersArray = addCharacterDataToStaffData(movieID, movieName, moviePoster, updateStaffCharactersArray, characters);
-        }
-        let promiseArray = [];
-        for (let i = 0; i < updateStaffCharactersArray.length; i++) {
-            let promise = dbMethods.updateByIdDB(type, updateStaffCharactersArray[i]._id, updateStaffCharactersArray[i]);
-            promiseArray.push(promise);
-            if (promiseArray.length > 10) {
-                await Promise.allSettled(promiseArray);
-                promiseArray = [];
-            }
-        }
-        await Promise.allSettled(promiseArray);
-    }
-    return staff_characters;
-}
-
-function addCharacterDataToStaffData(movieID, movieName, moviePoster, staff, characters) {
-    for (let i = 0; i < staff.length; i++) {
-        let thisMovieCredit = staff[i].credits.find(x => x.movieID.toString() === movieID.toString());
-        if (thisMovieCredit) {
-            let thisCharacter = characters.find(x => x.name === thisMovieCredit.characterName);
-            if (thisCharacter) {
-                thisMovieCredit.movieName = movieName;
-                thisMovieCredit.moviePoster = moviePoster || '';
-                thisMovieCredit.characterRole = thisCharacter.role || '';
-                thisMovieCredit.characterImage = thisCharacter.imageData ? thisCharacter.imageData.url : '';
-            }
-        }
-    }
-    return staff;
-}
-
-function updateStaffAndCharactersFields(prevFields, currentFields, type) {
-    let fieldsUpdated = false;
-    let newFields = {...prevFields};
-    if (!newFields.gender && currentFields.gender) {
-        newFields.gender = currentFields.gender;
-        fieldsUpdated = true;
-    }
-    if (!newFields.about && currentFields.about) {
-        newFields.about = currentFields.about;
-        fieldsUpdated = true;
-    }
-    if (!newFields.tvmazePersonID && currentFields.tvmazePersonID) {
-        newFields.tvmazePersonID = currentFields.tvmazePersonID;
-        fieldsUpdated = true;
-    }
-    if (!newFields.jikanPersonID && currentFields.jikanPersonID) {
-        newFields.jikanPersonID = currentFields.jikanPersonID;
-        fieldsUpdated = true;
-    }
-    if (type === 'staff') {
-        if (!newFields.country && currentFields.country) {
-            newFields.country = currentFields.country;
-            fieldsUpdated = true;
-        }
-        if (!newFields.birthday && currentFields.birthday) {
-            newFields.birthday = currentFields.birthday;
-            fieldsUpdated = true;
-        }
-        if (!newFields.deathday && currentFields.deathday) {
-            newFields.deathday = currentFields.deathday;
-            fieldsUpdated = true;
-        }
-    }
-    let prevLength = newFields.originalImages.length;
-    newFields.originalImages = utils.removeDuplicateElements([...newFields.originalImages, ...currentFields.originalImages]);
-    let newLength = newFields.originalImages.length;
-    if (prevLength !== newLength) {
-        fieldsUpdated = true;
-    }
-    return {newFields, fieldsUpdated};
-}
-
-async function addImage(dataArray) {
-    let promiseArray = [];
+async function addImageToStaffAndCharacters(dataArray) {
+    const promiseQueue = new pQueue.default({concurrency: 5});
     for (let i = 0; i < dataArray.length; i++) {
+        if (dataArray[i].imageData) {
+            continue;
+        }
         if (dataArray[i].originalImages.length > 0) {
-            let promise = cloudStorage.uploadCastImageToS3ByURl(
-                dataArray[i].name, dataArray[i].gender,
-                dataArray[i].tvmazePersonID, dataArray[i].jikanPersonID,
+            promiseQueue.add(() => cloudStorage.uploadCastImageToS3ByURl(
+                dataArray[i].name, dataArray[i].tvmazePersonID, dataArray[i].jikanPersonID,
                 dataArray[i].originalImages[0]).then(s3ImageData => {
+                dataArray[i].updateFlag = true;
                 dataArray[i].imageData = s3ImageData;
-            });
-            promiseArray.push(promise);
-            if (promiseArray.length > 10) {
-                await Promise.allSettled(promiseArray);
-                promiseArray = [];
-            }
+            }));
         }
     }
-    await Promise.allSettled(promiseArray);
+    await promiseQueue.onIdle();
     return dataArray;
 }
 
-function updateCredits(prevCredits, currentCredits, type) {
-    let creditsUpdated = false;
-    for (let j = 0; j < currentCredits.length; j++) {
-        let exist = false;
-        for (let k = 0; k < prevCredits.length; k++) {
-            if (prevCredits[k].movieID.toString() === currentCredits[j].movieID.toString()) {
-                exist = true;
-                if (type === 'staff') {
-                    if (
-                        (prevCredits[k].positions.length < currentCredits[j].positions.length) ||
-                        (prevCredits[k].characterName !== currentCredits[j].characterName && currentCredits[j].characterName) ||
-                        (prevCredits[k].moviePoster !== currentCredits[j].moviePoster) ||
-                        (prevCredits[k].characterImage !== currentCredits[j].characterImage)
-                    ) {
-                        creditsUpdated = true;
+async function fetchDataFromDB(staff_characters, type) {
+    const promiseQueue = new pQueue.default({concurrency: 10});
+    for (let i = 0; i < staff_characters.length; i++) {
+        promiseQueue.add(() => dbMethods.searchStaffAndCharactersDB(
+            type, staff_characters[i].name,
+            staff_characters[i].tvmazePersonID,
+            staff_characters[i].jikanPersonID
+        ).then(searchResult => {
+            if (!searchResult) {
+                //new staff/character
+                staff_characters[i].insertFlag = true;
+                staff_characters[i].updateFlag = true;
+            } else {
+                let fieldsUpdateResult = updateStaffAndCharactersFields(searchResult, staff_characters[i]);
+                staff_characters[i] = fieldsUpdateResult.fields;
+                staff_characters[i].insertFlag = false;
+                staff_characters[i].updateFlag = fieldsUpdateResult.isUpdated;
+            }
+        })).catch(error => saveError(error));
+    }
+    await promiseQueue.onIdle();
+    return staff_characters;
+}
+
+async function insertData(staff, characters) {
+    let newData = [];
+    for (let i = 0; i < staff.length; i++) {
+        let insertFlag = staff[i].insertFlag;
+        delete staff[i].insertFlag;
+        if (insertFlag) {
+            newData.push(staff[i]);
+        }
+    }
+    let insertResult = await dbMethods.insertToDB('staff', newData, true);
+    for (let i = 0; i < staff.length; i++) {
+        let findInsertResult = insertResult.find(item => item.name === staff[i].name && item.about === staff[i].about);
+        if (findInsertResult) {
+            staff[i]._id = findInsertResult._id;
+        }
+    }
+
+    newData = [];
+    for (let i = 0; i < characters.length; i++) {
+        let insertFlag = characters[i].insertFlag;
+        delete characters[i].insertFlag;
+        if (insertFlag) {
+            newData.push(characters[i]);
+        }
+    }
+    insertResult = await dbMethods.insertToDB('characters', newData, true);
+    for (let i = 0; i < characters.length; i++) {
+        let findInsertResult = insertResult.find(item => item.name === characters[i].name && item.about === characters[i].about);
+        if (findInsertResult) {
+            characters[i]._id = findInsertResult._id;
+        }
+    }
+
+    return {staff, characters};
+}
+
+async function updateData(staff, characters) {
+    const promiseQueue = new pQueue.default({concurrency: 10});
+    for (let i = 0; i < staff.length; i++) {
+        let updateFlag = staff[i].updateFlag;
+        delete staff[i].updateFlag;
+        if (updateFlag) {
+            promiseQueue.add(() => dbMethods.updateByIdDB('staff', staff[i]._id, staff[i]));
+        }
+    }
+    for (let i = 0; i < characters.length; i++) {
+        let updateFlag = characters[i].updateFlag;
+        delete characters[i].updateFlag;
+        if (updateFlag) {
+            promiseQueue.add(() => dbMethods.updateByIdDB('characters', characters[i]._id, characters[i]));
+        }
+    }
+    await promiseQueue.onIdle();
+    return {staff, characters};
+}
+
+function embedStaffAndCharacters(movieID, staff, characters) {
+    for (let i = 0; i < staff.length; i++) {
+        for (let j = 0; j < staff[i].credits.length; j++) {
+            let thisCredit = staff[i].credits[j];
+            if (thisCredit.movieID.toString() === movieID.toString()) {
+                let thisCharacter = characters.find(x => x.rawName === thisCredit.characterName);
+                if (thisCharacter) {
+                    if (!isEqual(thisCredit.characterID, thisCharacter._id) && isTrulyValue(thisCharacter._id)) {
+                        thisCredit.characterID = thisCharacter._id;
+                        staff[i].updateFlag = true;
                     }
-                } else {
-                    if (
-                        (prevCredits[k].role !== currentCredits[j].role && currentCredits[j].role) ||
-                        (prevCredits[k].actorName !== currentCredits[j].actorName && currentCredits[j].actorName)
-                    ) {
-                        creditsUpdated = true;
+                    let temp = thisCharacter.imageData ? thisCharacter.imageData.url : '';
+                    if (!isEqual(thisCredit.characterImage, temp) && isTrulyValue(temp)) {
+                        thisCredit.characterImage = temp;
+                        staff[i].updateFlag = true;
                     }
                 }
-                prevCredits[k] = currentCredits[j];
-                break;
             }
         }
-        if (!exist) {
-            prevCredits.push(currentCredits[j]);
-            creditsUpdated = true;
-        }
     }
-    return {prevCredits, creditsUpdated};
-}
 
-function mergeCharactersInfo(tvmazeCharacters, jikanCharacters) {
-    let result = [...tvmazeCharacters];
-    for (let i = 0; i < jikanCharacters.length; i++) {
-        let exist = false;
-        for (let j = 0; j < result.length; j++) {
-            if (result[j].name === jikanCharacters[i].name) {
-                exist = true;
-                result[j].gender = jikanCharacters[i].gender;
-                result[j].jikanPersonID = jikanCharacters[i].jikanPersonID;
-                result[j].about = jikanCharacters[i].about;
-                result[j].originalImages.push(...jikanCharacters[i].originalImages);
-                result[j].credits[0].role = jikanCharacters[i].credits[0].role;
-                break;
+    for (let i = 0; i < characters.length; i++) {
+        for (let j = 0; j < characters[i].credits.length; j++) {
+            let thisCredit = characters[i].credits[j];
+            if (thisCredit.movieID.toString() === movieID.toString()) {
+                let thisStaff = staff.find(x => x.rawName === thisCredit.actorName);
+                if (thisStaff) {
+                    if (!isEqual(thisCredit.actorID, thisStaff._id) && isTrulyValue(thisStaff._id)) {
+                        thisCredit.actorID = thisStaff._id;
+                        characters[i].updateFlag = true;
+                    }
+                    let temp = thisStaff.imageData ? thisStaff.imageData.url : '';
+                    if (!isEqual(thisCredit.actorImage, temp) && isTrulyValue(temp)) {
+                        thisCredit.actorImage = temp;
+                        characters[i].updateFlag = true;
+                    }
+                }
             }
         }
-        if (!exist) {
-            result.push(jikanCharacters[i]);
-        }
     }
-    return result;
+    return {staff, characters};
 }
 
-function getTvMazeActorsAndCharacters(movieID, tvmazeCast) {
+function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCast) {
     let tvmazeActors = [];
     for (let i = 0; i < tvmazeCast.length; i++) {
-        if (tvmazeCast[i].voice) {
-            continue;
-        }
-
-        let exist = false;
-        for (let j = 0; j < tvmazeActors.length; j++) {
-            if (utils.replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()) === tvmazeActors[j].name) {
-                exist = true;
-                let newCredit = {
-                    movieID: movieID,
-                    positions: ['Actor'],
-                    actorName: utils.replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
-                };
-                tvmazeActors[j].credits.push(newCredit);
-                break;
-            }
-        }
-        if (!exist) {
-            let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name : '';
-            let originalImages = [];
-            if (tvmazeCast[i].person.image) {
-                originalImages = [tvmazeCast[i].person.image.medium, tvmazeCast[i].person.image.original];
-            }
-            let person = getPersonModel(
-                tvmazeCast[i].person.name, tvmazeCast[i].person.gender, '',
-                tvmazeCast[i].person.id, 0,
-                countryName, tvmazeCast[i].person.birthday, tvmazeCast[i].person.deathday,
-                originalImages,
-                movieID, ['Actor'], utils.replaceSpecialCharacters(tvmazeCast[i].character.name.toLowerCase())
-            );
-            tvmazeActors.push(person);
+        let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name : '';
+        let originalImages = tvmazeCast[i].person.image ? [tvmazeCast[i].person.image.medium, tvmazeCast[i].person.image.original] : [];
+        let positions = tvmazeCast[i].voice ? ['Voice Actor'] : ['Actor'];
+        let newStaff = getPersonModel(
+            tvmazeCast[i].person.name, tvmazeCast[i].person.gender, '',
+            tvmazeCast[i].person.id, 0,
+            countryName, tvmazeCast[i].person.birthday, tvmazeCast[i].person.deathday,
+            originalImages,
+            movieID, movieName, moviePoster, positions, tvmazeCast[i].character.name, ''
+        );
+        //one actor play as multiple character
+        let findExistingStaff = tvmazeActors.find(item => item.name === newStaff.name);
+        if (findExistingStaff) {
+            findExistingStaff.credits.push(newStaff.credits[0]);
+        } else {
+            tvmazeActors.push(newStaff);
         }
     }
 
@@ -401,103 +357,192 @@ function getTvMazeActorsAndCharacters(movieID, tvmazeCast) {
         }
         let character = getCharacterModel(
             tvmazeCast[i].character.name, '', '',
-            tvmazeCast[i].character.id, 0,
-            originalImages,
-            movieID, '', utils.replaceSpecialCharacters(tvmazeCast[i].person.name.toLowerCase()),
+            tvmazeCast[i].character.id, 0, originalImages,
+            movieID, movieName, moviePoster, '', tvmazeCast[i].person.name,
         );
         tvmazeCharacters.push(character);
     }
     return {tvmazeActors, tvmazeCharacters};
 }
 
-async function getJikanStaff_voiceActors(movieID, jikanCharactersArray) {
+async function getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanCharactersArray, staff) {
     let voiceActors = [];
     for (let i = 0; i < jikanCharactersArray.length; i++) {
         let thisCharacterVoiceActors = jikanCharactersArray[i].voice_actors;
         for (let j = 0; j < thisCharacterVoiceActors.length; j++) {
             if (thisCharacterVoiceActors[j].language.toLowerCase() === 'japanese') {
                 thisCharacterVoiceActors[j].positions = ['Voice Actor'];
-                let temp = jikanCharactersArray[i].name.split(',').map(item => item.trim());
-                let characterName = [temp[1], temp[0]].join(' ').toLowerCase();
-                thisCharacterVoiceActors[j].characterName = utils.replaceSpecialCharacters(characterName);
+                thisCharacterVoiceActors[j].characterName = jikanCharactersArray[i].name.split(',').map(item => item.trim()).reverse().join(' ');
+                thisCharacterVoiceActors[j].characterRole = jikanCharactersArray[i].role;
                 voiceActors.push(thisCharacterVoiceActors[j]);
             }
         }
     }
-    return await getJikanStaff(movieID, voiceActors);
+    return await getJikanStaff(movieID, movieName, moviePoster, voiceActors, staff);
 }
 
-async function getJikanStaff(movieID, jikanStaffArray) {
+async function getJikanStaff(movieID, movieName, moviePoster, jikanStaffArray, staff) {
+    const promiseQueue = new pQueue.default({concurrency: 3});
     let result = [];
-    let promiseArray = [];
-    for (let i = 0; i < jikanStaffArray.length && i < 30; i++) {
-        let promise = getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
+    for (let i = 0; i < jikanStaffArray.length && i < maxStaffOrCharacterSize; i++) {
+        promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
             if (staffApiData) {
-                let gender = '';
-                if (staffApiData.about) {
-                    gender = staffApiData.about.match(/Gender:\s*Male/gi)
-                        ? 'Male'
-                        : staffApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
-                }
-                let originalImage = staffApiData.image_url.includes('/icon/') ? '' : staffApiData.image_url;
-                let person = getPersonModel(
-                    staffApiData.name, gender, staffApiData.about,
-                    0, staffApiData.mal_id,
-                    '', '', '',
-                    [originalImage],
-                    movieID, jikanStaffArray[i].positions, (jikanStaffArray[i].characterName || '')
+                let newStaff = makeNewStaffOrCharacterFromJikanData(
+                    movieID, movieName, moviePoster,
+                    jikanStaffArray[i], staffApiData, 'staff'
                 );
-                result.push(person);
-            }
-        });
-        promiseArray.push(promise);
-        if (promiseArray.length > 5) {
-            await Promise.allSettled(promiseArray);
-            promiseArray = [];
-        }
-    }
-    await Promise.allSettled(promiseArray);
-    return result;
-}
-
-async function getJikanCharaters(movieID, jikanCharatersArray) {
-    let result = [];
-    let promiseArray = [];
-    for (let i = 0; i < jikanCharatersArray.length && i < 30; i++) {
-        let promise = getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {
-            if (characterApiData) {
-                let gender = '';
-                if (characterApiData.about) {
-                    gender = characterApiData.about.match(/Gender:\s*Male/gi)
-                        ? 'Male'
-                        : characterApiData.about.match(/Gender:\s*Female/gi) ? 'Female' : '';
-                }
-                let originalImage = characterApiData.image_url.includes('/icon/') ? '' : characterApiData.image_url;
-                let voiceActors = jikanCharatersArray[i].voice_actors;
-                let voiceActorName = '';
-                for (let j = 0; j < voiceActors.length; j++) {
-                    if (voiceActors[j].language.toLowerCase() === 'japanese') {
-                        let temp = voiceActors[j].name.split(',').map(item => item.trim());
-                        let name = [temp[1], temp[0]].join(' ');
-                        voiceActorName = utils.replaceSpecialCharacters(name.toLowerCase());
-                        break;
+                //one actor play as multiple character
+                let existingStaffIndex = staff.findIndex(item => item.name === newStaff.name);
+                if (existingStaffIndex !== -1) {
+                    //merge data
+                    let fieldsUpdateResult = updateStaffAndCharactersFields(staff[existingStaffIndex], newStaff);
+                    staff[existingStaffIndex] = fieldsUpdateResult.fields;
+                } else {
+                    existingStaffIndex = result.findIndex(item => item.name === newStaff.name);
+                    if (existingStaffIndex !== -1) {
+                        //merge data
+                        let fieldsUpdateResult = updateStaffAndCharactersFields(result[existingStaffIndex], newStaff);
+                        result[existingStaffIndex] = fieldsUpdateResult.fields;
+                    } else {
+                        result.push(newStaff);
                     }
                 }
-                let character = getCharacterModel(
-                    characterApiData.name, gender, characterApiData.about,
-                    0, characterApiData.mal_id,
-                    [originalImage],
-                    movieID, jikanCharatersArray[i].role, voiceActorName,
-                );
-                result.push(character);
             }
-        });
-        promiseArray.push(promise);
-        if (promiseArray.length > 5) {
-            await Promise.allSettled(promiseArray);
-            promiseArray = [];
+        })).catch(error => saveError(error));
+    }
+    await promiseQueue.onIdle();
+    return result;
+}
+
+async function getJikanCharaters(movieID, movieName, moviePoster, jikanCharatersArray, characters) {
+    const promiseQueue = new pQueue.default({concurrency: 3});
+    let result = [];
+    for (let i = 0; i < jikanCharatersArray.length && i < maxStaffOrCharacterSize; i++) {
+        promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {
+            if (characterApiData) {
+                let newCharacter = makeNewStaffOrCharacterFromJikanData(
+                    movieID, movieName, moviePoster,
+                    jikanCharatersArray[i], characterApiData, 'character'
+                );
+                let existingCharacterIndex = characters.findIndex(item => item.name === newCharacter.name);
+                if (existingCharacterIndex !== -1) {
+                    //merge data
+                    let fieldsUpdateResult = updateStaffAndCharactersFields(characters[existingCharacterIndex], newCharacter);
+                    characters[existingCharacterIndex] = fieldsUpdateResult.fields;
+                } else {
+                    result.push(newCharacter);
+                }
+            }
+        })).catch(error => saveError(error));
+    }
+    await promiseQueue.onIdle();
+    return result;
+}
+
+function updateStaffAndCharactersFields(prevFields, currentFields) {
+    try {
+        let isUpdated = false;
+        let newFields = {...prevFields};
+        let keys = Object.keys(currentFields);
+        for (let i = 0; i < keys.length; i++) {
+            if (keys[i] === 'insertFlag' || keys[i] === 'updateFlag') {
+                newFields[keys[i]] = currentFields[keys[i]];
+                continue;
+            }
+            if (keys[i] === 'credits') {
+                let creditUpdateResult = updateCredits(prevFields.credits, currentFields.credits);
+                newFields.credits = creditUpdateResult.credits;
+                isUpdated = isUpdated || creditUpdateResult.isUpdated;
+            } else if (!isEqual(prevFields[keys[i]], currentFields[keys[i]]) && isTrulyValue(currentFields[keys[i]])) {
+                if (keys[i] === 'originalImages') {
+                    newFields.originalImages = utils.removeDuplicateElements([...prevFields.originalImages, ...currentFields.originalImages]);
+                } else {
+                    newFields[keys[i]] = currentFields[keys[i]];
+                }
+                isUpdated = true;
+            }
+        }
+        return {fields: newFields, isUpdated};
+    } catch (error) {
+        saveError(error);
+        return {fields: prevFields, isUpdated: false};
+    }
+}
+
+function updateCredits(prevCredits, newCredits) {
+    let isUpdated = false;
+    let credits = [...prevCredits];
+    let keys = Object.keys(newCredits[0]);
+    for (let i = 0; i < newCredits.length; i++) {
+        let exist = false;
+        for (let j = 0; j < credits.length; j++) {
+            if (
+                credits[j].movieID.toString() === newCredits[i].movieID.toString() &&
+                (
+                    !credits[j].characterName || credits[j].characterName === newCredits[i].characterName
+                )
+            ) {
+                for (let k = 0; k < keys.length; k++) {
+                    if (!isEqual(credits[j][keys[k]], newCredits[i][keys[k]]) && isTrulyValue(newCredits[i][keys[k]])) {
+                        credits[j][keys[k]] = newCredits[i][keys[k]];
+                        isUpdated = true;
+                    }
+                }
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            credits.push(newCredits[i]);
+            isUpdated = true;
         }
     }
-    await Promise.allSettled(promiseArray);
-    return result;
+    return {credits, isUpdated};
+}
+
+function isTrulyValue(value) {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+    if (typeof value === 'number') {
+        return value > 0;
+    }
+    return !isEmpty(value);
+}
+
+function makeNewStaffOrCharacterFromJikanData(movieID, movieName, moviePoster, SemiData, fullApiData, type) {
+    let gender = '';
+    if (fullApiData.about) {
+        fullApiData.about = fullApiData.about.replace(
+            'No voice actors have been added to this character. Help improve our database by searching for a voice actor, and adding this character to their roles .',
+            ''
+        );
+        gender = fullApiData.about.match(/Gender:\s*Male|(^|\s)he\s/gi)
+            ? 'Male'
+            : fullApiData.about.match(/Gender:\s*Female|(^|\s)she\s/gi) ? 'Female' : '';
+    }
+    let originalImage = fullApiData.image_url.includes('/icon/') ? '' : fullApiData.image_url;
+    if (type === 'staff') {
+        return getPersonModel(
+            fullApiData.name, gender, fullApiData.about,
+            0, fullApiData.mal_id,
+            '', '', '', [originalImage],
+            movieID, movieName, moviePoster, SemiData.positions,
+            (SemiData.characterName || ''), (SemiData.characterRole || '')
+        );
+    } else {
+        let voiceActors = SemiData.voice_actors;
+        let actorName = '';
+        for (let j = 0; j < voiceActors.length; j++) {
+            if (voiceActors[j].language.toLowerCase() === 'japanese') {
+                actorName = voiceActors[j].name.split(',').map(item => item.trim()).reverse().join(' ');
+                break;
+            }
+        }
+        return getCharacterModel(
+            fullApiData.name, gender, fullApiData.about,
+            0, fullApiData.mal_id, [originalImage],
+            movieID, movieName, moviePoster, SemiData.role, actorName,
+        );
+    }
 }

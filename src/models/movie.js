@@ -89,10 +89,12 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             metacritic: 0,
             myAnimeList: 0
         },
-        staffAndCharactersData: [],
-        actors: [],
-        directors: [],
-        writers: [],
+        actorsAndCharacters: [],
+        staff: {
+            directors: [],
+            writers: [],
+            others: [],
+        },
         awards: "",
         //jikan api data
         animeType: '',

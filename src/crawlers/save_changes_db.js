@@ -47,7 +47,7 @@ export default async function save(title, type, year, sourceData) {
 
         let apiData = await apiDataUpdate(db_data, downloadLinks, type, poster, sourceName);
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName);
-        if (db_data.sources.find((item) => item.sourceName === sourceName) !== -1) {
+        if (db_data.sources.find((item) => item.sourceName === sourceName)) {
             let linkUpdate = handleDownloadLinksUpdate(db_data, pageLink, persianSummary, type, downloadLinks, sourceName);
             await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData);
         } else if (downloadLinks.length > 0) {
@@ -333,10 +333,7 @@ async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
-            staffAndCharactersData: temp.staffAndCharactersData,
-            actors: temp.actors,
-            directors: temp.directors,
-            writers: temp.writers,
+            ...temp,
             castUpdateDate: new Date(),
         }
     }

@@ -40,13 +40,13 @@ const s3 = new S3Client({
     },
 });
 
-export async function uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0) {
+export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
         }
         if (retryCounter === 0) {
-            let s3CastImage = await checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID);
+            let s3CastImage = await checkCastImageExist(name, tvmazePersonID, jikanPersonID);
             if (s3CastImage) {
                 return {
                     url: s3CastImage,
@@ -59,7 +59,7 @@ export async function uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jik
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
-        let fileName = getFileName(name, gender, tvmazePersonID, jikanPersonID, 'jpg');
+        let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
         let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
         const params = {
             ContentType: response.headers["content-type"],
@@ -80,7 +80,7 @@ export async function uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jik
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadCastImageToS3ByURl(name, gender, tvmazePersonID, jikanPersonID, retryCounter);
+            return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter);
         }
         saveError(error);
         return null;
@@ -252,8 +252,8 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
     }
 }
 
-export async function checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID, retryCounter = 0) {
-    let fileName = getFileName(name, gender, tvmazePersonID, jikanPersonID, 'jpg');
+export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter = 0) {
+    let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
     let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
@@ -270,7 +270,7 @@ export async function checkCastImageExist(name, gender, tvmazePersonID, jikanPer
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkCastImageExist(name, gender, tvmazePersonID, jikanPersonID, retryCounter);
+            return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
