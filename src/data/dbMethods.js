@@ -88,6 +88,20 @@ export async function updateMovieCollectionDB(updateFields) {
     }
 }
 
+export async function resetMonthLikeAndView() {
+    try {
+        let collection = await getCollection('movies');
+        await collection.updateMany({}, {
+            $set: {
+                like_month: 0,
+                view_month: 0,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 export async function updateByIdDB(collectionName, id, updateFields) {
     try {
         let collection = await getCollection(collectionName);
@@ -158,28 +172,6 @@ export async function updateSourcesObjDB(updateFields) {
     try {
         let collection = await getCollection('sources');
         await collection.findOneAndUpdate({title: 'sources'}, {
-            $set: updateFields
-        });
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
-export async function getStatusObjDB() {
-    try {
-        let statesCollection = await getCollection('states');
-        return await statesCollection.findOne({name: 'states'});
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
-export async function updateStatusObjDB(updateFields) {
-    try {
-        let statesCollection = await getCollection('states');
-        await statesCollection.findOneAndUpdate({name: 'states'}, {
             $set: updateFields
         });
     } catch (error) {

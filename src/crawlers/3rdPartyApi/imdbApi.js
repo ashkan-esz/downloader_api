@@ -13,17 +13,6 @@ let imdbApiKey = {apikey: '', reachedMax: true};
 export async function updateImdbData() {
     imdbApiKey = {apikey: config.imdbApiKey.trim(), reachedMax: false};
 
-    let states = await dbMethods.getStatusObjDB();
-    if (!states) {
-        return;
-    }
-    //update data each 12 hour
-    let now = new Date();
-    let imdbDataUpdateDate = new Date(states.imdbDataUpdateDate);
-    if (utils.getDatesBetween(now, imdbDataUpdateDate).hours < 12) {
-        return;
-    }
-
     // check reached daily limit
     let testApiLimit = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
     if (testApiLimit === null) {
@@ -61,8 +50,6 @@ export async function updateImdbData() {
         await dbMethods.updateMovieCollectionDB({'rank.boxOffice': -1});
         await addBoxOfficeData();
     }
-
-    await dbMethods.updateStatusObjDB({imdbDataUpdateDate: now});
 }
 
 async function add_Top_popular(type, mode) {
@@ -83,22 +70,25 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const insertPromiseQueue = new pQueue.default({concurrency: 5});
+
     for (let i = 0; i < top_popular.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
         if (titleDataFromDB) {
-            await update_top_popular_title(titleDataFromDB, top_popular[i], type, mode, Number(top_popular[i].rank));
+            updatePromiseQueue.add(() => update_top_popular_title(titleDataFromDB, top_popular[i], type, mode, Number(top_popular[i].rank)));
         } else {
             //title doesnt exist in db , add it
             let titleDataFromIMDB = await getTitleDataFromIMDB(top_popular[i].id);
             if (titleDataFromIMDB) {
                 let status = type.includes('movie') ? 'ended' : 'unknown';
-                promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, status, 'waiting', mode, Number(top_popular[i].rank), top_popular[i]));
+                insertPromiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, status, 'waiting', mode, Number(top_popular[i].rank), top_popular[i]));
             }
         }
     }
-    await promiseQueue.onEmpty();
-    await promiseQueue.onIdle();
+
+    await updatePromiseQueue.onIdle();
+    await insertPromiseQueue.onIdle();
 }
 
 async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mode, rank) {
@@ -148,19 +138,22 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const insertPromiseQueue = new pQueue.default({concurrency: 5});
+
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);
         if (titleDataFromDB) {
-            await update_inTheaters_comingSoon_title(titleDataFromDB, theatres_soon[i], type, mode, (i + 1));
+            updatePromiseQueue.add(() => update_inTheaters_comingSoon_title(titleDataFromDB, theatres_soon[i], type, mode, (i + 1)));
         } else {
             //title doesnt exist in db , add it
             let titleDataFromIMDB = theatres_soon[i];
-            promiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, 'unknown', mode, mode, (i + 1), theatres_soon[i]));
+            insertPromiseQueue.add(() => addImdbTitleToDB(titleDataFromIMDB, type, 'unknown', mode, mode, (i + 1), theatres_soon[i]));
         }
     }
-    await promiseQueue.onEmpty();
-    await promiseQueue.onIdle();
+
+    await updatePromiseQueue.onIdle();
+    await insertPromiseQueue.onIdle();
 }
 
 async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData, type, mode, rank) {
@@ -181,7 +174,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
         titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
         updateFields.rating = titleDataFromDB.rating;
     }
-    if (titleDataFromDB.releaseState !== mode) {
+    if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== mode) {
         updateFields.releaseState = mode;
     }
 
@@ -304,7 +297,6 @@ async function addBoxOfficeData() {
 }
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
-    //todo : fix error : Cannot read properties of null (reading 'replace')
     let imdbPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
     if (imdbPoster) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
@@ -387,6 +379,9 @@ async function handleApiCall(url) {
                 )) {
                 imdbApiKey.reachedMax = true;
                 Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                return null;
+            }
+            if (data.errorMessage) {
                 return null;
             }
             return data;

@@ -1,10 +1,8 @@
 import {getDatesBetween} from "./utils";
-import {getSourcesObjDB, getStatusObjDB, updateMovieCollectionDB, updateStatusObjDB} from "../data/dbMethods";
+import {getSourcesObjDB} from "../data/dbMethods";
 import {getSourcesArray} from "./sourcesArray";
 import {domainChangeHandler} from "./domainChangeHandler";
-import {updateJikanData} from "./3rdPartyApi/jikanApi";
-import {updateImdbData} from "./3rdPartyApi/imdbApi";
-import Sentry from "@sentry/node";
+import * as Sentry from "@sentry/node";
 import {saveError} from "../error/saveError";
 import {flushCachedData} from "../api/middlewares/moviesCache";
 
@@ -24,9 +22,6 @@ export async function crawler(sourceName, crawlMode = 0, {
         flushCachedData();
         isCrawling = true;
         let startTime = new Date();
-        await handleDataBaseStates();
-        await updateImdbData();
-        await updateJikanData();
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
@@ -54,8 +49,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         }
 
         isCrawling = false;
-        let endTime = new Date();
-        let message = `crawling done in : ${getDatesBetween(endTime, startTime).seconds}s`;
+        let message = `crawling done in : ${getDatesBetween(new Date(), startTime).seconds}s`;
         Sentry.captureMessage(message);
         flushCachedData();
         return message;
@@ -63,26 +57,5 @@ export async function crawler(sourceName, crawlMode = 0, {
         await saveError(error);
         isCrawling = false;
         return 'error';
-    }
-}
-
-async function handleDataBaseStates() {
-    //todo : check agenda
-    try {
-        let states = await getStatusObjDB();
-        if (!states) {
-            return;
-        }
-        let now = new Date();
-        let lastMonthlyResetDate = new Date(states.lastMonthlyResetDate);
-        if (now.getDate() === 1 && getDatesBetween(now, lastMonthlyResetDate).days > 29) {
-            await updateMovieCollectionDB({
-                like_month: 0,
-                view_month: 0,
-            });
-            await updateStatusObjDB({lastMonthlyResetDate: now});
-        }
-    } catch (error) {
-        saveError(error);
     }
 }

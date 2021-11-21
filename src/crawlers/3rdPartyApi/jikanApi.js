@@ -9,7 +9,6 @@ import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
 
-
 let isRunning = false;
 let callTime = 0;
 let multiCounter = 0;
@@ -125,7 +124,7 @@ export function getJikanApiFields(data) {
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
                 animeType: data.animeType,
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
-                duration: (data.duration === "Unknown" || data.duration === "1 min per ep")
+                duration: (data.duration === "Unknown" || data.duration === "1 min per ep" || data.duration.match(/\d+ sec/g))
                     ? ''
                     : utils.convertHourToMinute(data.duration.replace('per ep', '').trim()),
                 releaseDay: (data.broadcast === null || data.broadcast === 'Unknown') ? '' : data.broadcast.split(' ')[0].replace(/s$/g, '').toLowerCase(),
@@ -352,30 +351,17 @@ function getTitlesFromData(fullData) {
 }
 
 export async function updateJikanData() {
-    let states = await dbMethods.getStatusObjDB();
-    if (!states) {
-        return;
-    }
-
-    //update data each 12 hour
-    let now = new Date();
-    let jikanDataUpdateDate = new Date(states.jikanDataUpdateDate);
-    if (utils.getDatesBetween(now, jikanDataUpdateDate).hours < 12) {
-        return;
-    }
-
     //reset rank
     await dbMethods.updateMovieCollectionDB({'rank.animeTopComingSoon': -1});
     await add_comingSoon_topAiring_Titles('comingSoon', 2);
     //reset rank
     await dbMethods.updateMovieCollectionDB({'rank.animeTopAiring': -1});
     await add_comingSoon_topAiring_Titles('topAiring', 2);
-
-    await dbMethods.updateStatusObjDB({jikanDataUpdateDate: now});
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const insertPromiseQueue = new pQueue.default({concurrency: 5});
 
     for (let k = 1; k <= numberOfPage; k++) {
         let url = (mode === 'comingSoon')
@@ -395,15 +381,15 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
                 castUpdateDate: 1,
             });
             if (titleDataFromDB) {
-                promiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode));
+                updatePromiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode));
             } else {
-                promiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode));
+                insertPromiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode));
             }
         }
     }
 
-    await promiseQueue.onEmpty();
-    await promiseQueue.onIdle();
+    await updatePromiseQueue.onIdle();
+    await insertPromiseQueue.onIdle();
 }
 
 async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData, mode) {
@@ -411,7 +397,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
 
     if (mode === 'comingSoon') {
         titleDataFromDB.rank.animeTopComingSoon = semiJikanData.rank;
-        if (titleDataFromDB.releaseState !== 'comingSoon') {
+        if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== 'comingSoon') {
             updateFields.releaseState = 'comingSoon';
         }
     } else {

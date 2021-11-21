@@ -9,8 +9,7 @@ import helmet from "helmet";
 import compression from "compression";
 // import jwt from "express-jwt";
 // import jwksRsa from "jwks-rsa";
-import cron from "node-cron";
-import {crawler} from "./crawlers/crawler";
+import {loadAgenda} from './loaders';
 //---------------Routes-----------------
 import routes from './api/routes';
 //--------------middleware--------------
@@ -31,17 +30,13 @@ app.use(cors());
 app.use(compression());
 //--------------------------------------
 //--------------------------------------
+await loadAgenda();
+
+//--------------------------------------
+//--------------------------------------
 
 app.use('/crawler', routes.crawlersRouters);
 app.use('/movies', routes.moviesRouters);
-
-
-cron.schedule('0 */3 * * *', async () => {
-    await crawler('', 0);
-}, {
-    scheduled: true,
-    timezone: "Asia/Tehran",
-});
 
 
 app.use(Sentry.Handlers.errorHandler({

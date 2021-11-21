@@ -186,7 +186,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
 }
 
 async function addImageToStaffAndCharacters(dataArray) {
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const promiseQueue = new pQueue.default({concurrency: 10});
     for (let i = 0; i < dataArray.length; i++) {
         if (dataArray[i].imageData) {
             continue;
@@ -205,7 +205,7 @@ async function addImageToStaffAndCharacters(dataArray) {
 }
 
 async function fetchDataFromDB(staff_characters, type) {
-    const promiseQueue = new pQueue.default({concurrency: 10});
+    const promiseQueue = new pQueue.default({concurrency: 20});
     for (let i = 0; i < staff_characters.length; i++) {
         promiseQueue.add(() => dbMethods.searchStaffAndCharactersDB(
             type, staff_characters[i].name,
@@ -265,7 +265,7 @@ async function insertData(staff, characters) {
 }
 
 async function updateData(staff, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 10});
+    const promiseQueue = new pQueue.default({concurrency: 20});
     for (let i = 0; i < staff.length; i++) {
         let updateFlag = staff[i].updateFlag;
         delete staff[i].updateFlag;
@@ -382,7 +382,7 @@ async function getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanC
 }
 
 async function getJikanStaff(movieID, movieName, moviePoster, jikanStaffArray, staff) {
-    const promiseQueue = new pQueue.default({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanStaffArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
@@ -415,7 +415,7 @@ async function getJikanStaff(movieID, movieName, moviePoster, jikanStaffArray, s
 }
 
 async function getJikanCharaters(movieID, movieName, moviePoster, jikanCharatersArray, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 3});
+    const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanCharatersArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {

@@ -1,0 +1,53 @@
+import config from "../config";
+import {resetMonthLikeAndView} from "../data/dbMethods";
+import Agenda from "agenda";
+import {crawler} from "../crawlers/crawler";
+import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi";
+import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi";
+import {saveError} from "../error/saveError";
+
+let agenda = new Agenda({
+    db: {address: config.databaseURL, collection: 'agendaJobs'},
+    processEvery: '1 minute',
+});
+
+const jobTypes = [];
+
+export async function startAgenda() {
+    try {
+        agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
+            await crawler('', 0);
+        });
+
+        agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
+            await updateImdbData();
+            await updateJikanData();
+        });
+
+        agenda.define("reset month likes", async (job) => {
+            await resetMonthLikeAndView();
+        });
+
+        for (let i = 0; i < jobTypes.length; i++) {
+            require("../jobs/" + jobTypes[i])(agenda);
+        }
+
+        await agenda.start();
+        await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
+        await agenda.every("0 */12 * * *", "update jikan/imdb data");
+        await agenda.every("0 1 1 * *", "reset month likes");
+
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+export default agenda;
+
+process.on("SIGTERM", graceful);
+process.on("SIGINT", graceful);
+
+async function graceful() {
+    await agenda.stop();
+    process.exit(0);
+}
