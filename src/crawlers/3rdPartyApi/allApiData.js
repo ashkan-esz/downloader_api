@@ -163,7 +163,7 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
             updateFields = {...updateFields, ...temp};
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
-                if (!db_data.trailer_s3 && !db_data.trailers && jikanApiFields.youtubeTrailer) {
+                if (!db_data.trailer_s3 && jikanApiFields.youtubeTrailer) {
                     let trailerUploadFields = await handleTrailerUpload(db_data, jikanApiFields.youtubeTrailer);
                     db_data = {...db_data, ...trailerUploadFields};
                     updateFields = {...updateFields, ...trailerUploadFields};

@@ -462,7 +462,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                 jikanID: titleDataFromDB.jikanID,
             },
         };
-        let castAndCharacters = await getCastAndCharacterFields(titleDataFromDB._id, titleDataFromDB, allApiData, titleDataFromDB.type);
+        let castAndCharacters = await getCastAndCharacterFields(titleDataFromDB._id, titleDataFromDB, allApiData);
         if (castAndCharacters) {
             updateFields = {...updateFields, ...castAndCharacters};
         }
@@ -513,7 +513,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
             let allApiData = {
                 jikanApiFields,
             };
-            let castAndCharacters = await getCastAndCharacterFields(insertedId, titleModel, allApiData, titleModel.type);
+            let castAndCharacters = await getCastAndCharacterFields(insertedId, titleModel, allApiData);
             if (castAndCharacters) {
                 await dbMethods.updateByIdDB('movies', insertedId, castAndCharacters);
             }
@@ -604,10 +604,8 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
     }
 }
 
-async function getCastAndCharacterFields(insertedId, titleData, allApiData, type) {
-    if (type.includes('anime')) {
-        await connectNewAnimeToRelatedTitles(titleData, insertedId);
-    }
+async function getCastAndCharacterFields(insertedId, titleData, allApiData) {
+    await connectNewAnimeToRelatedTitles(titleData, insertedId);
     let poster = titleData.posters.length > 0 ? titleData.posters[0].link : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {

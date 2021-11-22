@@ -229,38 +229,33 @@ async function fetchDataFromDB(staff_characters, type) {
 }
 
 async function insertData(staff, characters) {
-    let newData = [];
+    const promiseQueue = new pQueue.default({concurrency: 20});
+
     for (let i = 0; i < staff.length; i++) {
         let insertFlag = staff[i].insertFlag;
         delete staff[i].insertFlag;
         if (insertFlag) {
-            newData.push(staff[i]);
-        }
-    }
-    let insertResult = await dbMethods.insertToDB('staff', newData, true);
-    for (let i = 0; i < staff.length; i++) {
-        let findInsertResult = insertResult.find(item => item.name === staff[i].name && item.about === staff[i].about);
-        if (findInsertResult) {
-            staff[i]._id = findInsertResult._id;
+            promiseQueue.add(() => dbMethods.insertToDB('staff', staff[i]).then(insertedId => {
+                if (insertedId) {
+                    staff[i]._id = insertedId;
+                }
+            }));
         }
     }
 
-    newData = [];
     for (let i = 0; i < characters.length; i++) {
         let insertFlag = characters[i].insertFlag;
         delete characters[i].insertFlag;
         if (insertFlag) {
-            newData.push(characters[i]);
-        }
-    }
-    insertResult = await dbMethods.insertToDB('characters', newData, true);
-    for (let i = 0; i < characters.length; i++) {
-        let findInsertResult = insertResult.find(item => item.name === characters[i].name && item.about === characters[i].about);
-        if (findInsertResult) {
-            characters[i]._id = findInsertResult._id;
+            promiseQueue.add(() => dbMethods.insertToDB('characters', characters[i]).then(insertedId => {
+                if (insertedId) {
+                    characters[i]._id = insertedId;
+                }
+            }));
         }
     }
 
+    await promiseQueue.onIdle();
     return {staff, characters};
 }
 

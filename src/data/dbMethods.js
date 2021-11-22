@@ -127,19 +127,11 @@ export async function findOneAndUpdateMovieCollection(searchQuery, updateFields)
 //-----------------------------------
 //-----------------------------------
 
-export async function insertToDB(collectionName, dataToInsert, isMany = false) {
+export async function insertToDB(collectionName, dataToInsert) {
     try {
         let collection = await getCollection(collectionName);
-        if (isMany) {
-            if (dataToInsert.length === 0) {
-                return [];
-            }
-            let result = await collection.insertMany(dataToInsert);
-            return result.ops;
-        } else {
-            let result = await collection.insertOne(dataToInsert);
-            return result.insertedId;
-        }
+        let result = await collection.insertOne(dataToInsert);
+        return result.insertedId;
     } catch (error) {
         saveError(error);
         return null;

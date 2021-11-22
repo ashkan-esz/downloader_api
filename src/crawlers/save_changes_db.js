@@ -249,17 +249,17 @@ async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpda
             }
         }
 
-        if (db_data.trailer_s3 && db_data.trailers && db_data.trailers.length > 1) {
-            //remove trailer from s3
-            let fileName = db_data.trailer_s3.split('/').pop();
-            let removeS3Trailer = await deleteTrailerFromS3(fileName);
-            if (removeS3Trailer) {
-                db_data.trailer_s3 = '';
-                updateFields.trailer_s3 = '';
-                db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer'));
-                updateFields.trailers = db_data.trailers;
-            }
-        }
+        // if (db_data.trailer_s3 && db_data.trailers && db_data.trailers.length > 1) {
+        //     //remove trailer from s3
+        //     let fileName = db_data.trailer_s3.split('/').pop();
+        //     let removeS3Trailer = await deleteTrailerFromS3(fileName);
+        //     if (removeS3Trailer) {
+        //         db_data.trailer_s3 = '';
+        //         updateFields.trailer_s3 = '';
+        //         db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer'));
+        //         updateFields.trailers = db_data.trailers;
+        //     }
+        // }
 
         if (Object.keys(updateFields).length > 0) {
             await updateByIdDB('movies', db_data._id, updateFields);
@@ -329,7 +329,9 @@ function checkEqualLinks(link1, link2) {
 }
 
 async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
-    let poster = titleData.posters.length > 0 ? titleData.posters[0].link : '';
+    let poster = titleData.poster_s3
+        ? titleData.poster_s3.url
+        : titleData.posters.length > 0 ? titleData.posters[0].link : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
