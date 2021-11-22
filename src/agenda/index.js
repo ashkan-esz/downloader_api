@@ -11,7 +11,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = [];
+const jobTypes = ["email"];
 
 export async function startAgenda() {
     try {
@@ -29,7 +29,8 @@ export async function startAgenda() {
         });
 
         for (let i = 0; i < jobTypes.length; i++) {
-            require("../jobs/" + jobTypes[i])(agenda);
+            let job = await import("../jobs/" + jobTypes[i]);
+            job.default(agenda);
         }
 
         await agenda.start();

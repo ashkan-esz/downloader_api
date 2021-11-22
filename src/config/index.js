@@ -21,6 +21,10 @@ export default {
     remoteBrowser: {
         endpoint: process.env.REMOTE_BROWSER_ENDPOINT,
         password: process.env.REMOTE_BROWSER_PASSWORD,
+    },
+    email: {
+        username: process.env.EMAIL_USERNAME,
+        password: process.env.EMAIL_PASSWORD,
     }
 }
 

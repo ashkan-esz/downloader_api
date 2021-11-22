@@ -34,6 +34,8 @@ To run this project, you will need to add the following environment variables to
 | **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinit. like OMDB_API_KEY1 | `true` |
 | **`PRINT_ERRORS`**        |  | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`** |  | `false` |
+| **`EMAIL_USERNAME`** |  | `true` |
+| **`EMAIL_PASSWORD`** |  | `true` |
 
 
 ## Future updates

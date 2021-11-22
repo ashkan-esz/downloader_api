@@ -38,6 +38,7 @@
     "lodash.isequal": "^4.5.0",
     "mongodb": "^4.2.0",
     "node-cache": "^5.1.2",
+    "nodemailer": "^6.7.1",
     "p-queue": "^6.6.2",
     "persian-rex": "^2.3.3",
     "words-to-numbers": "^1.5.1",
