@@ -467,7 +467,13 @@ export function getDatesBetween(date1, date2) {
     let minutes = seconds / 60;
     let hours = minutes / 60;
     let days = hours / 24;
-    return {milliseconds, seconds, minutes, hours, days};
+    return {
+        milliseconds,
+        seconds,
+        minutes: minutes.toFixed(4),
+        hours: hours.toFixed(4),
+        days: days.toFixed(4),
+    };
 }
 
 export function getMonthNumberByMonthName(monthName) {

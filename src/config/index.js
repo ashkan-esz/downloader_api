@@ -25,6 +25,12 @@ export default {
     email: {
         username: process.env.EMAIL_USERNAME,
         password: process.env.EMAIL_PASSWORD,
+    },
+    jwt: {
+        accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+        refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
+        accessTokenExpire: '1h',
+        refreshTokenExpire: '180d',
     }
 }
 

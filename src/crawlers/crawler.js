@@ -49,7 +49,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         }
 
         isCrawling = false;
-        let message = `crawling done in : ${getDatesBetween(new Date(), startTime).seconds}s`;
+        let message = `crawling done in : ${getDatesBetween(new Date(), startTime).minutes}min`;
         Sentry.captureMessage(message);
         flushCachedData();
         return message;

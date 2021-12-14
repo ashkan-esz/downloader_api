@@ -36,6 +36,8 @@ To run this project, you will need to add the following environment variables to
 | **`CRAWLER_CONCURRENCY`** |  | `false` |
 | **`EMAIL_USERNAME`** |  | `true` |
 | **`EMAIL_PASSWORD`** |  | `true` |
+| **`ACCESS_TOKEN_SECRET`** |  | `true` |
+| **`REFRESH_TOKEN_SECRET`** |  | `true` |
 
 
 ## Future updates

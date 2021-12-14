@@ -2,14 +2,16 @@ import config from "./config";
 import * as Sentry from "@sentry/node";
 import Tracing from "@sentry/tracing";
 import express from "express";
-const app = express();
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 // import jwt from "express-jwt";
 // import jwksRsa from "jwks-rsa";
 import {loadAgenda} from './loaders';
+//--------------------------------------
+const app = express();
 //---------------Routes-----------------
 import routes from './api/routes';
 //--------------middleware--------------
@@ -26,10 +28,12 @@ app.use(Sentry.Handlers.tracingHandler());
 app.use(helmet());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(cors());
 app.use(compression());
 //--------------------------------------
 //--------------------------------------
+
 await loadAgenda();
 
 //--------------------------------------
@@ -37,10 +41,13 @@ await loadAgenda();
 
 app.use('/crawler', routes.crawlersRouters);
 app.use('/movies', routes.moviesRouters);
+app.use('/users', routes.usersRouters);
 
 
 app.use(Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
+        // todo : check what this do , why not send error to sentry
+        console.log(error);
         // Capture all 404 and 500+ errors
         return error.status === 404 || error.status >= 500;
     },

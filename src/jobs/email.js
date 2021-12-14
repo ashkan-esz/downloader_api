@@ -12,14 +12,14 @@ const transporter = nodemailer.createTransport({
 });
 
 export default function (agenda) {
-    agenda.define("registration email", async (job) => {
+    agenda.define("registration email", {concurrency: 100}, async (job) => {
         try {
-            let {email, username} = job.attrs.data;
+            let {email, rawUsername} = job.attrs.data;
             const mailOptions = {
                 from: 'downloaderapi@gmail.com',
                 to: email,
                 subject: 'Thanks for registering',
-                text: `user ${username}, welcome to our wonderful app`,
+                text: `user ${rawUsername}, welcome to our wonderful app`,
             };
             let result = await transporter.sendMail(mailOptions);
             return {delivered: 1, status: 'ok'};
