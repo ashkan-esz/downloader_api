@@ -61,6 +61,24 @@ export async function updateUserByID(userId, updateFields) {
     }
 }
 
+export async function verifyUserEmail(token) {
+    try {
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate({emailVerifyToken: token}, {
+            $set: {
+                emailVerified: true,
+            },
+            $unset: {
+                emailVerifyToken: '',
+            }
+        });
+        return result && result.value;
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
 export async function updateUserAuthTokens(userId, refreshToken, isLoginMethod = false) {
     try {
         let collection = await getCollection('users');

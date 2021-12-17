@@ -40,6 +40,8 @@ const s3 = new S3Client({
     },
 });
 
+export const defaultProfileImage = `https://serverstatic.${config.cloudStorage.websiteEndPoint}/defaultProfile.png`;
+
 export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0) {
     try {
         if (!originalUrl) {

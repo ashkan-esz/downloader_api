@@ -10,15 +10,10 @@ export async function signup(req, res) {
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
         });
     }
-    if (req.isAuth) {
-        return res.status(403).json({
-            code: 403,
-            errorMessage: 'Logout first',
-        });
-    }
 
     let {username, password, email} = req.body;
-    let signupResult = await usersServices.signup(username, email, password);
+    const host = req.protocol + '://' + req.get('host');
+    let signupResult = await usersServices.signup(username, email, password, host);
     if (signupResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             signupResult.data.refreshToken = signupResult.refreshToken;
@@ -40,13 +35,6 @@ export async function login(req, res) {
         return res.status(400).json({
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
-        });
-    }
-
-    if (req.isAuth) {
-        return res.status(403).json({
-            code: 403,
-            errorMessage: 'Logout first',
         });
     }
 
@@ -104,4 +92,17 @@ export async function getUserProfile(req, res) {
     delete user.password;
     delete user.refreshToken;
     return res.json(user);
+}
+
+export async function sendVerifyEmail(req, res) {
+    const host = req.protocol + '://' + req.get('host');
+    let verifyResult = await usersServices.sendVerifyEmail(req.userData, host);
+    res.statusCode = verifyResult.data.code;
+    return res.json(verifyResult.data);
+}
+
+export async function verifyEmail(req, res) {
+    let verifyResult = await usersServices.verifyEmail(req.params.token);
+    res.statusCode = verifyResult.data.code;
+    return res.json(verifyResult.data);
 }

@@ -1,15 +1,16 @@
 import config from "../config";
-import {findUser, addUser, updateUserAuthTokens} from "../data/usersDbMethods";
+import {findUser, addUser, updateUserAuthTokens, verifyUserEmail} from "../data/usersDbMethods";
 import {userModel} from "../models/user";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda";
 import jwt from "jsonwebtoken";
+import {v4 as uuidv4} from 'uuid';
 import {addToBlackList} from "../api/middlewares/isAuth";
 import {saveError} from "../error/saveError";
 
 //todo : forget password
 
-export async function signup(username, email, password) {
+export async function signup(username, email, password, host) {
     try {
         let findUserResult = await findUser(username, email);
         if (findUserResult) {
@@ -21,8 +22,10 @@ export async function signup(username, email, password) {
             }
         }
 
-        let hashedPassword = await bcrypt.hash(password, 10);
-        let userData = userModel(username, email, hashedPassword);
+        let hashedPassword = await bcrypt.hash(password, 12);
+        let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
+        emailVerifyToken = emailVerifyToken.replace(/\//g, '');
+        let userData = userModel(username, email, hashedPassword, emailVerifyToken);
         let userId = await addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, 'Server error, try again later');
@@ -30,11 +33,16 @@ export async function signup(username, email, password) {
         const user = getJwtPayload(userData, userId);
         const tokens = generateAuthTokens(user);
         await updateUserAuthTokens(userId, tokens.refreshToken);
-        await agenda.schedule('in 10 seconds', 'registration email', {rawUsername: userData.rawUsername, email: email});
+        await agenda.schedule('in 5 seconds', 'registration email', {
+            rawUsername: userData.rawUsername,
+            email,
+            emailVerifyToken,
+            host,
+        });
         return generateServiceResult({
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
-            username: userData.username,
+            username: userData.rawUsername,
             userId: userData._id,
         }, 201, '', tokens);
     } catch (error) {
@@ -57,7 +65,7 @@ export async function login(username_email, password) {
             return generateServiceResult({
                 accessToken: tokens.accessToken,
                 accessToken_expire: tokens.accessToken_expire,
-                username: userData.username,
+                username: userData.rawUsername,
                 userId: userData._id,
             }, 200, '', tokens);
         } else {
@@ -78,9 +86,10 @@ export async function getToken(userData, prevRefreshToken) {
             return generateServiceResult({
                 accessToken: tokens.accessToken,
                 accessToken_expire: tokens.accessToken_expire,
+                username: userData.rawUsername,
             }, 200, '', tokens);
         } else {
-            return generateServiceResult({}, 403, 'Invalid RefreshToken');
+            return generateServiceResult({}, 401, 'Invalid RefreshToken');
         }
     } catch (error) {
         saveError(error);
@@ -102,7 +111,7 @@ export async function logout(userData, prevRefreshToken, prevAccessToken) {
             }
 
             await updateUserAuthTokens(userData._id, '');
-            return generateServiceResult({accessToken: ''}, 204, '');
+            return generateServiceResult({accessToken: ''}, 200, '');
         } else {
             return generateServiceResult({}, 403, 'Invalid RefreshToken');
         }
@@ -112,10 +121,41 @@ export async function logout(userData, prevRefreshToken, prevAccessToken) {
     }
 }
 
+export async function sendVerifyEmail(userData, host) {
+    //todo : make force timeout between requests
+    try {
+        //todo : send right now
+        await agenda.schedule('in 5 seconds', 'verify email', {
+            rawUsername: userData.rawUsername,
+            email: userData.email,
+            emailVerifyToken: userData.emailVerifyToken,
+            host,
+        });
+
+        return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+}
+
+export async function verifyEmail(token) {
+    try {
+        let verify = await verifyUserEmail(token);
+        if (verify) {
+            return generateServiceResult({message: 'email verified'}, 200, '');
+        }
+        return generateServiceResult({}, 404, 'Invalid Token');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+}
+
 function getJwtPayload(userData, userId = '') {
     return {
         userId: (userData._id || userId).toString(),
-        rawUsername: userData.rawUsername,
+        username: userData.rawUsername,
         role: userData.role,
     };
 }

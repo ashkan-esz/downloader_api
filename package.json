@@ -44,6 +44,7 @@
     "nodemailer": "^6.7.1",
     "p-queue": "^6.6.2",
     "persian-rex": "^2.3.3",
+    "uuid": "^8.3.2",
     "words-to-numbers": "^1.5.1",
     "ytdl-core": "^4.9.1"
   },

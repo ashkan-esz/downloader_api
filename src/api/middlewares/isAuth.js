@@ -22,10 +22,7 @@ export function addToBlackList(jwtKey, cause, duration = null) {
 }
 
 export async function isAuth_refreshToken(req, res, next) {
-    let refreshToken = req.cookies.refreshToken;
-    if (!refreshToken && req.query.noCookie === 'true') {
-        refreshToken = req.headers['refreshtoken'];
-    }
+    let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
         return res.sendStatus(401);
     }
@@ -43,53 +40,21 @@ export async function isAuth_refreshToken(req, res, next) {
     }
 }
 
-//todo : merge attachAuthFlag
-
-export async function isAuth(req, res, next) {
-    let refreshToken = req.cookies.refreshToken;
-    if (!refreshToken && req.query.noCookie === 'true') {
-        refreshToken = req.headers['refreshtoken'];
-    }
-    if (!refreshToken) {
-        return res.sendStatus(401);
-    }
-    if (refreshTokenBlackList.has(refreshToken)) {
-        return res.sendStatus(403);
-    }
-    const authHeader = req.headers['authorization'];
-    let accessToken = authHeader && authHeader.split(' ')[1];
-    if (!accessToken) {
-        return res.sendStatus(401);
-    }
-    try {
-        let accessTokenVerifyResult = jwt.verify(accessToken, config.jwt.accessTokenSecret);
-        if (accessTokenVerifyResult) {
-            req.accessToken = accessToken;
-            req.refreshToken = refreshToken;
-            req.jwtUserData = accessTokenVerifyResult;
-            return next();
-        } else {
-            return res.sendStatus(403);
-        }
-    } catch (error) {
-        return res.sendStatus(403);
-    }
-}
-
 export async function attachAuthFlag(req, res, next) {
-    let refreshToken = req.cookies.refreshToken;
-    if (!refreshToken && req.query.noCookie === 'true') {
-        refreshToken = req.headers['refreshtoken'];
-    }
+    req.isAuth = false;
+    let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
+        req.authCode = 401;
         return next();
     }
     if (refreshTokenBlackList.has(refreshToken)) {
+        req.authCode = 401;
         return next();
     }
     const authHeader = req.headers['authorization'];
     let accessToken = authHeader && authHeader.split(' ')[1];
     if (!accessToken) {
+        req.authCode = 401;
         return next();
     }
     try {
@@ -100,8 +65,21 @@ export async function attachAuthFlag(req, res, next) {
             req.refreshToken = refreshToken;
             req.jwtUserData = accessTokenVerifyResult;
             req.isAuth = true;
+        } else {
+            req.authCode = 403;
         }
     } catch (error) {
+        req.authCode = 403;
+    }
+    return next();
+}
+
+export async function blockAuthorized(req, res, next) {
+    if (req.isAuth) {
+        return res.status(403).json({
+            code: 403,
+            errorMessage: 'Logout first',
+        });
     }
     return next();
 }
