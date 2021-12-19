@@ -104,8 +104,7 @@ function getPoster($) {
         for (let i = 0; i < $img.length; i++) {
             let parent = $img[i].parent;
             if (parent.name === 'a' && $($img[i]).hasClass('wp-post-image')) {
-                let href = $img[i].attribs['data-lazy-src'];
-                //todo : fix : Cannot read properties of undefined (reading 'includes')
+                let href = $img[i].attribs['src'];
                 if (href.includes('uploads')) {
                     return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
                 }
