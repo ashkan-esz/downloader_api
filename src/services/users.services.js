@@ -1,5 +1,5 @@
 import config from "../config";
-import {findUser, addUser, updateUserAuthTokens, verifyUserEmail} from "../data/usersDbMethods";
+import {findUser, addUser, updateUserAuthTokens, verifyUserEmail, updateEmailToken} from "../data/usersDbMethods";
 import {userModel} from "../models/user";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda";
@@ -25,7 +25,8 @@ export async function signup(username, email, password, host) {
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
-        let userData = userModel(username, email, hashedPassword, emailVerifyToken);
+        let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
+        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire);
         let userId = await addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, 'Server error, try again later');
@@ -122,17 +123,22 @@ export async function logout(userData, prevRefreshToken, prevAccessToken) {
 }
 
 export async function sendVerifyEmail(userData, host) {
-    //todo : make force timeout between requests
     try {
-        //todo : send right now
-        await agenda.schedule('in 5 seconds', 'verify email', {
-            rawUsername: userData.rawUsername,
-            email: userData.email,
-            emailVerifyToken: userData.emailVerifyToken,
-            host,
-        });
+        let newEmailToken = await bcrypt.hash(uuidv4(), 12);
+        newEmailToken = newEmailToken.replace(/\//g, '');
+        let newEmailToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
+        let updateResult = updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
+        if (updateResult) {
+            await agenda.now('verify email', {
+                rawUsername: userData.rawUsername,
+                email: userData.email,
+                emailVerifyToken: newEmailToken,
+                host,
+            });
 
-        return generateServiceResult({}, 200, '');
+            return generateServiceResult({}, 200, '');
+        }
+        return generateServiceResult({}, 400, 'Cannot find user email');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');
@@ -145,7 +151,7 @@ export async function verifyEmail(token) {
         if (verify) {
             return generateServiceResult({message: 'email verified'}, 200, '');
         }
-        return generateServiceResult({}, 404, 'Invalid Token');
+        return generateServiceResult({}, 404, 'Invalid/Stale Token');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');

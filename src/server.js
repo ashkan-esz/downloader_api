@@ -7,8 +7,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-// import jwt from "express-jwt";
-// import jwksRsa from "jwks-rsa";
+import rateLimit from "express-rate-limit";
 import {loadAgenda} from './loaders';
 //--------------------------------------
 const app = express();
@@ -23,6 +22,7 @@ Sentry.init({
     ],
     tracesSampleRate: 1.0,
 });
+app.set('trust proxy', 1);
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 app.use(helmet());
@@ -31,6 +31,10 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(cors());
 app.use(compression());
+app.use(rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 500 // limit each IP to 500 requests per windowMs
+}));
 //--------------------------------------
 //--------------------------------------
 

@@ -61,15 +61,37 @@ export async function updateUserByID(userId, updateFields) {
     }
 }
 
+export async function updateEmailToken(userId, token, expire) {
+    try {
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate({
+            _id: new mongodb.ObjectId(userId),
+        }, {
+            $set: {
+                emailVerifyToken: token,
+                emailVerifyToken_expire: expire,
+            },
+        });
+        return result && result.value;
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
 export async function verifyUserEmail(token) {
     try {
         let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate({emailVerifyToken: token}, {
+        let result = await collection.findOneAndUpdate({
+            emailVerifyToken: token,
+            emailVerifyToken_expire: {$gte: Date.now()},
+        }, {
             $set: {
                 emailVerified: true,
             },
             $unset: {
                 emailVerifyToken: '',
+                emailVerifyToken_expire: '',
             }
         });
         return result && result.value;

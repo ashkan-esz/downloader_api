@@ -2,7 +2,7 @@ import {defaultProfileImage} from "../data/cloudStorage.js";
 import {} from "../crawlers/utils";
 
 
-export function userModel(username, email, password, emailVerifyToken) {
+export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire) {
     return {
         name: '',
         lastName: '',
@@ -12,6 +12,7 @@ export function userModel(username, email, password, emailVerifyToken) {
         email: email.toLowerCase(),
         emailVerified: false,
         emailVerifyToken: emailVerifyToken,
+        emailVerifyToken_expire: emailVerifyToken_expire,
         password: password,
         about: '',
         bio: '',

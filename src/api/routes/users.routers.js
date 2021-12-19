@@ -20,10 +20,10 @@ router.post('/logout', middlewares.auth.attachAuthFlag, middlewares.attachCurren
 router.get('/profile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
 
 //users/sendVerifyEmail
-router.get('/sendVerifyEmail', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);
+router.get('/sendVerifyEmail', middlewares.rateLimit, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);
 
 //users/verifyEmail/:token
-router.get('/verifyEmail/:token', usersControllers.verifyEmail);
+router.get('/verifyEmail/:token', middlewares.rateLimit, usersControllers.verifyEmail);
 
 
 export default router;
