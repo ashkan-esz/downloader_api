@@ -22,6 +22,7 @@ export function addToBlackList(jwtKey, cause, duration = null) {
 }
 
 export async function isAuth_refreshToken(req, res, next) {
+    req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
         return res.sendStatus(401);
@@ -31,6 +32,7 @@ export async function isAuth_refreshToken(req, res, next) {
         if (refreshTokenVerifyResult) {
             req.refreshToken = refreshToken;
             req.jwtUserData = refreshTokenVerifyResult;
+            req.isAuth = true;
             return next();
         } else {
             return res.sendStatus(403);

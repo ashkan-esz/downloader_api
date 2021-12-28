@@ -1,6 +1,7 @@
 import getCollection from './mongoDB';
 import mongodb from 'mongodb';
 import {saveError} from "../error/saveError";
+import {getNewSession} from "../models/user.js";
 
 
 export async function findUser(username, email) {
@@ -101,19 +102,74 @@ export async function verifyUserEmail(token) {
     }
 }
 
-export async function updateUserAuthTokens(userId, refreshToken, isLoginMethod = false) {
+export async function setTokenForNewUser(userId, refreshToken) {
     try {
         let collection = await getCollection('users');
         let updateFields = {
-            refreshToken: refreshToken,
-        };
-        if (isLoginMethod) {
-            updateFields.loginDate = new Date();
+            'activeSessions.0.refreshToken': refreshToken,
         }
         await collection.findOneAndUpdate({_id: userId}, {
             $set: updateFields,
         });
     } catch (error) {
         saveError(error);
+    }
+}
+
+export async function setTokenForNewDevice(userId, deviceInfo, refreshToken) {
+    try {
+        let collection = await getCollection('users');
+        let newDeviceData = getNewSession(deviceInfo, refreshToken);
+        let result = await collection.findOneAndUpdate({_id: userId}, {
+            $push: {
+                activeSessions: newDeviceData,
+            }
+        });
+        return result.value ? result.value : 'cannot find user';
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function updateUserAuthToken(userId, deviceInfo, refreshToken, prevRefreshToken) {
+    try {
+        let collection = await getCollection('users');
+        let sessionData = getNewSession(deviceInfo, refreshToken);
+        let updateFields = {
+            "activeSessions.$[item].appName": sessionData.appName,
+            "activeSessions.$[item].appVersion": sessionData.appVersion,
+            "activeSessions.$[item].deviceOs": sessionData.os,
+            "activeSessions.$[item].deviceModel": sessionData.deviceModel,
+            "activeSessions.$[item].lastUseDate": sessionData.lastUseDate,
+            "activeSessions.$[item].refreshToken": sessionData.refreshToken,
+        };
+        const options = {
+            arrayFilters: [
+                {
+                    "item.refreshToken": prevRefreshToken,
+                },
+            ],
+        };
+        let result = await collection.findOneAndUpdate({_id: new mongodb.ObjectId(userId)}, {$set: updateFields}, options);
+        return result.value ? result.value : 'cannot find device';
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function removeAuthToken(userId, prevRefreshToken) {
+    try {
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate({_id: new mongodb.ObjectId(userId)}, {
+            $pull: {
+                activeSessions: {refreshToken: prevRefreshToken},
+            }
+        });
+        return result.value ? result.value : 'cannot find device';
+    } catch (error) {
+        saveError(error);
+        return null;
     }
 }

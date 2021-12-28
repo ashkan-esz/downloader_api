@@ -1,5 +1,6 @@
-import {usersServices} from '../services';
 import {validationResult} from 'express-validator';
+import {getClientIp} from 'request-ip';
+import {usersServices} from '../services';
 
 
 export async function signup(req, res) {
@@ -11,9 +12,11 @@ export async function signup(req, res) {
         });
     }
 
-    let {username, password, email} = req.body;
+    const ip = getClientIp(req) || '';
+    let {username, password, email, deviceInfo} = req.body;
+    deviceInfo = deviceInfo || {};
     const host = req.protocol + '://' + req.get('host');
-    let signupResult = await usersServices.signup(username, email, password, host);
+    let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, host);
     if (signupResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             signupResult.data.refreshToken = signupResult.refreshToken;
@@ -38,8 +41,10 @@ export async function login(req, res) {
         });
     }
 
-    let {username_email, password} = req.body;
-    let loginResult = await usersServices.login(username_email, password);
+    const ip = getClientIp(req) || '';
+    let {username_email, password, deviceInfo} = req.body;
+    deviceInfo = deviceInfo || {};
+    let loginResult = await usersServices.login(username_email, password, deviceInfo, ip);
     if (loginResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             loginResult.data.refreshToken = loginResult.refreshToken;
@@ -56,7 +61,11 @@ export async function login(req, res) {
 }
 
 export async function getToken(req, res) {
-    let getTokenResult = await usersServices.getToken(req.userData, req.refreshToken);
+    if (!req.isAuth && req.authCode) {
+        return res.sendStatus(req.authCode);
+    }
+    let deviceInfo = req.body.deviceInfo || {};
+    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, req.refreshToken);
     if (getTokenResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             getTokenResult.data.refreshToken = getTokenResult.refreshToken;
@@ -73,7 +82,10 @@ export async function getToken(req, res) {
 }
 
 export async function logout(req, res) {
-    let getTokenResult = await usersServices.logout(req.userData, req.refreshToken, req.accessToken);
+    if (!req.isAuth && req.authCode) {
+        return res.sendStatus(req.authCode);
+    }
+    let getTokenResult = await usersServices.logout(req.jwtUserData, req.refreshToken, req.accessToken);
     if (getTokenResult.data.code >= 200 && getTokenResult.data.code < 300) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
@@ -88,9 +100,12 @@ export async function logout(req, res) {
 }
 
 export async function getUserProfile(req, res) {
+    //todo : refactor
     let user = req.userData;
     delete user.password;
-    delete user.refreshToken;
+    delete user.activeSessions;
+    delete user.emailVerifyToken;
+    delete user.emailVerifyToken_expire;
     return res.json(user);
 }
 

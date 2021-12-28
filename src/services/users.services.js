@@ -1,5 +1,12 @@
 import config from "../config";
-import {findUser, addUser, updateUserAuthTokens, verifyUserEmail, updateEmailToken} from "../data/usersDbMethods";
+import {
+    findUser,
+    addUser,
+    setTokenForNewUser,
+    updateUserAuthToken,
+    verifyUserEmail,
+    updateEmailToken, setTokenForNewDevice, removeAuthToken,
+} from "../data/usersDbMethods";
 import {userModel} from "../models/user";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda";
@@ -7,10 +14,13 @@ import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {addToBlackList} from "../api/middlewares/isAuth";
 import {saveError} from "../error/saveError";
+import getIpLocation from "../extraServices/ip/index.js";
 
 //todo : forget password
 
-export async function signup(username, email, password, host) {
+//todo : forceLogout
+
+export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
         let findUserResult = await findUser(username, email);
         if (findUserResult) {
@@ -22,18 +32,19 @@ export async function signup(username, email, password, host) {
             }
         }
 
+        deviceInfo.IpLocation = ip ? getIpLocation(ip) : '';
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire);
+        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo);
         let userId = await addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, 'Server error, try again later');
         }
         const user = getJwtPayload(userData, userId);
         const tokens = generateAuthTokens(user);
-        await updateUserAuthTokens(userId, tokens.refreshToken);
+        await setTokenForNewUser(userId, tokens.refreshToken);
         await agenda.schedule('in 5 seconds', 'registration email', {
             rawUsername: userData.rawUsername,
             email,
@@ -52,8 +63,7 @@ export async function signup(username, email, password, host) {
     }
 }
 
-export async function login(username_email, password) {
-    //todo : send email on login
+export async function login(username_email, password, deviceInfo, ip) {
     try {
         let userData = await findUser(username_email, username_email);
         if (!userData) {
@@ -62,7 +72,17 @@ export async function login(username_email, password) {
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
             const tokens = generateAuthTokens(user);
-            await updateUserAuthTokens(userData._id, tokens.refreshToken, true);
+            deviceInfo.IpLocation = ip ? getIpLocation(ip) : '';
+            let result = await setTokenForNewDevice(userData._id, deviceInfo, tokens.refreshToken);
+            if (!result) {
+                return generateServiceResult({}, 500, 'Server error, try again later');
+            } else if (result === 'cannot find user') {
+                return generateServiceResult({}, 400, 'Cannot find user');
+            }
+            await agenda.schedule('in 5 seconds', 'login email', {
+                deviceInfo,
+                email: result.email,
+            });
             return generateServiceResult({
                 accessToken: tokens.accessToken,
                 accessToken_expire: tokens.accessToken_expire,
@@ -78,44 +98,50 @@ export async function login(username_email, password) {
     }
 }
 
-export async function getToken(userData, prevRefreshToken) {
+export async function getToken(jwtUserData, deviceInfo, prevRefreshToken) {
     try {
-        if (prevRefreshToken === userData.refreshToken) {
-            const user = getJwtPayload(userData);
-            const tokens = generateAuthTokens(user);
-            await updateUserAuthTokens(userData._id, tokens.refreshToken);
-            return generateServiceResult({
-                accessToken: tokens.accessToken,
-                accessToken_expire: tokens.accessToken_expire,
-                username: userData.rawUsername,
-            }, 200, '', tokens);
-        } else {
+        const user = {
+            userId: jwtUserData.userId,
+            username: jwtUserData.username,
+            role: jwtUserData.role,
+        };
+        const tokens = generateAuthTokens(user);
+        let result = await updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
+        if (!result) {
+            return generateServiceResult({}, 500, 'Server error, try again later');
+        } else if (result === 'cannot find device') {
             return generateServiceResult({}, 401, 'Invalid RefreshToken');
         }
+        return generateServiceResult({
+            accessToken: tokens.accessToken,
+            accessToken_expire: tokens.accessToken_expire,
+            username: result.rawUsername,
+            profileImages: result.profileImages,
+        }, 200, '', tokens);
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');
     }
 }
 
-export async function logout(userData, prevRefreshToken, prevAccessToken) {
+export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
     try {
-        if (prevRefreshToken === userData.refreshToken) {
-            try {
-                let decodedJwt = jwt.decode(prevAccessToken);
-                if (decodedJwt) {
-                    let jwtExpireLeft = (decodedJwt.exp * 1000 - Date.now()) / 1000;
-                    addToBlackList(userData.refreshToken, 'logout', jwtExpireLeft);
-                }
-            } catch (error2) {
-                saveError(error2);
-            }
-
-            await updateUserAuthTokens(userData._id, '');
-            return generateServiceResult({accessToken: ''}, 200, '');
-        } else {
+        let result = await removeAuthToken(jwtUserData.userId, prevRefreshToken);
+        if (!result) {
+            return generateServiceResult({}, 500, 'Server error, try again later');
+        } else if (result === 'cannot find device') {
             return generateServiceResult({}, 403, 'Invalid RefreshToken');
         }
+        try {
+            let decodedJwt = jwt.decode(prevAccessToken);
+            if (decodedJwt) {
+                let jwtExpireLeft = (decodedJwt.exp * 1000 - Date.now()) / 1000;
+                addToBlackList(result.refreshToken, 'logout', jwtExpireLeft);
+            }
+        } catch (error2) {
+            saveError(error2);
+        }
+        return generateServiceResult({accessToken: ''}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');

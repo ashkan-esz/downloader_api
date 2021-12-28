@@ -11,13 +11,13 @@ router.post('/signup', middlewares.auth.attachAuthFlag, middlewares.auth.blockAu
 router.post('/login', middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized, middlewares.validation.loginValidation, usersControllers.login);
 
 //users/getToken
-router.post('/getToken', middlewares.auth.isAuth_refreshToken, middlewares.attachCurrentUser, usersControllers.getToken);
+router.post('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.getToken);
 
 //users/logout
-router.post('/logout', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.logout);
+router.post('/logout', middlewares.auth.attachAuthFlag, usersControllers.logout);
 
-//users/profile
-router.get('/profile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
+//users/myProfile
+router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
 
 //users/sendVerifyEmail
 router.get('/sendVerifyEmail', middlewares.rateLimit, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);

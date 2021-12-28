@@ -70,6 +70,10 @@ Give a ⭐️ if you like this project!
 
 - [downloader_app](https://github.com/ashkan-esz/downloader_app/)
 
+##Extra
+
+This product includes IP2Location LITE data available from http://www.ip2location.com.
+
 ## Author
 
 **Ashkan Esz**

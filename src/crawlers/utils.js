@@ -470,9 +470,9 @@ export function getDatesBetween(date1, date2) {
     return {
         milliseconds,
         seconds,
-        minutes: minutes.toFixed(4),
-        hours: hours.toFixed(4),
-        days: days.toFixed(4),
+        minutes: minutes.toFixed(2),
+        hours: hours.toFixed(2),
+        days: days.toFixed(2),
     };
 }
 

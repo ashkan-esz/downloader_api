@@ -30,6 +30,33 @@ export default function (agenda) {
         }
     });
 
+    agenda.define("login email", {concurrency: 50}, async (job) => {
+        try {
+            let {deviceInfo, email} = job.attrs.data;
+            const mailOptions = {
+                from: 'downloaderapi@gmail.com',
+                to: email,
+                subject: 'New login detected',
+                text: `new device login ---> ${deviceInfo.appName}/${deviceInfo.appVersion} , ${deviceInfo.deviceModel}/${deviceInfo.os} from ${deviceInfo.IpLocation}`,
+                html: `
+                <div>
+                    <p>new device login: \n<p/>
+                    <p>appName: ${deviceInfo.appName} \n<p/>
+                    <p>appVersion: ${deviceInfo.appVersion} \n<p/>
+                    <p>deviceModel: ${deviceInfo.os} \n<p/>
+                    <p>deviceModel: ${deviceInfo.deviceModel} \n<p/>
+                    <p>IpLocation: ${deviceInfo.IpLocation} \n<p/>
+                </div>
+                `,
+            };
+            let result = await transporter.sendMail(mailOptions);
+            return {delivered: 1, status: 'ok'};
+        } catch (error) {
+            saveError(error);
+            return {delivered: 0, status: 'error'};
+        }
+    });
+
     agenda.define("verify email", {concurrency: 50}, async (job) => {
         try {
             let {email, rawUsername, emailVerifyToken, host} = job.attrs.data;
@@ -50,6 +77,7 @@ export default function (agenda) {
     });
 
     agenda.define("reset password", async (job) => {
+        // todo :
         // Etc
     });
 }
