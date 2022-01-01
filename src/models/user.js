@@ -2,7 +2,7 @@ import {defaultProfileImage} from "../data/cloudStorage.js";
 import {} from "../crawlers/utils";
 
 
-export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo) {
+export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId) {
     return {
         username: username.toLowerCase(),
         rawUsername: username,
@@ -16,7 +16,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         profileImages: [],
         defaultProfile: defaultProfileImage,
         activeSessions: [
-            getNewSession(deviceInfo, ''),
+            getNewSession(deviceInfo, deviceId, ''),
         ],
         friends: [],
         favorites: {
@@ -36,13 +36,14 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
     }
 }
 
-export function getNewSession(deviceInfo, refreshToken) {
+export function getNewSession(deviceInfo, deviceId, refreshToken) {
     return ({
         appName: deviceInfo.appName || '',
         appVersion: deviceInfo.appVersion || '',
         deviceOs: deviceInfo.os || '',
         deviceModel: deviceInfo.deviceModel || '',
-        IpLocation: deviceInfo.IpLocation || '',
+        ipLocation: deviceInfo.ipLocation || '',
+        deviceId: deviceId,
         loginDate: new Date(),
         lastUseDate: new Date(),
         refreshToken: refreshToken || '',

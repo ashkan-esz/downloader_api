@@ -16,8 +16,17 @@ router.post('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.
 //users/logout
 router.post('/logout', middlewares.auth.attachAuthFlag, usersControllers.logout);
 
+//users/forceLogout
+router.post('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, usersControllers.forceLogout);
+
+//users/forceLogoutAll
+router.post('/forceLogoutAll', middlewares.auth.attachAuthFlag, usersControllers.forceLogoutAll);
+
 //users/myProfile
 router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
+
+//users/myProfile
+router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserActiveSessions);
 
 //users/sendVerifyEmail
 router.get('/sendVerifyEmail', middlewares.rateLimit, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);

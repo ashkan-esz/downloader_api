@@ -37,7 +37,7 @@ export default function (agenda) {
                 from: 'downloaderapi@gmail.com',
                 to: email,
                 subject: 'New login detected',
-                text: `new device login ---> ${deviceInfo.appName}/${deviceInfo.appVersion} , ${deviceInfo.deviceModel}/${deviceInfo.os} from ${deviceInfo.IpLocation}`,
+                text: `new device login ---> ${deviceInfo.appName}/${deviceInfo.appVersion} , ${deviceInfo.deviceModel}/${deviceInfo.os} from ${deviceInfo.ipLocation}`,
                 html: `
                 <div>
                     <p>new device login: \n<p/>
@@ -45,7 +45,7 @@ export default function (agenda) {
                     <p>appVersion: ${deviceInfo.appVersion} \n<p/>
                     <p>deviceModel: ${deviceInfo.os} \n<p/>
                     <p>deviceModel: ${deviceInfo.deviceModel} \n<p/>
-                    <p>IpLocation: ${deviceInfo.IpLocation} \n<p/>
+                    <p>ipLocation: ${deviceInfo.ipLocation} \n<p/>
                 </div>
                 `,
             };

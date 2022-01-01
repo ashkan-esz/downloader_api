@@ -1,3 +1,8 @@
 {
-  "ignore": ["test.js","todo.js","logs/*"]
+  "ignore": [
+    "test.js",
+    "todo.js",
+    "logs/*",
+    "*.md"
+  ]
 }

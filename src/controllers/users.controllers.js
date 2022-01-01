@@ -99,14 +99,34 @@ export async function logout(req, res) {
     return res.json(getTokenResult.data);
 }
 
+export async function forceLogout(req, res) {
+    if (!req.isAuth && req.authCode) {
+        return res.sendStatus(req.authCode);
+    }
+    let getTokenResult = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
+    res.statusCode = getTokenResult.data.code;
+    return res.json(getTokenResult.data);
+}
+
+export async function forceLogoutAll(req, res) {
+    if (!req.isAuth && req.authCode) {
+        return res.sendStatus(req.authCode);
+    }
+    let getTokenResult = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
+    res.statusCode = getTokenResult.data.code;
+    return res.json(getTokenResult.data);
+}
+
 export async function getUserProfile(req, res) {
-    //todo : refactor
-    let user = req.userData;
-    delete user.password;
-    delete user.activeSessions;
-    delete user.emailVerifyToken;
-    delete user.emailVerifyToken_expire;
-    return res.json(user);
+    let result = await usersServices.getUserProfile(req.userData, req.refreshToken);
+    res.statusCode = result.data.code;
+    return res.json(result.data);
+}
+
+export async function getUserActiveSessions(req, res) {
+    let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
+    res.statusCode = result.data.code;
+    return res.json(result.data);
 }
 
 export async function sendVerifyEmail(req, res) {

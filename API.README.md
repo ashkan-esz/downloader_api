@@ -1,24 +1,36 @@
 ## Api parameters
 
-| param name                 |  Values  | Description                                          | Required |
-| -------------------------- | -------- | ---------------------------------------------------- | -------- |
-| **`types`**                 | _movie_, _serial_, _anime_movie_, _anime_serial_ | join values by `-` example: `movie-anime_serial`   | `true` |
-| **`dataLevel`**         | _low_, _medium_, _high_|  |`true` |
-| **`sortBase`** | _animeTopComingSoon_, _animeTopAiring_, _comingSoon_, _inTheaters_, _boxOffice_, _top_, _popular_, | | `true` |
-| **`years`** | numbers in range | example: 2010-2021 | `true` |
-| **`imdbScores`** | number in range 0 to 10 | example: 5-9 | `true` |
-| **`malScores`** | number in range 0 to 10 | example: 5-9 | `true` |
-| **`page`** | number start from 1 | paginating result , 12 item exists in page | `true` |
-| **`dayNumber`** | number in range 0-6 | number of day in week | `true` |
-| **`title`** | string | name of movie/staff/character to search | `true` |
-| **`id`** | mongodb id object | id of movie/staff/character to get | `true` |
-| **`password`** | string | password of crawler starter api | `true` |
+| param name                 |  Values  | Description                                      | Required |
+| -------------------------- | -------- |--------------------------------------------------| -------- |
+| **`types`**                 | _movie_, _serial_, _anime_movie_, _anime_serial_ | join values by `-` example: `movie-anime_serial` | `true` |
+| **`dataLevel`**         | _low_, _medium_, _high_|                                                  |`true` |
+| **`sortBase`** | _animeTopComingSoon_, _animeTopAiring_, _comingSoon_, _inTheaters_, _boxOffice_, _top_, _popular_, |                                                  | `true` |
+| **`years`** | numbers in range | example: 2010-2021                               | `true` |
+| **`imdbScores`** | number in range 0 to 10 | example: 5-9                                     | `true` |
+| **`malScores`** | number in range 0 to 10 | example: 5-9                                     | `true` |
+| **`page`** | number start from 1 | paginating result , 12 item exists in page       | `true` |
+| **`dayNumber`** | number in range 0-6 | number of day in week                            | `true` |
+| **`title`** | string | name of movie/staff/character to search          | `true` |
+| **`id`** | mongodb id object | id of movie/staff/character to get               | `true` |
+| **`password`** | string | password of crawler starter api                  | `true` |
+| **`deviceId`** | string | unique id of session                             | `true` |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
 ## API Resources
 - [POST /crawler/[password]](#post-crawlerpassword)
 - [POST /crawler/domainChange/[password]](#post-crawlerdomainchangepassword)
+
+- [POST /users/signup](#post-userssignup)
+- [POST /users/login](#post-userslogin)
+- [POST /users/getToken](#post-usersgettoken)
+- [POST /users/logout](#post-userslogout)
+- [POST /users/forceLogout/[deviceId]](#post-usersforcelogoutdeviceid)
+- [POST /users/forceLogoutAll](#post-usersforcelogoutall)
+- [GET /users/myProfile](#get-usersmyprofile)
+- [GET /users/activeSessions](#get-usersactivesessions)
+- [GET /users/sendVerifyEmail](#get-userssendverifyemail)
+- [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
 - [GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewstypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdatestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestopsbylikestypesdatalevelimdbscoresmalscorespage)
@@ -50,6 +62,68 @@ additional parameters:
 > do not use this
 
 Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWORD}
+
+# user section api
+
+## auth
+> put `accessToken` in each request header.
+> 
+> also send `refreshToken` cookie in each request.
+>> for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `?noCookie=true` parameter in api routes to receive it.
+>
+> api routes send 403 when `accessToken` is invalid or out of date. (getToken again)
+> 
+> api routes send 401 when `refreshToken` is invalid or out of date or revoked. (must log in again)
+> 
+> `users/getToken` route also generates new refreshToken and must replace the existing on client
+
+
+### POST /users/signup
+> receives { username , email , password , confirmPassword } in request body
+> 
+> return { accessToken , accessToken_expire , username , userId } and also `refreshToken`.
+
+
+### POST /users/login
+> receives { username_email , password } in request body
+>
+> return { accessToken , accessToken_expire , username , userId } and also `refreshToken`.
+
+
+### POST /users/getToken
+> return { accessToken , accessToken_expire , username , profileImages } and also `refreshToken`.
+
+
+### POST /users/logout
+> return { accessToken:'' } and also reset/remove `refreshToken` cookie.
+
+
+### POST /users/forceLogout/[deviceId]
+> receives `deviceId`
+>
+> return `activeSessions`.
+
+
+### POST /users/forceLogoutAll
+> return `activeSessions` as [].
+
+
+### GET /users/myProfile
+> return users profile data.
+
+
+### GET /users/activeSessions
+> return users active sections.
+
+### GET /users/sendVerifyEmail
+> send an email with an activation link.
+
+
+### GET /users/verifyEmail/[token]
+> verify given email token.
+
+
+# movie section api
 
 ### GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]  
 Example: https://downloader-node-api.herokuapp.com/movies/news/serial-anime_serial/low/0-10/0-10/1  
