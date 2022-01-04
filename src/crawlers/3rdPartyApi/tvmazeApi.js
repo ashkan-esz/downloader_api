@@ -1,5 +1,5 @@
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues} from "../utils";
+import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils";
 import {getEpisodeModel} from "../../models/episode";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
@@ -109,6 +109,10 @@ export function getTvMazeApiFields(data) {
                 officialSite: data.officialSite || "",
                 webChannel: data.webChannel ? data.webChannel.name || '' : '',
             },
+        }
+        if (!apiFields.releaseDay && apiFields.premiered) {
+            let dayNumber = new Date(apiFields.premiered).getDay();
+            apiFields.releaseDay = getDayName(dayNumber);
         }
         apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;

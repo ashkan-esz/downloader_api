@@ -132,6 +132,10 @@ export function getJikanApiFields(data) {
                 animeSource: data.source,
             }
         };
+        if (!apiFields.releaseDay && apiFields.premiered && apiFields.animeType.toLowerCase() === 'tv') {
+            let dayNumber = new Date(data.aired.from).getDay();
+            apiFields.releaseDay = utils.getDayName(dayNumber);
+        }
         apiFields.updateFields = utils.purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {

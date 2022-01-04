@@ -219,7 +219,7 @@ export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, l
                 releaseState: 'done',
                 ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
-            .sort({like: -1})
+            .sort({like: -1, _id: 1})
             .skip(skip)
             .limit(limit)
             .toArray();
@@ -269,13 +269,15 @@ export async function getSortedMovies(sortBase, types, imdbScores, malScores, sk
         } else if (sortBase === 'popular') {
             searchBase = "rank.popular";
         }
+
         let query = {
-            releaseState: {$ne: "done"},
             ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            [searchBase]: {$ne: -1},
         }
-        query[searchBase] = {$ne: -1};
-        let sortConfig = {};
-        sortConfig[searchBase] = 1;
+
+        let sortConfig = {
+            [searchBase]: 1,
+        };
 
         let collection = await getCollection('movies');
         return await collection
@@ -297,12 +299,11 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, sk
         let collection = await getCollection('movies');
         return await collection
             .find({
-                status: {$ne: "ended"},
+                status: "running",
                 releaseDay: daysOfWeek[dayNumber],
-                nextEpisode: {$ne: null},
                 ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
             }, {projection: projection})
-            .sort({'rating.imdb': -1, 'rating.myAnimeList': -1})
+            .sort({'rating.imdb': -1, 'rating.myAnimeList': -1, _id: -1})
             .skip(skip)
             .limit(limit)
             .toArray();

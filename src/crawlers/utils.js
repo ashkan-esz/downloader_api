@@ -493,3 +493,8 @@ export function getMonthNumberByMonthName(monthName) {
     };
     return months[monthName.slice(0, 3)];
 }
+
+export function getDayName(dayNumber) {
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return daysOfWeek[dayNumber];
+}

@@ -16,6 +16,7 @@ async function getCollection(collection_name) {
         return database.collection(collection_name);
     } catch (error) {
         saveError(error);
+        database = null;
         return null;
     }
 }
