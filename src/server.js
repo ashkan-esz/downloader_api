@@ -20,7 +20,7 @@ Sentry.init({
         new Sentry.Integrations.Http({tracing: true}),
         new Tracing.Integrations.Express({app}),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.2,
 });
 app.set('trust proxy', 1);
 app.use(Sentry.Handlers.requestHandler());
@@ -48,14 +48,7 @@ app.use('/movies', routes.moviesRouters);
 app.use('/users', routes.usersRouters);
 
 
-app.use(Sentry.Handlers.errorHandler({
-    shouldHandleError(error) {
-        // todo : check what this do , why not send error to sentry
-        console.log(error);
-        // Capture all 404 and 500+ errors
-        return error.status === 404 || error.status >= 500;
-    },
-}));
+app.use(Sentry.Handlers.errorHandler());
 
 app.use(function (req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})

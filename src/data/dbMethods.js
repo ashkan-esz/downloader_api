@@ -254,6 +254,7 @@ export async function getNewTrailers(types, imdbScores, malScores, skip, limit, 
 export async function getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let searchBase;
+        sortBase = sortBase.toLowerCase();
         if (sortBase === 'animetopcomingsoon') {
             searchBase = "rank.animeTopComingSoon";
         } else if (sortBase === 'animetopairing') {

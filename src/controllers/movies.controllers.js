@@ -76,6 +76,19 @@ export async function getSeriesOfDay(req, res) {
     return res.json(seriesOfDay);
 }
 
+export async function getMultipleStatus(req, res) {
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
+    let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
+    let malScores = req.params.malScores.split('-').map(item => Number(item));
+    let page = Number(req.params.page) || 1;
+    let count = Number(req.params.count) || 1;
+
+    let multipleStatus = await moviesServices.getMultipleStatus(types, dataLevel, imdbScores, malScores, page, count, req.url);
+
+    return res.json(multipleStatus);
+}
+
 export async function searchByTitle(req, res) {
     let title = req.params.title;
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());

@@ -9,6 +9,7 @@
 | **`imdbScores`** | number in range 0 to 10 | example: 5-9                                     | `true` |
 | **`malScores`** | number in range 0 to 10 | example: 5-9                                     | `true` |
 | **`page`** | number start from 1 | paginating result , 12 item exists in page       | `true` |
+| **`count`** | number start from 1 | number of item returned in each page       | `true` |
 | **`dayNumber`** | number in range 0-6 | number of day in week                            | `true` |
 | **`title`** | string | name of movie/staff/character to search          | `true` |
 | **`id`** | mongodb id object | id of movie/staff/character to get               | `true` |
@@ -36,7 +37,8 @@
 - [GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestopsbylikestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/trailers/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestrailerstypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviessortedmoviessortbasetypesdatalevelimdbscoresmalscorespage)
-- [GET /seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]](#get-seriesofdaydaynumbertypesimdbscoresmalscorespage)
+- [GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]](#get-moviesseriesofdaydaynumbertypesimdbscoresmalscorespage)
+- [GET /movies/multiple/status/[types]/[dataLevel]/[imdbScores]/[malScores]/[count]/[page]](#get-moviesmultiplestatustypesdatalevelimdbscoresmalscorescountpage)
 - [GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page]](#get-moviessearchbytitletitletypesdatalevelyearsimdbscoresmalscorespage)
 - [GET /movies/searchByID/[id]/[dataLevel]](#get-moviessearchbyididdatalevel)
 - [GET /movies/staff/searchById/[id]](#get-moviesstaffsearchbyidid)
@@ -155,10 +157,17 @@ Example: https://downloader-node-api.herokuapp.com/movies/sortedMovies/animeTopA
 Example: https://downloader-node-api.herokuapp.com/movies/sortedMovies/comingSoon/serial-anime_serial/high/0-10/0-10/1
 
 
-### GET /seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]
+### GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]
 Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/0/serial-anime_serial/0-10/0-10/1  
 Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/1/serial-anime_serial/6-10/0-10/1  
 Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/6/serial-anime_serial/0-10/0-10/1
+
+
+### GET /movies/multiple/status/[types]/[dataLevel]/[imdbScores]/[malScores]/[count]/[page]
+> return fields { inTheaters , comingSoon , news , update } as array of movie data
+> 
+Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/movie-serial/low/0-10/0-10/3/1
+Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1
 
 
 ### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page] 

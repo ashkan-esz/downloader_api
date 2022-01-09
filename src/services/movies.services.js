@@ -67,6 +67,30 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, pa
     return seriesOfDay;
 }
 
+export async function getMultipleStatus(types, dataLevel, imdbScores, malScores, page, count, routeUrl) {
+    let {skip, limit} = getSkipLimit(page, count);
+
+    let result = await Promise.allSettled([
+        dbMethods.getSortedMovies('inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getSortedMovies('comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
+    ]);
+
+    let multipleStatus = {
+        inTheaters: result[0].value || [],
+        comingSoon: result[1].value || [],
+        news: result[2].value || [],
+        update: result[3].value || [],
+    }
+
+    if (result.map(item => item.value || []).flat(1).length > 0) {
+        setCache(routeUrl, multipleStatus);
+    }
+
+    return multipleStatus;
+}
+
 export async function searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, routeUrl) {
     let {skip, limit} = getSkipLimit(page, 12);
 

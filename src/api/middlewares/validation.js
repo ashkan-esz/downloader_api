@@ -20,7 +20,7 @@ export const signupValidation = [
         .isLength({min: 6}).withMessage(USERNAME_LENGTH_MUST_BE_MORE_THAN_6)
         .isLength({max: 50}).withMessage(USERNAME_LENGTH_MUST_BE_LESS_THAN_50)
         .custom((value, {req, loc, path}) => {
-            if (!value.match(/^[a-z|0-9_]+$/g)) {
+            if (!value.match(/^[a-z|0-9_]+$/gi)) {
                 // trow error if password is equal with username
                 throw new Error(USERNAME_BAD_FORMAT);
             } else {

@@ -22,6 +22,9 @@ router.get('/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:pa
 //movies/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.getSeriesOfDay);
 
+//movies/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:page
+router.get('/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:page', middlewares.moviesCache, moviesControllers.getMultipleStatus);
+
 //movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page
 router.get('/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page', middlewares.moviesCache, moviesControllers.searchByTitle);
 
