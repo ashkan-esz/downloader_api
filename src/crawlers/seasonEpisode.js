@@ -166,6 +166,9 @@ function getSeasonsFromLinks(site_links) {
         if (season === 0) {
             ({season, episode} = getSeasonEpisode(site_links[l].info));
         }
+        if (season === 0 || episode > 3000) {
+            continue;
+        }
         let seasonExist = false;
         for (let m = 0; m < seasonsArray.length; m++) {
             if (seasonsArray[m].season === season) {

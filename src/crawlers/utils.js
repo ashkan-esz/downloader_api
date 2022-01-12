@@ -237,20 +237,47 @@ export function getSeasonEpisode(input) {
         if (input === '') {
             return {
                 season: 0,
-                episode: 0
+                episode: 0,
             }
         }
+        input = input.toLowerCase();
         let season = 0;
         let episode = 0;
-        let case1 = input.toLowerCase().replace(/1080p/g, '.1080p').match(/s\d+e\d+/g);
+        if (input.match(/\d(480p|720p|1080p)/g)) {
+            // .S06E03720p.WEB-DL
+            input = input
+                .replace(/480p/g, '.480p')
+                .replace(/720p/g, '.720p')
+                .replace(/1080p/g, '.1080p');
+        }
+        let case1 = input.replace(/1080p/gi, '.1080p').match(/s\d+([-.])*e\d+/gi);
         if (case1) {
-            let seasonEpisode = case1.pop();
-            season = Number(seasonEpisode.split('e')[0].replace('s', ''));
-            episode = Number(seasonEpisode.split('e')[1]);
+            let seasonEpisode = case1.pop().replace(/[-.]/g, '');
+            season = seasonEpisode.split('e')[0].replace('s', '');
+            episode = seasonEpisode.split('e')[1];
+        }
+        if (season === 0 || episode === 0) {
+            // e01e05 | s01s01
+            let case2 = input.match(/\.([se])\d+([se])\d+\./gi);
+            if (case2) {
+                let seasonEpisode = case2.pop().replace(/^\.|\.$/gi, '');
+                season = seasonEpisode.split(/[se]/gi)[1]; // ['',season,episode]
+                episode = seasonEpisode.split(/[se]/gi)[2];
+            }
+        }
+        if (season === 0 || episode === 0) {
+            const episodeRegex = /\.e*\d+\.((\d\d\d+p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
+            const episodeMatch = input.replace(/[-_]/g, '.').match(episodeRegex);
+            if (episodeMatch) {
+                let match = episodeMatch.find(item => item.includes('e')) || episodeMatch.pop();
+                episode = match.replace(/^\.e*/gi, '').split('.')[0];
+            }
+            const seasonMatch = input.match(/([\/.])s\d+([\/.])/gi);
+            season = seasonMatch ? seasonMatch.pop().replace(/([\/.s])/gi, '').replace('00', 1) : 1;
         }
         return {
-            season: season,
-            episode: episode
+            season: Number(season),
+            episode: Number(episode),
         }
     } catch (error) {
         saveError(error);

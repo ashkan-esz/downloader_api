@@ -13,6 +13,7 @@ const PASSWORDS_DONT_MATCH = 'Passwords Don\'t Match';
 const PASSWORD_IS_EQUAL_WITH_USERNAME = 'Password Is Equal With Username';
 const Password_Must_Contain_A_Number = 'Password Must Contain A Number';
 const Password_Must_Contain_An_Uppercase = 'Password Must Contain An Uppercase';
+const Password_Cannot_Have_Space = 'Password Cannot Have Space';
 
 export const signupValidation = [
     check('username')
@@ -42,6 +43,8 @@ export const signupValidation = [
             if (value === req.body.username) {
                 // trow error if password is equal with username
                 throw new Error(PASSWORD_IS_EQUAL_WITH_USERNAME);
+            } else if (value.includes(' ')) {
+                throw new Error(Password_Cannot_Have_Space);
             } else {
                 return value;
             }
