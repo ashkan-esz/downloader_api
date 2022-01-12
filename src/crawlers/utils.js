@@ -347,7 +347,9 @@ export function removeDuplicateLinks(input) {
     for (let i = 0; i < input.length; i++) {
         let exist = false;
         for (let j = 0; j < result.length; j++) {
-            if (input[i].link === result[j].link) {
+            if (
+                (input[i].link || input[i].url) === (result[j].link || result[j].url)
+            ) {
                 exist = true;
                 break;
             }

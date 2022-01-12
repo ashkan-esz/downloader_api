@@ -32,14 +32,14 @@ export async function addApiData(titleModel, site_links) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
-        let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0].link);
+        let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0].url);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
             if (s3poster.originalUrl) {
                 titleModel.posters[0].size = s3poster.size;
             }
             titleModel.posters.push({
-                link: s3poster.url,
+                url: s3poster.url,
                 info: 's3Poster',
                 size: s3poster.size,
             });
@@ -121,7 +121,7 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
     };
 
     if (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3)) {
-        let selectedPoster = sitePoster || (db_data.posters.length > 0 ? db_data.posters[0].link : '');
+        let selectedPoster = sitePoster || (db_data.posters.length > 0 ? db_data.posters[0].url : '');
         let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, selectedPoster, 0, true);
         if (s3poster) {
             db_data.poster_s3 = s3poster;
@@ -245,7 +245,7 @@ async function handleTrailerUpload(titleData, youtubeTrailer) {
         temp.trailer_s3 = s3Trailer;
         let trailers = titleData.trailers ? titleData.trailers : [];
         trailers.push({
-            link: s3Trailer.url,
+            url: s3Trailer.url,
             info: 's3Trailer-720p'
         });
         temp.trailers = sortTrailers(trailers);
@@ -358,7 +358,7 @@ async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdb
     }
     if (episodesUpdate) {
         fields.episodes = db_data.episodes;
-        fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
+        fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData, db_data.type);
         fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
     }
     if (nextEpisodeUpdate) {

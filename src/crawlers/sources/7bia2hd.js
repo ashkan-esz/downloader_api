@@ -135,7 +135,7 @@ function getTrailers($) {
             if (sourceChild) {
                 let src = sourceChild.attribs.src;
                 result.push({
-                    link: src,
+                    url: src,
                     info: 'bia2hd-720p'
                 });
             }

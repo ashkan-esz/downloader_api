@@ -37,8 +37,8 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
     let posterUpdated = false;
     for (let i = 0; i < db_data.posters.length; i++) {
         if (db_data.posters[i].info.includes(sourceName)) {//this poster source exist
-            if (db_data.posters[i].link !== poster) { //replace link
-                db_data.posters[i].link = poster;
+            if (db_data.posters[i].url !== poster) { //replace link
+                db_data.posters[i].url = poster;
                 if (db_data.posters[i].size === 0) {
                     db_data.posters[i].size = await getFileSize(poster);
                 }
@@ -51,7 +51,7 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
 
     if (!posterExist) {  //new poster
         db_data.posters.push({
-            link: poster,
+            url: poster,
             info: sourceName,
             size: await getFileSize(poster),
         });
@@ -59,7 +59,7 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
     let prevLength = db_data.posters.length;
     if (db_data.poster_s3) {
         db_data.posters.push({
-            link: db_data.poster_s3.url,
+            url: db_data.poster_s3.url,
             info: 's3Poster',
             size: db_data.poster_s3.size,
         });
@@ -79,8 +79,8 @@ function handleTrailerUpdate(db_data, site_trailers) {
         let trailer_exist = false;
         for (let j = 0; j < db_data.trailers.length; j++) {
             if (site_trailers[i].info === db_data.trailers[j].info) {//this trailer exist
-                if (site_trailers[i].link !== db_data.trailers[j].link) { //replace link
-                    db_data.trailers[j].link = site_trailers[i].link;
+                if (site_trailers[i].url !== db_data.trailers[j].url) { //replace link
+                    db_data.trailers[j].url = site_trailers[i].url;
                     trailersChanged = true;
                 }
                 trailer_exist = true;

@@ -211,14 +211,20 @@ function getSeasonsFromTvMazeApi(episodes) {
     return seasonsArray;
 }
 
-export function getTotalDuration(episodes, latestData) {
+export function getTotalDuration(episodes, latestData, type) {
     let totalDuration = 0;
+    let episodeCounter = 0;
     for (let i = 0; i < episodes.length; i++) {
         if (episodes[i].season < latestData.season ||
             (episodes[i].season === latestData.season &&
                 episodes[i].episode <= latestData.episode)) {
+            episodeCounter++;
             totalDuration += Number(episodes[i].duration.replace('min', ''));
         }
+    }
+    if (totalDuration === 0) {
+        let temp = type === 'anime_serial' ? 24 : 45;
+        totalDuration = episodeCounter * temp;
     }
     let hours = Math.floor(totalDuration / 60);
     let minutes = totalDuration % 60;

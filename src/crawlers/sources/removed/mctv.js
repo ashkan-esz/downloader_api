@@ -143,7 +143,7 @@ function getTrailers($) {
                 let src = sourceChild.attribs.src;
                 if (src.includes('trailer')) {
                     result.push({
-                        link: src,
+                        url: src,
                         info: 'mctv-720p'
                     });
                 }

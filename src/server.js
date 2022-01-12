@@ -48,7 +48,14 @@ app.use('/movies', routes.moviesRouters);
 app.use('/users', routes.usersRouters);
 
 
-app.use(Sentry.Handlers.errorHandler());
+app.use(Sentry.Handlers.errorHandler({
+    shouldHandleError(error) {
+        if (config.nodeEnv !== 'production' || config.printErrors === 'true') {
+            console.log(error);
+        }
+        return true;
+    }
+}));
 
 app.use(function (req, res) {
     res.status(404).send({url: req.originalUrl + ' not found'})

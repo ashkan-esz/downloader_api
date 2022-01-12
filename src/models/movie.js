@@ -37,17 +37,17 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         seasons: [],
         episodes: [],
         posters: [{
-            link: poster,
+            url: poster,
             info: sourceName,
             size: 0,
-        }].filter(item => item.link),
+        }].filter(item => item.url),
         poster_s3: null, // {url,originalUrl,size}
         trailer_s3: null, // {url,originalUrl,size}
         summary: {
             persian: persianSummary,
             english: '',
         },
-        trailers: trailers.length > 0 ? trailers : null, // [{'link,info'}]
+        trailers: trailers.length > 0 ? trailers : null, // [{'url,info'}]
         watchOnlineLinks: watchOnlineLinks,
         subtitles: [],
         latestData: {

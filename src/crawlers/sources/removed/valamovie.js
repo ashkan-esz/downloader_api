@@ -143,7 +143,7 @@ function getTrailers($) {
             let src = $(a[i]).children()[0].attribs.src;
             if (src && (src.includes('.mp4') || src.includes('.mkv'))) {
                 result.push({
-                    link: src,
+                    url: src,
                     info: 'valamovie-720p'
                 });
             }

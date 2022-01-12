@@ -100,7 +100,7 @@ function getTrailers($) {
             if (title && title.toLowerCase().includes('پخش آنلاین') && text.includes('مشاهده تریلر')) {
                 let href = $(a[i]).attr('href');
                 result.push({
-                    link: href,
+                    url: href,
                     info: 'zarmovie-720p'
                 });
             }

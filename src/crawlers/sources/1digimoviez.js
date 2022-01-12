@@ -136,7 +136,7 @@ function getTrailers($) {
                 let href = $div[i].attribs['data-trailerlink'];
                 if (href && href.toLowerCase().includes('trailer')) {
                     result.push({
-                        link: href,
+                        url: href,
                         info: 'digimoviez-720p'
                     });
                 }

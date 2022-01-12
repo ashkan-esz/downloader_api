@@ -126,7 +126,7 @@ function getTrailers($) {
             let child = $($a[i]).children()[0];
             if ($(child).text().includes('دانلود تریلر') && href && href.includes('.mp4')) {
                 result.push({
-                    link: href,
+                    url: href,
                     info: 'avamovie-720p',
                 });
             }

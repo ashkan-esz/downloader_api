@@ -126,7 +126,7 @@ function getTrailers($) {
                 if (href.includes('.mp4') || href.includes('.mkv')) {
                     let quality = href.includes('360p') ? '360p' : '720p';
                     result.push({
-                        link: href,
+                        url: href,
                         info: 'salamdl-' + quality
                     });
                 }

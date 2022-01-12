@@ -130,7 +130,7 @@ function getTrailers($) {
                     let quality = href.includes('1080p') ? '1080p'
                         : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
                     result.push({
-                        link: href,
+                        url: href,
                         info: 'film2movie-' + quality
                     });
                 }
@@ -141,7 +141,7 @@ function getTrailers($) {
         for (let i = 0; i < result.length; i++) {
             let exist = false;
             for (let j = 0; j < unique.length; j++) {
-                if (result[i].link === unique[j].link) {
+                if (result[i].url === unique[j].url) {
                     exist = true;
                     break;
                 }

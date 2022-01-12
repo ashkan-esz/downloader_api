@@ -438,7 +438,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             if (s3poster) {
                 updateFields.poster_s3 = s3poster;
                 updateFields.posters = [{
-                    link: s3poster.url,
+                    url: s3poster.url,
                     info: 's3Poster',
                     size: s3poster.size,
                 }];
@@ -453,7 +453,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             if (s3Trailer) {
                 updateFields.trailer_s3 = s3Trailer;
                 updateFields.trailers = [{
-                    link: s3Trailer.url,
+                    url: s3Trailer.url,
                     info: 's3Trailer-720p'
                 }];
             }
@@ -532,7 +532,7 @@ async function uploadPosterAndTrailer(titleModel, jikanData) {
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
             titleModel.posters = [{
-                link: s3poster.url,
+                url: s3poster.url,
                 info: 's3Poster',
                 size: s3poster.size,
             }];
@@ -545,7 +545,7 @@ async function uploadPosterAndTrailer(titleModel, jikanData) {
         if (s3Trailer) {
             titleModel.trailer_s3 = s3Trailer;
             titleModel.trailers = [{
-                link: s3Trailer.url,
+                url: s3Trailer.url,
                 info: 's3Trailer-720p'
             }];
         }
@@ -610,7 +610,7 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
 
 async function getCastAndCharacterFields(insertedId, titleData, allApiData) {
     await connectNewAnimeToRelatedTitles(titleData, insertedId);
-    let poster = titleData.posters.length > 0 ? titleData.posters[0].link : '';
+    let poster = titleData.posters.length > 0 ? titleData.posters[0].url : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
