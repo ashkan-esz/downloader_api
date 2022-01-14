@@ -7,16 +7,17 @@ import {
     replacePersianNumbers,
     purgeQualityText,
     persianWordToNumber,
-    getSeasonEpisode,
-    getDecodedLink
+    getDecodedLink,
+    sortLinks,
 } from "../utils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
 const sourceName = "bia2anime";
+const needHeadlessBrowser = false;
 
 export default async function bia2anime({movie_url, page_count}) {
-    await wrapper_module(sourceName, movie_url, page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -39,7 +40,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, null);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
@@ -200,14 +201,6 @@ function getFileData_serial($, link) {
     let quality = getQuality($, infoNodeChildren, linkHref, linkText);
 
     return [seasonEpisode, seasonPart, quality, dubbed].filter(value => value).join('.');
-}
-
-function sortLinks(links) {
-    return links.sort((a, b) => {
-        let a_SE = getSeasonEpisode(a.info);
-        let b_SE = getSeasonEpisode(b.info);
-        return ((a_SE.season > b_SE.season) || (a_SE.season === b_SE.season && a_SE.episode > b_SE.episode)) ? 1 : -1;
-    });
 }
 
 function getSeasonNumber($, infoNodeChildren, linkHref) {

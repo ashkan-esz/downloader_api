@@ -1,5 +1,6 @@
 import {wordsToNumbers} from "words-to-numbers";
 import {getDecodedLink} from "./utils";
+import {getEpisodeModel_placeholder} from "../models/episode";
 import {saveError} from "../error/saveError";
 
 
@@ -126,4 +127,151 @@ function checkSerialLinkMatch(link) {
     }
     return decodedLink.match(
         /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi);
+}
+
+//---------------------
+
+export function groupSerialLinks(links) {
+    let result = [];
+
+    for (let i = 0; i < links.length; i++) {
+        let seasonExist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (result[j].seasonNumber === links[i].season) {
+                seasonExist = true;
+                let episodeExist = false;
+                for (let k = 0; k < result[j].episodes.length; k++) {
+                    if (result[j].episodes[k].episodeNumber === links[i].episode) {
+                        episodeExist = true;
+                        result[j].episodes[k].links.push(links[i]);
+                        break;
+                    }
+                }
+                if (!episodeExist) {
+                    let episodeModel = getEpisodeModel_placeholder(links[i].season, links[i].episode);
+                    delete episodeModel.season;
+                    delete episodeModel.episode;
+                    result[j].episodes.push({
+                        episodeNumber: links[i].episode,
+                        ...episodeModel,
+                        links: [links[i]],
+                    });
+                }
+                break;
+            }
+        }
+        if (!seasonExist) {
+            let episodeModel = getEpisodeModel_placeholder(links[i].season, links[i].episode);
+            delete episodeModel.season;
+            delete episodeModel.episode;
+            result.push({
+                seasonNumber: links[i].season,
+                episodes: [{
+                    episodeNumber: links[i].episode,
+                    ...episodeModel,
+                    links: [links[i]],
+                }],
+            });
+        }
+    }
+
+    result = result.sort((a, b) => a.seasonNumber - b.seasonNumber);
+    for (let i = 0; i < result.length; i++) {
+        result[i].episodes = result[i].episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
+    }
+
+    return result;
+}
+
+export function groupMovieLinks(links) {
+    let qualities = [
+        {quality: '2160p', links: []},
+        {quality: '1080p', links: []},
+        {quality: '720p', links: []},
+        {quality: '480p', links: []},
+        {quality: '360p', links: []},
+        {quality: 'others', links: []}
+    ];
+
+    for (let i = 0; i < links.length; i++) {
+        let matchQuality = false;
+        for (let j = 0; j < qualities.length; j++) {
+            if (links[i].info.includes(qualities[j].quality)) {
+                qualities[j].links.push(links[i]);
+                matchQuality = true;
+                break;
+            }
+        }
+        if (!matchQuality) {
+            qualities.find(item => item.quality === 'others').links.push(links[i]);
+        }
+    }
+
+    return qualities;
+}
+
+export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, sourceName) {
+    let updateFlag = false;
+    for (let i = 0; i < currentGroupedLinks.length; i++) {
+        let checkQuality = prevGroupedLinks.find(item => item.quality === currentGroupedLinks[i].quality);
+        if (checkQuality) {
+            //quality exist
+            prevGroupedLinks[i].checked = true;
+            //get source links
+            let prevLinks = checkQuality.links.filter(item => item.sourceName === sourceName);
+            let currentLinks = currentGroupedLinks[i].links;
+            let linkUpdateResult = updateSerialLinks(checkQuality, prevLinks, currentLinks);
+            updateFlag = linkUpdateResult || updateFlag;
+        } else {
+            //new quality
+            currentGroupedLinks[i].checked = true;
+            prevGroupedLinks.push(currentGroupedLinks[i]);
+            updateFlag = true;
+        }
+    }
+
+    //handle removed quality links
+    for (let i = 0; i < currentGroupedLinks.length; i++) {
+        if (!currentGroupedLinks[i].checked) {
+            let prevLength = currentGroupedLinks[i].links.length;
+            currentGroupedLinks[i].links = currentGroupedLinks[i].links.filter(link => link.sourceName === sourceName);
+            let newLength = currentGroupedLinks[i].links.length;
+            if (prevLength !== newLength) {
+                updateFlag = true;
+            }
+        }
+        delete currentGroupedLinks[i].checked;
+    }
+
+    return updateFlag;
+}
+
+export function updateSerialLinks(checkEpisode, prevLinks, currentLinks) {
+    let updateFlag = false;
+    if (prevLinks.length !== currentLinks.length) {
+        //remove prev link
+        let removeLinks = prevLinks.map(item => item.link);
+        checkEpisode.links = checkEpisode.links.filter(item => !removeLinks.includes(item.link));
+        //add current links
+        checkEpisode.links = [...checkEpisode.links, ...currentLinks];
+        updateFlag = true;
+    } else {
+        for (let k = 0; k < prevLinks.length; k++) {
+            //replace changed links
+            if (!checkEqualLinks(prevLinks[k], currentLinks[k])) {
+                prevLinks[k] = currentLinks[k];
+                updateFlag = true;
+            }
+        }
+    }
+    return updateFlag;
+}
+
+export function checkEqualLinks(link1, link2) {
+    return (
+        link1.link === link2.link &&
+        link1.info === link2.info &&
+        link1.qualitySample === link2.qualitySample &&
+        link1.pageLink === link2.pageLink
+    );
 }

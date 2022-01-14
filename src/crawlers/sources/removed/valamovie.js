@@ -14,10 +14,11 @@ import * as persianRex from "persian-rex";
 import {saveError} from "../../../error/saveError";
 
 const sourceName = "valamovie";
+const needHeadlessBrowser = true;
 
 export default async function valamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(sourceName, serial_url, serial_page_count, search_title_serial);
-    await wrapper_module(sourceName, movie_url, page_count, search_title_movie);
+    await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title_serial);
+    await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title_movie);
 }
 
 async function search_title_serial(link, i) {
@@ -32,7 +33,7 @@ async function search_title_serial(link, i) {
             ({title, year} = getTitleAndYear(title, year, 'serial'));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, pageLink, 'serial', getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, 'serial', getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     let sourceData = {
@@ -67,7 +68,7 @@ async function search_title_movie(link, i) {
             ({title, year} = getTitleAndYear(title, year, 'movie'));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, pageLink, 'movie', getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, 'movie', getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     downloadLinks = removeDuplicateLinks(downloadLinks);

@@ -132,6 +132,9 @@ export function getJikanApiFields(data) {
                 animeSource: data.source,
             }
         };
+        if (apiFields.duration === '0 min' && apiFields.animeType.toLowerCase() === 'tv') {
+            apiFields.duration = '24 min';
+        }
         if (!apiFields.releaseDay && apiFields.premiered && apiFields.animeType.toLowerCase() === 'tv') {
             let dayNumber = new Date(data.aired.from).getDay();
             apiFields.releaseDay = utils.getDayName(dayNumber);

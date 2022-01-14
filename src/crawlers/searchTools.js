@@ -5,7 +5,7 @@ import * as cheerio from 'cheerio';
 import {default as pQueue} from "p-queue";
 import {check_download_link, getMatchCases, check_format} from "./link";
 import {getPageData} from "./remoteHeadlessBrowser";
-import {getDecodedLink} from "./utils";
+import {getDecodedLink, getSeasonEpisode} from "./utils";
 import {saveError} from "../error/saveError";
 import * as Sentry from "@sentry/node";
 
@@ -29,9 +29,9 @@ axiosRetry(axios, {
 
 let _headLessBrowser = false;
 
-export async function wrapper_module(sourceName, url, page_count, searchCB) {
+export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_count, searchCB) {
     try {
-        _headLessBrowser = checkNeedHeadlessBrowser(sourceName);
+        _headLessBrowser = needHeadlessBrowser;
 
         const concurrencyNumber = getConcurrencyNumber(sourceName);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
@@ -63,7 +63,7 @@ export async function wrapper_module(sourceName, url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(title, page_link, type, getFileData, getQualitySample = null,
+export async function search_in_title_page(sourceName, title, page_link, type, getFileData, getQualitySample = null,
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null, extraChecker = null) {
     try {
         let {$, links, cookies} = await getLinks(page_link, sourceLinkData);
@@ -84,14 +84,28 @@ export async function search_in_title_page(title, page_link, type, getFileData, 
                 let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    downloadLinks.push({link: link.trim(), info: link_info, qualitySample: qualitySample});
+                    let {season, episode} = getSeasonEpisode(link);
+                    if (season === 0) {
+                        ({season, episode} = getSeasonEpisode(link_info));
+                    }
+                    if (episode > 3000) {
+                        episode = 0;
+                    }
+                    downloadLinks.push({
+                        link: link.trim(),
+                        info: link_info,
+                        qualitySample: qualitySample,
+                        sourceName: sourceName,
+                        pageLink: page_link,
+                        season, episode,
+                    });
                 }
             } else if (link && !sourceLinkData && extraSearchMatch && extraSearchMatch($, links[j], title, type)) {
                 if (extraSearchLinks.includes(link)) {
                     continue;
                 }
                 extraSearchLinks.push(link);
-                let resultPromise = search_in_title_page(title, link, type, extraSearch_getFileData, getQualitySample,
+                let resultPromise = search_in_title_page(sourceName, title, link, type, extraSearch_getFileData, getQualitySample,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
                         link: links[j],
@@ -242,6 +256,7 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
 export function checkNeedHeadlessBrowser(sourceName) {
     return (
         sourceName === "digimoviez" ||
+        sourceName === "avamovie" ||
         sourceName === "film2movie" ||
         sourceName === "animelist"
     );

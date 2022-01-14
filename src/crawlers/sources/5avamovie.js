@@ -15,10 +15,11 @@ import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
 const sourceName = "avamovie";
+const needHeadlessBrowser = true;
 
 export default async function avamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
-    await wrapper_module(sourceName, movie_url, page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -34,7 +35,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {

@@ -19,11 +19,8 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         rawTitle: titleObj.rawTitle,
         alternateTitles: titleObj.alternateTitles,
         titleSynonyms: titleObj.titleSynonyms,
-        sources: [{
-            sourceName: sourceName,
-            url: page_link,
-            links: siteDownloadLinks //[{link,info,qualitySample}]
-        }].filter(item => item.url !== ''),
+        qualities: [],
+        seasons: [],
         like: 0,
         dislike: 0,
         view: 0,
@@ -34,8 +31,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         update_date: 0,
         apiUpdateDate: new Date(),
         castUpdateDate: 0,
-        seasons: [],
-        episodes: [],
         posters: [{
             url: poster,
             info: sourceName,

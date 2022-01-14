@@ -73,10 +73,7 @@ export function getLatestData(site_links, subtitles, type) {
         let link = site_links[i].link;
         let info = site_links[i].info;
         if (type.includes('serial')) {
-            let {season, episode} = getSeasonEpisode(link);
-            if (season === 0 && type === 'anime_serial') {
-                ({season, episode} = getSeasonEpisode(info));
-            }
+            let {season, episode} = site_links[i];
             if (season > latestSeason) { //found new season
                 prevStates[0] = latestSeason;
                 prevStates[1] = latestEpisode;

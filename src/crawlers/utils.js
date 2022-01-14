@@ -482,11 +482,9 @@ export function getDecodedLink(link) {
     return decodedLink;
 }
 
-export function sortLinks(links, type) {
+export function sortLinks(links) {
     return links.sort((a, b) => {
-        let a_se = type.includes('anime') ? getSeasonEpisode(a.info) : getSeasonEpisode(a.link);
-        let b_se = type.includes('anime') ? getSeasonEpisode(b.info) : getSeasonEpisode(b.link);
-        return ((a_se.season > b_se.season) || (a_se.season === b_se.season && a_se.episode > b_se.episode)) ? 1 : -1;
+        return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
     });
 }
 

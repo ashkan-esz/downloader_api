@@ -14,10 +14,11 @@ import save from "../../save_changes_db";
 import {saveError} from "../../../error/saveError";
 
 const sourceName = "animelist";
+const needHeadlessBrowser = true;
 
 export default async function animelist({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(sourceName, serial_url, serial_page_count, search_title);
-    await wrapper_module(sourceName, movie_url, page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i, $, url) {
@@ -40,7 +41,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
-                let pageSearchResult = await search_in_title_page(title, pageLink, type, getFileData, null,
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, null,
                     extraSearchMatch, extraSearch_getFileData, null, extraChecker);
 
                 if (pageSearchResult) {
@@ -50,7 +51,7 @@ async function search_title(link, i, $, url) {
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
                     if (type.includes('serial')) {
-                        downloadLinks = sortLinks(downloadLinks, type);
+                        downloadLinks = sortLinks(downloadLinks);
                         downloadLinks = removeSpecialFlagsIfAllHave(downloadLinks);
                     }
                     let sourceData = {

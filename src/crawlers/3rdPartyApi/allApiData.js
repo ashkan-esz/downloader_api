@@ -28,7 +28,7 @@ axiosRetry(axios, {
 });
 
 
-export async function addApiData(titleModel, site_links) {
+export async function addApiData(titleModel, site_links, sourceName) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
@@ -68,7 +68,7 @@ export async function addApiData(titleModel, site_links) {
     }
 
     if (titleModel.type.includes('serial')) {
-        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(titleModel, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -151,7 +151,7 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
     }
 
     if (db_data.type.includes('serial')) {
-        let seasonEpisodeFieldsUpdate = await updateSeasonEpisodeFields(db_data, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -345,23 +345,19 @@ function getNewGenres(data, apiGenres, isAnime, isAnimation) {
     }
 }
 
-async function updateSeasonEpisodeFields(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
+async function updateSeasonsField(db_data, sourceName, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
     let fields = {};
     let {
-        seasonsUpdate,
-        episodesUpdate,
-        nextEpisodeUpdate
-    } = await handleSeasonEpisodeUpdate(db_data, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
+        seasonsUpdateFlag,
+        nextEpisodeUpdateFlag
+    } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
 
-    if (seasonsUpdate) {
+    if (seasonsUpdateFlag) {
         fields.seasons = db_data.seasons;
+        fields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
+        fields.endYear = getEndYear(db_data.seasons, db_data.status, db_data.year);
     }
-    if (episodesUpdate) {
-        fields.episodes = db_data.episodes;
-        fields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData, db_data.type);
-        fields.endYear = getEndYear(db_data.episodes, db_data.status, db_data.year);
-    }
-    if (nextEpisodeUpdate) {
+    if (nextEpisodeUpdateFlag) {
         fields.nextEpisode = db_data.nextEpisode;
     }
     return fields;

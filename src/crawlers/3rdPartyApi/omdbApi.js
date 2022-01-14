@@ -151,9 +151,8 @@ function extractRatings(ratings) {
     return ratingObj;
 }
 
-export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type, duration, lastSeasonsOnly = false) {
+export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, lastSeasonsOnly = false) {
     try {
-        let seasons = [];
         let episodes = [];
         totalSeasons = isNaN(totalSeasons) ? 0 : Number(totalSeasons);
         let startSeasonNumber = (lastSeasonsOnly && totalSeasons > 1) ? totalSeasons - 1 : 1;
@@ -161,31 +160,23 @@ export async function get_OMDB_seasonEpisode_info(omdbTitle, totalSeasons, type,
 
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
             let seasonResult = await handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`);
-            if (seasonResult === null || seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
-                seasons.push({
-                    season: j,
-                    episodes: 0
-                });
-            } else {
+            if (seasonResult !== null && seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
                 let thisSeasonEpisodes = seasonResult.Episodes;
                 let seasonsEpisodeNumber = Number(thisSeasonEpisodes[thisSeasonEpisodes.length - 1].Episode);
-                seasons.push({
-                    season: j,
-                    episodes: seasonsEpisodeNumber
-                });
+
                 for (let k = 1; k <= seasonsEpisodeNumber; k++) {
                     let episodeResultPromise = getSeasonEpisode_episode(omdbTitle, episodes, thisSeasonEpisodes, j, k);
                     promiseArray.push(episodeResultPromise);
                 }
             }
         }
+
         await Promise.allSettled(promiseArray);
-        seasons = seasons.sort((a, b) => (a.season > b.season ? 1 : -1));
         episodes = episodes.sort((a, b) => {
             return ((a.season > b.season) || (a.season === b.season && a.episode > b.episode)) ? 1 : -1;
         });
-        fixEpisodesZeroDuration(episodes, duration, type);
-        return {seasons, episodes};
+
+        return episodes;
     } catch (error) {
         await saveError(error);
         return null;
@@ -293,46 +284,5 @@ async function handle_OMDB_ApiKeys(url) {
     } catch (error) {
         await saveError(error);
         return null;
-    }
-}
-
-export function fixEpisodesZeroDuration(episodes, duration, type) {
-    let badCases = [null, 'null min', '', 'N/A', 'N/A min', '0 min'];
-    duration = (badCases.includes(duration) || !duration) ? '0 min' : duration;
-    if (duration === '0 min' && type === 'anime_serial') {
-        duration = '23 min';
-    }
-
-    for (let i = 0; i < episodes.length; i++) {
-        if (!badCases.includes(episodes[i].duration) && episodes[i].duration && !isNaN(episodes[i].duration)) {
-            episodes[i].duration = episodes[i].duration + ' min';
-            continue;
-        }
-        if (badCases.includes(episodes[i].duration)) {
-            let fixed = false;
-            let prevEpisodesIndex = i;
-            while (prevEpisodesIndex >= 0) {
-                if (!badCases.includes(episodes[prevEpisodesIndex].duration)) {
-                    episodes[i].duration = episodes[prevEpisodesIndex].duration;
-                    fixed = true;
-                    break;
-                }
-                prevEpisodesIndex--;
-            }
-            if (!fixed) {
-                let nextEpisodesIndex = i;
-                while (nextEpisodesIndex < episodes.length) {
-                    if (!badCases.includes(episodes[nextEpisodesIndex].duration)) {
-                        episodes[i].duration = episodes[nextEpisodesIndex].duration;
-                        fixed = true;
-                        break;
-                    }
-                    nextEpisodesIndex++;
-                }
-            }
-            if (!fixed) {
-                episodes[i].duration = duration;
-            }
-        }
     }
 }

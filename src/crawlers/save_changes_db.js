@@ -7,6 +7,7 @@ import {handleSubUpdates} from "./subUpdates";
 import {getUploadedAnimeListSubtitles, handleSubtitleUpdate} from "./subtitle";
 import {getMovieModel} from "../models/movie";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi";
+import {groupMovieLinks, updateMoviesGroupedLinks} from "./link";
 import {saveError} from "../error/saveError";
 
 
@@ -30,7 +31,10 @@ export default async function save(title, type, year, sourceData) {
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
                 titleModel.subtitles = uploadedSubtitles;
-                let result = await addApiData(titleModel, downloadLinks);
+                let result = await addApiData(titleModel, downloadLinks, sourceName);
+                if (result.titleModel.type.includes('movie')) {
+                    result.titleModel.qualities = groupMovieLinks(downloadLinks);
+                }
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
                     if (type.includes('anime')) {
@@ -47,14 +51,7 @@ export default async function save(title, type, year, sourceData) {
 
         let apiData = await apiDataUpdate(db_data, downloadLinks, type, poster, sourceName);
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName);
-        if (db_data.sources.find((item) => item.sourceName === sourceName)) {
-            let linkUpdate = handleDownloadLinksUpdate(db_data, pageLink, persianSummary, type, downloadLinks, sourceName);
-            await handleUpdate(db_data, linkUpdate, null, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData);
-        } else if (downloadLinks.length > 0) {
-            //new source
-            await handleUpdate(db_data, true, titleModel, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData);
-        }
-
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, uploadedSubtitles, type, apiData);
     } catch (error) {
         await saveError(error);
     }
@@ -117,7 +114,8 @@ async function searchOnCollection(titleObj, year, type) {
         imdbID: 1,
         tvmazeID: 1,
         jikanID: 1,
-        sources: 1,
+        qualities: 1,
+        seasons: 1,
         summary: 1,
         posters: 1,
         poster_s3: 1,
@@ -129,8 +127,6 @@ async function searchOnCollection(titleObj, year, type) {
         rating: 1,
         duration: 1,
         totalSeasons: 1,
-        seasons: 1,
-        episodes: 1,
         latestData: 1,
         nextEpisode: 1,
         like: 1,
@@ -155,11 +151,10 @@ async function searchOnCollection(titleObj, year, type) {
             }
         }
     }
-
     return db_data;
 }
 
-async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpdates, downloadLinks, uploadedSubtitles, type, apiData) {
+async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, uploadedSubtitles, type, apiData) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -167,34 +162,32 @@ async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpda
             await convertUnReleasedTitleToNewTitle(db_data, updateFields, type);
         }
 
-        if (type.includes('serial')) {
-            let {seasonsUpdate, episodesUpdate} = handleSiteSeasonEpisodeUpdate(db_data, downloadLinks, true);
-            if (seasonsUpdate) {
+        if (type.includes('serial') && !apiData) {
+            let seasonsUpdateFlag = handleSiteSeasonEpisodeUpdate(db_data, sourceName, downloadLinks, true);
+            if (seasonsUpdateFlag) {
                 updateFields.seasons = db_data.seasons;
-            }
-            if (episodesUpdate) {
-                updateFields.episodes = db_data.episodes;
-                updateFields.totalDuration = getTotalDuration(db_data.episodes, db_data.latestData);
+                updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
             }
         }
 
-        if (linkUpdate) {
-            if (result === null) {
-                updateFields.sources = db_data.sources;
-            } else {
-                db_data.sources.push(result.sources[0]);
-                updateFields.sources = db_data.sources;
+        if (db_data.type.includes('movie')) {
+            let prevGroupedLinks = db_data.qualities;
+            let currentGroupedLinks = groupMovieLinks(downloadLinks);
+            if (updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, sourceName)) {
+                updateFields.qualities = db_data.qualities;
             }
-            let prevSize = db_data.sources.length;
-            let newSources = db_data.sources.filter(item => item.links.length > 0);
-            let newSize = newSources.length;
-            if (newSize === 0 && db_data.releaseState === 'done') {
+        }
+
+        if (updateFields.qualities || updateFields.seasons) {
+            let linksField = db_data.type.includes('movie') ? db_data.qualities : db_data.seasons;
+            const linksCount = linksField.map(item => item.links).flat(1).length;
+            if (linksCount === 0 && db_data.releaseState === 'done') {
                 if (db_data.trailer_s3) {
                     let fileName = db_data.trailer_s3.split('/').pop();
                     let trailerRemoved = await deleteTrailerFromS3(fileName);
                     if (trailerRemoved) {
                         if (db_data.trailers) {
-                            db_data.trailers = db_data.trailers.filter(item => item.link !== db_data.trailer_s3);
+                            db_data.trailers = db_data.trailers.filter(item => item.url !== db_data.trailer_s3);
                         }
                         if (db_data.trailers && db_data.trailers.length === 0) {
                             db_data.trailers = null;
@@ -204,9 +197,6 @@ async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpda
                         updateFields.trailer_s3 = '';
                     }
                 }
-            } else if (prevSize !== newSize) {
-                db_data.sources = newSources;
-                updateFields.sources = newSources;
             }
         }
 
@@ -270,68 +260,10 @@ async function handleUpdate(db_data, linkUpdate, result, persianSummary, subUpda
     }
 }
 
-function handleDownloadLinksUpdate(db_data, page_link, persianSummary, type, siteDownloadLinks, sourceName) {
-    for (let j = 0; j < db_data.sources.length; j++) {//check source exist
-        if (db_data.sources[j].sourceName === sourceName) { // this source exist
-            let shouldUpdate = checkDownloadLinksUpdate(siteDownloadLinks, db_data.sources[j].links, type);
-            if (shouldUpdate) {
-                db_data.sources[j].links = siteDownloadLinks;
-            }
-            if (!page_link.includes('webcache') && db_data.sources[j].url !== page_link) {
-                db_data.sources[j].url = page_link;
-                shouldUpdate = true;
-            }
-            return shouldUpdate;
-        }
-    }
-}
-
-function checkDownloadLinksUpdate(siteDownloadLinks, db_links, type) {
-    if (siteDownloadLinks.length !== db_links.length) {
-        return true;
-    }
-
-    if (type.includes('movie')) {
-        for (let i = 0; i < siteDownloadLinks.length; i++) {
-            if (!checkEqualLinks(siteDownloadLinks[i], db_links[i])) {
-                return true;
-            }
-        }
-    } else {
-        for (let i = 0; i < siteDownloadLinks.length; i++) {//check links exist
-            let link_exist = false;
-            for (let j = 0; j < db_links.length; j++) {
-                if (checkEqualLinks(siteDownloadLinks[i], db_links[j])) { //this link exist
-                    link_exist = true;
-                }
-            }
-            if (!link_exist) { //new link
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-function checkEqualLinks(link1, link2) {
-    if (!link1.qualitySample) {
-        link1.qualitySample = '';
-    }
-    if (!link2.qualitySample) {
-        link2.qualitySample = '';
-    }
-    return (
-        link1.link === link2.link &&
-        link1.info === link2.info &&
-        link1.qualitySample === link2.qualitySample
-    );
-}
-
 async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
     let poster = titleData.poster_s3
         ? titleData.poster_s3.url
-        : titleData.posters.length > 0 ? titleData.posters[0].link : '';
+        : titleData.posters.length > 0 ? titleData.posters[0].url : '';
     let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {

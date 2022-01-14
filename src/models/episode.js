@@ -4,9 +4,22 @@ export function getEpisodeModel(title, released, releaseStamp, duration, season,
         released: released || '',
         releaseStamp: releaseStamp || '',
         duration: duration || '0 min',
-        season: season || 0,
-        episode: episode || 0,
+        season: Number(season) || 0,
+        episode: Number(episode) || 0,
         imdbRating: imdbRating || '0',
         imdbID: imdbID || '',
+    };
+}
+
+export function getEpisodeModel_placeholder(season, episode) {
+    return {
+        title: 'unknown',
+        released: 'unknown',
+        releaseStamp: '',
+        duration: '0 min',
+        season: Number(season) || 0,
+        episode: Number(episode) || 0,
+        imdbRating: '0',
+        imdbID: '',
     };
 }
