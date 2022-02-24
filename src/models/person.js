@@ -23,5 +23,7 @@ export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPers
             characterRole: characterRole,
             characterImage: '',
         }],
+        likesCount: 0,
+        dislikesCount: 0,
     }
 }

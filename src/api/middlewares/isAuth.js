@@ -85,3 +85,10 @@ export async function blockAuthorized(req, res, next) {
     }
     return next();
 }
+
+export async function blockUnAuthorized(req, res, next) {
+    if (!req.isAuth && req.authCode) {
+        return res.sendStatus(req.authCode);
+    }
+    return next();
+}

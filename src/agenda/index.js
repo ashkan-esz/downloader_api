@@ -1,5 +1,5 @@
 import config from "../config";
-import {resetMonthLikeAndView} from "../data/dbMethods";
+import {resetMonthLikeAndViewDB} from "../data/dbMethods";
 import Agenda from "agenda";
 import {crawler} from "../crawlers/crawler";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi";
@@ -27,7 +27,7 @@ export async function startAgenda() {
         });
 
         agenda.define("reset month likes", async (job) => {
-            await resetMonthLikeAndView();
+            await resetMonthLikeAndViewDB();
         });
 
         for (let i = 0; i < jobTypes.length; i++) {

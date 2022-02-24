@@ -208,7 +208,8 @@ async function fetchDataFromDB(staff_characters, type) {
     const promiseQueue = new pQueue.default({concurrency: 20});
     for (let i = 0; i < staff_characters.length; i++) {
         promiseQueue.add(() => dbMethods.searchStaffAndCharactersDB(
-            type, staff_characters[i].name,
+            type,
+            staff_characters[i].name,
             staff_characters[i].tvmazePersonID,
             staff_characters[i].jikanPersonID
         ).then(searchResult => {
@@ -440,6 +441,9 @@ function updateStaffAndCharactersFields(prevFields, currentFields) {
         let newFields = {...prevFields};
         let keys = Object.keys(currentFields);
         for (let i = 0; i < keys.length; i++) {
+            if (keys[i] === 'likesCount' || keys[i] === 'dislikesCount') {
+                continue;
+            }
             if (keys[i] === 'insertFlag' || keys[i] === 'updateFlag') {
                 newFields[keys[i]] = currentFields[keys[i]];
                 continue;

@@ -43,6 +43,9 @@
 - [GET /movies/searchByID/[id]/[dataLevel]](#get-moviessearchbyididdatalevel)
 - [GET /movies/staff/searchById/[id]](#get-moviesstaffsearchbyidid)
 - [GET /movies/characters/searchById/[id]](#get-moviescharacterssearchbyidid)  
+- [PUT /movies/[type]/[id]](#put-moviestypeid)
+- [PUT /movies/staff/[type]/[id]](#put-moviesstafftypeid)
+- [PUT /movies/characters/[type]/[id]](#put-moviescharacterstypeid)
 
 
 ### POST /crawler/[password] 
@@ -67,6 +70,21 @@ Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWOR
 
 # user section api
 
+## auth fields
+
+```
+username: /^[a-z|0-9_]+$/gi and length of 6-50 ,
+email: String ,
+password: String and length of 8-50 with atleast one number and capital letter,
+confirmPassword: String ,
+deviceInfo: {
+    appName: String,
+    appVersion: String,
+    os: String,
+    deviceModel: String,
+};,
+```
+
 ## auth
 > put `accessToken` in each request header.
 > 
@@ -81,19 +99,19 @@ Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWOR
 
 
 ### POST /users/signup
-> receives { username , email , password , confirmPassword } in request body
+> receives { username , email , password , confirmPassword , deviceInfo } in request body
 > 
 > return { accessToken , accessToken_expire , username , userId } and also `refreshToken`.
 
 
 ### POST /users/login
-> receives { username_email , password } in request body
+> receives { username_email , password , deviceInfo } in request body
 >
 > return { accessToken , accessToken_expire , username , userId } and also `refreshToken`.
 
 
 ### POST /users/getToken
-> return { accessToken , accessToken_expire , username , profileImages } and also `refreshToken`.
+> return { accessToken , accessToken_expire , username , profileImages , deviceInfo } and also `refreshToken`.
 
 
 ### POST /users/logout
@@ -185,6 +203,12 @@ Example: https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d49
 Example: https://downloader-node-api.herokuapp.com/movies/staff/searchById/614a1e74a04ce900162c64e2
 
 
-
 ### GET /movies/characters/searchById/[id]  
 Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/61326d26c1ef65001665d02a  
+
+### PUT /movies/[type]/[id]
+### PUT /movies/staff/[type]/[id]
+### PUT /movies/characters/[type]/[id]
+> `type` can be `like` or `dislike` and also receive query parameters `remove=[true|false]`
+> 
+> returns status code 409 when liking a movie that is previously liked

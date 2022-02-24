@@ -590,11 +590,13 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
             obj[key] = titleModel[key];
             return obj;
         }, {});
-    let searchResults = await dbMethods.searchForAnimeRelatedTitlesByJikanID(jikanID);
+    let searchResults = await dbMethods.searchForAnimeRelatedTitlesByJikanIDDB(jikanID);
     for (let i = 0; i < searchResults.length; i++) {
+        let updateFlag = false;
         let thisTitleRelatedTitles = searchResults[i].relatedTitles;
         for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
             if (thisTitleRelatedTitles[j].jikanID === jikanID) {
+                updateFlag = true;
                 thisTitleRelatedTitles[j] = {
                     ...thisTitleRelatedTitles[j],
                     ...mediumLevelData,
@@ -602,12 +604,14 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
                 }
             }
         }
-        await dbMethods.updateByIdDB(
-            'movies',
-            searchResults[i]._id,
-            {
-                relatedTitles: thisTitleRelatedTitles
-            });
+        if (updateFlag) {
+            await dbMethods.updateByIdDB(
+                'movies',
+                searchResults[i]._id,
+                {
+                    relatedTitles: thisTitleRelatedTitles
+                });
+        }
     }
 }
 

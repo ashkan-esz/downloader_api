@@ -31,7 +31,7 @@ To run this project, you will need to add the following environment variables to
 | **`CLOUAD_STORAGE_ACCESS_KEY`**        |  | `true` |
 | **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |  | `true` |
 | **`IMDB_API_KEY`**        |  | `true` |
-| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinit. like OMDB_API_KEY1 | `true` |
+| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinite. like OMDB_API_KEY1 | `true` |
 | **`PRINT_ERRORS`**        |  | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`** |  | `false` |
 | **`EMAIL_USERNAME`** |  | `true` |
@@ -40,6 +40,42 @@ To run this project, you will need to add the following environment variables to
 | **`REFRESH_TOKEN_SECRET`** |  | `true` |
 
 
+```
+> Also, a mongodb collection with name `sources` with single doc in format of:
+
+{
+    title: "sources",
+    pageCounter_time: Date,
+    [sourceName]: {
+        movie_url: "https://example.com/page/",
+        serial_url: "https://example.com/serie/page/", //if needed
+        page_count: Number,
+        serial_page_count: Number,
+    },
+}
+
+for example ::
+{
+    title: "sources",
+    pageCounter_time: '2021-09-17T23:06:48.443+00:00',
+    digimoviez: {
+        movie_url: "https://digimovie.win/page/",
+        serial_url: "https://digimovie.win/serie/page/",
+        page_count: 419,
+        serial_page_count: 66,
+    },
+    film2movie: {
+        movie_url: "https://www.film2movie.asia/page/",
+        page_count: 1488,
+    },
+    ....
+}
+
+>> a file with the same name of [sourceName] exist in src/crawlers/sources/[sourceName].js
+>> and can be accessed from src/crawlers/sourcesArray.js 
+
+```
+
 ## Future updates
 - [x]  Direct download link.
 - [x]  Serve local poster/trailer.
@@ -47,7 +83,7 @@ To run this project, you will need to add the following environment variables to
 - [x]  Handle sources url changes.
 - [ ]  Authentication.
 - [ ]  Movie suggestion.
-- [ ]  Clustring.
+- [ ]  Clustering.
 - [ ]  Documentation.
 - [ ]  Write test.
 

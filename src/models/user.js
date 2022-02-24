@@ -16,7 +16,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         profileImages: [],
         defaultProfile: defaultProfileImage,
         activeSessions: [
-            getNewSession(deviceInfo, deviceId, ''),
+            getNewDeviceSession(deviceInfo, deviceId, ''),
         ],
         friends: [],
         favorites: {
@@ -29,14 +29,13 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
             watching: [],
             dropped: [],
             wantToWatch: [],
-            liked: [],
         },
         registrationDate: new Date(),
         role: 'member',
     }
 }
 
-export function getNewSession(deviceInfo, deviceId, refreshToken) {
+export function getNewDeviceSession(deviceInfo, deviceId, refreshToken) {
     return ({
         appName: deviceInfo.appName || '',
         appVersion: deviceInfo.appVersion || '',

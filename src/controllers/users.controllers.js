@@ -61,11 +61,9 @@ export async function login(req, res) {
 }
 
 export async function getToken(req, res) {
-    if (!req.isAuth && req.authCode) {
-        return res.sendStatus(req.authCode);
-    }
     let deviceInfo = req.body.deviceInfo || {};
-    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, req.refreshToken);
+    const ip = getClientIp(req) || '';
+    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken);
     if (getTokenResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             getTokenResult.data.refreshToken = getTokenResult.refreshToken;
@@ -82,9 +80,6 @@ export async function getToken(req, res) {
 }
 
 export async function logout(req, res) {
-    if (!req.isAuth && req.authCode) {
-        return res.sendStatus(req.authCode);
-    }
     let getTokenResult = await usersServices.logout(req.jwtUserData, req.refreshToken, req.accessToken);
     if (getTokenResult.data.code >= 200 && getTokenResult.data.code < 300) {
         res.cookie('refreshToken', '', {
@@ -100,18 +95,12 @@ export async function logout(req, res) {
 }
 
 export async function forceLogout(req, res) {
-    if (!req.isAuth && req.authCode) {
-        return res.sendStatus(req.authCode);
-    }
     let getTokenResult = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
     res.statusCode = getTokenResult.data.code;
     return res.json(getTokenResult.data);
 }
 
 export async function forceLogoutAll(req, res) {
-    if (!req.isAuth && req.authCode) {
-        return res.sendStatus(req.authCode);
-    }
     let getTokenResult = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
     res.statusCode = getTokenResult.data.code;
     return res.json(getTokenResult.data);

@@ -1,80 +1,81 @@
 import * as dbMethods from '../data/dbMethods';
-import {setCache} from "../api/middlewares/moviesCache";
+import * as likeDbMethods from '../data/likeDbMethods';
 import {dataLevelConfig} from "../models/movie";
+import {generateServiceResult} from "./users.services";
 
-export async function getNews(types, dataLevel, imdbScores, malScores, page, routeUrl) {
+export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await dbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let newMovies = await dbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (newMovies.length > 0) {
-        setCache(routeUrl, newMovies);
+        addFieldLikeOrDislike(newMovies);
     }
 
     return newMovies;
 }
 
-export async function getUpdates(types, dataLevel, imdbScores, malScores, page, routeUrl) {
+export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await dbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let updateMovies = await dbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies.length > 0) {
-        setCache(routeUrl, updateMovies);
+        addFieldLikeOrDislike(updateMovies);
     }
 
     return updateMovies;
 }
 
-export async function getTopsByLikes(types, dataLevel, imdbScores, malScores, page, routeUrl) {
+export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (topsByLikesMovies.length > 0) {
-        setCache(routeUrl, topsByLikesMovies);
+        addFieldLikeOrDislike(topsByLikesMovies);
     }
 
     return topsByLikesMovies;
 }
 
-export async function getTrailers(types, dataLevel, imdbScores, malScores, page, routeUrl) {
+export async function getTrailers(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let trailersData = await dbMethods.getNewTrailers(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let trailersData = await dbMethods.getNewTrailers(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (trailersData.length > 0) {
-        setCache(routeUrl, trailersData);
+        addFieldLikeOrDislike(trailersData);
     }
 
     return trailersData;
 }
 
-export async function getSortedMovies(sortBase, types, dataLevel, imdbScores, malScores, page, routeUrl) {
+export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
-    let sortedData = await dbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let sortedData = await dbMethods.getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (sortedData.length > 0) {
-        setCache(routeUrl, sortedData);
+        addFieldLikeOrDislike(sortedData);
     }
 
     return sortedData;
 }
 
-export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, page, routeUrl) {
+export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let seriesOfDay = await dbMethods.getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
+    let seriesOfDay = await dbMethods.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
     if (seriesOfDay.length > 0) {
-        setCache(routeUrl, seriesOfDay);
+        addFieldLikeOrDislike(seriesOfDay);
     }
 
     return seriesOfDay;
 }
 
-export async function getMultipleStatus(types, dataLevel, imdbScores, malScores, page, count, routeUrl) {
+export async function getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count) {
     let {skip, limit} = getSkipLimit(page, count);
 
     let result = await Promise.allSettled([
-        dbMethods.getSortedMovies('inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getSortedMovies('comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
+        dbMethods.getSortedMovies(userId, 'inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getSortedMovies(userId, 'comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
     ]);
 
     let multipleStatus = {
@@ -84,14 +85,15 @@ export async function getMultipleStatus(types, dataLevel, imdbScores, malScores,
         update: result[3].value || [],
     }
 
-    if (result.map(item => item.value || []).flat(1).length > 0) {
-        setCache(routeUrl, multipleStatus);
-    }
+    addFieldLikeOrDislike(multipleStatus.inTheaters);
+    addFieldLikeOrDislike(multipleStatus.comingSoon);
+    addFieldLikeOrDislike(multipleStatus.news);
+    addFieldLikeOrDislike(multipleStatus.update);
 
     return multipleStatus;
 }
 
-export async function searchByTitle(title, types, dataLevel, years, imdbScores, malScores, page, routeUrl) {
+export async function searchByTitle(userId, title, types, dataLevel, years, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
     let staffAndCharactersProjection = dataLevel === 'high'
@@ -101,11 +103,13 @@ export async function searchByTitle(title, types, dataLevel, years, imdbScores, 
             rawName: 1,
             gender: 1,
             imageData: 1,
+            likesCount: 1,
+            dislikesCount: 1,
         };
     let searchDataArray = await Promise.allSettled([
-        dbMethods.searchOnMovieCollectionByTitle(title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.searchOnCollectionByName('staff', title, skip, limit, staffAndCharactersProjection),
-        dbMethods.searchOnCollectionByName('characters', title, skip, limit, staffAndCharactersProjection),
+        dbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        dbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, staffAndCharactersProjection),
+        dbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, staffAndCharactersProjection),
     ]);
     let searchData = {
         movies: searchDataArray[0].value || [],
@@ -113,36 +117,59 @@ export async function searchByTitle(title, types, dataLevel, years, imdbScores, 
         characters: searchDataArray[2].value || [],
     }
 
-    setCache(routeUrl, searchData);
+    addFieldLikeOrDislike(searchData.movies);
+    addFieldLikeOrDislike(searchData.staff);
+    addFieldLikeOrDislike(searchData.characters);
 
     return searchData;
 }
 
-export async function searchMovieById(id, dataLevel, routeUrl) {
-    let movieData = await dbMethods.searchOnCollectionById("movies", id, dataLevelConfig[dataLevel]);
+export async function searchMovieById(userId, id, dataLevel) {
+    let movieData = await dbMethods.searchOnCollectionById("movies", userId, id, dataLevelConfig[dataLevel]);
     if (movieData) {
-        setCache(routeUrl, movieData);
+        addFieldLikeOrDislike([movieData]);
     }
 
     return movieData;
 }
 
-export async function searchStaffById(id, routeUrl) {
-    let movieData = await dbMethods.searchOnCollectionById("staff", id, {});
-    if (movieData) {
-        setCache(routeUrl, movieData);
+export async function searchStaffById(userId, id) {
+    let staffData = await dbMethods.searchOnCollectionById("staff", userId, id, {});
+    if (staffData) {
+        addFieldLikeOrDislike([staffData]);
     }
 
-    return movieData;
+    return staffData;
 }
 
-export async function searchCharacterById(id, routeUrl) {
-    let movieData = await dbMethods.searchOnCollectionById("characters", id, {});
-    if (movieData) {
-        setCache(routeUrl, movieData);
+export async function searchCharacterById(userId, id) {
+    let characterData = await dbMethods.searchOnCollectionById("characters", userId, id, {});
+    if (characterData) {
+        addFieldLikeOrDislike([characterData]);
     }
 
-    return movieData;
+    return characterData;
+}
+
+export async function likeOrDislikeService(userId, docType, id, likeOrDislike, isRemove) {
+    if (isRemove) {
+        let removeResult = await likeDbMethods.handleRemoveLikeOrDislikeTransaction(userId, docType, id, likeOrDislike);
+        const code = removeResult === 'error' ? 500 : removeResult === 'notfound' ? 404 : 200;
+        const errorMessage = removeResult === 'error' ? 'Server error, try again later' : removeResult === 'notfound' ? 'Cannot find movie' : '';
+        return generateServiceResult({}, code, errorMessage);
+    }
+
+    let result = await likeDbMethods.handleLikeOrDislikeTransaction(userId, docType, id, likeOrDislike);
+    if (result === 'error') {
+        return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+    if (result === 'notfound') {
+        return generateServiceResult({}, 404, 'Cannot find movie');
+    }
+    if (result === 'already exist') {
+        return generateServiceResult({}, 409, 'already exist');
+    }
+    return generateServiceResult({}, 200, '');
 }
 
 function getSkipLimit(page, limit) {
@@ -150,4 +177,13 @@ function getSkipLimit(page, limit) {
         skip: limit * (page - 1),
         limit,
     };
+}
+
+export function addFieldLikeOrDislike(docs) {
+    for (let i = 0; i < docs.length; i++) {
+        docs[i].likeOrDislike = docs[i].likeBucket.length > 0
+            ? docs[i].likeBucket[0].type
+            : '';
+        delete docs[i].likeBucket;
+    }
 }

@@ -24,11 +24,10 @@ import getIpLocation from "../extraServices/ip/index.js";
 //todo : forget password
 //todo : edit profile data
 //todo : profile images
-//todo : google auth
 
 export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
-        let findUserResult = await findUser(username, email);
+        let findUserResult = await findUser(username, email, {username: 1, email: 1});
         if (findUserResult) {
             if (findUserResult.username === username.toLowerCase()) {
                 return generateServiceResult({}, 403, 'This username already exists');
@@ -71,8 +70,10 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
 }
 
 export async function login(username_email, password, deviceInfo, ip) {
+    //todo : check device already exist
+    //todo : limit number of device
     try {
-        let userData = await findUser(username_email, username_email);
+        let userData = await findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
         if (!userData) {
             return generateServiceResult({}, 400, 'Cannot find user');
         }
@@ -106,7 +107,7 @@ export async function login(username_email, password, deviceInfo, ip) {
     }
 }
 
-export async function getToken(jwtUserData, deviceInfo, prevRefreshToken) {
+export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
     try {
         const user = {
             userId: jwtUserData.userId,
@@ -115,6 +116,7 @@ export async function getToken(jwtUserData, deviceInfo, prevRefreshToken) {
             generatedAt: Date.now(),
         };
         const tokens = generateAuthTokens(user);
+        deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
         let result = await updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, 'Server error, try again later');
@@ -230,8 +232,8 @@ export async function sendVerifyEmail(userData, host) {
         let newEmailToken = await bcrypt.hash(uuidv4(), 12);
         newEmailToken = newEmailToken.replace(/\//g, '');
         let newEmailToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let updateResult = updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
-        if (updateResult) {
+        let updateResult = await updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
+        if (updateResult === 'ok') {
             await agenda.now('verify email', {
                 rawUsername: userData.rawUsername,
                 email: userData.email,
@@ -240,8 +242,10 @@ export async function sendVerifyEmail(userData, host) {
             });
 
             return generateServiceResult({}, 200, '');
+        } else if (updateResult === 'notfound') {
+            return generateServiceResult({}, 400, 'Cannot find user email');
         }
-        return generateServiceResult({}, 400, 'Cannot find user email');
+        return generateServiceResult({}, 500, 'Server error, try again later');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');
@@ -251,10 +255,12 @@ export async function sendVerifyEmail(userData, host) {
 export async function verifyEmail(token) {
     try {
         let verify = await verifyUserEmail(token);
-        if (verify) {
+        if (verify === 'ok') {
             return generateServiceResult({message: 'email verified'}, 200, '');
+        } else if (verify === 'notfound') {
+            return generateServiceResult({}, 404, 'Invalid/Stale Token');
         }
-        return generateServiceResult({}, 404, 'Invalid/Stale Token');
+        return generateServiceResult({}, 500, 'Server error, try again later');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');
@@ -280,11 +286,11 @@ function generateAuthTokens(user) {
     };
 }
 
-function generateServiceResult(tokenFields, code, errorMessage, extraData = {}) {
+export function generateServiceResult(dataFields, code, errorMessage, extraData = {}) {
     return {
         ...extraData,
         data: {
-            ...tokenFields,
+            ...dataFields,
             code: code,
             errorMessage: errorMessage,
         }

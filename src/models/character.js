@@ -19,5 +19,7 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
             actorName: fixJapaneseCharacter(actorName),
             actorImage: '',
         }],
+        likesCount: 0,
+        dislikesCount: 0,
     }
 }

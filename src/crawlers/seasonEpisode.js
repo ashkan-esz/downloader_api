@@ -277,7 +277,8 @@ export function getTotalDuration(seasons, latestData, type) {
         if (seasons[i].seasonNumber <= latestData.season) {
             let episodes = seasons[i].episodes;
             for (let j = 0; j < episodes.length; j++) {
-                if (episodes[j].episodeNumber <= latestData.episode) {
+                if (seasons[i].seasonNumber < latestData.season ||
+                    episodes[j].episodeNumber <= latestData.episode) {
                     episodeCounter++;
                     totalDuration += Number(episodes[j].duration.replace('min', ''));
                 }

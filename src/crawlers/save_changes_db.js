@@ -129,8 +129,8 @@ async function searchOnCollection(titleObj, year, type) {
         totalSeasons: 1,
         latestData: 1,
         nextEpisode: 1,
-        like: 1,
-        dislike: 1,
+        likesCount: 1,
+        dislikesCount: 1,
         releaseDay: 1,
     };
 
@@ -183,7 +183,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             const linksCount = linksField.map(item => item.links).flat(1).length;
             if (linksCount === 0 && db_data.releaseState === 'done') {
                 if (db_data.trailer_s3) {
-                    let fileName = db_data.trailer_s3.split('/').pop();
+                    let fileName = db_data.trailer_s3.url.split('/').pop();
                     let trailerRemoved = await deleteTrailerFromS3(fileName);
                     if (trailerRemoved) {
                         if (db_data.trailers) {
