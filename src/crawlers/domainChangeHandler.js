@@ -2,7 +2,6 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as Sentry from "@sentry/node";
 import {updateSourcesObjDB} from "../data/dbMethods";
-import {checkNeedHeadlessBrowser} from "./searchTools";
 import {getSourcesArray} from "./sourcesArray";
 import {getPageData} from "./remoteHeadlessBrowser";
 import {getDatesBetween} from "./utils";
@@ -55,19 +54,15 @@ async function checkSourcesUrl(sourcesUrls) {
     let changedSources = [];
     try {
         for (let i = 0; i < sourcesUrls.length; i++) {
-            let headLessBrowser = checkNeedHeadlessBrowser(sourcesUrls[i].sourceName);
-
             let responseUrl;
             try {
                 let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
-                if (headLessBrowser) {
-                    let pageData = await getPageData(homePageLink);
-                    if (pageData && pageData.pageContent) {
-                        responseUrl = pageData.responseUrl;
-                    }
-                } else {
-                    let response = await axios.get(homePageLink);
-                    responseUrl = response.request.res.responseUrl;
+                let pageData = await getPageData(homePageLink);
+                if (pageData && pageData.pageContent) {
+                    responseUrl = pageData.responseUrl;
+                }
+                if (!responseUrl) {
+                    continue;
                 }
             } catch (error) {
                 await saveError(error);

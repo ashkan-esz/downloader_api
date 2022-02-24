@@ -84,12 +84,15 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                 let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    let {season, episode} = getSeasonEpisode(link);
-                    if (season === 0) {
-                        ({season, episode} = getSeasonEpisode(link_info));
-                    }
-                    if (episode > 3000) {
-                        episode = 0;
+                    let season = 0, episode = 0;
+                    if (type.includes('serial')) {
+                        ({season, episode} = getSeasonEpisode(link));
+                        if (season === 0) {
+                            ({season, episode} = getSeasonEpisode(link_info));
+                        }
+                        if (episode > 3000) {
+                            episode = 0;
+                        }
                     }
                     downloadLinks.push({
                         link: link.trim(),
@@ -251,15 +254,6 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
         saveError(error);
         return true;
     }
-}
-
-export function checkNeedHeadlessBrowser(sourceName) {
-    return (
-        sourceName === "digimoviez" ||
-        sourceName === "avamovie" ||
-        sourceName === "film2movie" ||
-        sourceName === "animelist"
-    );
 }
 
 function getConcurrencyNumber(sourceName) {

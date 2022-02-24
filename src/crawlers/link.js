@@ -216,7 +216,7 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
         let checkQuality = prevGroupedLinks.find(item => item.quality === currentGroupedLinks[i].quality);
         if (checkQuality) {
             //quality exist
-            prevGroupedLinks[i].checked = true;
+            checkQuality.checked = true;
             //get source links
             let prevLinks = checkQuality.links.filter(item => item.sourceName === sourceName);
             let currentLinks = currentGroupedLinks[i].links;
@@ -231,16 +231,16 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
     }
 
     //handle removed quality links
-    for (let i = 0; i < currentGroupedLinks.length; i++) {
-        if (!currentGroupedLinks[i].checked) {
-            let prevLength = currentGroupedLinks[i].links.length;
-            currentGroupedLinks[i].links = currentGroupedLinks[i].links.filter(link => link.sourceName === sourceName);
-            let newLength = currentGroupedLinks[i].links.length;
+    for (let i = 0; i < prevGroupedLinks.length; i++) {
+        if (!prevGroupedLinks[i].checked) {
+            let prevLength = prevGroupedLinks[i].links.length;
+            prevGroupedLinks[i].links = prevGroupedLinks[i].links.filter(link => link.sourceName === sourceName);
+            let newLength = prevGroupedLinks[i].links.length;
             if (prevLength !== newLength) {
                 updateFlag = true;
             }
         }
-        delete currentGroupedLinks[i].checked;
+        delete prevGroupedLinks[i].checked;
     }
 
     return updateFlag;
