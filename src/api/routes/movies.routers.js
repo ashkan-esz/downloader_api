@@ -57,5 +57,11 @@ router.put('/staff/:type/:id', middlewares.auth.attachAuthFlag, middlewares.auth
 //movies/characters/:type/:id?remove=(true|false)
 router.put('/characters/:type/:id', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.likeCharacter);
 
+//movies/status/genres
+router.put('/status/genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getGenresStatus);
+
+//movies/genres/:type/:dataLevel/:imdbScores/:malScores/:page
+router.put('/genres/:type/:dataLevel/:imdbScores/:malScores/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getGenresMovies);
 
 export default router;

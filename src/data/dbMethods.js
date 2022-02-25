@@ -428,22 +428,76 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
     }
 }
 
-//-----------------------------------
-//-----------------------------------
-
-export async function searchOnMovieCollectionByTitle(userId, title, types, years, imdbScores, malScores, skip, limit, projection) {
+export async function getGenresStatusDB() {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {
-                $search: {
-                    index: 'default',
-                    text: {
-                        query: title,
-                        path: ['title', 'alternateTitles', 'titleSynonyms'],
+                $unwind: "$genres"
+            },
+            {
+                $group:
+                    {
+                        _id: "$genres",
+                        count: {$sum: 1}
                     }
+            },
+            {
+                $sort: {
+                    count: -1,
                 }
             },
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        let aggregationPipeline = [
+            {
+                $match: {
+                    genres: {$all: genres},
+                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+                }
+            },
+            {
+                $sort: {
+                    year: -1,
+                    insert_date: -1
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            },
+            getLookupOnLikeBucketStage(userId, 'movies'),
+            {
+                $project: {...projection, likeBucket: 1},
+            }
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+        let aggregationPipeline = [
             {
                 $match: {
                     type: {$in: types},
@@ -469,6 +523,23 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
         ];
+
+        if (title) {
+            aggregationPipeline.unshift({
+                $search: {
+                    index: 'default',
+                    text: {
+                        query: title,
+                        path: ['title', 'alternateTitles', 'titleSynonyms'],
+                    }
+                }
+            });
+        }
+
+        if (genres.length > 0) {
+            let matchIndex = title ? 1 : 0;
+            aggregationPipeline[matchIndex]['$match'].genres = {$all: genres};
+        }
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({

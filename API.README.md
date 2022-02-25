@@ -15,6 +15,7 @@
 | **`id`** | mongodb id object | id of movie/staff/character to get               | `true` |
 | **`password`** | string | password of crawler starter api                  | `true` |
 | **`deviceId`** | string | unique id of session                             | `true` |
+| **`genres`** | array of string | example: ['action', 'comedy']                             | `true` |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -46,6 +47,8 @@
 - [PUT /movies/[type]/[id]](#put-moviestypeid)
 - [PUT /movies/staff/[type]/[id]](#put-moviesstafftypeid)
 - [PUT /movies/characters/[type]/[id]](#put-moviescharacterstypeid)
+- [GET /movies/status/genres](#get-moviesstatusgenres)
+- [GET /movies/genres/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenrestypesdatalevelimdbscoresmalscorespage)
 
 
 ### POST /crawler/[password] 
@@ -189,6 +192,8 @@ Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/anime_
 
 
 ### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page] 
+> also receive field `genres` in request body (optional).
+
 Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1  
 Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1  
 Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/high/2000-2022/0-10/0-10/1
@@ -212,3 +217,10 @@ Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/
 > `type` can be `like` or `dislike` and also receive query parameters `remove=[true|false]`
 > 
 > returns status code 409 when liking a movie that is previously liked
+
+### GET /movies/status/genres
+> returns all available genres with their count
+
+
+### GET /movies/genres/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]  
+> receive field `genres` in request body and return movies match with searching genres 

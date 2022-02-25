@@ -102,11 +102,12 @@ export async function searchByTitle(req, res) {
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let years = req.params.years.split('-');
+    let genres = req.body.genres || [];
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
 
-    let titles = await moviesServices.searchByTitle(userId, title, types, dataLevel, years, imdbScores, malScores, page);
+    let titles = await moviesServices.searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page);
     if (titles.movies.length > 0 || titles.staff.length > 0 || titles.characters.length > 0) {
         return res.json(titles);
     }
@@ -177,4 +178,25 @@ export async function likeCharacter(req, res) {
 
     res.statusCode = likeResult.data.code;
     return res.json(likeResult.data);
+}
+
+export async function getGenresStatus(req, res) {
+    let result = await moviesServices.getGenresStatus();
+
+    res.statusCode = result.data.code;
+    return res.json(result.data);
+}
+
+export async function getGenresMovies(req, res) {
+    let userId = req.jwtUserData.userId;
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
+    let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
+    let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
+    let malScores = req.params.malScores.split('-').map(item => Number(item));
+    let page = Number(req.params.page) || 1;
+    let genres = req.body.genres || [];
+    let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page);
+
+    res.statusCode = result.data.code;
+    return res.json(result.data);
 }

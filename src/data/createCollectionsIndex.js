@@ -23,7 +23,7 @@ export async function createCollectionsAndIndexes() {
         await moviesCollection.createIndex({alternateTitles: 1});
         await moviesCollection.createIndex({titleSynonyms: 1});
         await moviesCollection.createIndex({jikanID: 1});
-        await moviesCollection.createIndex({releaseState: 1, type: 1, 'rating.imdb': 1, 'rating.myAnimeList': 1});
+        await moviesCollection.createIndex({type: 1, releaseState: 1, 'rating.imdb': 1, 'rating.myAnimeList': 1});
         await moviesCollection.createIndex({year: -1, insert_date: -1});
         await moviesCollection.createIndex({update_date: -1, year: -1});
         await moviesCollection.createIndex({likesCount: -1, _id: -1});
@@ -40,6 +40,7 @@ export async function createCollectionsAndIndexes() {
             'rating.myAnimeList': 1
         });
         await moviesCollection.createIndex({status: 1, releaseDay: 1});
+        await moviesCollection.createIndex({genres: 1});
         //usage: title, **alternateTitles**, **titleSynonyms**, type, year
         //usage: jikanID
         //usage: relatedTitles.jikanID
@@ -49,7 +50,8 @@ export async function createCollectionsAndIndexes() {
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: likesCount, _id)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, trailers, (sort: year, add_date)
         //usage: rank.*, type, rating.imdb, rating.myAnimeList, (sort: rank)
-        //usage: status, releaseDay, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)
+        //usage: status, releaseDay, type, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)
+        //usage: genres, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
 
 
         const staffAndCharactersCollections = ['staff', 'characters'];

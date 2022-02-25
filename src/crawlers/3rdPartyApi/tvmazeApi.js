@@ -92,7 +92,7 @@ export function getTvMazeApiFields(data) {
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
             summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
-            genres: data.genres.map(value => value.toLowerCase()) || [],
+            genres: data.genres.map(value => value.toLowerCase()).filter(item => item !== 'n/a') || [],
             isAnimation: (data.type.toLowerCase() === 'animation'),
             isAnime: (data.genres.includes('Anime')),
             updateFields: {
