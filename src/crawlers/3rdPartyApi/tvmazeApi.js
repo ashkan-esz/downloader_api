@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
 
 
-export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, type, canReTry = true) {
+export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, premiered, type, canReTry = true) {
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
@@ -17,11 +17,11 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
 
             let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
             let data = response.data;
-            let titleMatch = checkTitle(data, title, alternateTitles, titleSynonyms, imdbID);
+            let titleMatch = checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premiered);
             if (titleMatch) {
                 return data;
             } else {
-                return await getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID);
+                return await getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID, premiered);
             }
         } catch (error) {
             if (error.response && error.response.status === 429) {
@@ -32,7 +32,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 if (type.includes('anime') && canReTry) {
                     let newTitle = getEditedTitle(title);
                     if (newTitle !== title) {
-                        return await getTvMazeApiData(newTitle, alternateTitles, titleSynonyms, imdbID, type, false);
+                        return await getTvMazeApiData(newTitle, alternateTitles, titleSynonyms, imdbID, premiered, type, false);
                     }
                 }
                 return null;
@@ -66,7 +66,7 @@ function getEditedTitle(title) {
         .replace(' renai ', ' ren\'ai ');
 }
 
-async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID) {
+async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID, premiered) {
     let multiSearcheUrl = `https://api.tvmaze.com/search/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
     let data = await handleApiCall(multiSearcheUrl);
     if (!data) {
@@ -74,10 +74,10 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
     }
     for (let i = 0; i < data.length; i++) {
         let thisTitleData = data[i].show;
-        if (checkTitle(thisTitleData, title, alternateTitles, titleSynonyms, imdbID)) {
+        if (checkTitle(thisTitleData, title, alternateTitles, titleSynonyms, imdbID, premiered)) {
             let titleUrl = `https://api.tvmaze.com/shows/${thisTitleData.id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
             let titleData = await handleApiCall(titleUrl);
-            if (titleData && checkTitle(titleData, title, alternateTitles, titleSynonyms, imdbID)) {
+            if (titleData && checkTitle(titleData, title, alternateTitles, titleSynonyms, imdbID, premiered)) {
                 return titleData;
             }
         }
@@ -104,7 +104,7 @@ export function getTvMazeApiFields(data) {
                 duration: data.runtime ? data.runtime + ' min' :
                     data.averageRuntime ? data.averageRuntime + ' min' : '',
                 status: data.status.toLowerCase(),
-                movieLang: data.language || '',
+                movieLang: data.language ? data.language.toLowerCase() : '',
                 releaseDay: data.schedule.days ? (data.schedule.days[0] || '').toLowerCase() : '',
                 officialSite: data.officialSite || "",
                 webChannel: data.webChannel ? data.webChannel.name || '' : '',
@@ -145,7 +145,11 @@ async function handleApiCall(url) {
     return null;
 }
 
-function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID) {
+function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premiered) {
+    let titleYear = premiered.split('-')[0];
+    if (titleYear && data.premiered && Math.abs(Number(titleYear) - Number(data.premiered.split(/[-–]/g)[0])) > 1) {
+        return false;
+    }
     let apiTitle = data.name.toLowerCase();
     let apiTitle_simple = replaceSpecialCharacters(apiTitle);
     alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()));

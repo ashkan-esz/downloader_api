@@ -334,7 +334,7 @@ async function getTitleDataFromDB(title, year, type) {
         alternateTitles: [],
         titleSynonyms: [],
     }
-    let temp = await dbMethods.searchTitleDB(titleObj, [type], year, {
+    let dataConfig = {
         title: 1,
         type: 1,
         premiered: 1,
@@ -345,7 +345,14 @@ async function getTitleDataFromDB(title, year, type) {
         releaseState: 1,
         trailers: 1,
         posters: 1,
-    });
+    }
+
+    let temp = await dbMethods.searchTitleDB(titleObj, [type], year, dataConfig);
+    if (temp.length === 0) {
+        let plusYear = (Number(year) - 1).toString();
+        temp = await dbMethods.searchTitleDB(titleObj, [type], plusYear, dataConfig);
+    }
+
     return temp.length > 0 ? temp[0] : null;
 }
 

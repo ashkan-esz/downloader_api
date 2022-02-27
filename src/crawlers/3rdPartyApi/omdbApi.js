@@ -20,7 +20,15 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
         let url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${searchType}&plot=full`;
-        let data = await handle_OMDB_ApiKeys(url);
+        let data;
+        if (titleYear) {
+            data = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
+            if (data === null) {
+                data = await handle_OMDB_ApiKeys(url);
+            }
+        } else {
+            data = await handle_OMDB_ApiKeys(url);
+        }
         if (data === null) {
             if (canRetry) {
                 let newTitle = getEditedTitle(title);
@@ -109,14 +117,14 @@ export function getOMDBApiFields(data, type) {
             directorsNames: data.Director.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             writersNames: data.Writer.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             actorsNames: data.Actors.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
-            summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
+            summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim().replace('N/A', '') : '',
             genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()).filter(item => item !== 'n/a') : [],
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
             omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
+            year: data.Year.split(/[-–]/g)[0],
             updateFields: {
                 imdbID: data.imdbID,
                 rawTitle: data.Title.trim(),
-                year: data.Year.split(/[-–]/g)[0],
                 duration: data.Runtime || '0 min',
                 totalSeasons: (type.includes('movie')) ? 0 : Number(data.totalSeasons),
                 rated: data.Rated,

@@ -56,6 +56,11 @@ export async function addApiData(titleModel, site_links, sourceName) {
             titleModel = {...titleModel, ...omdbApiFields.updateFields};
             updateSpecificFields(titleModel, titleModel, omdbApiFields, 'omdb');
             titleModel.rating = {...titleModel.rating, ...omdbApiFields.rating};
+            if (omdbApiFields.year) {
+                if (titleModel.type.includes('serial') || !titleModel.year) {
+                    titleModel.year = omdbApiFields.year;
+                }
+            }
         }
     }
 
@@ -139,6 +144,12 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
             updateSpecificFields(db_data, updateFields, omdbApiFields, 'omdb');
             db_data.rating = {...db_data.rating, ...omdbApiFields.rating};
             updateFields.rating = db_data.rating;
+            if (omdbApiFields.year) {
+                if (db_data.type.includes('serial') || !db_data.year) {
+                    db_data.year = omdbApiFields.year;
+                    updateFields.year = omdbApiFields.year;
+                }
+            }
         }
     }
 
@@ -273,7 +284,7 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
     let searchTitle = (apiName === 'omdb') ? titleData.rawTitle || titleData.title : titleData.title;
     let result = (apiName === 'omdb')
         ? await getOMDBApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
-        : await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
+        : await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
     if (result) {
         return result;
     } else {
@@ -288,7 +299,7 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
         for (let i = 0; i < alternateTitles.length; i++) {
             result = (apiName === 'omdb')
                 ? await getOMDBApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
-                : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.type);
+                : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
             if (result) {
                 return result;
             }

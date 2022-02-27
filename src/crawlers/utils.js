@@ -118,6 +118,10 @@ export function getType(title) {
         title.includes('استند آپ')) {
         return 'movie';
     }
+    if (title.includes('دانلود دوبله فارسی') && !title.includes('سریال') && !title.includes('انیم')) {
+        //case: دانلود دوبله فارسی Wonder 2017
+        return 'movie';
+    }
     if (title.includes('انیمیشن')) {
         return title.includes('سریال') ? 'serial' : 'movie';
     }

@@ -47,7 +47,7 @@ async function search_title(link, i, $, url) {
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
                     if (downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
-                        type = 'serial';
+                        type = type.replace('movie', 'serial');
                     }
                     let sourceData = {
                         sourceName,
@@ -79,7 +79,15 @@ function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
             if (!isNaN(year) && Number(year) > 1900) {
                 splitTitle.pop();
                 title = splitTitle.join(" ");
-                if (year.length > 4) {
+                if (year.length === 8) {
+                    let y1 = year.slice(0, 4);
+                    let y2 = year.slice(4);
+                    if (y1 > 2000 && y2 > 2000) {
+                        year = Math.min(y1, y2);
+                    } else {
+                        year = y1;
+                    }
+                } else if (year.length > 4) {
                     year = year.slice(0, 4);
                 }
             } else {

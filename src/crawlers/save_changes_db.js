@@ -141,16 +141,34 @@ async function searchOnCollection(titleObj, year, type) {
         searchTypes.push(('anime_' + type));
     }
 
+    let reSearch = false;
     let searchResults = await searchTitleDB(titleObj, searchTypes, year, dataConfig);
+    if (searchResults.length === 0 && searchTypes[0].includes('serial') && year) {
+        reSearch = true;
+        searchResults = await searchTitleDB(titleObj, searchTypes, '', dataConfig);
+    }
 
     A: for (let i = 0; i < searchTypes.length; i++) {
-        for (let j = 0; j < searchResults.length; j++) {
-            if (searchTypes[i] === searchResults[j].type) {
-                db_data = searchResults[j];
-                break A;
+        if (reSearch) {
+            for (let k = 0; k < 2; k++) {
+                for (let j = 0; j < searchResults.length; j++) {
+                    let compareYear = Math.abs(Number(searchResults[j].year) - Number(year));
+                    if (compareYear <= k && searchTypes[i] === searchResults[j].type) {
+                        db_data = searchResults[j];
+                        break A;
+                    }
+                }
+            }
+        } else {
+            for (let j = 0; j < searchResults.length; j++) {
+                if (searchTypes[i] === searchResults[j].type) {
+                    db_data = searchResults[j];
+                    break A;
+                }
             }
         }
     }
+
     return db_data;
 }
 

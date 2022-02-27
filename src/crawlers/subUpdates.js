@@ -57,16 +57,25 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
         });
     }
     let prevLength = db_data.posters.length;
+    let s3PosterUpdate = false;
     if (db_data.poster_s3) {
-        db_data.posters.push({
-            url: db_data.poster_s3.url,
-            info: 's3Poster',
-            size: db_data.poster_s3.size,
-        });
+        let prevS3Poster = db_data.posters.find(item => item.info === 's3Poster');
+        if (!prevS3Poster) {
+            s3PosterUpdate = true;
+            db_data.posters.push({
+                url: db_data.poster_s3.url,
+                info: 's3Poster',
+                size: db_data.poster_s3.size,
+            });
+        } else if (prevS3Poster.url !== db_data.poster_s3.url || prevS3Poster.size !== db_data.poster_s3.size) {
+            s3PosterUpdate = true;
+            prevS3Poster.url = db_data.poster_s3.url;
+            prevS3Poster.size = db_data.poster_s3.size;
+        }
     }
     db_data.posters = removeDuplicateLinks(db_data.posters);
     db_data.posters = sortPosters(db_data.posters);
-    return (posterUpdated || !posterExist || prevLength !== db_data.posters.length);
+    return (posterUpdated || !posterExist || s3PosterUpdate || prevLength !== db_data.posters.length);
 }
 
 function handleTrailerUpdate(db_data, site_trailers) {
