@@ -8,7 +8,8 @@ import {
     checkHardSub,
     purgeSizeText,
     purgeQualityText,
-    purgeEncoderText
+    purgeEncoderText,
+    removeDuplicateLinks
 } from "../utils";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db";
@@ -31,22 +32,44 @@ async function search_title(link, i, $) {
             if (config.nodeEnv === 'dev') {
                 console.log(`golchindl/${type}/${i}/${title}  ========>  `);
             }
-            let isCollection = title.includes('کالکشن فیلم');
+            title = title.replace('پلی استیشن 5', '');
+            let isCeremony = title.includes('دانلود مراسم');
+            let isCollection = title.includes('کالکشن فیلم') || title.includes('کالکشن انیمیشن');
             ({title, year} = getTitleAndYear(title, year, type));
-            if (isCollection) {
-                title += ' collection';
-            }
+
             if (!year) {
                 year = fixYear($, link);
-            }
-            if (title === 'spongebob') {
-                return;
             }
 
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
+                    if (type.includes('serial') && downloadLinks.length > 0 &&
+                        downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
+                        type = type.replace('serial', 'movie');
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                    }
+                    if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
+                        type = type.replace('movie', 'serial');
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                    }
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    if (isCollection) {
+                        title += ' collection';
+                        addTitleNameToInfo(downloadLinks);
+                    } else if (isCeremony) {
+                        addTitleNameToInfo(downloadLinks);
+                    }
+
                     let sourceData = {
                         sourceName,
                         pageLink,
@@ -88,6 +111,26 @@ function fixYear($, link) {
     } catch (error) {
         saveError(error);
         return '';
+    }
+}
+
+function addTitleNameToInfo(downloadLinks) {
+    for (let i = 0; i < downloadLinks.length; i++) {
+        let fileName = downloadLinks[i].link.split('/').pop();
+        let nameMatch = fileName.match(/.+(\d\d\d\d|\d\d\d)p/gi);
+        if (!nameMatch) {
+            nameMatch = fileName.match(/.+(hdtv)/gi);
+        }
+        let name = nameMatch ? nameMatch.pop().replace(/(\d\d\d\d|\d\d\d)p|hdtv/gi, '').replace(/\.|%20/g, ' ').trim() : '';
+        if (!name) {
+            continue;
+        }
+        let splitInfo = downloadLinks[i].info.split(' - ');
+        if (splitInfo.length === 1) {
+            downloadLinks[i].info += ' (' + name + ')';
+        } else {
+            downloadLinks[i].info = splitInfo[0] + ' (' + name + ')' + ' - ' + splitInfo[1];
+        }
     }
 }
 
@@ -159,20 +202,27 @@ function getFileData_serial($, link) {
     let splitInfoText = infoText.split(' – ');
     let quality, encoder;
     if (splitInfoText[0].includes('کیفیت')) {
-        let qualityText = splitInfoText[0].split('کیفیت')[1].trim().split(' ');
+        let qualityText = splitInfoText[0].split('کیفیت')[1].trim().split(/ |\s/g);
         quality = [...qualityText.slice(1), qualityText[0]].filter(value => value).join('.');
         quality = purgeQualityText(quality);
         encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
     } else if (splitInfoText[0].includes('«')) {
         quality = splitInfoText[0].split('«')[1].replace('»:', '');
         quality = purgeQualityText(quality).replace(/\s+/g, '.');
-        encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
+        encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1].replace('»: لينک مستقيم', '')) : '';
     } else {
-        let linkHref = $(link).attr('href').split('.');
-        linkHref.pop();
-        let seasonEpisodeIndex = linkHref.findIndex((value => value.match(/s\d+e\d+/gi)));
-        quality = linkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
+        let splitLinkHref = linkHref.split('.');
+        splitLinkHref.pop();
+        let seasonEpisodeIndex = splitLinkHref.findIndex((value => value.match(/s\d+e\d+/gi)));
+        quality = splitLinkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
         quality = purgeQualityText(quality);
+        quality = quality
+            .replace('g.', '')
+            .replace(/^\d\./, '')
+            .replace('x265.720p', '720p.x265')
+            .replace('DD%202.0.H.264-monkee', 'monkee')
+            .replace('WEB-RIP.hevc.x265', 'x265.WEB-RIP.hevc')
+            .replace('REPACK.720p.WEB-DL', '720p.WEB-DL.REPACK');
         encoder = '';
     }
     let linkHrefQualityMatch = linkHref.match(/bluray|webdl|web-dl|webrip|web-rip/gi);
@@ -180,31 +230,50 @@ function getFileData_serial($, link) {
         quality = quality + '.' + linkHrefQualityMatch.pop();
         quality = purgeQualityText(quality);
     }
+    if (quality === 'DUBLE.Golchindl') {
+        let qualityMatch = linkHref.match(/[.\s](\d\d\d\d|\d\d\d)p[.\s]/gi);
+        let temp = qualityMatch ? qualityMatch.pop().replace(/[.\s]/g, '') : '480p';
+        quality = temp + '.' + 'dubbed';
+    }
     if (quality.includes('10bit')) {
         bit10 = '';
     }
+    if (quality.toLowerCase().includes('duble') || quality.toLowerCase().includes('dubbed')) {
+        dubbed = '';
+    }
+    let resolution = quality.match(/\d\d\d+p/g);
+    if (resolution) {
+        quality = quality
+            .replace(`x265.${resolution[0]}`, `${resolution[0]}.x265`)
+            .replace(`Dl.${resolution[0]}.Web`, `${resolution[0]}.WEB-DL`)
+            .replace(`BluRay${resolution[0]}`, `${resolution[0]}.BluRay`);
+    }
+
     quality = quality.replace(/\.Www\.DownloadSpeed\.iR|-NEXT|-DEEP|\.subed|\.subdl|\.\[shahrdl.com]|\.NF|\.DDP2\.0|\.x264/gi, '').trim();
-    return [quality, bit10, encoder, hardSub, dubbed]
+    let multiEpisodeMatch = linkHref.match(/s\d\de\d\d(e\d\d)+/gi);
+    let multiEpisode = multiEpisodeMatch ? multiEpisodeMatch.pop() : '';
+    return [quality, multiEpisode, bit10, encoder, hardSub, dubbed]
         .filter(value => value)
         .join('.')
-        .replace('WEB-DL.10bit', '10bit.WEB-DL');
+        .replace(/^REAL\.REPACK\.|^REPACK\./gi, '')
+        .replace('WEB-DL.10bit', '10bit.WEB-DL')
+        .replace('WEB-RIP.10bit', '10bit.WEB-RIP')
+        .replace('10bit.WEB-RIP.2CH.x265', 'x265.10bit.WEB-RIP.2CH')
+        .replace('10bit.WEB-RIP.6CH.x265', 'x265.10bit.WEB-RIP.6CH')
+        .replace('4K.2160p', '2160p.4K')
+        .replace('Farsi.Dubbed', 'dubbed')
+        .replace('.Golchindl.net', '')
+        .replace('DUBLE', 'dubbed');
 }
 
 function getFileData_movie($, link) {
-    let parentName = $(link).parent()[0].name;
-    let infoNodeChildren = parentName !== 'p'
-        ? $($(link).parent().parent().prev().children()[0]).children()[0]
-        : $($(link).parent().prev().children()[0]).children()[0];
-    let infoText = $(infoNodeChildren).text()
-        .replace('- 4K', '')
-        .replace('- اختصاصی گلچین دانلود', '')
-        .replace('زبان اصلی - ', '')
-        .trim();
-    if (infoText.includes('دانلود پشت صحنه')) {
+    let linkHref = $(link).attr('href');
+    let infoText = getMovieInfoText($, link);
+    if (infoText.includes('دانلود پشت صحنه') || $(link).text().includes('دانلود پشت صحنه')) {
         return 'ignore';
     }
-    let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), infoText) ? 'dubbed' : '';
+    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, infoText) ? 'dubbed' : '';
     let quality, encoder, size;
     if (infoText.includes('|')) {
         let splitInfoText = infoText.split('|');
@@ -266,13 +335,68 @@ function getFileData_movie($, link) {
             .replace(`Dl.${resolution[0]}.Web`, `${resolution[0]}.WEB-DL`)
             .replace(`BluRay.${resolution[0]}`, `${resolution[0]}.BluRay`);
     }
-    if (quality === '') {
-        let resolution = $(link).attr('href').match(/\d\d\d+p/g);
-        if (resolution) {
-            quality = resolution.pop();
+
+    if (quality.match(/^(web-dl|dvdrip|bluray|brrip)$/gi) || quality === '') {
+        let qualityMatch = linkHref.match(/[.\s](\d\d\d\d|\d\d\d)p[.\s]/gi);
+        let temp = qualityMatch ? qualityMatch.pop().replace(/[.\s]/g, '') : '480p';
+        if (!temp.toLowerCase().includes('x265') && linkHref.includes('x265')) {
+            temp += '.x265';
         }
+        quality = quality ? temp + '.' + quality : temp;
     }
-    quality = quality.replace('BluRay.x265', 'x265.BluRay');
-    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.').replace('.دوبله فارسی', '');
+
+    let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi);
+    if (quality.match(/^(\d\d\d\d|\d\d\d)p(\.x265)*$/gi) && linkHrefQualityMatch) {
+        quality = quality + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
+    }
+
+    let matchPart = linkHref.match(/\.part\d\./gi);
+    let part = matchPart ? matchPart.pop().replace(/\./g, '') : '';
+    let info = [quality, encoder, part, hardSub, dubbed]
+        .filter(value => value).join('.')
+        .replace('.دوبله فارسی', '')
+        .replace('.اختصاصی', '')
+        .replace('BluRay.x265', 'x265.BluRay')
+        .replace('4K.2160p', '2160p.4K')
+        .replace('BluRay1080p', '1080p.BluRay');
     return [info, size].filter(value => value).join(' - ');
+}
+
+function getMovieInfoText($, link) {
+    let infoText = '';
+    let parentName = $(link).parent()[0].name;
+    if (parentName !== 'li') {
+        let infoNodeChildren = parentName !== 'p'
+            ? $($(link).parent().parent().prev().children()[0]).children()[0]
+            : $($(link).parent().prev().children()[0]).children()[0];
+        infoText = $(infoNodeChildren).text();
+        if (infoText.match(/پارت \d/g)) {
+            // پارت 1
+            infoNodeChildren = $(infoNodeChildren).prev();
+            infoText = $(infoNodeChildren).text();
+        }
+        if (infoText.includes('انکودر') || $(infoNodeChildren).length === 0) {
+            // انکودر : RMT
+            infoNodeChildren = $(link).parent().parent().prev().prev();
+            infoText = $(infoNodeChildren).text();
+            if (infoText.includes('خلاصه داستان')) {
+                infoNodeChildren = $(link).parent().prev().children()[0];
+                infoText = $(infoNodeChildren).text();
+            }
+            if (infoText.match(/^(–|\s)+$/g) || $(infoNodeChildren).length === 0) {
+                infoNodeChildren = $(link).parent().parent().prev();
+                infoText = $(infoNodeChildren).text();
+            }
+            if (infoText.match(/^([-=….])+$/g)) {
+                infoText = '';
+            }
+        }
+        infoText = infoText
+            .replace(/ /g, ' ')
+            .replace('- 4K', '')
+            .replace('- اختصاصی گلچین دانلود', '')
+            .replace('زبان اصلی - ', '')
+            .trim();
+    }
+    return infoText;
 }

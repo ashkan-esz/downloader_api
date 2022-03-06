@@ -349,8 +349,8 @@ async function getTitleDataFromDB(title, year, type) {
 
     let temp = await dbMethods.searchTitleDB(titleObj, [type], year, dataConfig);
     if (temp.length === 0) {
-        let plusYear = (Number(year) - 1).toString();
-        temp = await dbMethods.searchTitleDB(titleObj, [type], plusYear, dataConfig);
+        let minusYear = (Number(year) - 1).toString();
+        temp = await dbMethods.searchTitleDB(titleObj, [type], minusYear, dataConfig);
     }
 
     return temp.length > 0 ? temp[0] : null;

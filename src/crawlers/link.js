@@ -21,7 +21,7 @@ export function check_download_link(original_link, matchCases, type) {
                 decodedLink.includes(matchCases.case1) ||
                 decodedLink.includes(matchCases.case1.replace(/\./g, ' ')) ||
                 link.split('/').pop().replace(/\.the\.movie|[.%s]/g, '').includes(matchCases.case1.replace(/[.%s]/g, '')) ||
-                link.replace(/\.the\.movie|the\.|at\./g, '').includes(matchCases.case1.replace(/\.the\.movie|the\.|at\./g, '')) ||
+                link.replace(/\.the\.movie|the\.|at\.|\.special/g, '').includes(matchCases.case1.replace(/\.the\.movie|the\.|at\.|\.special/g, '')) ||
                 link.includes(matchCases.case1.replace(/\./g, '')) ||
                 link.includes(matchCases.case1.replace('.ova', '.oad')) ||
                 link.includes(matchCases.case1.replace('.iii', '.3')) ||
@@ -105,7 +105,7 @@ export function check_format(link, type) {
     }
 
     if (
-        link.includes('dvdrip') || link.includes('hdcam') ||
+        link.includes('dvdrip') || link.includes('hdcam') || link.includes('hdtv') ||
         link.includes('mobile') || link.match(/\d\d\d+\.nineanime/g)
     ) {
         return true;
@@ -115,7 +115,7 @@ export function check_format(link, type) {
 }
 
 function checkSerialLinkMatch(link) {
-    let decodedLink = getDecodedLink(link).toLowerCase().replace(/_/gi, '.');
+    let decodedLink = getDecodedLink(link).toLowerCase().replace(/[_-]|\.\.+/gi, '.');
     let serialMatch = decodedLink.match(/\[\d+]|s\d+e\d+|e\d+|\d+\.nineanime/gi);
     if (serialMatch) {
         return true;

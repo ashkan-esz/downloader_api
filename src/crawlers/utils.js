@@ -115,14 +115,20 @@ export function replacePersianNumbers(input) {
 export function getType(title) {
     if (title.includes('فیلم') ||
         title.includes('استندآپ') ||
-        title.includes('استند آپ')) {
+        title.includes('استند آپ') ||
+        title.includes('دانلود مراسم')
+    ) {
         return 'movie';
     }
     if (title.includes('دانلود دوبله فارسی') && !title.includes('سریال') && !title.includes('انیم')) {
         //case: دانلود دوبله فارسی Wonder 2017
         return 'movie';
     }
-    if (title.includes('انیمیشن')) {
+    if (title.includes('دانلود ویژه برنامه') && !title.includes('سریال')) {
+        //case: دانلود ویژه برنامه Harry Potter 20th Anniversary: Return to Hogwarts
+        return 'movie';
+    }
+    if (title.includes('انیمیشن') || title.includes('کارتون')) {
         return title.includes('سریال') ? 'serial' : 'movie';
     }
     if (title.includes('انیمه')) {
@@ -185,7 +191,7 @@ export function checkDubbed(link, info = '') {
     link = link.toLowerCase();
     info = info.toLowerCase();
     return (
-        link.includes('farsi') ||
+        (link.includes('farsi') && !link.includes('farsisub')) ||
         link.includes('dubbed') ||
         link.includes('duble') ||
         link.includes('دوبله فارسی') ||
@@ -204,6 +210,7 @@ export function checkHardSub(input) {
     input = input.toLowerCase();
     return (
         input.includes('softsub') ||
+        input.includes('softsuv') ||
         input.includes('hardsub') ||
         input.includes('subfa') ||
         input.includes('sub') ||
@@ -421,6 +428,8 @@ export function purgeSizeText(sizeText) {
         .replace('bytes', 'b')
         .replace('انکودر', '')
         .replace(/[\s:]/g, '')
+        .replace(/\(ورژن\d\)/g, '') // (ورژن1)
+        .replace(/\(جدید\)/g, '') // (جدید)
         .toUpperCase();
 }
 
