@@ -162,11 +162,18 @@ export function sortTrailers(trailers) {
     return sortedTrailers;
 }
 
-async function getFileSize(url) {
+async function getFileSize(url, retryCounter = 0) {
     try {
         let response = await axios.head(url);
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
+        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
+            decodeURIComponent(url) === url && retryCounter < 1) {
+            retryCounter++;
+            let fileName = url.split('/').pop();
+            url = url.replace(fileName, encodeURIComponent(fileName));
+            return await getFileSize(url, retryCounter);
+        }
         saveError(error);
         return 0;
     }

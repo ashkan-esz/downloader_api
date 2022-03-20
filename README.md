@@ -23,15 +23,15 @@ To run this project, you will need to add the following environment variables to
 | **`PORT`**                 | server port  | `false (default:3000)` |
 | **`UPDATE_PASSWORD`**         | password to start web crawler if needed. | `true` |
 | **`REMOTE_BROWSER_PASSWORD`** | password of remote headless browser (puppeteer) | `true` |
-| **`REMOTE_BROWSER_ENDPOINT`** | end point of remote headless browser (puppeteer) | `true` |
-| **`DATABASE_URL`**            | mongodb url | `true` |
-| **`SENTRY_DNS`** |  | `false` |
-| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url | `true` |
+| **`REMOTE_BROWSER_ENDPOINT`** | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)  | `true` |
+| **`DATABASE_URL`**            | mongodb url, for example see [mongodb.com](https://www.mongodb.com/) | `true` |
+| **`SENTRY_DNS`** | see [sentry.io](https://sentry.io) | `false` |
+| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en) | `true` |
 | **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix | `true` |
 | **`CLOUAD_STORAGE_ACCESS_KEY`**        |  | `true` |
 | **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |  | `true` |
-| **`IMDB_API_KEY`**        |  | `true` |
-| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinite. like OMDB_API_KEY1 | `true` |
+| **`IMDB_API_KEY`**        | see [imdb-api.com](https://imdb-api.com/) | `true` |
+| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinite. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/) | `true` |
 | **`PRINT_ERRORS`**        |  | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`** |  | `false` |
 | **`EMAIL_USERNAME`** |  | `true` |
@@ -81,7 +81,7 @@ for example ::
 - [x]  Serve local poster/trailer.
 - [x]  Efficient and low memory usage web crawler.
 - [x]  Handle sources url changes.
-- [ ]  Authentication.
+- [x]  Authentication.
 - [ ]  Movie suggestion.
 - [ ]  Clustering.
 - [ ]  Documentation.

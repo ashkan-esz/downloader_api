@@ -50,6 +50,7 @@ export async function getJikanApiData(title, year, type, jikanID) {
         if (
             (
                 type.includes('serial') &&
+                jikanSearchResult.results[i].start_date &&
                 jikanSearchResult.results[i].start_date.split('-')[0] !== year &&
                 Number(jikanSearchResult.results[i].episodes) === 0
             ) ||
@@ -79,7 +80,7 @@ async function getJikanSearchResult(title, year) {
     let yearSearch = '';
     if (year) {
         let temp = Number(year);
-        yearSearch = `&start_date=${temp - 1}-01-01&end_date=${temp + 1}-01-01`;
+        yearSearch = `&start_date=${temp - 1}-01-01&end_date=${temp + 1}-04-01`;
     }
     let animeSearchUrl = `https://api.jikan.moe/v3/search/anime?q=${searchTitle}&limit=10${yearSearch}`.trim();
     let data = await handleApiCall(animeSearchUrl);

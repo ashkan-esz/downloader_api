@@ -5,6 +5,7 @@ export function purgeTitle(title, type, keepLastNumber = true) {
     let currentYear = new Date().getFullYear();
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
+    const savedTitle = title;
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
     title = title
@@ -12,10 +13,35 @@ export function purgeTitle(title, type, keepLastNumber = true) {
         .replace('دوبله فارسی انیمیشن 2 ', ' ')
         .replace('فیلم 100', '100')
         .replace('فیلم 19', '19')
-        .replace('فیلم 1', '')
         .replace(/سینمایی \d/g, '');
 
+    if (title.includes('فیلم 1')) {
+        let splitTitle = title.split('');
+        let index = splitTitle.indexOf('فیلم');
+        if (splitTitle[index + 1] === '1') {
+            title = title.replace('فیلم 1', '');
+        }
+    }
+
     let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
+
+    if (!isNaN(title_array[0]) && !isNaN(title_array[1]) && (isNaN(title_array[2]) || title_array[2] > 2000)) {
+        if (savedTitle.match(/\d\d?:\d\d?/)) {
+            //case: دانلود فیلم ۳:۱۰ to yuma 2007
+            let t = title_array.shift();
+            title_array[0] = t + ':' + title_array[0];
+        } else if (savedTitle.match(/\d\d?\/\d\d?/)) {
+            //case: دانلود فیلم ۱/۱ ۲۰۱۸
+            let t = title_array.shift();
+            title_array[0] = t + '/' + title_array[0];
+        }
+    }
+
+    if (title_array[0] && title_array[0].match(/^\d+[a-zA-Z]+/)) {
+        //14cameras --> 14 cameras
+        title_array[0] = title_array[0].replace(/^\d+/, (number) => number + ' ');
+    }
+
     if (title.includes('قسمت های ویژه') && !title.toLowerCase().includes('ova')) {
         title_array.push('OVA');
     }
@@ -128,7 +154,14 @@ export function getType(title) {
         //case: دانلود ویژه برنامه Harry Potter 20th Anniversary: Return to Hogwarts
         return 'movie';
     }
-    if (title.includes('انیمیشن') || title.includes('کارتون')) {
+    if (
+        title.includes('انیمیشن') ||
+        title.includes('انیمیسن') ||
+        title.includes('انیمشن') ||
+        title.includes('انمیشن') ||
+        title.includes('اینیمشن') ||
+        title.includes('انیمیشین') ||
+        title.includes('کارتون')) {
         return title.includes('سریال') ? 'serial' : 'movie';
     }
     if (title.includes('انیمه')) {
@@ -405,15 +438,15 @@ export function purgeQualityText(qualityText) {
         .replace('پخش آنلاین', '')
         .replace('لينک مستقيم', '')
         .replace(/[)(:]/g, '')
-        .replace(/web[-_]dl/gi, 'WEB-DL')
-        .replace(/webrip/gi, 'WEB-RIP')
+        .replace(/weba?[-_]d(l|$)/gi, 'WEB-DL')
+        .replace(/web(-)*rip/gi, 'WEB-RIP')
         .replace(/hdrip/gi, 'HD-RIP')
         .replace(/full hd/gi, 'FULL-HD')
         .trim();
 }
 
 export function purgeSizeText(sizeText) {
-    return sizeText
+    let result = sizeText
         .trim()
         .replace('میانگین حجم', '')
         .replace('حجم: نامشخص', '')
@@ -427,10 +460,22 @@ export function purgeSizeText(sizeText) {
         .replace('مگابایت', 'MB')
         .replace('bytes', 'b')
         .replace('انکودر', '')
-        .replace(/[\s:]/g, '')
+        .replace(/[\s:.]/g, '')
         .replace(/\(ورژن\d\)/g, '') // (ورژن1)
         .replace(/\(جدید\)/g, '') // (جدید)
         .toUpperCase();
+
+    if (result.match(/(mb|gb)\d+/gi)) {
+        result = result.slice(2) + result.slice(0, 2);
+    }
+    if (result && !result.match(/mb|gb/gi)) {
+        let temp = result.match(/^\d(\.\d+)?$/g) ? 'GB' : 'MB';
+        result += temp;
+    }
+    if (result.match(/^(mkvmb|mb|gb)$/gi)) {
+        return '';
+    }
+    return result;
 }
 
 export function purgeEncoderText(encoderText) {

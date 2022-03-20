@@ -46,9 +46,15 @@ async function search_title(link, i, $, url) {
                         ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
-                    if (downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
+                    if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
+
                     let sourceData = {
                         sourceName,
                         pageLink,
@@ -187,28 +193,100 @@ function getFileData($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
     try {
-        let infoNode = (type.includes('serial') || $(link).attr('href').match(/s\d+e\d+/gi))
+        let linkHref = $(link).attr('href');
+        let infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
             ? $($(link).parent().parent().parent().prev().children()[1]).children()
             : $(link).parent().parent().next().children();
         let infoNodeChildren = $(infoNode[1]).children();
-        let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
-        let quality = purgeQualityText($(infoNode[0]).text()).replace(/\s/g, '.');
-        let hardSub = quality.match(/softsub|hardsub/gi) || '';
+        let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+        let quality = purgeQualityText($(infoNode[0]).text()).replace(/\s+/g, '.').replace('زیرنویس.چسبیده', '');
+        let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
         if (hardSub) {
             hardSub = hardSub[0];
             quality = quality.replace('.' + hardSub, '');
         }
         quality = sortQualityInfo(quality);
+        if (quality.includes('.Dual.Audio') || linkHref.includes('.Dual.Audio')) {
+            quality = quality.replace('.Dual.Audio', '');
+            dubbed = 'dubbed';
+        }
+        let resolution = quality.match(/\d\d\d+p/g);
+        if (resolution) {
+            quality = fixQualityInfo(resolution, quality);
+            if (!quality.toLowerCase().includes('x265') && linkHref.includes('x265')) {
+                quality = quality.replace(resolution[0], `${resolution[0]}.x265`).replace('2160p.x265.4K', '2160p.4K.x265');
+            }
+        } else if (quality === '' || quality === 'DVDRip') {
+            let qualityMatch = linkHref.match(/[.\s](\d\d\d\d|\d\d\d)p[.\s]/gi);
+            quality = qualityMatch ? qualityMatch.pop().replace(/[.\s]/g, '') : quality === 'DVDRip' ? '576p' : '480p';
+            if (linkHref.includes('x265')) {
+                quality += '.x265';
+            }
+            let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi);
+            if (linkHrefQualityMatch) {
+                quality = quality + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
+            }
+        }
         let encoder = (infoNodeChildren.length === 3) ? purgeEncoderText($(infoNodeChildren[0]).text()) : '';
-        let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
+        encoder = encoder
+            .replace('DigiMoviez', '')
+            .replace(/https:?\/\/.+(mkv|jpg)/, '')
+            .replace('نسخه زیرنویس چسبیده فارسی', '');
         let size = (infoNodeChildren.length === 3)
             ? purgeSizeText($(infoNodeChildren[1]).text())
             : purgeSizeText($(infoNodeChildren[0]).text());
+        if (size.includes('ENCODER')) {
+            size = '';
+        }
+        let seasonStack = '';
+        if (encoder.includes('تمامی قسمت ها در یک فایل قرار دارد')) {
+            encoder = encoder.replace('تمامی قسمت ها در یک فایل قرار دارد', '');
+            seasonStack = ' (whole season in one file)'
+            size = '';
+        }
+        let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
         return [info, size].filter(value => value).join(' - ');
     } catch (error) {
         saveError(error);
         return '';
     }
+}
+
+function fixQualityInfo(resolution, quality) {
+    quality = quality
+        .replace(/\.Digim?Digimoviezoviez/gi, '')
+        .replace('7480p.', '480p.')
+        .replace('48p.', '480p.')
+        .replace('px.', 'p.')
+        .replace(/\.x256p?\./i, '.x265.')
+        .replace(/\.265\./, '.x265.')
+        .replace('ExtendedFarsi', 'Extended')
+        .replace('BluRayFarsi', 'BluRay')
+        .replace(`HDTV.${resolution[0]}`, `${resolution[0]}.HDTV`)
+        .replace(`10bit.WEB-DL.x265.${resolution[0]}`, `${resolution[0]}.x265.10bit.WEB-DL`)
+        .replace(`10bit.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.10bit.BluRay`)
+        .replace(`10bit.BluRay.x265.6CH.${resolution[0]}`, `${resolution[0]}.x265.10bit.BluRay.6CH`)
+        .replace(`REMASTERED.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.BluRay.REMASTERED`)
+        .replace(`REMASTERED.${resolution[0]}.BluRay`, `${resolution[0]}.BluRay.REMASTERED`)
+        .replace(`EXTENDED.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.BluRay.Extended`)
+        .replace(`EXTENDED.${resolution[0]}.BluRay`, `${resolution[0]}.BluRay.Extended`)
+        .replace('HDTV.x265', 'x265.HDTV')
+        .replace(/-softsub|\.WEB-DL1080p/gi, '')
+        .replace('720p.x265.WEB-DL720p.x265.WEB-DL.SoftSub', '720p.x265.WEB-DL')
+        .replace('10bit.WEB-DL.x265', 'x265.10bit.WEB-DL')
+        .replace('10bit.HDR.WEB-DL.x265', 'x265.10bit.HDR.WEB-DL')
+        .replace('10bit.6CH.WEB-DL.x265', 'x265.10bit.6CH.WEB-DL')
+        .replace('Extended.BluRay.x265', 'x265.Extended.BluRay')
+        .replace('HDR.WEB-DL.x265', 'x265.HDR.WEB-DL')
+        .replace('3D.HSBS.1080p.BluRay', '1080p.3D.HSBS.BluRay')
+        .replace('4K.WEB-DL.x265.HDR.2160p', '2160p.4K.x265.WEB-DL.HDR')
+        .replace('4K.x265.2160p', '2160p.4K.x265')
+        .replace('3D.10bit.HSBS.BluRay.x265', 'x265.10bit.3D.HSBS.BluRay')
+        .replace('WEB-DL.FULL-HD', 'FULL-HD.WEB-DL')
+        .replace('WEB-DL.x265.10bit', 'x265.10bit.WEB-DL')
+        .replace('10bit.BluRay.x265', 'x265.10bit.BluRay')
+        .replace('BluRay.x265', 'x265.BluRay');
+    return quality;
 }
 
 function sortQualityInfo(quality) {

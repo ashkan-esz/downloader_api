@@ -201,7 +201,7 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
     };
 }
 
-async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster) {
+async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter = 0) {
     try {
         //replace low quality poster of myAnimeList
         if (newPosterUrl && prevS3Poster.originalUrl.includes('cdn.myanimelist.net')) {
@@ -231,6 +231,13 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
         }
         return false;
     } catch (error) {
+        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
+            decodeURIComponent(newPosterUrl) === newPosterUrl && retryCounter < 1) {
+            retryCounter++;
+            let fileName = newPosterUrl.split('/').pop();
+            newPosterUrl = newPosterUrl.replace(fileName, encodeURIComponent(fileName));
+            return await checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter);
+        }
         saveError(error);
         return false;
     }
@@ -238,7 +245,8 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
 
 function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
     let temp = {
-        type: siteType,
+        //dont override serial on anime_serial, like 'vinland saga' tagged as serial on some sources
+        type: db_data.type.includes('anime') ? db_data.type : siteType,
         ...titleObj,
     };
     //if this anime detected as movie before , add alternate title if needed.

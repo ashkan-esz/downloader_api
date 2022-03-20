@@ -175,6 +175,13 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             size: Number(response.data.length.toString()),
         };
     } catch (error) {
+        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
+            decodeURIComponent(originalUrl) === originalUrl && retryCounter < 3) {
+            retryCounter++;
+            let fileName = originalUrl.split('/').pop();
+            originalUrl = originalUrl.replace(fileName, encodeURIComponent(fileName));
+            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload);
+        }
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
@@ -450,11 +457,18 @@ export async function resetBucket(bucketName) {
     }
 }
 
-async function getFileSize(url) {
+async function getFileSize(url, retryCounter = 0) {
     try {
         let response = await axios.head(url);
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
+        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
+            decodeURIComponent(url) === url && retryCounter < 1) {
+            retryCounter++;
+            let fileName = url.split('/').pop();
+            url = url.replace(fileName, encodeURIComponent(fileName));
+            return await getFileSize(url, retryCounter);
+        }
         saveError(error);
         return 0;
     }
