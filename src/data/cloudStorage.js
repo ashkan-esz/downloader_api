@@ -30,6 +30,8 @@ axiosRetry(axios, {
     ),
 });
 
+//bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
+
 const s3 = new S3Client({
     region: 'default',
     forcePathStyle: false,
@@ -187,7 +189,11 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload);
         }
-        saveError(error);
+
+        if (((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') || !originalUrl.includes('salamdl.')) {
+            //do not save salamdl 404|ENOTFOUND images errors
+            saveError(error);
+        }
         return null;
     }
 }

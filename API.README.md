@@ -44,9 +44,9 @@
 - [GET /movies/searchByID/[id]/[dataLevel]](#get-moviessearchbyididdatalevel)
 - [GET /movies/staff/searchById/[id]](#get-moviesstaffsearchbyidid)
 - [GET /movies/characters/searchById/[id]](#get-moviescharacterssearchbyidid)  
-- [PUT /movies/[type]/[id]](#put-moviestypeid)
-- [PUT /movies/staff/[type]/[id]](#put-moviesstafftypeid)
-- [PUT /movies/characters/[type]/[id]](#put-moviescharacterstypeid)
+- [PUT /movies/likeOrDislike/[type]/[id]](#put-movieslikeordisliketypeid)
+- [PUT /movies/likeOrDislike/staff/[type]/[id]](#put-movieslikeordislikestafftypeid)
+- [PUT /movies/likeOrDislike/characters/[type]/[id]](#put-movieslikeordislikecharacterstypeid)
 - [GET /movies/status/genres](#get-moviesstatusgenres)
 - [GET /movies/genres/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenrestypesdatalevelimdbscoresmalscorespage)
 
@@ -211,9 +211,9 @@ Example: https://downloader-node-api.herokuapp.com/movies/staff/searchById/614a1
 ### GET /movies/characters/searchById/[id]  
 Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/61326d26c1ef65001665d02a  
 
-### PUT /movies/[type]/[id]
-### PUT /movies/staff/[type]/[id]
-### PUT /movies/characters/[type]/[id]
+### PUT /movies/likeOrDislike/[type]/[id]
+### PUT /movies/likeOrDislike/staff/[type]/[id]
+### PUT /movies/likeOrDislike/characters/[type]/[id]
 > `type` can be `like` or `dislike` and also receive query parameters `remove=[true|false]`
 > 
 > returns status code 409 when liking a movie that is previously liked

@@ -106,7 +106,7 @@ export function check_format(link, type) {
 
     if (
         link.includes('dvdrip') || link.includes('hdcam') || link.includes('hdtv') ||
-        link.includes('mobile') || link.match(/\d\d\d+\.nineanime/g)
+        link.includes('mobile') || link.includes('dubbed.farsi') || link.match(/\d\d\d+\.nineanime/g)
     ) {
         return true;
     }

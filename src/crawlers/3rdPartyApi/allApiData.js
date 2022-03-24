@@ -238,7 +238,11 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
             newPosterUrl = newPosterUrl.replace(fileName, encodeURIComponent(fileName));
             return await checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter);
         }
-        saveError(error);
+
+        if (((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') || !newPosterUrl.includes('salamdl.')) {
+            //do not save salamdl 404|ENOTFOUND images errors
+            saveError(error);
+        }
         return false;
     }
 }

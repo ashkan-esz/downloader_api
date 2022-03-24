@@ -140,6 +140,7 @@ export function replacePersianNumbers(input) {
 
 export function getType(title) {
     if (title.includes('فیلم') ||
+        title.includes('فيلم') || //its not duplicate
         title.includes('استندآپ') ||
         title.includes('استند آپ') ||
         title.includes('دانلود مراسم')
@@ -438,11 +439,39 @@ export function purgeQualityText(qualityText) {
         .replace('پخش آنلاین', '')
         .replace('لينک مستقيم', '')
         .replace(/[)(:]/g, '')
-        .replace(/weba?[-_]d(l|$)/gi, 'WEB-DL')
+        .replace(/weba?[-_]+d(l|$)/gi, 'WEB-DL')
         .replace(/web(-)*rip/gi, 'WEB-RIP')
         .replace(/hdrip/gi, 'HD-RIP')
         .replace(/full hd/gi, 'FULL-HD')
         .trim();
+}
+
+export function fixLinkInfo(info, linkHref) {
+    if (!info.match(/\d\d\d\d?p/gi)) {
+        let qualityMatch = linkHref.match(/[.\s]\d\d\d\d?p[.\s]/gi);
+        let resolution = qualityMatch
+            ? qualityMatch.pop().replace(/[.\s]/g, '')
+            : (info.includes('DVDRip') || linkHref.includes('DVDRip')) ? '576p' : '480p';
+        info = resolution + '.' + info;
+    }
+
+    if (!info.toLowerCase().includes('x265') && linkHref.toLowerCase().includes('x265')) {
+        info = info
+            .replace(/\d\d\d\d?p/g, (res) => res + '.x265')
+            .replace('2160p.x265.4K', '2160p.4K.x265');
+    }
+
+    if (!info.toLowerCase().includes('10bit') && linkHref.toLowerCase().includes('10bit')) {
+        info = info.replace('.x265', '.x265.10bit');
+    }
+
+    const qualityTypeRegex = /bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi;
+    let linkHrefQualityMatch = linkHref.match(qualityTypeRegex);
+    if (!info.match(qualityTypeRegex) && linkHrefQualityMatch) {
+        info = info + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
+    }
+
+    return info.replace(/\.$/, '');
 }
 
 export function purgeSizeText(sizeText) {
@@ -458,11 +487,13 @@ export function purgeSizeText(sizeText) {
         .replace('گیگابیت', 'GB')
         .replace('گیگ', 'GB')
         .replace('مگابایت', 'MB')
+        .replace('مگابابت', 'MB')
         .replace('bytes', 'b')
         .replace('انکودر', '')
-        .replace(/[\s:.]/g, '')
+        .replace(/[\s:,]/g, '')
         .replace(/\(ورژن\d\)/g, '') // (ورژن1)
         .replace(/\(جدید\)/g, '') // (جدید)
+        .replace(/bytes|kb/gi, '')
         .toUpperCase();
 
     if (result.match(/(mb|gb)\d+/gi)) {
@@ -472,7 +503,15 @@ export function purgeSizeText(sizeText) {
         let temp = result.match(/^\d(\.\d+)?$/g) ? 'GB' : 'MB';
         result += temp;
     }
-    if (result.match(/^(mkvmb|mb|gb)$/gi)) {
+    if (result.match(/\d\d+\.\d+MB/g)) {
+        result = result.split('.')[0] + 'MB';
+    }
+    if (result.match(/\d\d\d\dMB/)) {
+        let size = result.split('M')[0];
+        let newSize = (size / 1024).toFixed(2);
+        result = newSize + 'GB';
+    }
+    if (result.match(/^((mkvmb|mb|gb)|(0(mb|gb)))$/gi) || result === '1MB') {
         return '';
     }
     return result;

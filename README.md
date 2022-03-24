@@ -71,6 +71,8 @@ for example ::
     ....
 }
 
+>> cloud storage (s3) bucket names: serverstatic, cast, download-subtitle, poster, download-trailer
+
 >> a file with the same name of [sourceName] exist in src/crawlers/sources/[sourceName].js
 >> and can be accessed from src/crawlers/sourcesArray.js 
 
