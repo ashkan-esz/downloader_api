@@ -107,6 +107,7 @@ export function check_format(link, type) {
     if (
         link.includes('dvdrip') || link.includes('hdcam') || link.includes('hdtv') ||
         link.includes('mobile') || link.includes('dubbed.farsi') || link.match(/\d\d\d+\.nineanime/g)
+        || link.includes('1080.bia2anime.mkv')
     ) {
         return true;
     }
@@ -126,7 +127,8 @@ function checkSerialLinkMatch(link) {
         return true;
     }
     return decodedLink.match(
-        /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi);
+        /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi)
+        || decodedLink.match(/\.\d\d\d?\.bitdownload\.ir\.mkv/gi);
 }
 
 //---------------------

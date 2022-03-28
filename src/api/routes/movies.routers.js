@@ -32,7 +32,7 @@ router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page',
 router.get('/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getMultipleStatus);
 
-//movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page
+//movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page?genres
 router.get('/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.searchByTitle);
 
@@ -60,8 +60,8 @@ router.put('/likeOrDislike/characters/:type/:id', middlewares.auth.attachAuthFla
 //movies/status/genres
 router.get('/status/genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getGenresStatus);
 
-//movies/genres/:type/:dataLevel/:imdbScores/:malScores/:page
-router.put('/genres/:type/:dataLevel/:imdbScores/:malScores/:page',
+//movies/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getGenresMovies);
 
 export default router;

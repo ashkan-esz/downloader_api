@@ -11,16 +11,16 @@ router.post('/signup', middlewares.auth.attachAuthFlag, middlewares.auth.blockAu
 router.post('/login', middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized, middlewares.validation.loginValidation, usersControllers.login);
 
 //users/getToken
-router.post('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.getToken);
+router.put('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.getToken);
 
 //users/logout
-router.post('/logout', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.logout);
+router.put('/logout', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.logout);
 
 //users/forceLogout
-router.post('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogout);
+router.put('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogout);
 
 //users/forceLogoutAll
-router.post('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogoutAll);
+router.put('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogoutAll);
 
 //users/myProfile
 router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);

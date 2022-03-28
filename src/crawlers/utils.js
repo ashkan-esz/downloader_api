@@ -1,6 +1,15 @@
 import * as persianRex from "persian-rex";
 import {saveError} from "../error/saveError";
 
+export const linkInfoRegex = new RegExp([
+    /^(\d\d\d\d?p|1080p\.FULL-HD|2160p\.4k)/,
+    /(\.x265\.10bit(\.hdr)?|\.x265|\.3d\.hsbs)?/,
+    /\.(WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|DVDRip|DVDScr|HD-CAM)/,
+    /(\.(rarbg|pahe|psa|yts|rmteam|evo|rmt|yify|ShAaNiG|Ganool|MkvCage|GalaxyRG|Digimoviez|SalamDL|HDETG|AdiT|galaxytv|DRONES|joy|Ozlem|nItRo))?/,
+    /(\.(HardSub|SoftSub|dubbed))?/,
+    /( - (\d\d?(\.\d\d?)?gb|\d\d\d?mb))?$/
+].map(item => item.source).join(''), 'gi');
+
 export function purgeTitle(title, type, keepLastNumber = true) {
     let currentYear = new Date().getFullYear();
     let titleIncludesSeason = title.includes('فصل');

@@ -15,7 +15,7 @@
 | **`id`** | mongodb id object | id of movie/staff/character to get               | `true` |
 | **`password`** | string | password of crawler starter api                  | `true` |
 | **`deviceId`** | string | unique id of session                             | `true` |
-| **`genres`** | array of string | example: ['action', 'comedy']                             | `true` |
+| **`genres`** | array of string joined by '-' | example: action or action-comedy-drama                             | `true` |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -25,14 +25,15 @@
 
 - [POST /users/signup](#post-userssignup)
 - [POST /users/login](#post-userslogin)
-- [POST /users/getToken](#post-usersgettoken)
-- [POST /users/logout](#post-userslogout)
-- [POST /users/forceLogout/[deviceId]](#post-usersforcelogoutdeviceid)
-- [POST /users/forceLogoutAll](#post-usersforcelogoutall)
+- [PUT /users/getToken](#put-usersgettoken)
+- [PUT /users/logout](#put-userslogout)
+- [PUT /users/forceLogout/[deviceId]](#put-usersforcelogoutdeviceid)
+- [PUT /users/forceLogoutAll](#put-usersforcelogoutall)
 - [GET /users/myProfile](#get-usersmyprofile)
 - [GET /users/activeSessions](#get-usersactivesessions)
 - [GET /users/sendVerifyEmail](#get-userssendverifyemail)
 - [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
+  
 - [GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewstypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdatestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestopsbylikestypesdatalevelimdbscoresmalscorespage)
@@ -48,7 +49,7 @@
 - [PUT /movies/likeOrDislike/staff/[type]/[id]](#put-movieslikeordislikestafftypeid)
 - [PUT /movies/likeOrDislike/characters/[type]/[id]](#put-movieslikeordislikecharacterstypeid)
 - [GET /movies/status/genres](#get-moviesstatusgenres)
-- [GET /movies/genres/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenrestypesdatalevelimdbscoresmalscorespage)
+- [GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenresgenrestypesdatalevelimdbscoresmalscorespage)
 
 
 ### POST /crawler/[password] 
@@ -113,21 +114,21 @@ deviceInfo: {
 > return { accessToken , accessToken_expire , username , userId } and also `refreshToken`.
 
 
-### POST /users/getToken
+### PUT /users/getToken
 > return { accessToken , accessToken_expire , username , profileImages , deviceInfo } and also `refreshToken`.
 
 
-### POST /users/logout
+### PUT /users/logout
 > return { accessToken:'' } and also reset/remove `refreshToken` cookie.
 
 
-### POST /users/forceLogout/[deviceId]
+### PUT /users/forceLogout/[deviceId]
 > receives `deviceId`
 >
 > return `activeSessions`.
 
 
-### POST /users/forceLogoutAll
+### PUT /users/forceLogoutAll
 > return `activeSessions` as [].
 
 
@@ -191,8 +192,8 @@ Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/movie-
 Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1
 
 
-### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page] 
-> also receive field `genres` in request body (optional).
+### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page]
+> also receive field `genres` as query parameter (optional).
 
 Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1  
 Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1  
@@ -222,5 +223,5 @@ Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/
 > returns all available genres with their count
 
 
-### GET /movies/genres/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]  
-> receive field `genres` in request body and return movies match with searching genres 
+### GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]  
+> return movies match with searching genres 

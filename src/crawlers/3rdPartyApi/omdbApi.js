@@ -1,6 +1,6 @@
 import config from "../../config";
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues} from "../utils";
+import {replaceSpecialCharacters, purgeObjFalsyValues, getDatesBetween} from "../utils";
 import {getEpisodeModel} from "../../models/episode";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError";
@@ -52,7 +52,9 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
 
         return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) ? data : null;
     } catch (error) {
-        await saveError(error);
+        if (!error.response && error.response.status !== 500) {
+            await saveError(error);
+        }
         return null;
     }
 }
@@ -137,7 +139,9 @@ export function getOMDBApiFields(data, type) {
         apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {
-        saveError(error);
+        if (!error.response && error.response.status !== 500) {
+            saveError(error);
+        }
         return null;
     }
 }
@@ -186,7 +190,9 @@ export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, lastSeasons
 
         return episodes;
     } catch (error) {
-        await saveError(error);
+        if (!error.response && error.response.status !== 500) {
+            await saveError(error);
+        }
         return null;
     }
 }
@@ -269,14 +275,14 @@ async function handle_OMDB_ApiKeys(url) {
                     (error.response && error.response.data.Error === 'Request limit reached!') ||
                     (error.response && error.response.status === 401)
                 ) {
-                    let endTime = new Date();
-                    let timeElapsed = (endTime.getTime() - startTime.getTime()) / 1000;
-                    if (timeElapsed > 12) {
+                    if (getDatesBetween(new Date(), startTime).seconds > 12) {
                         Sentry.captureMessage('more omdb api keys are needed');
                         return null;
                     }
                 } else {
-                    saveError(error);
+                    if (!error.response && error.response.status !== 500) {
+                        saveError(error);
+                    }
                     return null;
                 }
             }
@@ -290,7 +296,9 @@ async function handle_OMDB_ApiKeys(url) {
         }
         return response.data;
     } catch (error) {
-        await saveError(error);
+        if (!error.response && error.response.status !== 500) {
+            await saveError(error);
+        }
         return null;
     }
 }

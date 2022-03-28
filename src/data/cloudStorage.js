@@ -1,6 +1,5 @@
 import config from "../config";
 import axios from "axios";
-import axiosRetry from "axios-retry";
 import {AbortController} from "@aws-sdk/abort-controller";
 import {
     S3Client,
@@ -11,24 +10,6 @@ import {
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
 import {saveError} from "../error/saveError";
-
-axiosRetry(axios, {
-    retries: 3, // number of retries
-    retryDelay: (retryCount) => {
-        return retryCount * 1000; // time interval between retries
-    },
-    retryCondition: (error) => (
-        error.code === 'ECONNRESET' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ECONNABORTED' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'SlowDown' ||
-        (error.response &&
-            error.response.status !== 429 &&
-            error.response.status !== 404 &&
-            error.response.status !== 403)
-    ),
-});
 
 //bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
 
@@ -86,7 +67,10 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter);
         }
-        saveError(error);
+        if ((!error.response || error.response.status !== 404) || !originalUrl.includes('cdn.myanimelist.')) {
+            //do not save myanimelist 404 images errors
+            saveError(error);
+        }
         return null;
     }
 }
@@ -475,7 +459,9 @@ async function getFileSize(url, retryCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter);
         }
-        saveError(error);
+        if (!error.response && error.response.status !== 404) {
+            saveError(error);
+        }
         return 0;
     }
 }

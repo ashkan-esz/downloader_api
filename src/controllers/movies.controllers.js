@@ -99,10 +99,12 @@ export async function getMultipleStatus(req, res) {
 export async function searchByTitle(req, res) {
     let userId = req.jwtUserData.userId;
     let title = req.params.title;
+    let genres = req.params.genres ?
+        req.params.genres.split('-').map(item => item.toLowerCase().trim())
+        : [];
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let years = req.params.years.split('-');
-    let genres = req.body.genres || [];
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
@@ -190,11 +192,11 @@ export async function getGenresStatus(req, res) {
 export async function getGenresMovies(req, res) {
     let userId = req.jwtUserData.userId;
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
+    let genres = req.params.genres.split('-').map(item => item.toLowerCase().trim());
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-    let genres = req.body.genres || [];
     let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page);
 
     res.statusCode = result.data.code;

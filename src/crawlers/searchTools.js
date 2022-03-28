@@ -11,6 +11,7 @@ import * as Sentry from "@sentry/node";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
+    shouldResetTimeout: true,
     retryDelay: (retryCount) => {
         return retryCount * 1000; // time interval between retries
     },
@@ -21,6 +22,7 @@ axiosRetry(axios, {
         error.code === 'ETIMEDOUT' ||
         error.code === 'SlowDown' ||
         (error.response &&
+            error.response.status !== 500 &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
             error.response.status !== 403)
@@ -86,9 +88,16 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
                     let season = 0, episode = 0;
                     if (type.includes('serial')) {
-                        ({season, episode} = getSeasonEpisode(link));
-                        if (season === 0) {
+                        if (type.includes('anime')) {
                             ({season, episode} = getSeasonEpisode(link_info));
+                            if (season === 0 && episode === 0) {
+                                ({season, episode} = getSeasonEpisode(link));
+                            }
+                        } else {
+                            ({season, episode} = getSeasonEpisode(link));
+                            if (season === 0) {
+                                ({season, episode} = getSeasonEpisode(link_info));
+                            }
                         }
                         if (episode > 3000) {
                             episode = 0;
@@ -96,7 +105,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                     }
                     downloadLinks.push({
                         link: link.trim(),
-                        info: link_info,
+                        info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
                         qualitySample: qualitySample,
                         sourceName: sourceName,
                         pageLink: page_link,

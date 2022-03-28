@@ -6,6 +6,7 @@ import {
     checkDubbed,
     replacePersianNumbers,
     purgeQualityText,
+    fixLinkInfo,
     persianWordToNumber,
     getDecodedLink,
     sortLinks,
@@ -23,7 +24,7 @@ export default async function bia2anime({movie_url, page_count}) {
 async function search_title(link, i) {
     try {
         let text = link.text();
-        if (text && text.includes('مطلب') && text.includes('ادامه')) {
+        if (text && text.includes('دانلود') && link.parent().hasClass('postsFooter')) {
             let title = link.attr('title').toLowerCase().split('|')[0];
             let year;
             let pageLink = link.attr('href');
@@ -35,7 +36,7 @@ async function search_title(link, i) {
             if (title === 'dota dragons blood' && type === 'anime_serial') {
                 type = 'serial';
             }
-            if (title === 'kuroshitsuji') {
+            if (title.includes('kuroshitsuji') || title.includes('mushishi') || title.includes('nanatsu no taizai')) {
                 return;
             }
 
@@ -46,8 +47,11 @@ async function search_title(link, i) {
                     if (!year) {
                         year = fixYear($2);
                     }
-                    downloadLinks = sortLinks(downloadLinks);
                     title = replaceShortTitleWithFull(title);
+                    downloadLinks = fixWrongSeasonNumberIncrement(downloadLinks);
+                    downloadLinks = fixSeasonSeparation(downloadLinks);
+                    downloadLinks = sortLinks(downloadLinks);
+
                     let sourceData = {
                         sourceName,
                         pageLink,
@@ -103,9 +107,8 @@ function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
-            if ($($p[i]).hasClass('postPlot')) {
-                let temp = $($($p[i]).children()[0]).text();
-                return $($p[i]).text().replace(temp, '').trim();
+            if ($($p[i]).parent().hasClass('-plot')) {
+                return $($p[i]).text();
             }
         }
         return '';
@@ -119,7 +122,7 @@ function getPoster($) {
     try {
         let $div = $('div');
         for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('imgWrapper')) {
+            if ($($div[i]).hasClass('post-poster')) {
                 let src = $($($div[i]).children()[0]).children()[0].attribs['data-lazy-src'];
                 src = src.replace(/-\d\d+x\d\d+/g, '');
                 if (src.includes('uploads')) {
@@ -139,7 +142,7 @@ function getFileData($, link, type) {
     try {
         return type.includes('serial')
             ? getFileData_serial($, link)
-            : '';
+            : getFileData_movie($, link);
     } catch (error) {
         saveError(error);
         return 'ignore';
@@ -168,11 +171,15 @@ function getFileData_serial($, link) {
         return 'ignore';
     }
     let linkText = $(link).text();
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : linkHref.includes('dual.audio') ? 'dubbed(english)' : '';
 
     let seasonNumber = getSeasonNumber($, infoNodeChildren, linkHref);
+    let result = fixWrongSeasonNumber(seasonNumber, linkHref);
+    seasonNumber = result.seasonNumber;
+    let seasonName = result.seasonName;
 
     let episodeMatch = linkHref
+        .replace('.br.', '.')
         .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
     if (!episodeMatch) {
         return 'ignore';
@@ -185,50 +192,97 @@ function getFileData_serial($, link) {
     let episodeNumber = episodeMatch[0]
         .replace(/\s*(\.bd|\.10bit\.special)*\s*([.\[]+)[1-9]\d\d+p*([.\]])(?!(\d\d\d+p))|(\.web\.dual\.audio)*(bia2anime|bitdownload\.ir|\.\d\d\d+p|\.br|\.uncen)\.mkv|\s|^[.\-]|s\d+e|e/g, '')
         .split(/([.\-])/g)[0];
-    let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
 
-    let seasonPart = '';
     let seasonPartMatch = linkHref.match(/part\s*\d/g);
-    if (seasonPartMatch) {
-        let temp = seasonPartMatch.pop();
-        if (temp === 'part2' && linkHref.includes('shingeki.no.kyojin.s3.part2')) {
-            seasonEpisode = 'S' + seasonNumber + 'E' + (Number(episodeNumber) + 12);
-        } else {
-            seasonPart = temp;
-        }
+    let seasonPart = seasonPartMatch ? seasonPartMatch.pop() : '';
+
+    if (seasonNumber === 1 && Number(episodeNumber) === 0 && !seasonPart) {
+        seasonNumber = 0;
+        episodeNumber = 1;
+    }
+    let specialEpisodeName = '';
+    if (seasonNumber === 0 && !seasonName) {
+        let temp = linkHref.split('/').pop().replace(/\d\d\d\d?p?\.bia2anime\.mkv/gi, '').replace(/\./g, ' ');
+        specialEpisodeName = ' (' + temp + ')';
     }
 
+    let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
     let quality = getQuality($, infoNodeChildren, linkHref, linkText);
+    quality = fixLinkInfo(quality, $(link).attr('href'));
+    quality = quality.replace(/HD\.\d\d\d\d?p/gi, (res) => res.split('.').reverse().join('.'));
+    return [seasonEpisode, quality, seasonPart, dubbed, specialEpisodeName, seasonName].filter(value => value).join('.');
+}
 
-    return [seasonEpisode, seasonPart, quality, dubbed].filter(value => value).join('.');
+function getFileData_movie($, link) {
+    let linkHref = getDecodedLink($(link).attr('href')).toLowerCase().replace(/\.\.+/g, '.');
+    let temp = linkHref.match(/\.mkv/g);
+    if (temp && temp.length > 1) {
+        return 'ignore';
+    }
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
+    let qualityText = purgeQualityText($(infoNodeChildren[1]).text());
+    let qualitySplit = qualityText.trim().split(' - ');
+
+    let movieName = qualitySplit[1].split(/the movie/gi).pop().trim();
+    if (movieName.match(/^\d+\s+/)) {
+        movieName = 'Movie ' + movieName;
+    }
+    if (!movieName.match(/\d\d\d\d$/)) {
+        let yearMatch = linkHref.match(/\.\d\d\d\d\./g);
+        let year = yearMatch ? yearMatch.pop().replace(/\./g, '') : '';
+        if (year) {
+            movieName += ' ' + year;
+        }
+    }
+    movieName = ' (' + movieName + ')';
+
+    let info = [qualitySplit[0], movieName, dubbed].filter(value => value).join('.');
+    info = fixLinkInfo(info, $(link).attr('href'));
+    return info;
 }
 
 function getSeasonNumber($, infoNodeChildren, linkHref) {
     let seasonText = replacePersianNumbers($(infoNodeChildren[0]).text().toLowerCase());
-    seasonText = seasonText.replace(/[()]/g, '').replace('بخش اول', '').replace('بخش دوم', '');
+    if (!seasonText && infoNodeChildren.length > 1) {
+        seasonText = replacePersianNumbers($(infoNodeChildren[1]).text().toLowerCase());
+    }
+    let quickMatch = seasonText.match(/\(s\d\)/gi);
+    if (quickMatch) {
+        return Number(quickMatch.pop().replace(/[()s]/g, ''));
+    }
+
+    seasonText = seasonText.replace(/[()]/g, '').replace(/^قسمت ها \d+$/g, '').replace('بخش اول', '').replace('بخش دوم', '');
     let seasonNumber = persianWordToNumber(seasonText);
     if (seasonNumber === 0) {
         if (seasonText.includes('فصل')) {
-            let seasonMatch = linkHref.match(/\d+/g);
+            let temp = seasonText.match(/^فصل \d$/);
+            if (temp) {
+                return Number(temp.pop().replace('فصل', '').trim());
+            }
+            let seasonMatch = seasonText.match(/\d+/g);
             if (seasonMatch && seasonText.length < 8) {
                 seasonNumber = Number(seasonMatch.pop());
+            }
+        }
+        if (seasonNumber === 0) {
+            let seasonMatch = linkHref.match(/[^\/]([.\/])s\d+([.\/])/g);
+            if (seasonMatch) {
+                seasonNumber = Number(seasonMatch.pop().split('s').pop().replace(/[.\/]/g, ''));
             } else {
-                let seasonMatch = linkHref.match(/([.\/])s\d+([.\/])/g);
+                let seasonMatch = seasonText.match(/season \d+|\(\s*s\d+\s*\)/g);
                 if (seasonMatch) {
-                    seasonNumber = Number(seasonMatch.pop().replace(/[.s\/]/g, ''));
+                    seasonNumber = Number(seasonMatch.pop().replace(/season|[\s()s]/g, ''));
                 } else {
-                    let seasonMatch = seasonText.match(/season \d+|\(\s*s\d+\s*\)/g);
-                    if (seasonMatch) {
-                        seasonNumber = Number(seasonMatch.pop().replace(/season|[\s()s]/g, ''));
-                    } else {
-                        return 'ignore';
-                    }
+                    seasonNumber = 1;
                 }
             }
-        } else {
+        }
+        if (seasonNumber === 0) {
             seasonNumber = 1;
         }
     }
+
     return seasonNumber;
 }
 
@@ -238,8 +292,16 @@ function getQuality($, infoNodeChildren, linkHref, linkText) {
         quality = purgeQualityText(linkText.match(/\d\d\d+p/gi).pop());
     } else {
         let qualityText = $(infoNodeChildren[1]).text();
-        qualityText = qualityText.match(/\d\d\d+p*/gi) ? qualityText : $(infoNodeChildren[2]).text();
-        qualityText = qualityText.match(/\d\d\d+p*/gi) ? qualityText : '';
+        if (infoNodeChildren[2]) {
+            let temp = $(infoNodeChildren[2]).text();
+            if (!qualityText.match(/(480|576|720|1080|2160)p*/gi) || temp.includes('کیفیت')) {
+                qualityText = purgeQualityText(temp);
+            }
+        }
+        qualityText = qualityText.match(/(480|576|720|1080|2160)p*/gi) ? qualityText : '';
+        if (qualityText.match(/^قسمت ها \d\d* تا \d\d*$/g)) {
+            qualityText = '';
+        }
         if (!qualityText) {
             let qualityMatch = linkHref.match(/\d\d\d+p/g);
             if (qualityMatch) {
@@ -249,11 +311,48 @@ function getQuality($, infoNodeChildren, linkHref, linkText) {
         quality = purgeQualityText(qualityText);
     }
     quality = quality.includes('p') ? quality : quality !== '' ? quality + 'p' : '';
-    quality = replacePersianNumbers(quality).replace(/\s+/g, '.');
+    quality = replacePersianNumbers(quality.replace('x 265', 'x265')).replace(/\s+/g, '.');
     if (quality === '') {
         quality = '720p';
     }
     return quality;
+}
+
+function fixWrongSeasonNumber(seasonNumber, linkHref) {
+    let seasonName = '';
+    if (linkHref.includes('kenpuu.denki.berserk')) {
+        seasonNumber = 0;
+    } else if (linkHref.includes('berserk.2016')) {
+        seasonNumber = 1;
+    } else if (linkHref.includes('berserk.2017')) {
+        seasonNumber = 2;
+    } else if (linkHref.includes('tensura.nikki.tensei.shitara.slime.datta.ken')) {
+        seasonNumber = 0;
+    } else if (linkHref.includes('sword.art.online-alicization.war.of.underworld')) {
+        seasonNumber = 2;
+    } else if (linkHref.includes('kuroshitsuji.book.of.murder')) {
+        seasonNumber = 0;
+    } else if (linkHref.includes('minami-ke.okaeri')) {
+        seasonNumber = 3;
+    } else if (linkHref.includes('minami-ke.tadaima')) {
+        seasonNumber = 4;
+    } else if (linkHref.includes('grappler.baki')) {
+        seasonName = ' (Grappler Baki)';
+        seasonNumber = 0;
+    } else if (linkHref.includes('fate.stay.night.ubw.s1')) {
+        seasonName = ' (Unlimited Blade Works S1)';
+        seasonNumber = 2;
+    } else if (linkHref.includes('fate.stay.night.ubw.s2')) {
+        seasonName = ' (Unlimited Blade Works S2)';
+        seasonNumber = 3;
+    } else if (seasonNumber === 1) {
+        if (linkHref.includes('fairy.tail.zero')) {
+            seasonNumber = 3;
+        } else if (linkHref.includes('fairy.tail.final')) {
+            seasonNumber = 4;
+        }
+    }
+    return {seasonNumber, seasonName};
 }
 
 function replaceShortTitleWithFull(title, type) {
@@ -279,4 +378,91 @@ function replaceShortTitleWithFull(title, type) {
         title = 'itai no wa iya nano de bougyoryoku ni kyokufuri shitai to omoimasu all seasons';
     }
     return title;
+}
+
+function fixWrongSeasonNumberIncrement(downloadLinks) {
+    let lastEpisodeFromPrevSeason = 0;
+    for (let i = 0; i < downloadLinks.length; i++) {
+        if (downloadLinks[i].season === 1) {
+            if (downloadLinks[i].episode > lastEpisodeFromPrevSeason) {
+                lastEpisodeFromPrevSeason = downloadLinks[i].episode;
+            }
+        }
+    }
+    if (lastEpisodeFromPrevSeason > 0) {
+        let firstEpisodeOfSeason = -1;
+        for (let i = 0; i < downloadLinks.length; i++) {
+            if (downloadLinks[i].season === 2) {
+                if (firstEpisodeOfSeason === -1) {
+                    firstEpisodeOfSeason = downloadLinks[i].episode;
+                }
+                if (downloadLinks[i].episode < firstEpisodeOfSeason) {
+                    firstEpisodeOfSeason = downloadLinks[i].episode;
+                }
+            }
+        }
+
+        for (let i = 0; i < downloadLinks.length; i++) {
+            if (!downloadLinks[i].info.includes('.part') && downloadLinks[i].season === 2) {
+                if (firstEpisodeOfSeason === lastEpisodeFromPrevSeason + 1) {
+                    downloadLinks[i].season = downloadLinks[i].season - 1;
+                }
+            }
+        }
+    }
+
+    return downloadLinks;
+}
+
+function fixSeasonSeparation(downloadLinks) {
+    let saveResult = [];
+    for (let i = 0; i < downloadLinks.length; i++) {
+        let partMatch = downloadLinks[i].info.match(/\.part\d/gi);
+        if (partMatch) {
+            let partNumber = Number(partMatch[0].replace(/part|\./gi, ''));
+            if (partNumber === 1) {
+                continue;
+            }
+            let seasonNumber = downloadLinks[i].season;
+
+            let cache = saveResult.find(item => item.seasonNumber === downloadLinks[i].season && item.partNumber === partNumber);
+            if (cache) {
+                downloadLinks[i].episode += cache.plusEpisode;
+                continue;
+            }
+
+            let lastEpisodeFromPrevPart = 0;
+
+            for (let j = 0; j < downloadLinks.length; j++) {
+                if (
+                    (partNumber === 2 &&
+                        (downloadLinks[j].info.toLowerCase().includes('.part1') || !downloadLinks[j].info.toLowerCase().includes('.part'))) ||
+                    (partNumber > 2 && downloadLinks[j].info.toLowerCase().includes('.part' + (partNumber - 1)))
+                ) {
+                    if (downloadLinks[j].season === seasonNumber && downloadLinks[j].episode > lastEpisodeFromPrevPart) {
+                        lastEpisodeFromPrevPart = downloadLinks[j].episode;
+                    }
+                }
+            }
+
+            if (lastEpisodeFromPrevPart > 0) {
+                saveResult.push({
+                    seasonNumber: seasonNumber,
+                    partNumber: partNumber,
+                    plusEpisode: lastEpisodeFromPrevPart,
+                });
+                downloadLinks[i].episode += lastEpisodeFromPrevPart;
+            }
+        }
+    }
+    for (let i = 0; i < downloadLinks.length; i++) {
+        let partMatch = downloadLinks[i].info.match(/\.part\d/gi);
+        if (partMatch) {
+            let partNumber = Number(partMatch[0].replace(/part|\./gi, ''));
+            if (saveResult.findIndex(item => item.seasonNumber === downloadLinks[i].season && item.partNumber === partNumber) !== -1) {
+                downloadLinks[i].info = downloadLinks[i].info.replace(/\.part\d/gi, '');
+            }
+        }
+    }
+    return downloadLinks;
 }

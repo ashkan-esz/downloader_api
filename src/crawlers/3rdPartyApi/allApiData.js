@@ -1,5 +1,4 @@
 import axios from "axios";
-import axiosRetry from "axios-retry";
 import {getOMDBApiData, getOMDBApiFields} from "./omdbApi";
 import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi";
 import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi";
@@ -8,24 +7,6 @@ import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} from "../season
 import {sortPosters, sortTrailers} from "../subUpdates";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils";
 import {saveError} from "../../error/saveError";
-
-axiosRetry(axios, {
-    retries: 3, // number of retries
-    retryDelay: (retryCount) => {
-        return retryCount * 1000; // time interval between retries
-    },
-    retryCondition: (error) => (
-        error.code === 'ECONNRESET' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ECONNABORTED' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'SlowDown' ||
-        (error.response &&
-            error.response.status !== 429 &&
-            error.response.status !== 404 &&
-            error.response.status !== 403)
-    ),
-});
 
 
 export async function addApiData(titleModel, site_links, sourceName) {

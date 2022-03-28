@@ -1,29 +1,9 @@
-import axios from "axios";
-import axiosRetry from "axios-retry";
 import * as Sentry from "@sentry/node";
 import {updateSourcesObjDB} from "../data/dbMethods";
 import {getSourcesArray} from "./sourcesArray";
 import {getPageData} from "./remoteHeadlessBrowser";
 import {getDatesBetween} from "./utils";
 import {saveError} from "../error/saveError";
-
-axiosRetry(axios, {
-    retries: 3, // number of retries
-    retryDelay: (retryCount) => {
-        return retryCount * 1000; // time interval between retries
-    },
-    retryCondition: (error) => (
-        error.code === 'ECONNRESET' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ECONNABORTED' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'SlowDown' ||
-        (error.response &&
-            error.response.status !== 429 &&
-            error.response.status !== 404 &&
-            error.response.status !== 403)
-    ),
-});
 
 
 export async function domainChangeHandler(sourcesObj) {

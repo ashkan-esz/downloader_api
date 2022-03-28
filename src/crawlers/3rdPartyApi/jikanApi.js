@@ -168,14 +168,14 @@ export async function getCharactersStaff(jikanID) {
 export async function getPersonInfo(jikanID) {
     if (jikanID) {
         let url = `https://api.jikan.moe/v3/person/${jikanID}`;
-        return await handleApiCall(url);
+        return await handleApiCall(url, 15);
     }
 }
 
 export async function getCharacterInfo(jikanID) {
     if (jikanID) {
         let url = `https://api.jikan.moe/v3/character/${jikanID}`;
-        return await handleApiCall(url);
+        return await handleApiCall(url, 15);
     }
 }
 
@@ -264,7 +264,7 @@ function getTitleObjFromJikanData(allTitles) {
     return titleObj;
 }
 
-async function handleApiCall(url) {
+async function handleApiCall(url, timeoutSec = 0) {
     let cacheResult = jikanCache.get(url);
     if (cacheResult === 'notfound: jikan error') {
         return null;
@@ -274,7 +274,7 @@ async function handleApiCall(url) {
     }
     while (isRunning) {
         let now = new Date();
-        if (utils.getDatesBetween(now, callTime).seconds > 4 && multiCounter < 10) {
+        if (multiCounter < 10 && utils.getDatesBetween(now, callTime).seconds > 4) {
             break;
         }
         await new Promise((resolve => setTimeout(resolve, 100)));
@@ -285,7 +285,26 @@ async function handleApiCall(url) {
         try {
             isRunning = true;
             callTime = new Date();
-            let response = await axios.get(url);
+
+            let response = await new Promise((resolve, reject) => {
+                const source = axios.CancelToken.source();
+                let hardTimeout = timeoutSec === 0 ? 3 * 60 * 1000 : (3 * timeoutSec * 1000) + 7;
+                const timeoutId = setTimeout(() => {
+                    source.cancel('hard timeout');
+                }, hardTimeout);
+
+                axios.get(url, {
+                    cancelToken: source.token,
+                    timeout: timeoutSec * 1000,
+                }).then((result) => {
+                    clearTimeout(timeoutId);
+                    return resolve(result);
+                }).catch((err) => {
+                    clearTimeout(timeoutId);
+                    return reject(err);
+                });
+            })
+
             if (multiCounter === 1) {
                 isRunning = false;
             }
@@ -307,8 +326,12 @@ async function handleApiCall(url) {
                     isRunning = false;
                 }
                 multiCounter--;
+                if (error.message === 'hard timeout') {
+                    return null;
+                }
                 if (
                     error.code === 'ECONNABORTED' ||
+                    !error.response ||
                     (error.response && (
                         error.response.status !== 404 &&
                         error.response.status !== 500 &&
