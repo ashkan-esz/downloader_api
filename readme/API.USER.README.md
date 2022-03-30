@@ -45,13 +45,13 @@
 
 
 ### POST /users/signup
-> receives { __username__, __email__, __password__, __confirmPassword__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device Info))
+> receives { __username__, __email__, __password__, __confirmPassword__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
 >
 > return Tokens and also `refreshToken`. ([Tokens schema](SCHEMA.README.md#Tokens))
 
 
 ### POST /users/login
-> receives { __username_email__, __password__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device Info))
+> receives { __username_email__, __password__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
 > 
 > __username_email__ means user can log in with username or email address.
 > 
@@ -59,7 +59,7 @@
 
 
 ### PUT /users/getToken
-> receives __deviceInfo__ in request body. ([DeviceInfo schema](SCHEMA.README.md#Device Info))
+> receives __deviceInfo__ in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
 > 
 > return __Tokens__ and also `refreshToken`. ([Tokens schema](SCHEMA.README.md#Tokens))
 
