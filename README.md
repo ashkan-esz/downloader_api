@@ -5,40 +5,24 @@ A webcrawler based movie/anime data provider with rest api's
 
 
 ## Motivation
-There is lots of movie sources to download from and also they change url frequently , so i made this to collect them all in one place and handle url changes.
+There is lots of movie sources to download from and also they change url frequently, so I made this to collect them all in one place and handle url changes.
 
-## How to use
-First install and start remote headless browser from [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/) .  
-then use command `npm install` and then `npm run start`.
+## Getting started
+
+### 1. Install and start remote headless browser
+
+Go to [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/) and follow instructions. (`REMOTE_BROWSER_PASSWORD`, `REMOTE_BROWSER_ENDPOINT`) 
+
+**Note: Without this almost half of movie sources and url updater doesn't work .**
 
 
-> you may want to change `--max_old_space_size` and `--gc_interval` values in start script.
+### 2. Install dependencies and Environment variables
+First set all environment variables to .env file in your local environment or to server shell. then use npm script `npm install` to install dependencies.
 
-## Environment Variables
+### 3. Setup Db collections
 
-To run this project, you will need to add the following environment variables to your .env file
-
-| Prop                       | Description                                          | Required |
-| -------------------------- | ---------------------------------------------------- | -------- |
-| **`PORT`**                 | server port  | `false (default:3000)` |
-| **`UPDATE_PASSWORD`**         | password to start web crawler if needed. | `true` |
-| **`REMOTE_BROWSER_PASSWORD`** | password of remote headless browser (puppeteer) | `true` |
-| **`REMOTE_BROWSER_ENDPOINT`** | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)  | `true` |
-| **`DATABASE_URL`**            | mongodb url, for example see [mongodb.com](https://www.mongodb.com/) | `true` |
-| **`SENTRY_DNS`** | see [sentry.io](https://sentry.io) | `false` |
-| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en) | `true` |
-| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix | `true` |
-| **`CLOUAD_STORAGE_ACCESS_KEY`**        |  | `true` |
-| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |  | `true` |
-| **`IMDB_API_KEY`**        | see [imdb-api.com](https://imdb-api.com/) | `true` |
-| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinite. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/) | `true` |
-| **`PRINT_ERRORS`**        |  | `false (default:false)` |
-| **`CRAWLER_CONCURRENCY`** |  | `false` |
-| **`EMAIL_USERNAME`** |  | `true` |
-| **`EMAIL_PASSWORD`** |  | `true` |
-| **`ACCESS_TOKEN_SECRET`** |  | `true` |
-| **`REFRESH_TOKEN_SECRET`** |  | `true` |
-
+Collection information listed in [`src/data/createCollectionsIndex`](src/data/createCollectionsIndex.js).
+you can run npm script `npm run pre_start` to create collections and their indexes automatically.
 
 ```
 > Also, a mongodb collection with name `sources` with single doc in format of:
@@ -69,14 +53,61 @@ for example ::
         page_count: 1488,
     },
     ....
+    ....
 }
 
->> cloud storage (s3) bucket names: serverstatic, cast, download-subtitle, poster, download-trailer
-
->> a file with the same name of [sourceName] exist in src/crawlers/sources/[sourceName].js
->> and can be accessed from src/crawlers/sourcesArray.js 
-
 ```
+
+> a file with the same name of [sourceName] exist in [sources](src/crawlers/sources)
+> and can be accessed from [sourcesArray](src/crawlers/sourcesArray.js).
+
+### 4. Setup cloud storage
+
+Config your own preferred cloud storage provider (s3) and create buckets with names of [serverstatic, cast, download-subtitle, poster, download-trailer].
+
+**Note: all of them must be public and enable static website.**
+
+
+### 5. Finally, the end
+
+Set the rest of environment variables, like `CLOUAD_STORAGE_ENDPOINT`.
+
+if you have more than 500mb of ram (which you should have) change `--max_old_space_size` and `--gc_interval` values in start script.
+
+start npm script `npm run start` and boom server is working.
+
+### Note
+
+In few hours (almost every 3 hour) crawler start and populates database, also you can start the crawler with api (POST /crawler/[password])
+ 
+we plan to add this step into admin panel.
+
+## Environment Variables
+
+To run this project, you will need to add the following environment variables to your .env file
+
+| Prop                       | Description                                          | Required |
+| -------------------------- | ---------------------------------------------------- | -------- |
+| **`PORT`**                 | server port  | `false (default:3000)` |
+| **`UPDATE_PASSWORD`**         | password to start web crawler if needed. | `true` |
+| **`REMOTE_BROWSER_PASSWORD`** | password of remote headless browser (puppeteer) | `true` |
+| **`REMOTE_BROWSER_ENDPOINT`** | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)  | `true` |
+| **`DATABASE_URL`**            | mongodb url, for example see [mongodb.com](https://www.mongodb.com/) | `true` |
+| **`SENTRY_DNS`** | see [sentry.io](https://sentry.io) | `false` |
+| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en) | `true` |
+| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix | `true` |
+| **`CLOUAD_STORAGE_ACCESS_KEY`**        |  | `true` |
+| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |  | `true` |
+| **`IMDB_API_KEY`**        | see [imdb-api.com](https://imdb-api.com/) | `true` |
+| **`OMDB_API_KEY{i}`**     | `i` start from 1 to infinite. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/) | `true` |
+| **`PRINT_ERRORS`**        |  | `false (default:false)` |
+| **`CRAWLER_CONCURRENCY`** |  | `false` |
+| **`EMAIL_USERNAME`** |  | `true` |
+| **`EMAIL_PASSWORD`** |  | `true` |
+| **`ACCESS_TOKEN_SECRET`** |  | `true` |
+| **`REFRESH_TOKEN_SECRET`** |  | `true` |
+
+
 
 ## Future updates
 - [x]  Direct download link.
@@ -89,8 +120,11 @@ for example ::
 - [ ]  Documentation.
 - [ ]  Write test.
 
-## Api routes
-Open [api routes](API.README.md) for api docs.
+
+## API Routes
+- Open [admin api docs](readme/API.ADMIN.README.md).
+- Open [user api docs](readme/API.USER.README.md).
+- Open [movie api docs](readme/API.MOVIES.README.md).
 
 ## Contributing
 
@@ -106,6 +140,7 @@ Give a ⭐️ if you like this project!
 
 ## Related
 
+- [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
 - [downloader_app](https://github.com/ashkan-esz/downloader_app/)
 
 ## Extra

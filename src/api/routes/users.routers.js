@@ -25,7 +25,7 @@ router.put('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.
 //users/myProfile
 router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
 
-//users/myProfile
+//users/activeSessions
 router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserActiveSessions);
 
 //users/sendVerifyEmail

@@ -6,6 +6,7 @@ import {saveError} from "../error/saveError";
 
 export async function createCollectionsAndIndexes() {
     try {
+        console.log('creating mongodb collection and indexes');
         const likeBucketCollections = ['moviesLikeBucket', 'staffLikeBucket', 'charactersLikeBucket'];
         for (let i = 0; i < likeBucketCollections.length; i++) {
             let collection = await getCollection(likeBucketCollections[i]);
@@ -70,7 +71,7 @@ export async function createCollectionsAndIndexes() {
         //usage: emailVerifyToken, emailVerifyToken_expire
         //usage: activeSessions.refreshToken
         //usage: _id, activeSessions.refreshToken
-
+        console.log('creating mongodb collection and indexes --done!');
     } catch (error) {
         saveError(error);
     }

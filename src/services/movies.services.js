@@ -114,21 +114,27 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
 
 export async function searchMovieById(userId, id, dataLevel) {
     let movieData = await dbMethods.searchOnCollectionById("movies", userId, id, dataLevelConfig[dataLevel]);
-    addFieldLikeOrDislike([movieData]);
+    if (movieData) {
+        addFieldLikeOrDislike([movieData]);
+    }
 
     return movieData;
 }
 
 export async function searchStaffById(userId, id) {
     let staffData = await dbMethods.searchOnCollectionById("staff", userId, id, {});
-    addFieldLikeOrDislike([staffData]);
+    if (staffData) {
+        addFieldLikeOrDislike([staffData]);
+    }
 
     return staffData;
 }
 
 export async function searchCharacterById(userId, id) {
     let characterData = await dbMethods.searchOnCollectionById("characters", userId, id, {});
-    addFieldLikeOrDislike([characterData]);
+    if (characterData) {
+        addFieldLikeOrDislike([characterData]);
+    }
 
     return characterData;
 }

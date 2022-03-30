@@ -7,6 +7,7 @@
   },
   "type": "module",
   "scripts": {
+    "pre_start": "NODE_ENV=production node --experimental-specifier-resolution=node src/preStart.js",
     "start": "NODE_ENV=production node --optimize_for_size --max_old_space_size=460 --gc_interval=100 --experimental-specifier-resolution=node src/server.js",
     "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc --experimental-specifier-resolution=node src/server.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config --experimental-specifier-resolution=node src/server.js",

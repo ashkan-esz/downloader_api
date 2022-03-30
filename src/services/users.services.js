@@ -61,7 +61,7 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             username: userData.rawUsername,
-            userId: userData._id,
+            userId: userId,
         }, 201, '', tokens);
     } catch (error) {
         saveError(error);
@@ -127,6 +127,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             username: result.rawUsername,
+            userId: result._id.toString(),
             profileImages: result.profileImages,
         }, 200, '', tokens);
     } catch (error) {
@@ -202,10 +203,13 @@ export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
 export async function getUserProfile(userData, refreshToken) {
     try {
         userData.thisDevice = userData.activeSessions.find(item => item.refreshToken === refreshToken);
+        delete userData.thisDevice.refreshToken;
         delete userData.activeSessions;
         delete userData.password;
         delete userData.emailVerifyToken;
         delete userData.emailVerifyToken_expire;
+        userData.username = userData.rawUsername; //outside of server rawUsername is the actual username
+        delete userData.rawUsername;
         return generateServiceResult(userData, 200, '');
     } catch (error) {
         saveError(error);
@@ -220,6 +224,7 @@ export async function getUserActiveSessions(userData, refreshToken) {
             delete item.refreshToken;
             return item;
         });
+        delete thisDevice.refreshToken;
         return generateServiceResult({thisDevice, activeSessions}, 200, '');
     } catch (error) {
         saveError(error);
@@ -267,7 +272,7 @@ export async function verifyEmail(token) {
     }
 }
 
-function getJwtPayload(userData, userId = '') {
+export function getJwtPayload(userData, userId = '') {
     return {
         userId: (userData._id || userId).toString(),
         username: userData.rawUsername,
@@ -276,9 +281,9 @@ function getJwtPayload(userData, userId = '') {
     };
 }
 
-function generateAuthTokens(user) {
-    const accessToken = jwt.sign(user, config.jwt.accessTokenSecret, {expiresIn: config.jwt.accessTokenExpire});
-    const refreshToken = jwt.sign(user, config.jwt.refreshTokenSecret, {expiresIn: config.jwt.refreshTokenExpire});
+export function generateAuthTokens(user, customExpire = '') {
+    const accessToken = jwt.sign(user, config.jwt.accessTokenSecret, {expiresIn: customExpire || config.jwt.accessTokenExpire});
+    const refreshToken = jwt.sign(user, config.jwt.refreshTokenSecret, {expiresIn: customExpire || config.jwt.refreshTokenExpire});
     return {
         accessToken,
         accessToken_expire: jwt.decode(accessToken).exp * 1000,

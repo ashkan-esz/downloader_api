@@ -31,7 +31,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
             wantToWatch: [],
         },
         registrationDate: new Date(),
-        role: 'member',
+        role: 'user',
     }
 }
 

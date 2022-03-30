@@ -1,6 +1,7 @@
 import config from "../../config";
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
+import {findUser} from "../../data/usersDbMethods";
 import {saveError} from "../../error/saveError";
 
 const refreshTokenBlackList = new NodeCache({stdTTL: 60 * 60});
@@ -43,6 +44,22 @@ export async function isAuth_refreshToken(req, res, next) {
 }
 
 export async function attachAuthFlag(req, res, next) {
+    if (req.method === 'GET' && req.query.testUser === 'true') {
+        let findUserResult = await findUser('$$test_user$$', '', {activeSessions: 1});
+        if (findUserResult && findUserResult.activeSessions[0]) {
+            let refreshToken = findUserResult.activeSessions[0].refreshToken;
+            let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
+            if (refreshTokenVerifyResult) {
+                req.accessToken = '';
+                req.refreshToken = refreshToken;
+                req.jwtUserData = refreshTokenVerifyResult;
+                req.isAuth = true;
+                req.isTestUser = true;
+                return next();
+            }
+        }
+    }
+
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {

@@ -4,7 +4,9 @@ import {crawler} from "../../crawlers/crawler";
 
 const router = Router();
 
-router.post('/:password/', async (req, res) => {
+//todo : add validation --> role:admin
+
+router.put('/:password/', async (req, res) => {
     let password = req.params.password;
     let sourceName = req.query.sourceName;
     let mode = req.query.mode ? Number(req.query.mode) : 0;
@@ -22,7 +24,7 @@ router.post('/:password/', async (req, res) => {
     }
 });
 
-router.post('/domainChange/:password', async (req, res) => {
+router.put('/domainChange/:password', async (req, res) => {
     let password = req.params.password;
 
     if (password === config.crawlerStarterPassword) {

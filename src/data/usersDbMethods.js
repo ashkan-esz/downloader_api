@@ -23,7 +23,7 @@ export async function findUser(username, email, projection) {
                 },
             ],
         };
-        return await collection.findOne(searchObj, projection);
+        return await collection.findOne(searchObj, {projection: projection});
     } catch (error) {
         saveError(error);
         return null;
