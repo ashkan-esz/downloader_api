@@ -176,7 +176,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
-        if (db_data.releaseState !== 'done') {
+        if (db_data.releaseState !== 'done' && downloadLinks.length > 0) {
             await convertUnReleasedTitleToNewTitle(db_data, updateFields, type);
         }
 
@@ -205,7 +205,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
                     let trailerRemoved = await deleteTrailerFromS3(fileName);
                     if (trailerRemoved) {
                         if (db_data.trailers) {
-                            db_data.trailers = db_data.trailers.filter(item => item.url !== db_data.trailer_s3);
+                            db_data.trailers = db_data.trailers.filter(item => item.url !== db_data.trailer_s3.url);
                         }
                         if (db_data.trailers && db_data.trailers.length === 0) {
                             db_data.trailers = null;
@@ -297,7 +297,7 @@ async function convertUnReleasedTitleToNewTitle(db_data, updateFields, type) {
     updateFields.releaseState = 'done';
     db_data.insert_date = new Date();
     updateFields.insert_date = new Date();
-    if (type.includes('anime')) {
+    if (db_data.type.includes('anime') || type.includes('anime')) {
         await connectNewAnimeToRelatedTitles(db_data, db_data._id);
     }
 }

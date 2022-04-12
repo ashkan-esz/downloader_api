@@ -2,6 +2,7 @@ import * as dbMethods from '../data/dbMethods';
 import * as likeDbMethods from '../data/likeDbMethods';
 import {dataLevelConfig} from "../models/movie";
 import {generateServiceResult} from "./users.services";
+import {setCache} from "../api/middlewares/moviesCache";
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
@@ -160,11 +161,18 @@ export async function likeOrDislikeService(userId, docType, id, likeOrDislike, i
     return generateServiceResult({}, 200, '');
 }
 
-export async function getGenresStatus() {
+export async function getGenresStatus(routeUrl) {
     let result = await dbMethods.getGenresStatusDB();
 
     if (result === 'error') {
         return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+    if (result.length > 0) {
+        setCache(routeUrl, {
+            data: result,
+            code: 200,
+            errorMessage: '',
+        }, 10 * 60);
     }
     return generateServiceResult({data: result}, 200, '');
 }

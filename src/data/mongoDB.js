@@ -6,9 +6,15 @@ let connection = null;
 let database = null;
 
 async function startDatabase() {
-    const uri = config.databaseURL;
-    connection = await mongodb.MongoClient.connect(uri);
-    database = connection.db();
+    try {
+        const uri = config.databaseURL;
+        connection = await mongodb.MongoClient.connect(uri);
+        database = connection.db();
+    } catch (error) {
+        saveError(error);
+        connection = null;
+        database = null;
+    }
 }
 
 async function getCollection(collection_name) {

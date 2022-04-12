@@ -23,9 +23,15 @@ const s3 = new S3Client({
     },
 });
 
+// s3 error codes:
+// 500: internal error
+// 502: gateway error
+// 503: too many request to prefix
+// 504: gateway timeout
+
 export const defaultProfileImage = `https://serverstatic.${config.cloudStorage.websiteEndPoint}/defaultProfile.png`;
 
-export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0) {
+export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
@@ -65,7 +71,12 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter);
+            return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if ((!error.response || error.response.status !== 404) || !originalUrl.includes('cdn.myanimelist.')) {
             //do not save myanimelist 404 images errors
@@ -75,7 +86,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
     }
 }
 
-export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, retryCounter = 0) {
+export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
@@ -116,14 +127,19 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter);
+            return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
         return null;
     }
 }
 
-export async function uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter = 0, forceUpload = false) {
+export async function uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter = 0, forceUpload = false, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
@@ -166,14 +182,18 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             retryCounter++;
             let fileName = originalUrl.split('/').pop();
             originalUrl = originalUrl.replace(fileName, encodeURIComponent(fileName));
-            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload);
+            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload);
+            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
-
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
+        }
         if (((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') || !originalUrl.includes('salamdl.')) {
             //do not save salamdl 404|ENOTFOUND images errors
             saveError(error);
@@ -182,7 +202,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
     }
 }
 
-export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter = 0) {
+export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
@@ -242,7 +262,12 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.statusCode === 410) && retryCounter < 4) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter);
+            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && (error.response.status === 429 || error.response.status >= 500) && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if (error.name !== "AbortError") {
             saveError(error);
@@ -251,7 +276,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
     }
 }
 
-export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter = 0) {
+export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
     let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
@@ -269,7 +294,12 @@ export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, r
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter);
+            return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
@@ -279,7 +309,7 @@ export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, r
     }
 }
 
-export async function checkSubtitleExist(fileName, retryCounter = 0) {
+export async function checkSubtitleExist(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileUrl = `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
         const params = {
@@ -296,7 +326,12 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkSubtitleExist(fileName, retryCounter);
+            return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
@@ -306,7 +341,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0) {
     }
 }
 
-export async function checkTitlePosterExist(title, type, year, retryCounter = 0) {
+export async function checkTitlePosterExist(title, type, year, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(title, type, year, '', 'jpg');
     let fileUrl = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
@@ -324,7 +359,12 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0)
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkTitlePosterExist(title, type, year, retryCounter);
+            return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
@@ -334,7 +374,7 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0)
     }
 }
 
-export async function checkTitleTrailerExist(title, type, year, retryCounter = 0) {
+export async function checkTitleTrailerExist(title, type, year, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(title, type, year, '', 'mp4');
     let fileUrl = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
     try {
@@ -355,7 +395,12 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await checkTitleTrailerExist(title, type, year, retryCounter);
+            return await checkTitleTrailerExist(title, type, year, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && (error.response.status === 429 || error.response.status >= 500) && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await checkTitleTrailerExist(title, type, year, retryCounter, retryWithSleepCounter);
         }
         let statusCode = error['$metadata'].httpStatusCode;
         if (statusCode !== 404 && statusCode !== 200) {
@@ -365,7 +410,7 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
     }
 }
 
-export async function deletePosterFromS3(fileName, retryCounter = 0) {
+export async function deletePosterFromS3(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
             Bucket: 'poster',
@@ -378,14 +423,19 @@ export async function deletePosterFromS3(fileName, retryCounter = 0) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await deletePosterFromS3(fileName, retryCounter);
+            return await deletePosterFromS3(fileName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await deletePosterFromS3(fileName, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
         return false;
     }
 }
 
-export async function deleteTrailerFromS3(fileName, retryCounter = 0) {
+export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
             Bucket: 'download-trailer',
@@ -398,7 +448,12 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await deleteTrailerFromS3(fileName, retryCounter);
+            return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
         return false;
@@ -419,6 +474,7 @@ function getFileName(title, titleType, year, extra, fileType) {
 }
 
 export async function resetBucket(bucketName) {
+    //use with caution
     const params = {
         Bucket: bucketName,
     };
@@ -447,7 +503,7 @@ export async function resetBucket(bucketName) {
     }
 }
 
-async function getFileSize(url, retryCounter = 0) {
+async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         let response = await axios.head(url);
         return Number(response.headers['content-length']) || 0;
@@ -457,9 +513,14 @@ async function getFileSize(url, retryCounter = 0) {
             retryCounter++;
             let fileName = url.split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
-            return await getFileSize(url, retryCounter);
+            return await getFileSize(url, retryCounter, retryWithSleepCounter);
         }
-        if (!error.response && error.response.status !== 404) {
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await getFileSize(url, retryCounter, retryWithSleepCounter);
+        }
+        if (!error.response || error.response.status !== 404) {
             saveError(error);
         }
         return 0;

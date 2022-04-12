@@ -148,7 +148,12 @@ Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/
 ```javascript
 result = {
     data: Array({
-        _id: String,
+        genre: String,
+        poster: {
+            url: String,
+            info: String,
+            size: Int
+        },
         count: Int,
     }),
     code: Int,

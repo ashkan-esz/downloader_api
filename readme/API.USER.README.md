@@ -99,7 +99,7 @@ Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUse
 
 
 ### GET /users/verifyEmail/[token]
-> verify given email token.
+> verify given email token. create activation link on server side.
 
 Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
 

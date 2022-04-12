@@ -451,12 +451,19 @@ export async function getGenresStatusDB() {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {
+                $sort: {
+                    year: -1,
+                    insert_date: -1,
+                }
+            },
+            {
                 $unwind: "$genres"
             },
             {
                 $group:
                     {
                         _id: "$genres",
+                        poster: {$first: {$arrayElemAt: ['$posters', 0]}},
                         count: {$sum: 1}
                     }
             },
@@ -465,6 +472,14 @@ export async function getGenresStatusDB() {
                     count: -1,
                 }
             },
+            {
+                $project: {
+                    _id: 0,
+                    genre: "$_id",
+                    poster: 1,
+                    count: 1,
+                }
+            }
         ];
 
         return await collection.aggregate(aggregationPipeline).toArray();

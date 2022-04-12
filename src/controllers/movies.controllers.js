@@ -183,7 +183,7 @@ export async function likeCharacter(req, res) {
 }
 
 export async function getGenresStatus(req, res) {
-    let result = await moviesServices.getGenresStatus();
+    let result = await moviesServices.getGenresStatus(req.url);
 
     res.statusCode = result.data.code;
     return res.json(result.data);
