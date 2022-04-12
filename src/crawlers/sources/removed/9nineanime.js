@@ -5,11 +5,10 @@ import {
     getType,
     checkDubbed,
     replacePersianNumbers,
-    purgeQualityText,
-    purgeSizeText,
     persianWordToNumber,
     getDecodedLink,
 } from "../../utils";
+import {purgeSizeText, purgeQualityText} from "../../linkInfoUtils";
 import save from "../../save_changes_db";
 import * as persianRex from "persian-rex";
 import {saveError} from "../../../error/saveError";

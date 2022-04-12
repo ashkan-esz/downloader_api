@@ -6,11 +6,9 @@ import {
     getType,
     removeDuplicateLinks,
     checkDubbed,
-    purgeQualityText,
-    purgeEncoderText,
-    purgeSizeText,
     getYear
 } from "../utils";
+import {purgeEncoderText, purgeSizeText, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -222,7 +220,7 @@ function getFileData($, link, type) {
             if (linkHref.includes('x265')) {
                 quality += '.x265';
             }
-            let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi);
+            let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|br(-)?rip/gi);
             if (linkHrefQualityMatch) {
                 quality = quality + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
             }
@@ -323,4 +321,18 @@ function getQualitySample($, link, type) {
         saveError(error);
         return '';
     }
+}
+
+function printLinksWithBadInfo(downloadLinks) {
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

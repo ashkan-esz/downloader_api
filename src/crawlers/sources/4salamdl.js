@@ -1,14 +1,7 @@
 import config from "../../config";
 import {search_in_title_page, wrapper_module} from "../searchTools";
-import {
-    getTitleAndYear,
-    validateYear,
-    getType,
-    purgeQualityText,
-    purgeSizeText,
-    purgeEncoderText,
-    fixLinkInfo
-} from "../utils";
+import {getTitleAndYear, validateYear, getType} from "../utils";
+import {purgeEncoderText, purgeSizeText, fixLinkInfo, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import * as persianRex from "persian-rex";
 import {saveError} from "../../error/saveError";
@@ -170,7 +163,7 @@ function getFileData($, link, type) {
     //'720p.WEB-DL.YTS - 848.85MB'  //'1080p.x265.10bit.WEB-DL.PSA - 1.98GB'
     let text_array = [];
     try {
-        if (type === 'serial') {
+        if (type.includes('serial')) {
             return getFileData_serial($, link);
         }
 
@@ -266,9 +259,8 @@ function getSerialFileInfoFromLink(linkHref) {
             .replace('10bit.x265', 'x265.10bit')
             .replace('.farsi', '')
             .replace('dubbed.x265.hevc', 'x265.hevc.dubbed')
-            .replace('bluray.x265.10bit', 'x265.10bit.bluray')
-            .replace('bluray', 'BluRay')
-            .replace('brrip', 'BrRip')
+            .replace('BluRay.x265.10bit', 'x265.10bit.BluRay')
+            .replace(/BR(-)?RIP/gi, 'BR-RIP')
             .replace('amzn.WEB-DL', 'WEB-DL')
             .replace('10bit.WEB-DL.6ch.x265', 'x265.10bit.WEB-DL.6ch')
             .replace('10bit.BluRay.x265', 'x265.10bit.BluRay')
@@ -353,17 +345,17 @@ function getFileData_movie(text_array, dubbed, linkHref) {
         .replace('Ultra.HD.2160p.4K', '2160p.4K')
         .replace('2160p.x265.4K', '2160p.4K.x265')
         .replace('3D.HSBS.1080p', '1080p.3D.HSBS')
-        .replace('dubbed.bluray', 'BluRay.dubbed')
+        .replace('dubbed.BluRay', 'BluRay.dubbed')
         .replace('3D.HSBS.x265', 'x265.3D.HSBS')
         .replace('10bit.x265', 'x265.10bit')
         .replace('HD-TV', 'HDTV')
         .replace('DVD-Rip', 'DVDRip')
         .replace('WEBRip', 'WEB-RIP')
         .replace('Web-DL', 'WEB-DL')
-        .replace('dubbed.Bluray', 'Bluray.dubbed')
+        .replace('dubbed.BluRay', 'BluRay.dubbed')
         .replace('dubbed.WEB-DL', 'WEB-DL.dubbed')
         .replace(/REMUX\.\d\d\d\d?p/gi, (res) => res.split('.').reverse().join('.'))
-        .replace(/(MkvCage|ShAaNiG|Ganool|YIFY|nItRo)\.(Bluray|WEB-DL)/gi, (res) => res.split('.').reverse().join('.'));
+        .replace(/(MkvCage|ShAaNiG|Ganool|YIFY|nItRo)\.(BluRay|WEB-DL)/gi, (res) => res.split('.').reverse().join('.'));
 
     return [info, size].filter(value => value).join(' - ');
 }
@@ -413,4 +405,18 @@ function checkTrailer_year($, link, text_array) {
     } else {
         return '';
     }
+}
+
+function printLinksWithBadInfo(downloadLinks) {
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

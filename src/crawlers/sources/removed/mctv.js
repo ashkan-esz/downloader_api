@@ -5,11 +5,9 @@ import {
     getType,
     checkDubbed,
     checkHardSub,
-    removeDuplicateLinks,
-    purgeQualityText,
-    purgeSizeText,
-    purgeEncoderText,
+    removeDuplicateLinks
 } from "../../utils";
+import {purgeEncoderText, purgeSizeText, purgeQualityText} from "../../linkInfoUtils";
 import save from "../../save_changes_db";
 import {saveError} from "../../../error/saveError";
 

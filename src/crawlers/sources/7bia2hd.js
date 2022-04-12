@@ -8,10 +8,16 @@ import {
     checkHardSub,
     removeDuplicateLinks,
     replacePersianNumbers,
-    purgeQualityText,
-    purgeSizeText,
-    purgeEncoderText
+    getDecodedLink
 } from "../utils";
+import {
+    purgeEncoderText,
+    purgeSizeText,
+    fixLinkInfoOrder,
+    fixLinkInfo,
+    purgeQualityText,
+    linkInfoRegex
+} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -42,6 +48,7 @@ async function search_title(link, i) {
                     if (!year) {
                         year = fixYear($2);
                     }
+
                     let sourceData = {
                         sourceName,
                         pageLink,
@@ -190,13 +197,20 @@ function getFileData($, link, type) {
 
 function getFileData_serial($, link) {
     let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
-    let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
+    let linkHref = $(link).attr('href');
+    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let quality = $(infoNodeChildren[2]).text()
         .replace('کیفیت', '').trim()
+        .replace(/\d\d\d مگابایت/g, '')
         .replace(' x264', '')
+        .replace(' x65', ' x265')
         .replace(' -', '')
-        .replace(/\s/g, '.');
+        .replace(/قسمت ها \d+/g, '')
+        .replace(/\s/g, '.')
+        .replace(/^\d\d\d\d?\.(x265|HDTV)$/g, (res) => res.replace('.', 'p.'))
+        .replace(/^(x265\.)?\d\d\d\d?$/g, (res) => res + 'p');
+
     quality = replacePersianNumbers(quality);
     quality = purgeQualityText(quality);
     let qualitySplit = quality.split('.');
@@ -217,6 +231,8 @@ function getFileData_serial($, link) {
         }
     }
     let info = [quality, hardSub, dubbed].filter(value => value).join('.');
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -225,19 +241,35 @@ function getFileData_movie($, link) {
     let linkHref = $(link).attr('href');
     let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let quality = replacePersianNumbers($(infoNodeChildren[1]).text());
-    quality = quality.replace(/x264|-/g, '').replace(/\s\s+/g, ' ').trim();
-    let linkHrefQualityMatch = linkHref.match(/bluray|webdl|web-dl|webrip|web-rip/gi);
-    if (!quality.match(/bluray|webdl|web-dl|webrip|web-rip/gi) && linkHrefQualityMatch) {
-        quality = quality + ' ' + linkHrefQualityMatch.pop();
-    }
+    let qualityText = $(infoNodeChildren[1]).text();
+    let sizeText = $(infoNodeChildren[2]).text();
+    let encoderText = $(infoNodeChildren[3]).text();
+    let quality = replacePersianNumbers(qualityText);
+    quality = quality.replace(/x264|-/gi, '').replace(/\s\s+/g, ' ').trim();
     quality = purgeQualityText(quality).replace(/\s+/g, '.');
-    if (quality.startsWith('4K.')) {
-        quality = '2160p.' + quality;
+    let size = purgeSizeText(sizeText);
+    let encoder = purgeEncoderText(encoderText);
+    if (sizeText.includes('انکودر') && !encoderText) {
+        size = '';
+        encoder = purgeEncoderText(sizeText);
     }
-    let size = purgeSizeText($(infoNodeChildren[2]).text());
-    let encoder = purgeEncoderText($(infoNodeChildren[3]).text());
+    if (infoNodeChildren.length === 2 && qualityText.includes('انکودر')) {
+        size = '';
+        encoder = purgeEncoderText(quality).replace(/(^\.)|(\.$)/g, '');
+        quality = '';
+    }
+    if (infoNodeChildren.length <= 3 && qualityText.includes('حجم') && qualityText.includes('مگابایت')) {
+        size = purgeSizeText(qualityText);
+        quality = '';
+    }
+    if (qualityText.includes('بایت') && sizeText.match(/\d\d\d\d?p/)) {
+        quality = purgeQualityText(sizeText.replace('حجم', ''));
+        size = purgeSizeText(qualityText.replace('کیفیت', ''));
+    }
+
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -253,6 +285,8 @@ function checkPersianSerial(title) {
         'legionnaire', 'hasto nist', 'divar be divar', 'gosal',
         'az yadha rafteh', 'recovery', 'zoj ya fard', 'deldadegan 1397',
         'raghs rooi e shisheh', 'baradar jaan', 'shahrzad 1394',
+        'golshifte', 'alijenab', 'kargadan', 'shahgoosh', 'ashoob', 'mankan',
+        'nahang abi aka blue whale', 'asheghaneh', 'salhaye door az khane',
     ];
     for (let i = 0; i < names.length; i++) {
         if (title === names[i]) {
@@ -260,4 +294,37 @@ function checkPersianSerial(title) {
         }
     }
     return false;
+}
+
+function printLinksWithBadInfo(downloadLinks, type) {
+    const bia2hdLinkRegex = new RegExp([
+        /[-.](((S\d\d(\.)?)|(E\d\d-))?E\d\d([-E]+\d\d)?)/,
+        /(\.(INTERNAL|REPACK|REAL|PROPER))?/,
+        /([-_.]+\d\d\d\d?pl?)?/,
+        /(\.+x264([-.](mSD|RMTeam|Justiso))?)?/,
+        /(\.Farsi\.Dubbed)?/,
+        /(\.RMT)?/,
+        /(-PaHe)?/,
+        /([.-]+Bi?a?2HD)?/,
+        /\.(mkv|mp4|avi|wmv)$/,
+    ].map(item => item.source).join(''), 'gi');
+
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex) &&
+        (
+            type.includes('movie') || (
+                !item.info.match(/^\d\d\d\d?p(\.x265\.10bit|\.x265(\.dubbed)?|\.dubbed)$/g) &&
+                !getDecodedLink(item.link).replace(/\s/g, '.').match(bia2hdLinkRegex)
+            )
+        )
+    )
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

@@ -5,11 +5,11 @@ import {
     validateYear,
     checkDubbed,
     replacePersianNumbers,
-    purgeSizeText,
     removeDuplicateLinks,
     getDecodedLink,
     sortLinks
 } from "../../utils";
+import {purgeSizeText} from "../../linkInfoUtils";
 import save from "../../save_changes_db";
 import {saveError} from "../../../error/saveError";
 

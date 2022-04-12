@@ -5,12 +5,11 @@ import {
     validateYear,
     checkDubbed,
     replacePersianNumbers,
-    purgeQualityText,
-    fixLinkInfo,
     persianWordToNumber,
     getDecodedLink,
     sortLinks,
 } from "../utils";
+import {fixLinkInfo, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -465,4 +464,18 @@ function fixSeasonSeparation(downloadLinks) {
         }
     }
     return downloadLinks;
+}
+
+function printLinksWithBadInfo(downloadLinks) {
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

@@ -1,14 +1,6 @@
 import * as persianRex from "persian-rex";
 import {saveError} from "../error/saveError";
 
-export const linkInfoRegex = new RegExp([
-    /^(\d\d\d\d?p|1080p\.FULL-HD|2160p\.4k)/,
-    /(\.x265\.10bit(\.hdr)?|\.x265|\.3d\.hsbs)?/,
-    /\.(WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|DVDRip|DVDScr|HD-CAM)/,
-    /(\.(rarbg|pahe|psa|yts|rmteam|evo|rmt|yify|ShAaNiG|Ganool|MkvCage|GalaxyRG|Digimoviez|SalamDL|HDETG|AdiT|galaxytv|DRONES|joy|Ozlem|nItRo))?/,
-    /(\.(HardSub|SoftSub|dubbed))?/,
-    /( - (\d\d?(\.\d\d?)?gb|\d\d\d?mb))?$/
-].map(item => item.source).join(''), 'gi');
 
 export function purgeTitle(title, type, keepLastNumber = true) {
     let currentYear = new Date().getFullYear();
@@ -194,7 +186,7 @@ export function getTitleAndYear(title, year, type) {
     try {
         let splitTitle = purgeTitle(title.toLowerCase(), type);
         year = splitTitle[splitTitle.length - 1];
-        if (!isNaN(year) && Number(year) > 1900) {
+        if (!isNaN(year) && Number(year) > 1900 && Number(year) < 2100) {
             splitTitle.pop();
             title = splitTitle.join(" ");
             let currentYear = new Date().getFullYear();
@@ -256,7 +248,7 @@ export function checkHardSub(input) {
         input.includes('softsuv') ||
         input.includes('hardsub') ||
         input.includes('subfa') ||
-        input.includes('sub') ||
+        (input.includes('sub') && !input.includes('subfrench')) ||
         input.includes('هاردساب فارسی') ||
         input.includes('زیرنویس')
     );
@@ -294,7 +286,11 @@ export function getSeasonEpisode(input) {
                 episode: 0,
             }
         }
-        input = input.toLowerCase();
+        input = input
+            .toLowerCase()
+            .replace(/https?:\/\//, '')
+            .split('/').slice(1).join('/')
+            .replace(/\.s\d\d?e\d\d?10bit/g, (res) => res.replace('10bit', '.10bit'));
         let season = 0;
         let episode = 0;
         if (input.match(/\d(480p|720p|1080p)/g)) {
@@ -320,19 +316,32 @@ export function getSeasonEpisode(input) {
             }
         }
         if (season === 0 || episode === 0) {
-            const episodeRegex = /\.e*\d+\.((\d\d\d+p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
+            const episodeRegex = /(\.\d\d\d\d)?\.e?\d+\.((\d\d\d\d?p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
             const episodeMatch = input.replace(/[-_]/g, '.').match(episodeRegex);
             if (episodeMatch) {
                 let match = episodeMatch.find(item => item.includes('e')) || episodeMatch.pop();
-                episode = match.replace(/^\.e*/gi, '').split('.')[0];
+                episode = match.replace(/^(\.\d\d\d\d)?\.e?/gi, '').split('.')[0];
+                if (episode.match(/\d\d\d\d?p/)) {
+                    episode = '';
+                }
             }
             const seasonMatch = input.match(/([\/.])s\d+([\/.])/gi);
-            season = seasonMatch ? seasonMatch.pop().replace(/([\/.s])/gi, '').replace('00', 1) : 1;
+            let temp = seasonMatch ? seasonMatch.pop().replace(/([\/.s])/gi, '') : '';
+            let missedEpisodeMatch = temp.match(/0\d\d\d/g); //case: S0409 --> S04E09
+            if (missedEpisodeMatch && episode === 0) {
+                let se = missedEpisodeMatch.pop();
+                season = se.slice(0, 2);
+                episode = se.slice(2);
+            } else {
+                season = temp ? temp.replace('00', '1') : 1;
+            }
         }
-        return {
-            season: Number(season),
-            episode: Number(episode),
+        season = Number(season);
+        episode = Number(episode);
+        if (season > 2000 && season < 2050) {
+            season = 0;
         }
+        return {season, episode};
     } catch (error) {
         saveError(error);
         return {
@@ -430,112 +439,6 @@ export function removeDuplicateElements(input) {
         }
     }
     return result;
-}
-
-export function purgeQualityText(qualityText) {
-    return qualityText
-        .replace('دانلود', '')
-        .replace('با', '')
-        .replace('کیفیت', '')
-        .replace('انتخاب', '')
-        .replace('کیفیت', '')
-        .replace('نسخه', '')
-        .replace('اختصاصی', '')
-        .replace('گلچین', '')
-        .replace('دوبله', '')
-        .replace('فارسی', '')
-        .replace('هاردساب', '')
-        .replace('پخش آنلاین', '')
-        .replace('لينک مستقيم', '')
-        .replace(/[)(:]/g, '')
-        .replace(/weba?[-_]+d(l|$)/gi, 'WEB-DL')
-        .replace(/web(-)*rip/gi, 'WEB-RIP')
-        .replace(/hdrip/gi, 'HD-RIP')
-        .replace(/full hd/gi, 'FULL-HD')
-        .trim();
-}
-
-export function fixLinkInfo(info, linkHref) {
-    if (!info.match(/\d\d\d\d?p/gi)) {
-        let qualityMatch = linkHref.match(/[.\s]\d\d\d\d?p[.\s]/gi);
-        let resolution = qualityMatch
-            ? qualityMatch.pop().replace(/[.\s]/g, '')
-            : (info.includes('DVDRip') || linkHref.includes('DVDRip')) ? '576p' : '480p';
-        info = resolution + '.' + info;
-    }
-
-    if (!info.toLowerCase().includes('x265') && linkHref.toLowerCase().includes('x265')) {
-        info = info
-            .replace(/\d\d\d\d?p/g, (res) => res + '.x265')
-            .replace('2160p.x265.4K', '2160p.4K.x265');
-    }
-
-    if (!info.toLowerCase().includes('10bit') && linkHref.toLowerCase().includes('10bit')) {
-        info = info.replace('.x265', '.x265.10bit');
-    }
-
-    const qualityTypeRegex = /bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi;
-    let linkHrefQualityMatch = linkHref.match(qualityTypeRegex);
-    if (!info.match(qualityTypeRegex) && linkHrefQualityMatch) {
-        info = info + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
-    }
-
-    return info.replace(/\.$/, '');
-}
-
-export function purgeSizeText(sizeText) {
-    let result = sizeText
-        .trim()
-        .replace('میانگین حجم', '')
-        .replace('حجم: نامشخص', '')
-        .replace('حجم', '')
-        .replace('میانگین', '')
-        .replace('فایل', '')
-        .replace('گیگابایت', 'GB')
-        .replace('گیگا بایت', 'GB')
-        .replace('گیگابیت', 'GB')
-        .replace('گیگ', 'GB')
-        .replace('مگابایت', 'MB')
-        .replace('مگابابت', 'MB')
-        .replace('bytes', 'b')
-        .replace('انکودر', '')
-        .replace(/[\s:,]/g, '')
-        .replace(/\(ورژن\d\)/g, '') // (ورژن1)
-        .replace(/\(جدید\)/g, '') // (جدید)
-        .replace(/bytes|kb/gi, '')
-        .toUpperCase();
-
-    if (result.match(/(mb|gb)\d+/gi)) {
-        result = result.slice(2) + result.slice(0, 2);
-    }
-    if (result && !result.match(/mb|gb/gi)) {
-        let temp = result.match(/^\d(\.\d+)?$/g) ? 'GB' : 'MB';
-        result += temp;
-    }
-    if (result.match(/\d\d+\.\d+MB/g)) {
-        result = result.split('.')[0] + 'MB';
-    }
-    if (result.match(/\d\d\d\dMB/)) {
-        let size = result.split('M')[0];
-        let newSize = (size / 1024).toFixed(2);
-        result = newSize + 'GB';
-    }
-    if (result.match(/^((mkvmb|mb|gb)|(0(mb|gb)))$/gi) || result === '1MB') {
-        return '';
-    }
-    return result;
-}
-
-export function purgeEncoderText(encoderText) {
-    return encoderText
-        .replace('انتخاب انکودر', '')
-        .replace('انکودر', '')
-        .replace('انکدر', '')
-        .replace('انکود', '')
-        .replace('موسسه', '')
-        .replace('لینک های دانلود با زیرنویس فارسی چسبیده', '')
-        .replace(/encoder|Unknown|:/gi, '')
-        .trim();
 }
 
 export function persianWordToNumber(text) {

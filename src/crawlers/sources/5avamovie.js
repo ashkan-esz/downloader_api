@@ -7,10 +7,15 @@ import {
     checkDubbed,
     checkHardSub,
     replacePersianNumbers,
-    purgeQualityText,
-    purgeSizeText,
-    purgeEncoderText
 } from "../utils";
+import {
+    purgeEncoderText,
+    purgeSizeText,
+    fixLinkInfoOrder,
+    fixLinkInfo,
+    purgeQualityText,
+    linkInfoRegex
+} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -41,6 +46,7 @@ async function search_title(link, i) {
                     if (!year) {
                         year = fixYear($2);
                     }
+
                     let sourceData = {
                         sourceName,
                         pageLink,
@@ -153,23 +159,12 @@ function getFileData($, link, type) {
 }
 
 function getFileData_serial($, link) {
+    let linkHref = $(link).attr('href');
     let infoNodeChildren = $($(link).parent().parent().parent().prev().children()[0]).children();
-    let hardSub = checkHardSub($(link).attr('href')) ? 'HardSub' : '';
-    let dubbed = checkDubbed($(link).attr('href'), '') ? 'dubbed' : '';
-    let quality = purgeQualityText($(infoNodeChildren[2]).text()).split(' ').reverse().join('.');
-    quality = replacePersianNumbers(quality);
-    let resolution = quality.match(/\d\d\d+p/g);
-    if (resolution) {
-        quality = quality
-            .replace('x256', 'x265')
-            .replace(`x265.${resolution[0]}`, `${resolution[0]}.x265`)
-            .replace(`10bit.${resolution[0]}`, `${resolution[0]}.10bit`)
-    }
-    quality = quality
-        .replace('10bit.x265', 'x265.10bit')
-        .replace('HDR.1080p.10bit', '1080p.10bit.HDR')
-        .replace('HD.1080p', '1080p.HD')
-        .replace('HD.720p', '720p.HD');
+    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let quality = replacePersianNumbers($(infoNodeChildren[2]).text());
+    quality = purgeQualityText(quality).split(/\s\s*/g).reverse().join('.');
     let size = $(infoNodeChildren[3]).text();
     if (size.includes('حجم')) {
         size = purgeSizeText(size);
@@ -180,6 +175,8 @@ function getFileData_serial($, link) {
     if (info === '' && size === '') {
         return 'ignore';
     }
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -188,24 +185,44 @@ function getFileData_movie($, link) {
     let linkHref = $(link).attr('href');
     let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let quality = purgeQualityText($(infoNodeChildren[0]).text()).replace(' HD', '').split(' ').reverse().join('.');
-    quality = replacePersianNumbers(quality);
-    let resolution = quality.match(/\d\d\d+p/g);
-    if (resolution) {
-        quality = quality
-            .replace('x256', 'x265')
-            .replace(`x265.${resolution[0]}`, `${resolution[0]}.x265`)
-            .replace(`10bit.${resolution[0]}`, `${resolution[0]}.10bit`)
-    }
-    quality = quality.replace('10bit.x265', 'x265.10bit');
+    let quality = replacePersianNumbers($(infoNodeChildren[0]).text());
+    quality = purgeQualityText(quality).replace(' HD', '').split(' ').reverse().join('.');
     let encoder = '';
     let size = $(infoNodeChildren[2]).text();
     if (size.includes('حجم')) {
         size = purgeSizeText(size);
+    } else if (infoNodeChildren.length === 3 && size.includes('انکودر')) {
+        encoder = purgeEncoderText(size);
+        if (encoder.match(/\d+(\.\d+)? (mb|gb)/i)) {
+            encoder = '';
+            size = purgeSizeText(encoder);
+        } else {
+            size = '';
+        }
     } else if (infoNodeChildren.length > 3) {
         encoder = purgeEncoderText($(infoNodeChildren[2]).text());
         size = purgeSizeText($(infoNodeChildren[3]).text());
+        if (encoder.toUpperCase() + 'MB' === size) {
+            size = '';
+        }
     }
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
+    info = info.replace('GalaxyRGAvaMovie','GalaxyRG');
     return [info, size].filter(value => value).join(' - ');
+}
+
+function printLinksWithBadInfo(downloadLinks) {
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

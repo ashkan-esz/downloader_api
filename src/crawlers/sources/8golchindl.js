@@ -6,11 +6,9 @@ import {
     getType,
     checkDubbed,
     checkHardSub,
-    purgeSizeText,
-    purgeQualityText,
-    purgeEncoderText,
     removeDuplicateLinks
 } from "../utils";
+import {purgeEncoderText, purgeSizeText, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
@@ -336,7 +334,7 @@ function getFileData_movie($, link) {
             .replace(`BluRay.${resolution[0]}`, `${resolution[0]}.BluRay`);
     }
 
-    if (quality.match(/^(web-dl|dvdrip|bluray|brrip)$/gi) || quality === '') {
+    if (quality.match(/^(web-dl|dvdrip|bluray|br(-)?rip)$/gi) || quality === '') {
         let qualityMatch = linkHref.match(/[.\s](\d\d\d\d|\d\d\d)p[.\s]/gi);
         let temp = qualityMatch ? qualityMatch.pop().replace(/[.\s]/g, '') : '480p';
         if (!temp.toLowerCase().includes('x265') && linkHref.includes('x265')) {
@@ -345,7 +343,7 @@ function getFileData_movie($, link) {
         quality = quality ? temp + '.' + quality : temp;
     }
 
-    let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|brrip/gi);
+    let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|br(-)?rip/gi);
     if (quality.match(/^(\d\d\d\d|\d\d\d)p(\.x265)*$/gi) && linkHrefQualityMatch) {
         quality = quality + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
     }
@@ -399,4 +397,18 @@ function getMovieInfoText($, link) {
             .trim();
     }
     return infoText;
+}
+
+function printLinksWithBadInfo(downloadLinks) {
+    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+
+    console.log([...badLinks, ...badSeasonEpisode].map(item => {
+        return ({
+            link: item.link,
+            info: item.info,
+            seasonEpisode: `S${item.season}E${item.episode}`,
+        })
+    }));
 }

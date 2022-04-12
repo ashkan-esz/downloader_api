@@ -211,10 +211,13 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -247,10 +250,13 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -283,10 +289,13 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -320,10 +329,13 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -376,10 +388,13 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -416,10 +431,13 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
@@ -479,10 +497,13 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
                 $limit: limit,
             },
             getLookupOnLikeBucketStage(userId, 'movies'),
-            {
-                $project: {...projection, likeBucket: 1},
-            }
         ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: {...projection, likeBucket: 1},
+            });
+        }
 
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {

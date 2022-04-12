@@ -1,6 +1,7 @@
 import config from "../../../config";
 import {search_in_title_page, wrapper_module} from "../../searchTools";
-import {getType, checkDubbed, purgeQualityText, getTitleAndYear} from "../../utils";
+import {getType, checkDubbed, getTitleAndYear} from "../../utils";
+import {purgeQualityText} from "../../linkInfoUtils";
 import save from "../../save_changes_db";
 import * as persianRex from "persian-rex";
 import {saveError} from "../../../error/saveError";

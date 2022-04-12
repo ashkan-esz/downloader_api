@@ -52,7 +52,7 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
 
         return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) ? data : null;
     } catch (error) {
-        if (!error.response && error.response.status !== 500) {
+        if (!error.response || error.response.status !== 500) {
             await saveError(error);
         }
         return null;
@@ -139,7 +139,7 @@ export function getOMDBApiFields(data, type) {
         apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {
-        if (!error.response && error.response.status !== 500) {
+        if (!error.response || error.response.status !== 500) {
             saveError(error);
         }
         return null;
@@ -190,7 +190,7 @@ export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, lastSeasons
 
         return episodes;
     } catch (error) {
-        if (!error.response && error.response.status !== 500) {
+        if (!error.response || error.response.status !== 500) {
             await saveError(error);
         }
         return null;
@@ -280,7 +280,7 @@ async function handle_OMDB_ApiKeys(url) {
                         return null;
                     }
                 } else {
-                    if (!error.response && error.response.status !== 500) {
+                    if (!error.response || error.response.status !== 500) {
                         saveError(error);
                     }
                     return null;
@@ -296,7 +296,7 @@ async function handle_OMDB_ApiKeys(url) {
         }
         return response.data;
     } catch (error) {
-        if (!error.response && error.response.status !== 500) {
+        if (!error.response || error.response.status !== 500) {
             await saveError(error);
         }
         return null;
