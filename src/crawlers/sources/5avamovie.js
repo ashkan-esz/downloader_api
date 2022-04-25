@@ -7,6 +7,7 @@ import {
     checkDubbed,
     checkHardSub,
     replacePersianNumbers,
+    removeDuplicateLinks,
 } from "../utils";
 import {
     purgeEncoderText,
@@ -14,7 +15,8 @@ import {
     fixLinkInfoOrder,
     fixLinkInfo,
     purgeQualityText,
-    linkInfoRegex
+    linkInfoRegex,
+    encodersRegex
 } from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
@@ -30,7 +32,7 @@ export default async function avamovie({movie_url, serial_url, page_count, seria
 async function search_title(link, i) {
     try {
         let title = link.attr('title');
-        if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
+        if (title && title.includes('دانلود') && link.parent()[0].name === 'h2' && link.parent().hasClass('title')) {
             let year;
             let pageLink = link.attr('href');
             let type = getType(title);
@@ -40,12 +42,26 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
+                    if (type.includes('movie') && downloadLinks.length > 0 && (
+                        downloadLinks[0].link.match(/s\d+e\d+/gi) ||
+                        downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i) ||
+                        downloadLinks[0].link.match(/(?<=\.)(Special|OVA|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p/i) ||
+                        (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
+                    )) {
+                        type = type.replace('movie', 'serial');
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                    }
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
                         sourceName,
@@ -73,8 +89,15 @@ function fixYear($) {
         if (postInfo.length === 0) {
             postInfo = $('li:contains("سال انتشار")');
         }
+        if (postInfo.length === 0) {
+            postInfo = $('li:contains("سال تولید")');
+        }
         if (postInfo.length === 1) {
-            let temp = $(postInfo).text().replace('سال های پخش', '').replace('سال انتشار', '').toLowerCase().trim();
+            let temp = $(postInfo).text()
+                .replace('سال های پخش', '')
+                .replace('سال انتشار', '')
+                .replace('سال تولید', '')
+                .toLowerCase().trim();
             let yearArray = temp.split(/\s+|-/g)
                 .filter(item => item && !isNaN(item.trim()))
                 .sort((a, b) => Number(a) - Number(b));
@@ -92,10 +115,10 @@ function fixYear($) {
 
 function getPersianSummary($) {
     try {
-        let $p = $('p');
-        for (let i = 0; i < $p.length; i++) {
-            if ($($p[i]).text().includes('خلاصه داستان')) {
-                return $($p[i]).text().replace('خلاصه داستان :', '').trim();
+        let $div = $('div');
+        for (let i = 0; i < $div.length; i++) {
+            if ($($div[i]).hasClass('plot')) {
+                return $($div[i]).text().replace('خلاصه داستان :', '').trim();
             }
         }
         return '';
@@ -110,7 +133,7 @@ function getPoster($) {
         let $img = $('img');
         for (let i = 0; i < $img.length; i++) {
             let parent = $img[i].parent;
-            if (parent.name === 'a' && $($img[i]).hasClass('wp-post-image')) {
+            if (parent.name === 'a') {
                 let href = $img[i].attribs['src'];
                 if (href.includes('uploads')) {
                     return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
@@ -130,8 +153,7 @@ function getTrailers($) {
         let $a = $('a');
         for (let i = 0; i < $a.length; i++) {
             let href = $a[i].attribs.href;
-            let child = $($a[i]).children()[0];
-            if ($(child).text().includes('دانلود تریلر') && href && href.includes('.mp4')) {
+            if ($($a[i]).text().includes('تریلر') && href && href.includes('/trailer/')) {
                 result.push({
                     url: href,
                     info: 'avamovie-720p',
@@ -160,16 +182,24 @@ function getFileData($, link, type) {
 
 function getFileData_serial($, link) {
     let linkHref = $(link).attr('href');
-    let infoNodeChildren = $($(link).parent().parent().parent().prev().children()[0]).children();
-    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let infoNodeChildren = $($(link).parent().parent().parent().parent().prev()).children();
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let quality = replacePersianNumbers($(infoNodeChildren[2]).text());
+    let temp = $(infoNodeChildren[0]).text();
+    let qualityText = (temp.match(/\d\d\d\d?p/i) || temp.includes('کیفیت')) ? temp : $(infoNodeChildren[1]).text();
+    let quality = replacePersianNumbers(qualityText);
     quality = purgeQualityText(quality).split(/\s\s*/g).reverse().join('.');
-    let size = $(infoNodeChildren[3]).text();
+    let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
+    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+    let size = $(infoNodeChildren[2]).text();
     if (size.includes('حجم')) {
         size = purgeSizeText(size);
-    } else if (infoNodeChildren.length > 4) {
-        size = purgeSizeText($(infoNodeChildren[4]).text());
+    } else if (infoNodeChildren.length > 3) {
+        let text = $(infoNodeChildren[3]).text();
+        if (text === 'SoftSub') {
+            size = '';
+        } else {
+            size = purgeSizeText(text);
+        }
     }
     let info = [quality, hardSub, dubbed].filter(value => value).join('.');
     if (info === '' && size === '') {
@@ -181,40 +211,57 @@ function getFileData_serial($, link) {
 }
 
 function getFileData_movie($, link) {
-    let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
+    let infoNode = $(link).parent().next().children();
+    let infoNodeChildren = $(infoNode[1]).children();
     let linkHref = $(link).attr('href');
-    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let quality = replacePersianNumbers($(infoNodeChildren[0]).text());
-    quality = purgeQualityText(quality).replace(' HD', '').split(' ').reverse().join('.');
-    let encoder = '';
-    let size = $(infoNodeChildren[2]).text();
-    if (size.includes('حجم')) {
-        size = purgeSizeText(size);
-    } else if (infoNodeChildren.length === 3 && size.includes('انکودر')) {
-        encoder = purgeEncoderText(size);
-        if (encoder.match(/\d+(\.\d+)? (mb|gb)/i)) {
-            encoder = '';
-            size = purgeSizeText(encoder);
-        } else {
-            size = '';
-        }
-    } else if (infoNodeChildren.length > 3) {
-        encoder = purgeEncoderText($(infoNodeChildren[2]).text());
-        size = purgeSizeText($(infoNodeChildren[3]).text());
-        if (encoder.toUpperCase() + 'MB' === size) {
-            size = '';
-        }
+    let quality = replacePersianNumbers($(infoNode[0]).text());
+    if (quality.includes('نلود فیلم')) {
+        quality = '';
+    } else {
+        quality = purgeQualityText(quality).split(' ').reverse().join('.').replace(/^\.?(softsub|hardsub)\.?/i, '');
     }
+    let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
+    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+
+    let encoder = purgeEncoderText($(infoNodeChildren[0]).text());
+    let size = purgeSizeText($(infoNodeChildren[1]).text());
+    if (encoder.includes('حجم')) {
+        size = purgeSizeText(encoder);
+        encoder = '';
+    }
+
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, linkHref);
     info = fixLinkInfoOrder(info);
-    info = info.replace('GalaxyRGAvaMovie','GalaxyRG');
+    info = info.replace('GalaxyRGAvaMovie', 'GalaxyRG');
     return [info, size].filter(value => value).join(' - ');
 }
 
+function getQualitySample($, link) {
+    try {
+        let nextNode = $(link).next()[0];
+        if (!nextNode || nextNode.name !== 'div') {
+            return '';
+        }
+        let sampleUrl = nextNode.attribs['data-imgqu'];
+        if (sampleUrl.endsWith('.jpg')) {
+            return sampleUrl;
+        }
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
+    }
+}
+
 function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+    const badLinks = downloadLinks.filter(item =>
+        !item.info.match(linkInfoRegex) &&
+        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.(${encodersRegex.source})\\.SoftSub( - ((\\d\\d\\d?MB)|(\\d(\\.\\d)?GB)))?$`)) &&
+        !item.info.match(/^\d\d\d\d?p\.x265(\.10bit)?( - ((\d\d\d?MB)|(\d(\.\d)?GB)))?$/) &&
+        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.FULL-HD\\.(${encodersRegex.source})( - ((\\d\\d\\d?MB)|(\\d(\\.\\d)?GB)))?$`))
+    );
 
     const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
 

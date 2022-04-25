@@ -39,7 +39,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         poster_s3: null, // {url,originalUrl,size}
         trailer_s3: null, // {url,originalUrl,size}
         summary: {
-            persian: persianSummary,
+            persian: persianSummary.replace(/([.…])+$/, ''),
             english: '',
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'url,info'}]

@@ -274,6 +274,8 @@ export function checkEqualLinks(link1, link2) {
         link1.link === link2.link &&
         link1.info === link2.info &&
         link1.qualitySample === link2.qualitySample &&
-        link1.pageLink === link2.pageLink
+        link1.pageLink === link2.pageLink &&
+        link1.season === link2.season &&
+        link1.episode === link2.episode
     );
 }

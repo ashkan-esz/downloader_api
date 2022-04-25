@@ -8,7 +8,14 @@ import {
     checkDubbed,
     getYear
 } from "../utils";
-import {purgeEncoderText, purgeSizeText, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
+import {
+    purgeEncoderText,
+    purgeSizeText,
+    purgeQualityText,
+    fixLinkInfo,
+    fixLinkInfoOrder,
+    linkInfoRegex,
+} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -43,7 +50,6 @@ async function search_title(link, i, $, url) {
                     if (!year) {
                         ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
                     }
-                    downloadLinks = removeDuplicateLinks(downloadLinks);
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
                         pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
@@ -52,6 +58,7 @@ async function search_title(link, i, $, url) {
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
                         sourceName,
@@ -203,28 +210,12 @@ function getFileData($, link, type) {
             hardSub = hardSub[0];
             quality = quality.replace('.' + hardSub, '');
         }
-        quality = sortQualityInfo(quality);
+
         if (quality.includes('.Dual.Audio') || linkHref.includes('.Dual.Audio')) {
             quality = quality.replace('.Dual.Audio', '');
             dubbed = 'dubbed';
         }
-        let resolution = quality.match(/\d\d\d+p/g);
-        if (resolution) {
-            quality = fixQualityInfo(resolution, quality);
-            if (!quality.toLowerCase().includes('x265') && linkHref.includes('x265')) {
-                quality = quality.replace(resolution[0], `${resolution[0]}.x265`).replace('2160p.x265.4K', '2160p.4K.x265');
-            }
-        } else if (quality === '' || quality === 'DVDRip') {
-            let qualityMatch = linkHref.match(/[.\s](\d\d\d\d|\d\d\d)p[.\s]/gi);
-            quality = qualityMatch ? qualityMatch.pop().replace(/[.\s]/g, '') : quality === 'DVDRip' ? '576p' : '480p';
-            if (linkHref.includes('x265')) {
-                quality += '.x265';
-            }
-            let linkHrefQualityMatch = linkHref.match(/bluray|b\.lu\.ry|webdl|web-dl|webrip|web-rip|br(-)?rip/gi);
-            if (linkHrefQualityMatch) {
-                quality = quality + '.' + linkHrefQualityMatch.pop().replace('b.lu.ry', 'BluRay');
-            }
-        }
+
         let encoder = (infoNodeChildren.length === 3) ? purgeEncoderText($(infoNodeChildren[0]).text()) : '';
         encoder = encoder
             .replace('DigiMoviez', '')
@@ -243,67 +234,13 @@ function getFileData($, link, type) {
             size = '';
         }
         let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
+        info = fixLinkInfo(info, linkHref);
+        info = fixLinkInfoOrder(info);
         return [info, size].filter(value => value).join(' - ');
     } catch (error) {
         saveError(error);
         return '';
     }
-}
-
-function fixQualityInfo(resolution, quality) {
-    quality = quality
-        .replace(/\.Digim?Digimoviezoviez/gi, '')
-        .replace('7480p.', '480p.')
-        .replace('48p.', '480p.')
-        .replace('px.', 'p.')
-        .replace(/\.x256p?\./i, '.x265.')
-        .replace(/\.265\./, '.x265.')
-        .replace('ExtendedFarsi', 'Extended')
-        .replace('BluRayFarsi', 'BluRay')
-        .replace(`HDTV.${resolution[0]}`, `${resolution[0]}.HDTV`)
-        .replace(`10bit.WEB-DL.x265.${resolution[0]}`, `${resolution[0]}.x265.10bit.WEB-DL`)
-        .replace(`10bit.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.10bit.BluRay`)
-        .replace(`10bit.BluRay.x265.6CH.${resolution[0]}`, `${resolution[0]}.x265.10bit.BluRay.6CH`)
-        .replace(`REMASTERED.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.BluRay.REMASTERED`)
-        .replace(`REMASTERED.${resolution[0]}.BluRay`, `${resolution[0]}.BluRay.REMASTERED`)
-        .replace(`EXTENDED.BluRay.x265.${resolution[0]}`, `${resolution[0]}.x265.BluRay.Extended`)
-        .replace(`EXTENDED.${resolution[0]}.BluRay`, `${resolution[0]}.BluRay.Extended`)
-        .replace('HDTV.x265', 'x265.HDTV')
-        .replace(/-softsub|\.WEB-DL1080p/gi, '')
-        .replace('720p.x265.WEB-DL720p.x265.WEB-DL.SoftSub', '720p.x265.WEB-DL')
-        .replace('10bit.WEB-DL.x265', 'x265.10bit.WEB-DL')
-        .replace('10bit.HDR.WEB-DL.x265', 'x265.10bit.HDR.WEB-DL')
-        .replace('10bit.6CH.WEB-DL.x265', 'x265.10bit.6CH.WEB-DL')
-        .replace('Extended.BluRay.x265', 'x265.Extended.BluRay')
-        .replace('HDR.WEB-DL.x265', 'x265.HDR.WEB-DL')
-        .replace('3D.HSBS.1080p.BluRay', '1080p.3D.HSBS.BluRay')
-        .replace('4K.WEB-DL.x265.HDR.2160p', '2160p.4K.x265.WEB-DL.HDR')
-        .replace('4K.x265.2160p', '2160p.4K.x265')
-        .replace('3D.10bit.HSBS.BluRay.x265', 'x265.10bit.3D.HSBS.BluRay')
-        .replace('WEB-DL.FULL-HD', 'FULL-HD.WEB-DL')
-        .replace('WEB-DL.x265.10bit', 'x265.10bit.WEB-DL')
-        .replace('10bit.BluRay.x265', 'x265.10bit.BluRay')
-        .replace('BluRay.x265', 'x265.BluRay');
-    return quality;
-}
-
-function sortQualityInfo(quality) {
-    let spited_quality = quality.split('.');
-
-    if (quality.match(/(\d\d\d\dp|\d\d\dp)\.10bit\.(BluRay|WEB-DL|WEB-RIP|HDTV)(\.6ch)*\.x265/gi)) {
-        //'1080p.10bit.BluRay.x265','1080p.x265.10bit.BluRay'
-        spited_quality = spited_quality.filter(text => text !== 'x265');
-        quality = [spited_quality[0], 'x265', ...spited_quality.slice(1)].filter(value => value).join('.');
-    } else if (quality.match(/(\d\d\d\dp|\d\d\dp)\.(BluRay|WEB-DL|WEB-RIP|HDTV)\.x265/gi)) {
-        //'1080p.BluRay.x265','1080p.x265.BluRay'
-        quality = [spited_quality[0], ...spited_quality.slice(2), spited_quality[1]].filter(value => value).join('.');
-    } else if (quality.match(/BluRay\.(\d\d\d\dp|\d\d\dp)/gi)) {
-        //'BluRay.1080p.x265','1080p.x265.BluRay'
-        //'BluRay.1080p','1080p.BluRay'
-        quality = [...spited_quality.slice(1), spited_quality[0]].filter(value => value).join('.');
-    }
-    quality = quality.replace('REMASTERED.1080p.BluRay', '1080p.BluRay.REMASTERED');
-    return quality;
 }
 
 function getQualitySample($, link, type) {
@@ -324,7 +261,11 @@ function getQualitySample($, link, type) {
 }
 
 function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+    const badLinks = downloadLinks.filter(item =>
+        !item.info.match(linkInfoRegex) &&
+        !item.info.match(/^\d\d\d\d?p\.dubbed - (\d\d\d)|(\d\d?(\.\d\d?)?)(MB|GB)/) &&
+        !item.info.match(/^\d\d\d\d?p\.(HardSub|SoftSub)$/)
+    );
 
     const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
 

@@ -127,7 +127,8 @@ export function fixJapaneseCharacter(input) {
     return input
         .replace(/[ū]/g, 'uu')
         .replace(/ō/g, 'ou')
-        .replace('Yuichi', 'Yuuichi');
+        .replace('Yuichi', 'Yuuichi')
+        .trim();
 }
 
 export function replacePersianNumbers(input) {
@@ -248,7 +249,7 @@ export function checkHardSub(input) {
         input.includes('softsuv') ||
         input.includes('hardsub') ||
         input.includes('subfa') ||
-        (input.includes('sub') && !input.includes('subfrench')) ||
+        input.match(/sub(?!(title|french|BED))/i) ||
         input.includes('هاردساب فارسی') ||
         input.includes('زیرنویس')
     );
@@ -286,21 +287,18 @@ export function getSeasonEpisode(input) {
                 episode: 0,
             }
         }
+
+        input = input.toLowerCase().replace(/https?:\/\//, '');
+        if (input.includes('/')) {
+            input = input.split('/').slice(1).join('/')
+        }
         input = input
-            .toLowerCase()
-            .replace(/https?:\/\//, '')
-            .split('/').slice(1).join('/')
-            .replace(/\.s\d\d?e\d\d?10bit/g, (res) => res.replace('10bit', '.10bit'));
+            .replace(/(?<!\.)10bit/g, '.10bit')
+            .replace(/(?<!(\.|^))(2160|1440|1080|720|576|480|360)p/g, (res) => '.' + res); // .S06E03720p.WEB-DL
+
         let season = 0;
         let episode = 0;
-        if (input.match(/\d(480p|720p|1080p)/g)) {
-            // .S06E03720p.WEB-DL
-            input = input
-                .replace(/480p/g, '.480p')
-                .replace(/720p/g, '.720p')
-                .replace(/1080p/g, '.1080p');
-        }
-        let case1 = input.replace(/1080p/gi, '.1080p').match(/s\d+([-.])*e\d+/gi);
+        let case1 = input.match(/s\d+([-.])*e\d+/gi);
         if (case1) {
             let seasonEpisode = case1.pop().replace(/[-.]/g, '');
             season = seasonEpisode.split('e')[0].replace('s', '');
@@ -316,13 +314,13 @@ export function getSeasonEpisode(input) {
             }
         }
         if (season === 0 || episode === 0) {
-            const episodeRegex = /(\.\d\d\d\d)?\.e?\d+\.((\d\d\d\d?p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
+            const episodeRegex = /(\.\d\d\d\d)*\.e?\d+\.((\d\d\d\d?p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
             const episodeMatch = input.replace(/[-_]/g, '.').match(episodeRegex);
             if (episodeMatch) {
                 let match = episodeMatch.find(item => item.includes('e')) || episodeMatch.pop();
-                episode = match.replace(/^(\.\d\d\d\d)?\.e?/gi, '').split('.')[0];
+                episode = match.replace(/^(\.\d\d\d\d)*\.e?/gi, '').split('.')[0];
                 if (episode.match(/\d\d\d\d?p/)) {
-                    episode = '';
+                    episode = 0;
                 }
             }
             const seasonMatch = input.match(/([\/.])s\d+([\/.])/gi);
@@ -334,6 +332,12 @@ export function getSeasonEpisode(input) {
                 episode = se.slice(2);
             } else {
                 season = temp ? temp.replace('00', '1') : 1;
+            }
+        }
+        if (season === 0 && episode === 0) {
+            let ovaMatch = input.match(/(?<=\.)(Special|OVA|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p/i);
+            if (ovaMatch) {
+                episode = ovaMatch.pop().split('.')[0];
             }
         }
         season = Number(season);
@@ -405,7 +409,7 @@ export function checkBetterQuality(quality, prevQuality) {
     return isBetter;
 }
 
-export function removeDuplicateLinks(input) {
+export function removeDuplicateLinks(input, replaceInfo = false) {
     let result = [];
     for (let i = 0; i < input.length; i++) {
         let exist = false;
@@ -413,6 +417,9 @@ export function removeDuplicateLinks(input) {
             if (
                 (input[i].link || input[i].url) === (result[j].link || result[j].url)
             ) {
+                if (replaceInfo && input[i].info.length > result[j].info.length) {
+                    result[j].info = input[i].info;
+                }
                 exist = true;
                 break;
             }

@@ -266,7 +266,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         }
         if (error.response && (error.response.status === 429 || error.response.status >= 500) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 1000)));
+            await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if (error.name !== "AbortError") {

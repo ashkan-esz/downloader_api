@@ -1,7 +1,16 @@
 import config from "../../config";
 import {search_in_title_page, wrapper_module} from "../searchTools";
-import {getTitleAndYear, validateYear, getType} from "../utils";
-import {purgeEncoderText, purgeSizeText, fixLinkInfo, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
+import {getTitleAndYear, validateYear, getType, removeDuplicateLinks} from "../utils";
+import {
+    purgeEncoderText,
+    purgeSizeText,
+    fixLinkInfo,
+    purgeQualityText,
+    fixLinkInfoOrder,
+    linkInfoRegex,
+    releaseRegex,
+    encodersRegex
+} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import * as persianRex from "persian-rex";
 import {saveError} from "../../error/saveError";
@@ -49,6 +58,7 @@ async function search_title(link, i) {
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
+                    downloadLinks = removeDuplicateLinks(downloadLinks, true);
 
                     let sourceData = {
                         sourceName,
@@ -183,12 +193,8 @@ function getFileData($, link, type) {
         }
         return getFileData_movie(text_array, dubbed, linkHref);
     } catch (error) {
-        try {
-            return checkTrailer_year($, link, text_array);
-        } catch (error2) {
-            saveError(error2);
-            return "";
-        }
+        saveError(error2);
+        return "";
     }
 }
 
@@ -198,89 +204,58 @@ function getFileData_serial($, link) {
     let text_array = purgeQualityText($(prevNodeChildren[3]).text()).split(' ');
     let bit10 = linkHref.toLowerCase().includes('10bit') ? '10bit' : '';
     let size = purgeSizeText($(prevNodeChildren[5]).text());
+
     let filtered_text_array = text_array.filter(value => value && !persianRex.hasLetter.test(value));
     if (filtered_text_array.length === 0) {
         return getSerialFileInfoFromLink(linkHref);
     }
+
     if (text_array.length === 1 && text_array[0] === '') {
-        text_array = $(link).parent().prev().text().replace('Web-DL', 'WEB-DL').split(' ');
-        if ($(link).parent().text().includes('|') ||
-            (text_array.length === 1 && text_array[0] === '')) {
-            let text = $(link).text();
-            size = '';
-            if (text.includes('دانلود قسمت')) {
-                text_array = ['480p'];
-            } else {
-                text_array = ['720p'];
-            }
-        }
+        text_array = $(link).parent().prev().text().split(' ');
     }
 
-    let info = text_array[0].match(/\d\d\d\d?p/gi)
-        ? [...text_array, bit10].filter(value => value).join('.')
-        : [text_array[1], ...text_array.slice(2), bit10, text_array[0]].filter(value => value).join('.');
-
+    let info = [...text_array, bit10].filter(value => value).join('.');
     info = fixLinkInfo(info, linkHref);
-
-    info = info
-        .replace(/^720\./g, '720p.')
-        .replace(/^\d\d\d\d?\./g, (res) => res.replace('.', 'p.'))
-        .replace(/\.265\./, '.x265.')
-        .replace('WEB-DL1080p', '1080p.WEB-DL')
-        .replace('WEB-DL.x265', 'x265.WEB-DL')
-        .replace('BluRay.x265', 'x265.BluRay')
-        .replace('HDTV.x265', 'x265.HDTV')
-        .replace('WEB-DL.10bit', '10bit.WEB-DL')
-        .replace('x265.WEB-DL.PSA.10bit', 'x265.10bit.WEB-DL.PSA')
-        .replace('2160p.x265.10bit.WEB-DL.4K', '2160p.4K.x265.10bit.WEB-DL')
-        .replace('WEB-DL.2160p.x265.10bit.4K', '2160p.4K.x265.10bit.WEB-DL')
-        .replace('2160p.x265.WEB-DL.4K', '2160p.4K.x265.WEB-DL')
-        .replace('WEB-DL.2160p.4K.x265', '2160p.4K.x265.WEB-DL')
-        .replace('2160p.x265.10bit.4K', '2160p.4K.x265.10bit')
-        .replace('HDTV.WEB-DL', 'WEB-DL')
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
 function getSerialFileInfoFromLink(linkHref) {
-    let link_href = linkHref.toLowerCase().replace(/[/_\s]/g, '.').replace('.-.', '.');
-    let link_href_array = link_href.split('.');
-    let seasonEpisode_match = link_href.match(/s\d+e\d+(-?e\d+)?/g);
-    if (seasonEpisode_match) {
-        let seasonEpisode = seasonEpisode_match.pop();
-        let index = link_href_array.indexOf(seasonEpisode);
-        let array = link_href_array.slice(index + 1);
-        array.pop();
-        let info = purgeQualityText(array.join('.'));
-        info = info
-            .replace('repack.', '')
-            .replace(/\.(nf|2ch)\./g, '.')
-            .replace('.x264', '')
-            .replace('WEB-DL.x265', 'x265.WEB-DL')
-            .replace('10bit.x265', 'x265.10bit')
-            .replace('.farsi', '')
-            .replace('dubbed.x265.hevc', 'x265.hevc.dubbed')
-            .replace('BluRay.x265.10bit', 'x265.10bit.BluRay')
-            .replace(/BR(-)?RIP/gi, 'BR-RIP')
-            .replace('amzn.WEB-DL', 'WEB-DL')
-            .replace('10bit.WEB-DL.6ch.x265', 'x265.10bit.WEB-DL.6ch')
-            .replace('10bit.BluRay.x265', 'x265.10bit.BluRay')
-            .replace('WEB-RIP.x265', 'x265.WEB-RIP')
-            .replace(/BluRay\.\d\d\d\d?p/gi, (res) => res.split('.').reverse().join('.'))
-            .replace('.tehmovies.com', '');
-
-        if (!info.match(/^\d\d\d\d?p/)) {
-            let splitInfo = info.split('.');
-            let resIndex = splitInfo.findIndex(item => item.match(/\d\d\d\d?p/));
-            if (resIndex === -1) {
-                resIndex = splitInfo.findIndex(item => item.match(/WEB-DL/));
-            }
-            info = resIndex !== -1 ? splitInfo.slice(resIndex).join('.') : '';
-            info = fixLinkInfo(info, link_href);
-        }
-        return info;
-    } else {
+    linkHref = linkHref.replace(/[/_\s]/g, '.').replace('.-.', '.');
+    let link_href_array = linkHref.split('.');
+    let seasonEpisode_match = linkHref.match(/s\d+e\d+(-?e\d+)*/gi);
+    if (!seasonEpisode_match) {
         return '';
     }
+
+    let seasonEpisode = seasonEpisode_match.pop();
+    let index = link_href_array.indexOf(seasonEpisode);
+    let array = link_href_array.slice(index + 1);
+    array.pop();
+    let info = purgeQualityText(array.join('.'));
+
+    info = info
+        .replace(/repack\.\d\d\d\d?p/i, (res) => res.split('.').reverse().join('.'))
+        .replace(/\.(nf|2ch|co)(?=(\.|$))/gi, '')
+        .replace(/PaHe\.SalamDL/i, 'PaHe')
+        .replace('amzn.', '')
+        .replace(/^new\./i, '')
+        .replace(/\.tehmovies\.com/i, '');
+
+    if (!info.match(/\d\d\d\d?p/i)) {
+        let splitInfo = info.split('.');
+        let resIndex = splitInfo.findIndex(item => item.match(/\d\d\d\d?p/));
+        if (resIndex === -1) {
+            resIndex = splitInfo.findIndex(item => item.match(releaseRegex));
+        }
+        info = resIndex !== -1 ? splitInfo.slice(resIndex).join('.') : '';
+    }
+
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
+    info = info.replace(/(.+\.)\d\d\d\d?p+/, (res) => res.split('.').reverse().join('.'));
+    return info;
+
 }
 
 function getFileData_movie(text_array, dubbed, linkHref) {
@@ -290,88 +265,53 @@ function getFileData_movie(text_array, dubbed, linkHref) {
 
     let encoder = '';
     let encoder_index = (text_array.length === 1) ? 0 :
-        (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1 : '';
+        (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1
+            : (text_array[2] && text_array[2].includes('انکودر:')) ? 2 : '';
     if (encoder_index) {
         encoder = purgeEncoderText(text_array[encoder_index])
-            .split(' ')
-            .filter(value =>
-                value && !persianRex.hasLetter.test(value) &&
-                isNaN(value) && value !== 'GB' && value !== 'MB')
-            .join('')
-            .replace(/[\s:]/g, '');
     } else {
-        let temp = text_array[0].match(/MkvCage|ShAaNiG|Ganool|YIFY|nItRo/);
+        let temp = text_array[0].match(/MkvCage|ShAaNiG|Ganool|YIFY|nItRo/i);
         if (temp) {
             encoder = temp[0];
-            text_array[0] = text_array[0].replace(temp[0] + ' - ', '');
+            text_array[0] = text_array[0].replace(new RegExp(`${temp[0]}\\s*-\\s`), '');
         }
     }
 
     let size_index = (text_array.length === 1) ? 0 :
         (text_array[1].includes('حجم')) ? 1 :
             (text_array[2]) ? 2 : '';
-    let size = size_index ? purgeSizeText(text_array[size_index]).replace('MKVCAGEMB', '') : '';
+    let size = size_index ? purgeSizeText(text_array[size_index]) : '';
 
     let quality = purgeQualityText(text_array[0]);
     if (quality.includes('دانلود نسخه سه بعد')) {
         let info = ['3D', dubbed].filter(value => value).join('.')
         return [info, size].filter(value => value).join(' - ');
     }
-    quality = quality.split(' ').filter(value => value && !persianRex.hasLetter.test(value));
+
+    quality = quality.split(' ');
     if (quality.length === 1 && quality[0] === '--') {
-        let resolution = linkHref.match(/[_.]\d\d\d\dp[_.]/gi);
-        if (resolution) {
-            quality[0] = resolution.pop().replace(/[_.]/g, '');
-        } else {
-            quality[0] = 'unknown';
-        }
+        quality = [];
     }
 
-    if (!quality.join('.').match(/\d\d\d\d?p/gi)) {
-        let resolution = linkHref.match(/[_.]\d\d\d\d?p[_.]/gi);
-        if (resolution) {
-            quality.unshift(resolution.pop().replace(/[_.]/g, ''));
-        }
-    }
-
-    let info = (quality[0].match(/\d\d\d+p/g)) ?
-        [quality[0], ...quality.slice(2), quality[1], encoder, dubbed].filter(value => value).join('.') :
-        [quality[1], ...quality.slice(2), quality[0], encoder, dubbed].filter(value => value).join('.');
-
+    let moviePartMatch = linkHref.match(/part[\s.]*\d(?=\.)/i);
+    let moviePart = moviePartMatch ? moviePartMatch.pop().replace(/part/i, 'Part') : '';
+    let info = [...quality, moviePart, encoder, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, linkHref);
-
-    info = info
-        .replace('4K.Ultra.HD.2160p.x265', '2160p.4K.x265')
-        .replace('Ultra.HD.2160p.4K', '2160p.4K')
-        .replace('2160p.x265.4K', '2160p.4K.x265')
-        .replace('3D.HSBS.1080p', '1080p.3D.HSBS')
-        .replace('dubbed.BluRay', 'BluRay.dubbed')
-        .replace('3D.HSBS.x265', 'x265.3D.HSBS')
-        .replace('10bit.x265', 'x265.10bit')
-        .replace('HD-TV', 'HDTV')
-        .replace('DVD-Rip', 'DVDRip')
-        .replace('WEBRip', 'WEB-RIP')
-        .replace('Web-DL', 'WEB-DL')
-        .replace('dubbed.BluRay', 'BluRay.dubbed')
-        .replace('dubbed.WEB-DL', 'WEB-DL.dubbed')
-        .replace(/REMUX\.\d\d\d\d?p/gi, (res) => res.split('.').reverse().join('.'))
-        .replace(/(MkvCage|ShAaNiG|Ganool|YIFY|nItRo)\.(BluRay|WEB-DL)/gi, (res) => res.split('.').reverse().join('.'));
-
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
 function getFileData_extraLink($, link) {
     let link_href = $(link).attr('href');
     let link_href_array = link_href.split('.');
-    let quality_match = link_href.match(/\d\d\d+p/g);
+    let quality_match = link_href.match(/\d\d\d\d?p/gi);
     if (quality_match) {
         let quality = quality_match.pop();
         let quality_index = link_href_array.indexOf(quality);
         let text_array = link_href_array.slice(quality_index, quality_index + 4);
-        if (text_array[2] === 'x265') {
-            text_array = [text_array[0], text_array[2], text_array[1], text_array[3]]
-        }
-        return purgeQualityText(text_array.join('.'));
+        let info = purgeQualityText(text_array.join('.'));
+        info = fixLinkInfoOrder(info);
+        return info;
     } else {
         let year_match = link_href.match(/\d\d\d\d/g);
         if (year_match) {
@@ -379,6 +319,7 @@ function getFileData_extraLink($, link) {
             let year_index = link_href_array.indexOf(year);
             let info = link_href_array[year_index + 1];
             info = fixLinkInfo(info, link_href);
+            info = fixLinkInfoOrder(info);
             return info;
         } else {
             return '';
@@ -386,29 +327,14 @@ function getFileData_extraLink($, link) {
     }
 }
 
-function checkTrailer_year($, link, text_array) {
-    if (text_array[0].includes('دانلود تریلر') || text_array[0].includes('دانلود تیزر')) {
-        return 'trailer';
-    }
-    let link_href = $(link).attr('href');
-    let link_href_array = link_href.split('.');
-    let year_match = link_href.match(/\d\d\d\d/g);
-    if (year_match) {
-        let year = year_match.pop();
-        let year_index = link_href_array.indexOf(year);
-        let result = link_href_array.slice(year_index + 1);
-        result.pop();
-        let info = purgeQualityText(result.join('.'));
-        info = fixLinkInfo(info, link_href);
-        info = info.replace('.Farsi', '');
-        return info;
-    } else {
-        return '';
-    }
-}
-
 function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+    const badLinks = downloadLinks.filter(item =>
+        !item.info.match(linkInfoRegex) &&
+        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.(${encodersRegex.source})$`)) &&
+        !item.info.match(/^\d\d\d\d?p\.(3D|(Part\.\d))(\.dubbed)?$/) &&
+        !item.info.match(/^\d\d\d\d?p(\.x265)?(\.Episode\(\d\d?\d?-\d\d?\d?\))?(\.dubbed)?$/) &&
+        !item.link.match(/\.s\d\de\d\d(\.REPACK)?(.*)\.\d\d\d\d?p(\.x265)?(\.hevc)?(\.Farsi\.Dubbed)?\.mkv/i)
+    );
 
     const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
 

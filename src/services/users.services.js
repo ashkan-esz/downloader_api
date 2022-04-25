@@ -75,7 +75,7 @@ export async function login(username_email, password, deviceInfo, ip) {
     try {
         let userData = await findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
         if (!userData) {
-            return generateServiceResult({}, 400, 'Cannot find user');
+            return generateServiceResult({}, 404, 'Cannot find user');
         }
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);

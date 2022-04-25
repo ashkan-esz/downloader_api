@@ -90,7 +90,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                     if (type.includes('serial')) {
                         if (type.includes('anime')) {
                             ({season, episode} = getSeasonEpisode(link_info));
-                            if (season === 0 && episode === 0) {
+                            if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p\./)) {
                                 ({season, episode} = getSeasonEpisode(link));
                             }
                         } else {
@@ -266,10 +266,11 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
 }
 
 function getConcurrencyNumber(sourceName) {
-    let concurrencyNumber;
+    let concurrencyNumber = 0;
     if (config.crawlerConcurrency) {
         concurrencyNumber = Number(config.crawlerConcurrency);
-    } else {
+    }
+    if (concurrencyNumber === 0) {
         concurrencyNumber = (sourceName === "animelist" || sourceName === "golchindl" || _headLessBrowser)
             ? 9
             : 12;

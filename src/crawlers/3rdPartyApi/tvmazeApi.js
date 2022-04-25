@@ -91,7 +91,7 @@ export function getTvMazeApiFields(data) {
             cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
-            summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : '',
+            summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').replace(/([.…])+$/, '').trim() : '',
             genres: data.genres.map(value => value.toLowerCase()).filter(item => item !== 'n/a') || [],
             isAnimation: (data.type.toLowerCase() === 'animation'),
             isAnime: (data.genres.includes('Anime')),
@@ -189,7 +189,7 @@ function getNextEpisode(data) {
             season: nextEpisodeInfo.season,
             episode: nextEpisodeInfo.number,
             releaseStamp: nextEpisodeInfo.airstamp || '',
-            summary: nextEpisodeInfo.summary ? nextEpisodeInfo.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim() : ''
+            summary: nextEpisodeInfo.summary ? nextEpisodeInfo.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').replace(/([.…])+$/, '').trim() : ''
         };
     }
     return nextEpisode;

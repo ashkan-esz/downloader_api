@@ -19,6 +19,8 @@ export async function updateImdbData() {
         return;
     }
 
+    //todo : fix delay between reset and set
+
     //top
     if (!imdbApiKey.reachedMax) {
         await dbMethods.updateMovieCollectionDB({'rank.top': -1});
@@ -254,7 +256,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
     }
     titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
-    titleModel.summary.english = imdbData.plot;
+    titleModel.summary.english = imdbData.plot.replace(/([.…])+$/, '');
     titleModel.awards = imdbData.awards || '';
     titleModel.genres = imdbData.genres ? imdbData.genres.toLowerCase().split(',').map(item => item.trim()).filter(item => item !== 'n/a') : [];
     titleModel.country = imdbData.countries ? imdbData.countries.toLowerCase() : '';

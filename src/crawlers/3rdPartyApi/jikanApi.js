@@ -113,7 +113,7 @@ export function getJikanApiFields(data) {
         let apiFields = {
             jikanID: data.mal_id,
             jikanRelatedTitles: getRelatedTitles(data),
-            summary_en: data.synopsis ? data.synopsis.replace('[Written by MAL Rewrite]').trim() : '',
+            summary_en: data.synopsis ? data.synopsis.replace('[Written by MAL Rewrite]').replace(/([.…])+$/, '').trim() : '',
             genres: data.genres.map(item => item.name.toLowerCase()).filter(item => item !== 'n/a') || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
@@ -457,7 +457,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         updateFields.genres = jikanApiFields.genres;
         titleDataFromDB.rating.myAnimeList = jikanApiFields.myAnimeListScore;
         updateFields.rating = titleDataFromDB.rating;
-        titleDataFromDB.summary.english = jikanApiFields.summary_en;
+        titleDataFromDB.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         updateFields.summary = titleDataFromDB.summary;
     }
 
@@ -539,7 +539,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.endYear = jikanApiFields.endYear;
         titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
         titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
-        titleModel.summary.english = jikanApiFields.summary_en;
+        titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         titleModel.genres = jikanApiFields.genres;
         let insertedId = await dbMethods.insertToDB('movies', titleModel);
 

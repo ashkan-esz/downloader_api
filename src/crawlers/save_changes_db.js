@@ -218,12 +218,12 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
         }
 
-        if (db_data.summary.persian.length < persianSummary.length) {
+        if (db_data.summary.persian.length < persianSummary.replace(/([.…])+$/, '').length) {
             let currentSummary = updateFields.summary;
             if (currentSummary === undefined) {
                 currentSummary = db_data.summary;
             }
-            currentSummary.persian = persianSummary;
+            currentSummary.persian = persianSummary.replace(/([.…])+$/, '');
             updateFields.summary = currentSummary;
         }
 

@@ -1,15 +1,16 @@
 import config from "../../config";
 import {search_in_title_page, wrapper_module} from "../searchTools";
 import {
-    getTitleAndYear,
-    validateYear,
     checkDubbed,
-    replacePersianNumbers,
-    persianWordToNumber,
     getDecodedLink,
+    getTitleAndYear,
+    persianWordToNumber,
+    removeDuplicateLinks,
+    replacePersianNumbers,
     sortLinks,
+    validateYear,
 } from "../utils";
-import {fixLinkInfo, purgeQualityText, linkInfoRegex} from "../linkInfoUtils";
+import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
 
@@ -35,7 +36,13 @@ async function search_title(link, i) {
             if (title === 'dota dragons blood' && type === 'anime_serial') {
                 type = 'serial';
             }
-            if (title.includes('kuroshitsuji') || title.includes('mushishi') || title.includes('nanatsu no taizai')) {
+            if (
+                title.includes('kuroshitsuji')
+                || title.includes('mushishi')
+                || title.includes('nanatsu no taizai')
+                || title.includes('kimetsu no yaiba')
+                || title.includes('minami ke all seasons')
+            ) {
                 return;
             }
 
@@ -46,10 +53,12 @@ async function search_title(link, i) {
                     if (!year) {
                         year = fixYear($2);
                     }
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
                     title = replaceShortTitleWithFull(title);
                     downloadLinks = fixWrongSeasonNumberIncrement(downloadLinks);
                     downloadLinks = fixSeasonSeparation(downloadLinks);
                     downloadLinks = sortLinks(downloadLinks);
+                    downloadLinks = fixSpecialEpisodeSeason(downloadLinks);
 
                     let sourceData = {
                         sourceName,
@@ -192,8 +201,12 @@ function getFileData_serial($, link) {
         .replace(/\s*(\.bd|\.10bit\.special)*\s*([.\[]+)[1-9]\d\d+p*([.\]])(?!(\d\d\d+p))|(\.web\.dual\.audio)*(bia2anime|bitdownload\.ir|\.\d\d\d+p|\.br|\.uncen)\.mkv|\s|^[.\-]|s\d+e|e/g, '')
         .split(/([.\-])/g)[0];
 
-    let seasonPartMatch = linkHref.match(/part\s*\d/g);
-    let seasonPart = seasonPartMatch ? seasonPartMatch.pop() : '';
+    let seasonPartMatch = linkHref.match(/part[\s.]*\d/g);
+    let seasonPart = seasonPartMatch
+        ? seasonPartMatch.pop()
+            .replace(/[\s.]/g, '')
+            .replace('part', 'Part')
+        : '';
 
     if (seasonNumber === 1 && Number(episodeNumber) === 0 && !seasonPart) {
         seasonNumber = 0;
@@ -205,11 +218,32 @@ function getFileData_serial($, link) {
         specialEpisodeName = ' (' + temp + ')';
     }
 
+    ({seasonNumber, episodeNumber} = fixWrongSeasonEpisodeNumber(seasonPart, seasonNumber, episodeNumber, linkHref));
+
+    let halfEpisode = '';
+    if (Number(episodeNumber) === 5) {
+        let halfEpisodeMatch = linkHref.match(/\.\d\d\.5\.\d\d\d\d?p/i);
+        if (halfEpisodeMatch) {
+            episodeNumber = halfEpisodeMatch.pop().match(/(?<=\.)\d\d(?=\.)/).pop();
+            episodeNumber = Number(episodeNumber);
+            halfEpisode = 'Episode(' + episodeNumber + '.5)';
+        }
+    }
+
+    if (seasonNumber === 1 && linkHref.includes('special')) {
+        seasonNumber = 0;
+    }
+
     let seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
+
     let quality = getQuality($, infoNodeChildren, linkHref, linkText);
     quality = fixLinkInfo(quality, $(link).attr('href'));
+    quality = fixLinkInfoOrder(quality);
     quality = quality.replace(/HD\.\d\d\d\d?p/gi, (res) => res.split('.').reverse().join('.'));
-    return [seasonEpisode, quality, seasonPart, dubbed, specialEpisodeName, seasonName].filter(value => value).join('.');
+    if (quality.includes('720p') && linkHref.includes('.480p.')) {
+        quality = quality.replace('720p', '480p');
+    }
+    return [seasonEpisode, quality, halfEpisode, seasonPart, dubbed, specialEpisodeName, seasonName].filter(value => value).join('.');
 }
 
 function getFileData_movie($, link) {
@@ -220,8 +254,10 @@ function getFileData_movie($, link) {
     }
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
-    let qualityText = purgeQualityText($(infoNodeChildren[1]).text());
+    let qualityText = $(infoNodeChildren[1]).text();
     let qualitySplit = qualityText.trim().split(' - ');
+    qualitySplit[0] = purgeQualityText(qualitySplit[0]);
+    qualitySplit[1] = purgeQualityText(qualitySplit[1]);
 
     let movieName = qualitySplit[1].split(/the movie/gi).pop().trim();
     if (movieName.match(/^\d+\s+/)) {
@@ -238,6 +274,7 @@ function getFileData_movie($, link) {
 
     let info = [qualitySplit[0], movieName, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, $(link).attr('href'));
+    info = fixLinkInfoOrder(info);
     return info;
 }
 
@@ -344,6 +381,10 @@ function fixWrongSeasonNumber(seasonNumber, linkHref) {
     } else if (linkHref.includes('fate.stay.night.ubw.s2')) {
         seasonName = ' (Unlimited Blade Works S2)';
         seasonNumber = 3;
+    } else if (linkHref.includes('code.geass.hangyaku.no.lelouch.r2')) {
+        seasonNumber = 2;
+    } else if (linkHref.includes('hachimitsu.to.clover.ii')) {
+        seasonNumber = 2;
     } else if (seasonNumber === 1) {
         if (linkHref.includes('fairy.tail.zero')) {
             seasonNumber = 3;
@@ -352,6 +393,23 @@ function fixWrongSeasonNumber(seasonNumber, linkHref) {
         }
     }
     return {seasonNumber, seasonName};
+}
+
+function fixWrongSeasonEpisodeNumber(seasonPart, seasonNumber, episodeNumber, linkHref) {
+    if (linkHref.includes('jojo.no.kimyou.na.bouken')) {
+        if (seasonPart === 'Part3') {
+            if (seasonNumber === 1) {
+                seasonNumber = 3;
+            } else if (seasonNumber === 2) {
+                seasonNumber = 3;
+                episodeNumber = Number(episodeNumber) + 24;
+            }
+        }
+        if (seasonPart) {
+            seasonNumber = Number(seasonPart.replace('Part', ''));
+        }
+    }
+    return {seasonNumber, episodeNumber};
 }
 
 function replaceShortTitleWithFull(title, type) {
@@ -402,7 +460,7 @@ function fixWrongSeasonNumberIncrement(downloadLinks) {
         }
 
         for (let i = 0; i < downloadLinks.length; i++) {
-            if (!downloadLinks[i].info.includes('.part') && downloadLinks[i].season === 2) {
+            if (!downloadLinks[i].info.toLowerCase().includes('.part') && downloadLinks[i].season === 2) {
                 if (firstEpisodeOfSeason === lastEpisodeFromPrevSeason + 1) {
                     downloadLinks[i].season = downloadLinks[i].season - 1;
                 }
@@ -416,9 +474,9 @@ function fixWrongSeasonNumberIncrement(downloadLinks) {
 function fixSeasonSeparation(downloadLinks) {
     let saveResult = [];
     for (let i = 0; i < downloadLinks.length; i++) {
-        let partMatch = downloadLinks[i].info.match(/\.part\d/gi);
+        let partMatch = downloadLinks[i].info.match(/\.Part\d/gi);
         if (partMatch) {
-            let partNumber = Number(partMatch[0].replace(/part|\./gi, ''));
+            let partNumber = Number(partMatch[0].replace(/Part|\./gi, ''));
             if (partNumber === 1) {
                 continue;
             }
@@ -454,12 +512,21 @@ function fixSeasonSeparation(downloadLinks) {
             }
         }
     }
+    return downloadLinks;
+}
+
+function fixSpecialEpisodeSeason(downloadLinks) {
     for (let i = 0; i < downloadLinks.length; i++) {
-        let partMatch = downloadLinks[i].info.match(/\.part\d/gi);
-        if (partMatch) {
-            let partNumber = Number(partMatch[0].replace(/part|\./gi, ''));
-            if (saveResult.findIndex(item => item.seasonNumber === downloadLinks[i].season && item.partNumber === partNumber) !== -1) {
-                downloadLinks[i].info = downloadLinks[i].info.replace(/\.part\d/gi, '');
+        if (downloadLinks[i].info.toLowerCase().includes('special') && downloadLinks[i].season === 0) {
+            downloadLinks[i].season = 1;
+            if (downloadLinks[i].episode <= 1) {
+                let season1LastEpisode = downloadLinks.reduce((episodeNumber, item) => {
+                    if (item.season === 1) {
+                        episodeNumber = Math.max(episodeNumber, item.episode);
+                    }
+                    return episodeNumber;
+                }, 0);
+                downloadLinks[i].episode += season1LastEpisode;
             }
         }
     }
@@ -467,9 +534,24 @@ function fixSeasonSeparation(downloadLinks) {
 }
 
 function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex));
+    const bia2animeLinkInfoRegex = new RegExp([
+        /^\d\d\d\d?p/,
+        /(\.x265)?(\.10bit)?/,
+        /(\.Part\.?\d)?/,
+        /(\.Episode\(\d\d?\.5\))?/,
+        /(\.(Special|OVA|NCED|NCOP)(_\d)?)?/,
+        /(\.UnCensored)?/,
+        /(\.dubbed\(english\))?/,
+        /(\.\s\(.+\))?/,
+        /( - (\d\d?(\.\d\d?)?GB|\d\d\d?MB))?$/,
+    ].map(item => item.source).join(''));
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+    const badLinks = downloadLinks.filter(item =>
+        !item.info.match(linkInfoRegex) &&
+        !item.info.match(bia2animeLinkInfoRegex)
+    );
+
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 1100);
 
     console.log([...badLinks, ...badSeasonEpisode].map(item => {
         return ({

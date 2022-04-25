@@ -132,13 +132,13 @@ Example: https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d49
 
 
 ### GET /movies/staff/searchById/[id]
-> return searching staff data. ([staff schema](SCHEMA.README.md#Staff Data))
+> return searching staff data. ([staff schema](SCHEMA.README.md#Staff-Data))
 
 Example: https://downloader-node-api.herokuapp.com/movies/staff/searchById/614a1e74a04ce900162c64e2?testUser=true
 
 
 ### GET /movies/characters/searchById/[id]
-> return searching character data. ([character schema](SCHEMA.README.md#Character Data))
+> return searching character data. ([character schema](SCHEMA.README.md#Character-Data))
 
 Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/61326d26c1ef65001665d02a?testUser=true
 

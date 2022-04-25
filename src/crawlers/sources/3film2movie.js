@@ -50,7 +50,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (
                         downloadLinks[0].link.match(/\.s\d+e\d+\./i) ||
-                        downloadLinks[0].link.match(/\.E\d\d\d?\..*\.\d\d\d\d?p\./i))) {
+                        downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i))) {
                         type = type.replace('movie', 'serial');
                         pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
                         if (!pageSearchResult) {
@@ -312,9 +312,9 @@ function printLinksWithBadInfo(downloadLinks, type) {
         /(\.3D)?/,
         /(\.\d\d\d\d\.\d\d\.\d\d)?/,
         /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
-        /(\.(Special|NCED|OVA)(_\d)?)?/,
+        /(\.(Special|OVA|NCED|NCOP)(_\d)?)?/,
         /(\.Censored)?/,
-        /(\.(HardSub|dubbed))?$/,
+        /(\.(HardSub(\.dubbed)?|dubbed))?$/,
     ].map(item => item.source).join(''), 'g');
 
     const countries = [
@@ -354,7 +354,7 @@ function printLinksWithBadInfo(downloadLinks, type) {
         )
     )
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 46 || item.episode > 400);
 
     console.log([...badLinks, ...badSeasonEpisode].map(item => {
         return ({

@@ -16,7 +16,9 @@ import {
     fixLinkInfoOrder,
     fixLinkInfo,
     purgeQualityText,
-    linkInfoRegex
+    linkInfoRegex,
+    encodersRegex,
+    releaseRegex
 } from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
@@ -46,8 +48,9 @@ async function search_title(link, i) {
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
-                        year = fixYear($2);
+                        year = fixYear($2, type);
                     }
+                    downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
                         sourceName,
@@ -69,7 +72,7 @@ async function search_title(link, i) {
     }
 }
 
-function fixYear($) {
+function fixYear($, type) {
     try {
         let state = 0;
         let postInfo = $('li:contains("سال انتشار")');
@@ -93,6 +96,17 @@ function fixYear($) {
             }
             return validateYear(yearArray[0]);
         }
+        if (type.includes('movie')) {
+            let postInfo = $('span[class=pr-item]:contains("سال انتشار")');
+            let temp = $(postInfo).text().replace('سال انتشار', '').toLowerCase().trim();
+            let yearArray = temp.split(/\s+|-|–/g)
+                .filter(item => item && !isNaN(item.trim()))
+                .sort((a, b) => Number(a) - Number(b));
+            if (yearArray.length === 0) {
+                return '';
+            }
+            return validateYear(yearArray[0]);
+        }
         return '';
     } catch (error) {
         saveError(error);
@@ -104,7 +118,8 @@ function getPersianSummary($) {
     try {
         let $p = $('p');
         for (let i = 0; i < $p.length; i++) {
-            if ($($p[i]).text().includes('خلاصه داستان')) {
+            let parent = $p[i].parent;
+            if (parent.name === 'div' && $(parent).hasClass('-plot')) {
                 return $($p[i]).text().replace('خلاصه داستان:', '').trim();
             }
         }
@@ -166,7 +181,7 @@ function getWatchOnlineLinks($) {
             if (text && text.toLowerCase().includes('پخش آنلاین')) {
                 let href = $(a[i]).attr('href');
                 let info = getFileData_movie($, a[i]);
-                let quality = info.includes('1080') ? '1080p' : info.includes('720') ? '720p' : '480p';
+                let quality = info.includes('1080') ? '1080p' : info.includes('480') ? '480p' : '720p';
                 result.push({
                     link: href,
                     info: 'bia2hd-' + quality,
@@ -197,28 +212,13 @@ function getFileData($, link, type) {
 
 function getFileData_serial($, link) {
     let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
-    let linkHref = $(link).attr('href');
+    let linkHref = $(link).attr('href').split('ihttp')[0];
     let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let quality = $(infoNodeChildren[2]).text()
-        .replace('کیفیت', '').trim()
-        .replace(/\d\d\d مگابایت/g, '')
-        .replace(' x264', '')
-        .replace(' x65', ' x265')
-        .replace(' -', '')
-        .replace(/قسمت ها \d+/g, '')
-        .replace(/\s/g, '.')
-        .replace(/^\d\d\d\d?\.(x265|HDTV)$/g, (res) => res.replace('.', 'p.'))
-        .replace(/^(x265\.)?\d\d\d\d?$/g, (res) => res + 'p');
-
     quality = replacePersianNumbers(quality);
-    quality = purgeQualityText(quality);
-    let qualitySplit = quality.split('.');
-    if (qualitySplit.length > 1 &&
-        qualitySplit[0] === 'x265' &&
-        qualitySplit[1].match(/\d\d\d+p/g)) {
-        quality = [qualitySplit[1], qualitySplit[0], ...qualitySplit.slice(2)].filter(value => value).join('.');
-    }
+    quality = purgeQualityText(quality).replace(/\s/g, '.');
+
     let size = '';
     if ($(link).parent()[0].name === 'div') {
         let sizeInfoNodeChildren = $($(link).parent().prev().children()[0]).children();
@@ -238,14 +238,13 @@ function getFileData_serial($, link) {
 
 function getFileData_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
-    let linkHref = $(link).attr('href');
+    let linkHref = $(link).attr('href').split('ihttp')[0];
     let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let qualityText = $(infoNodeChildren[1]).text();
     let sizeText = $(infoNodeChildren[2]).text();
     let encoderText = $(infoNodeChildren[3]).text();
     let quality = replacePersianNumbers(qualityText);
-    quality = quality.replace(/x264|-/gi, '').replace(/\s\s+/g, ' ').trim();
     quality = purgeQualityText(quality).replace(/\s+/g, '.');
     let size = purgeSizeText(sizeText);
     let encoder = purgeEncoderText(encoderText);
@@ -296,7 +295,9 @@ function checkPersianSerial(title) {
     return false;
 }
 
-function printLinksWithBadInfo(downloadLinks, type) {
+function printLinksWithBadInfo(downloadLinks, type, title) {
+    const excludeTitles = ['shazam', 'dave chappelle sticks and stones', 'aquaman', 'avengers endgame'];
+
     const bia2hdLinkRegex = new RegExp([
         /[-.](((S\d\d(\.)?)|(E\d\d-))?E\d\d([-E]+\d\d)?)/,
         /(\.(INTERNAL|REPACK|REAL|PROPER))?/,
@@ -305,20 +306,38 @@ function printLinksWithBadInfo(downloadLinks, type) {
         /(\.Farsi\.Dubbed)?/,
         /(\.RMT)?/,
         /(-PaHe)?/,
+        /(\.WEB-RMTeam)?/,
         /([.-]+Bi?a?2HD)?/,
         /\.(mkv|mp4|avi|wmv)$/,
     ].map(item => item.source).join(''), 'gi');
 
-    const badLinks = downloadLinks.filter(item => !item.info.match(linkInfoRegex) &&
+    const bia2hdMovieLinkInfoRegex = new RegExp([
+        /^\d\d\d\d?p(\.3D)?(\.x265)?/,
+        /(\.EXTENDED)?/,
+        /(\.Oscar)?/,
+        new RegExp(`(\\.((${releaseRegex.source})|(${encodersRegex.source})))+`),
+        /(\.dubbed)?/,
+        /( - ((\d\d\d?MB)|(\d(\.\d\d?)?GB)))?$/,
+    ].map(item => item.source).join(''));
+
+    const badLinks = downloadLinks.filter(item =>
+        !item.info.match(linkInfoRegex) &&
+        !excludeTitles.includes(title) &&
         (
-            type.includes('movie') || (
-                !item.info.match(/^\d\d\d\d?p(\.x265\.10bit|\.x265(\.dubbed)?|\.dubbed)$/g) &&
+            (
+                type.includes('movie') &&
+                !item.info.match(bia2hdMovieLinkInfoRegex) &&
+                !item.info.match(/^\d\d\d\d?p(\.3D)?(\.x265(\.10bit)?)?(\.Censored)?(\.dubbed)?( - ((\d\d\d?MB)|(\d(\.\d\d?)?GB)))$/) &&
+                !item.link.match(/\/.*[._]\d\d\d\d[._]\d\d\d\d?(\.Fa)?p([._]HDrip)?[._]Bia2HD\.mkv$/i)
+            ) || (
+                type.includes('serial') &&
+                !item.info.match(/^\d\d\d\d?p(\.x265(\.10bit)?)?(\.Episode\(\d\d?\d?-\d\d?\d?\))?(\.dubbed)?$/g) &&
                 !getDecodedLink(item.link).replace(/\s/g, '.').match(bia2hdLinkRegex)
             )
         )
     )
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 47 || item.episode > 400);
 
     console.log([...badLinks, ...badSeasonEpisode].map(item => {
         return ({

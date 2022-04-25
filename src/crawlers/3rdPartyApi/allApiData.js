@@ -304,9 +304,9 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
 function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
     if (
         (apiName === 'jikan' && apiFields.summary_en) ||
-        ((!oldData.summary.english || oldData.summary.english.length < apiFields.summary_en) && apiFields.summary_en)
+        ((!oldData.summary.english || oldData.summary.english.length < apiFields.summary_en.replace(/([.…])+$/, '')) && apiFields.summary_en)
     ) {
-        oldData.summary.english = apiFields.summary_en;
+        oldData.summary.english = apiFields.summary_en.replace(/([.…])+$/, '');
         updateFields.summary = oldData.summary;
     }
     //---------------------
