@@ -7,6 +7,7 @@ export function purgeTitle(title, type, keepLastNumber = true) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     const savedTitle = title;
+    title = title.replace(/\d%/, (res) => res.replace('%', 'percent'));
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
     title = title
@@ -188,18 +189,67 @@ export function getTitleAndYear(title, year, type) {
         let splitTitle = purgeTitle(title.toLowerCase(), type);
         year = splitTitle[splitTitle.length - 1];
         if (!isNaN(year) && Number(year) > 1900 && Number(year) < 2100) {
-            splitTitle.pop();
-            title = splitTitle.join(" ");
-            let currentYear = new Date().getFullYear();
-            if (Number(year) === currentYear + 1) {
-                year = currentYear.toString();
-            } else if (Number(year) > currentYear + 1) {
-                year = '';
+            if (splitTitle.length === 2 && Number(splitTitle[0]) > Number(year) && Number(splitTitle[0]) < 2030) {
+                year = splitTitle[0];
+                title = splitTitle[1];
+            } else {
+                splitTitle.pop();
+                title = splitTitle.join(" ");
+                let currentYear = new Date().getFullYear();
+                if (Number(year) === currentYear + 1) {
+                    year = currentYear.toString();
+                } else if (Number(year) > currentYear + 1) {
+                    year = '';
+                }
             }
+        } else if (splitTitle.length === 2 && Number(splitTitle[0]) > 2000 && Number(splitTitle[0]) < 2030 && Number(splitTitle[1]) < 1500) {
+            year = splitTitle[0];
+            title = splitTitle[1];
+        } else if (isNaN(year) && Number(splitTitle[0]) > 2000 && Number(splitTitle[0]) < 2030) {
+            year = splitTitle.shift();
+            title = splitTitle.join(" ");
         } else {
             title = splitTitle.join(" ");
             year = '';
         }
+        title = title
+            .replace(/^\d+ (d|st|th|below)(?=\s)/i, (res) => res.replace(' ', ''))
+            .replace(/^\d \d \d .+ \d \d \d$/, (res) => res.replace(/\s\d \d \d$/, '').trim())
+            .replace(/^\d{2,5} .+ \d{2,5}$/, (res) => res.replace(/\s\d{2,5}$/, '').trim())
+            .replace(/^\d{2,6} \d{2,6}$/, (res) => {
+                let temp = res.split(' ');
+                return (temp[0] === temp[1]) ? temp[0] : res;
+            })
+            .replace(/^\d\d?:\d\d? .+ \d\d?\s\d\d?$/, (res) => {
+                let temp = res.split(' ');
+                let lastPart = temp[temp.length - 2] + ' ' + temp[temp.length - 1];
+                if (temp.length > 2 && temp[0] === lastPart.replace(' ', ':')) {
+                    temp.pop();
+                    temp.pop();
+                    return temp.join(' ');
+                }
+                return res;
+            })
+            .replace(/^9 jkl$/i, '9jkl')
+            .replace('10 x10', '10x10')
+            .replace('100percent', '100 percent')
+            .replace('2 the jungle book', 'the jungle book 2')
+            .replace('5 transformers the last knight', 'transformers the last knight')
+            .replace('6 recep ivedik', 'recep ivedik 6')
+            .replace('5 ice age collision course', 'ice age collision course');
+
+        let yearMatch = title.match(/\s\d\d\d\d$/g);
+        if (yearMatch) {
+            let number = Number(yearMatch.pop().trim());
+            if (number >= 1995 && number <= 2030) {
+                number = number.toString();
+                if (!year || year === number) {
+                    year = number;
+                    title = title.replace(number, '').trim();
+                }
+            }
+        }
+
         return {title, year: year || ''};
     } catch (error) {
         saveError(error);

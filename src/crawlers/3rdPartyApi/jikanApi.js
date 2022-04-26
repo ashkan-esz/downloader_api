@@ -13,7 +13,7 @@ let isRunning = false;
 let callTime = 0;
 let multiCounter = 0;
 
-const jikanCache = new NodeCache({stdTTL: 7 * 60 * 60}); // 7 hour
+const jikanCache = new NodeCache({stdTTL: 6 * 60 * 60}); // 6 hour
 
 export function flushJikanCachedData() {
     jikanCache.flushAll();
@@ -101,7 +101,7 @@ function checkTitle(title, type, allTitles) {
     } = allTitles;
 
     return (
-        title.replace(/tv|the|\s+/g, '').trim() === apiTitle_simple.replace(/the|tv|\s+/g, '').trim() ||
+        title.replace(/tv|the|precent|\s+/g, '').trim() === apiTitle_simple.replace(/the|tv|precent|\s+/g, '').trim() ||
         title === apiTitleEnglish_simple.replace(/the/gi, '').replace(/\s\s+/g, ' ') ||
         title === apiTitleJapanese ||
         titleSynonyms.includes(title)
@@ -303,7 +303,7 @@ async function handleApiCall(url, timeoutSec = 0) {
                     clearTimeout(timeoutId);
                     return reject(err);
                 });
-            })
+            });
 
             if (multiCounter === 1) {
                 isRunning = false;

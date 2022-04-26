@@ -32,7 +32,13 @@ async function search_title(link, i) {
             if (config.nodeEnv === 'dev') {
                 console.log(`film2movie/${type}/${i}/${title}  ========>  `);
             }
-            if (title.includes('تلویزیونی ماه عسل')) {
+            if (
+                title.includes('تلویزیونی ماه عسل') ||
+                title.includes('ایرانی') ||
+                title.includes('دانلود سریال پهلوانان') ||
+                title.includes('دانلود سریال شکرستان') ||
+                title.includes('کلاه قرمزی')
+            ) {
                 return;
             }
             let typeFix = '';

@@ -33,6 +33,14 @@ async function search_title(link, i) {
             if (config.nodeEnv === 'dev') {
                 console.log(`salamdl/${type}/${i}/${title}  ========>  `);
             }
+            if (
+                title.includes('ایران') ||
+                title.includes('ماجرای نیمروز') ||
+                title.includes('سهیلا') ||
+                title.includes('رسوایی')
+            ) {
+                return;
+            }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {

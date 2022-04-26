@@ -41,6 +41,9 @@ async function search_title(link, i, $, url) {
             if (config.nodeEnv === 'dev') {
                 console.log(`digimoviez/${type}/${i}/${title}  ========>  `);
             }
+            if (title.includes('ایران')) {
+                return;
+            }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {

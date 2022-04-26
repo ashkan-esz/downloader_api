@@ -58,6 +58,7 @@ export default async function save(title, type, year, sourceData) {
 }
 
 async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
+    title = fixTitle(title);
     let titleObj = await getTitleObj(title, year, type, false);
     let db_data = await searchOnCollection(titleObj, year, type);
     if (db_data) {
@@ -73,6 +74,13 @@ async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
         db_data = await searchOnCollection(titleObj, year, type);
     }
     return {titleObj, db_data};
+}
+
+function fixTitle(title) {
+    if (title === 'go toubun no hanayome' || title === 'gotoubun no hanayome') {
+        title = '5 toubun no hanayome';
+    }
+    return title;
 }
 
 async function getTitleObj(title, year, type, useJikanApi) {

@@ -41,6 +41,9 @@ async function search_title(link, i) {
             if (config.nodeEnv === 'dev') {
                 console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
             }
+            if (title.includes('ایران')) {
+                return;
+            }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !checkPersianSerial(title)) {

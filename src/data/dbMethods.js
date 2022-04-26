@@ -18,6 +18,10 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
         };
         if (year) {
             searchObj.year = year;
+            let temp = titleObj.title.split('').map(item => item.trim() + '\\s?').join('').replace(/\\s\?$/, '');
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp + '$')
+            });
         }
         return await collection.find(searchObj, {projection: dataConfig}).toArray();
     } catch (error) {
@@ -448,6 +452,9 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
 
 export async function getGenresStatusDB() {
     try {
+        //todo : sort by imdb score then sort by genre name
+        //todo : fix Null poster
+        //todo : fix genre 'N/A'
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {

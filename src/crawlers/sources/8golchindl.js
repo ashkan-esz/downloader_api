@@ -38,6 +38,13 @@ async function search_title(link, i, $) {
             if (config.nodeEnv === 'dev') {
                 console.log(`golchindl/${type}/${i}/${title}  ========>  `);
             }
+            if (
+                title.includes('انتخابات') ||
+                title.includes('مجله لیگ قهرمانان') ||
+                title.includes('جومونگ')
+            ) {
+                return;
+            }
             title = title.replace('پلی استیشن 5', '');
             let isCeremony = title.includes('دانلود مراسم');
             let isCollection = title.includes('کالکشن فیلم') || title.includes('کالکشن انیمیشن');

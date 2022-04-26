@@ -163,7 +163,7 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premier
     return (
         imdbID && imdbID === data.externals.imdb ||
         title.replace(/\s+/g, '') === apiTitle.replace(/\s+/g, '') ||
-        title.replace(/\s+/g, '') === apiTitle_simple.replace(/\s+/g, '') ||
+        title.replace(/precent|\s+/g, '') === apiTitle_simple.replace(/precent|\s+/g, '') ||
         title.replace(' wo ', ' o ') === apiTitle_simple ||
         title.replace(/\swo$/, ' o') === apiTitle_simple ||
         specialCase4 === apiTitle_simple ||

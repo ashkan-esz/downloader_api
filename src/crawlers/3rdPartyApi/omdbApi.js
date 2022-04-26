@@ -245,7 +245,7 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type
     return (
         matchYear &&
         (
-            title.replace(/\s+/g, '') === apiTitle.replace(/\s+/g, '') ||
+            title.replace(/precent|\s+/g, '') === apiTitle.replace(/precent|\s+/g, '') ||
             title === apiTitle.replace(' movie', '') ||
             title === apiTitle.replace('eiga ', '') ||
             title === apiTitle.replace('gekijouban ', '') ||
