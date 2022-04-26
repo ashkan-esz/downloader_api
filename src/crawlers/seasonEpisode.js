@@ -159,7 +159,7 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
         for (let j = 0; j < episodes.length; j++) {
             if (!episodes[j].checked) {
                 let prevLength = episodes[j].links.length;
-                episodes[j].links = episodes[j].links.filter(link => link.sourceName === sourceName);
+                episodes[j].links = episodes[j].links.filter(link => link.sourceName !== sourceName);
                 let newLength = episodes[j].links.length;
                 if (prevLength !== newLength) {
                     updateFlag = true;

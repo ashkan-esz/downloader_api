@@ -236,7 +236,7 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
     for (let i = 0; i < prevGroupedLinks.length; i++) {
         if (!prevGroupedLinks[i].checked) {
             let prevLength = prevGroupedLinks[i].links.length;
-            prevGroupedLinks[i].links = prevGroupedLinks[i].links.filter(link => link.sourceName === sourceName);
+            prevGroupedLinks[i].links = prevGroupedLinks[i].links.filter(link => link.sourceName !== sourceName);
             let newLength = prevGroupedLinks[i].links.length;
             if (prevLength !== newLength) {
                 updateFlag = true;

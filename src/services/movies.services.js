@@ -172,7 +172,7 @@ export async function getGenresStatus(routeUrl) {
             data: result,
             code: 200,
             errorMessage: '',
-        }, 10 * 60);
+        }, 30 * 60);
     }
     return generateServiceResult({data: result}, 200, '');
 }

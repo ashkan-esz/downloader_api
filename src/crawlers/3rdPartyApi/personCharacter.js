@@ -149,8 +149,8 @@ function getStaffAndCharactersData(staff, characters, movieID) {
 function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) {
     for (let i = 0; i < omdbApiFields.directorsNames.length; i++) {
         staffAndCharactersData.push({
-            name: utils.replaceSpecialCharacters(omdbApiFields.directorsNames[i]),
-            rawName: omdbApiFields.directorsNames[i],
+            _id: '',
+            name: omdbApiFields.directorsNames[i],
             gender: '',
             country: '',
             image: '',
@@ -160,8 +160,8 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     }
     for (let i = 0; i < omdbApiFields.writersNames.length; i++) {
         staffAndCharactersData.push({
-            name: utils.replaceSpecialCharacters(omdbApiFields.writersNames[i]),
-            rawName: omdbApiFields.writersNames[i],
+            _id: '',
+            name: omdbApiFields.writersNames[i],
             gender: '',
             country: '',
             image: '',
@@ -172,8 +172,8 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
     if (!tvmazeApiFields) {
         for (let i = 0; i < omdbApiFields.actorsNames.length; i++) {
             staffAndCharactersData.push({
-                name: utils.replaceSpecialCharacters(omdbApiFields.actorsNames[i]),
-                rawName: omdbApiFields.actorsNames[i],
+                _id: '',
+                name: omdbApiFields.actorsNames[i],
                 gender: '',
                 country: '',
                 image: '',

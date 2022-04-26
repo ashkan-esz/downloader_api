@@ -452,9 +452,6 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
 
 export async function getGenresStatusDB() {
     try {
-        //todo : sort by imdb score then sort by genre name
-        //todo : fix Null poster
-        //todo : fix genre 'N/A'
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {
@@ -476,7 +473,7 @@ export async function getGenresStatusDB() {
             },
             {
                 $sort: {
-                    count: -1,
+                    _id: 1,
                 }
             },
             {
@@ -489,7 +486,8 @@ export async function getGenresStatusDB() {
             }
         ];
 
-        return await collection.aggregate(aggregationPipeline).toArray();
+        let genres = await collection.aggregate(aggregationPipeline).toArray();
+        return genres.filter(item => item.genre !== 'n/a');
     } catch (error) {
         saveError(error);
         return 'error';
