@@ -308,3 +308,26 @@ characterData = {
     likeOrDislike: String, // enum('', 'like', 'dislike')
 }
 ```
+
+## Genres
+
+```javascript
+genres = Array({
+    genre: String,
+    poster: {
+        url: String,
+        info: String,
+        size: Int
+    },
+    count: Int,
+})
+```
+
+## Movie Sources
+
+```javascript
+movieSources = Array({
+    sourceName: String,
+    url: String,
+})
+```

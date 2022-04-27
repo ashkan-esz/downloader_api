@@ -36,6 +36,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
 }
 
 export function getNewDeviceSession(deviceInfo, deviceId, refreshToken) {
+    let now = new Date();
     return ({
         appName: deviceInfo.appName || '',
         appVersion: deviceInfo.appVersion || '',
@@ -43,8 +44,8 @@ export function getNewDeviceSession(deviceInfo, deviceId, refreshToken) {
         deviceModel: deviceInfo.deviceModel || '',
         ipLocation: deviceInfo.ipLocation || '',
         deviceId: deviceId,
-        loginDate: new Date(),
-        lastUseDate: new Date(),
+        loginDate: now,
+        lastUseDate: now,
         refreshToken: refreshToken || '',
     });
 }

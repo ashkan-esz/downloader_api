@@ -19,7 +19,7 @@ export async function signup(req, res) {
     let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, host);
     if (signupResult.refreshToken) {
         if (req.query.noCookie === 'true') {
-            signupResult.data.refreshToken = signupResult.refreshToken;
+            signupResult.responseData.refreshToken = signupResult.refreshToken;
         } else {
             res.cookie('refreshToken', signupResult.refreshToken, {
                 httpOnly: true,
@@ -28,8 +28,8 @@ export async function signup(req, res) {
             });
         }
     }
-    res.statusCode = signupResult.data.code;
-    return res.json(signupResult.data);
+
+    return res.status(signupResult.responseData.code).json(signupResult.responseData);
 }
 
 export async function login(req, res) {
@@ -47,7 +47,7 @@ export async function login(req, res) {
     let loginResult = await usersServices.login(username_email, password, deviceInfo, ip);
     if (loginResult.refreshToken) {
         if (req.query.noCookie === 'true') {
-            loginResult.data.refreshToken = loginResult.refreshToken;
+            loginResult.responseData.refreshToken = loginResult.refreshToken;
         } else {
             res.cookie('refreshToken', loginResult.refreshToken, {
                 httpOnly: true,
@@ -56,8 +56,8 @@ export async function login(req, res) {
             });
         }
     }
-    res.statusCode = loginResult.data.code;
-    return res.json(loginResult.data);
+
+    return res.status(loginResult.responseData.code).json(loginResult.responseData);
 }
 
 export async function getToken(req, res) {
@@ -66,7 +66,7 @@ export async function getToken(req, res) {
     let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken);
     if (getTokenResult.refreshToken) {
         if (req.query.noCookie === 'true') {
-            getTokenResult.data.refreshToken = getTokenResult.refreshToken;
+            getTokenResult.responseData.refreshToken = getTokenResult.refreshToken;
         } else {
             res.cookie('refreshToken', getTokenResult.refreshToken, {
                 httpOnly: true,
@@ -75,13 +75,13 @@ export async function getToken(req, res) {
             });
         }
     }
-    res.statusCode = getTokenResult.data.code;
-    return res.json(getTokenResult.data);
+
+    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
 }
 
 export async function logout(req, res) {
     let getTokenResult = await usersServices.logout(req.jwtUserData, req.refreshToken, req.accessToken);
-    if (getTokenResult.data.code >= 200 && getTokenResult.data.code < 300) {
+    if (getTokenResult.responseData.code >= 200 && getTokenResult.responseData.code < 300) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
             secure: true,
@@ -90,43 +90,43 @@ export async function logout(req, res) {
             maxAge: 0,
         });
     }
-    res.statusCode = getTokenResult.data.code;
-    return res.json(getTokenResult.data);
+
+    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
 }
 
 export async function forceLogout(req, res) {
     let getTokenResult = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
-    res.statusCode = getTokenResult.data.code;
-    return res.json(getTokenResult.data);
+
+    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
 }
 
 export async function forceLogoutAll(req, res) {
     let getTokenResult = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
-    res.statusCode = getTokenResult.data.code;
-    return res.json(getTokenResult.data);
+
+    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
 }
 
 export async function getUserProfile(req, res) {
     let result = await usersServices.getUserProfile(req.userData, req.refreshToken);
-    res.statusCode = result.data.code;
-    return res.json(result.data);
+
+    return res.status(result.responseData.code).json(result.responseData);
 }
 
 export async function getUserActiveSessions(req, res) {
     let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
-    res.statusCode = result.data.code;
-    return res.json(result.data);
+
+    return res.status(result.responseData.code).json(result.responseData);
 }
 
 export async function sendVerifyEmail(req, res) {
     const host = req.protocol + '://' + req.get('host');
     let verifyResult = await usersServices.sendVerifyEmail(req.userData, host);
-    res.statusCode = verifyResult.data.code;
-    return res.json(verifyResult.data);
+
+    return res.status(verifyResult.responseData.code).json(verifyResult.responseData);
 }
 
 export async function verifyEmail(req, res) {
     let verifyResult = await usersServices.verifyEmail(req.params.token);
-    res.statusCode = verifyResult.data.code;
-    return res.json(verifyResult.data);
+
+    return res.status(verifyResult.responseData.code).json(verifyResult.responseData);
 }

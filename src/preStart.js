@@ -21,7 +21,9 @@ async function createTestUser() {
             activeSessions: 1,
         });
 
-        if (!findUserResult) {
+        if (findUserResult === 'error') {
+            console.log('error on creating test user');
+        } else if (!findUserResult) {
             //create test user
             let deviceInfo = {
                 ipLocation: '',

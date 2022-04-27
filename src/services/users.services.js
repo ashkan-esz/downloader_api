@@ -19,6 +19,7 @@ import {v4 as uuidv4} from 'uuid';
 import {addToBlackList} from "../api/middlewares/isAuth";
 import {saveError} from "../error/saveError";
 import getIpLocation from "../extraServices/ip/index.js";
+import {generateServiceResult} from "./serviceUtils";
 
 //todo : remove account
 //todo : forget password
@@ -28,7 +29,9 @@ import getIpLocation from "../extraServices/ip/index.js";
 export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
         let findUserResult = await findUser(username, email, {username: 1, email: 1});
-        if (findUserResult) {
+        if (findUserResult === 'error') {
+            return generateServiceResult({}, 500, 'Server error, try again later');
+        } else if (findUserResult) {
             if (findUserResult.username === username.toLowerCase()) {
                 return generateServiceResult({}, 403, 'This username already exists');
             }
@@ -74,7 +77,9 @@ export async function login(username_email, password, deviceInfo, ip) {
     //todo : limit number of device
     try {
         let userData = await findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
-        if (!userData) {
+        if (userData === 'error') {
+            return generateServiceResult({}, 500, 'Server error, try again later');
+        } else if (!userData) {
             return generateServiceResult({}, 404, 'Cannot find user');
         }
         if (await bcrypt.compare(password, userData.password)) {
@@ -88,7 +93,7 @@ export async function login(username_email, password, deviceInfo, ip) {
             } else if (result === 'cannot find user') {
                 return generateServiceResult({}, 400, 'Cannot find user');
             }
-            await agenda.schedule('in 5 seconds', 'login email', {
+            agenda.schedule('in 4 seconds', 'login email', {
                 deviceInfo,
                 email: result.email,
             });
@@ -248,7 +253,7 @@ export async function sendVerifyEmail(userData, host) {
 
             return generateServiceResult({}, 200, '');
         } else if (updateResult === 'notfound') {
-            return generateServiceResult({}, 400, 'Cannot find user email');
+            return generateServiceResult({}, 404, 'Cannot find user email');
         }
         return generateServiceResult({}, 500, 'Server error, try again later');
     } catch (error) {
@@ -288,16 +293,5 @@ export function generateAuthTokens(user, customExpire = '') {
         accessToken,
         accessToken_expire: jwt.decode(accessToken).exp * 1000,
         refreshToken,
-    };
-}
-
-export function generateServiceResult(dataFields, code, errorMessage, extraData = {}) {
-    return {
-        ...extraData,
-        data: {
-            ...dataFields,
-            code: code,
-            errorMessage: errorMessage,
-        }
     };
 }

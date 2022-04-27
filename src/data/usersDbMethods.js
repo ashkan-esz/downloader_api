@@ -23,10 +23,11 @@ export async function findUser(username, email, projection) {
                 },
             ],
         };
-        return await collection.findOne(searchObj, {projection: projection});
+        let result = await collection.find(searchObj, {projection: projection}).limit(1).toArray();
+        return result.length === 0 ? null : result[0];
     } catch (error) {
         saveError(error);
-        return null;
+        return 'error';
     }
 }
 

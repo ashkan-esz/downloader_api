@@ -32,11 +32,12 @@
 - [GET /movies/searchByID/[id]/[dataLevel]](#get-moviessearchbyididdatalevel)
 - [GET /movies/staff/searchById/[id]](#get-moviesstaffsearchbyidid)
 - [GET /movies/characters/searchById/[id]](#get-moviescharacterssearchbyidid)
+- [GET /movies/status/genres](#get-moviesstatusgenres)
+- [GET /movies/status/movieSources](#get-moviesstatusmoviesources)
+- [GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenresgenrestypesdatalevelimdbscoresmalscorespage)
 - [PUT /movies/likeOrDislike/[type]/[id]](#put-movieslikeordisliketypeid)
 - [PUT /movies/likeOrDislike/staff/[type]/[id]](#put-movieslikeordislikestafftypeid)
 - [PUT /movies/likeOrDislike/characters/[type]/[id]](#put-movieslikeordislikecharacterstypeid)
-- [GET /movies/status/genres](#get-moviesstatusgenres)
-- [GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenresgenrestypesdatalevelimdbscoresmalscorespage)
 
 
 ## Movie-Data Api
@@ -144,24 +145,15 @@ Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/
 
 
 ### GET /movies/status/genres
-> returns all available genres with their count.
-```javascript
-result = {
-    data: Array({
-        genre: String,
-        poster: {
-            url: String,
-            info: String,
-            size: Int
-        },
-        count: Int,
-    }),
-    code: Int,
-    errorMessage: String,
-}
-```
+> returns all available genres with their count. ([genres schema](SCHEMA.README.md#Genres))
 
 Example: https://downloader-node-api.herokuapp.com/movies/status/genres?testUser=true
+
+
+### GET /movies/status/movieSources
+> returns movie sources with latest url. ([movie sources schema](SCHEMA.README.md#Movie-Sources))
+
+Example: https://downloader-node-api.herokuapp.com/movies/status/movieSources?testUser=true
 
 
 ### GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
@@ -172,8 +164,6 @@ Example: https://downloader-node-api.herokuapp.com/movies/genres/action/movie-se
 Example: https://downloader-node-api.herokuapp.com/movies/genres/drama/serial/medium/5-10/0-10/1?testUser=true
 
 Example: https://downloader-node-api.herokuapp.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1?testUser=true
-
-
 
 
 ## Like/Save Movie Api

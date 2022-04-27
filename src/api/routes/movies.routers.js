@@ -60,6 +60,9 @@ router.put('/likeOrDislike/characters/:type/:id', middlewares.auth.attachAuthFla
 //movies/status/genres
 router.get('/status/genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, middlewares.moviesCache, moviesControllers.getGenresStatus);
 
+//movies/status/movieSources
+router.get('/status/movieSources', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, middlewares.moviesCache, moviesControllers.getMovieSources);
+
 //movies/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getGenresMovies);

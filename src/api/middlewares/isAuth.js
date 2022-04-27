@@ -26,7 +26,10 @@ export async function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
-        return res.sendStatus(401);
+        return res.status(401).json({
+            code: 401,
+            errorMessage: 'Unauthorized'
+        });
     }
     try {
         let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
@@ -36,17 +39,23 @@ export async function isAuth_refreshToken(req, res, next) {
             req.isAuth = true;
             return next();
         } else {
-            return res.sendStatus(403);
+            return res.status(403).json({
+                code: 403,
+                errorMessage: 'Invalid token'
+            });
         }
     } catch (error) {
-        return res.sendStatus(403);
+        return res.status(403).json({
+            code: 403,
+            errorMessage: 'Invalid token'
+        });
     }
 }
 
 export async function attachAuthFlag(req, res, next) {
     if (req.method === 'GET' && req.query.testUser === 'true') {
         let findUserResult = await findUser('$$test_user$$', '', {activeSessions: 1});
-        if (findUserResult && findUserResult.activeSessions[0]) {
+        if (findUserResult && findUserResult !== 'error' && findUserResult.activeSessions[0]) {
             let refreshToken = findUserResult.activeSessions[0].refreshToken;
             let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
             if (refreshTokenVerifyResult) {
@@ -105,7 +114,11 @@ export async function blockAuthorized(req, res, next) {
 
 export async function blockUnAuthorized(req, res, next) {
     if (!req.isAuth && req.authCode) {
-        return res.sendStatus(req.authCode);
+        return res.status(req.authCode).json({
+            data: null,
+            code: req.authCode,
+            errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token'
+        });
     }
     return next();
 }

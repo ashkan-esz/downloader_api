@@ -7,10 +7,9 @@ export async function getNews(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-
     let news = await moviesServices.getNews(userId, types, dataLevel, imdbScores, malScores, page);
 
-    return res.json(news);
+    return res.status(news.responseData.code).json(news.responseData);
 }
 
 export async function getUpdates(req, res) {
@@ -20,10 +19,9 @@ export async function getUpdates(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-
     let updates = await moviesServices.getUpdates(userId, types, dataLevel, imdbScores, malScores, page);
 
-    return res.json(updates);
+    return res.status(updates.responseData.code).json(updates.responseData);
 }
 
 export async function getTopsByLikes(req, res) {
@@ -33,10 +31,9 @@ export async function getTopsByLikes(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-
     let topsByLikes = await moviesServices.getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page);
 
-    return res.json(topsByLikes);
+    return res.status(topsByLikes.responseData.code).json(topsByLikes.responseData);
 }
 
 export async function getTrailers(req, res) {
@@ -46,12 +43,9 @@ export async function getTrailers(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-
     let trailers = await moviesServices.getTrailers(userId, types, dataLevel, imdbScores, malScores, page);
-    if (trailers.length > 0) {
-        return res.json(trailers);
-    }
-    return res.sendStatus(404);
+
+    return res.status(trailers.responseData.code).json(trailers.responseData);
 }
 
 export async function getSortedMovies(req, res) {
@@ -62,12 +56,9 @@ export async function getSortedMovies(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
+    let sortedMovies = await moviesServices.getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page);
 
-    let trailers = await moviesServices.getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page);
-    if (trailers.length > 0) {
-        return res.json(trailers);
-    }
-    return res.sendStatus(404);
+    return res.status(sortedMovies.responseData.code).json(sortedMovies.responseData);
 }
 
 export async function getSeriesOfDay(req, res) {
@@ -77,9 +68,9 @@ export async function getSeriesOfDay(req, res) {
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
-
     let seriesOfDay = await moviesServices.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page);
-    return res.json(seriesOfDay);
+
+    return res.status(seriesOfDay.responseData.code).json(seriesOfDay.responseData);
 }
 
 export async function getMultipleStatus(req, res) {
@@ -90,30 +81,26 @@ export async function getMultipleStatus(req, res) {
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
     let count = Number(req.params.count) || 1;
-
     let multipleStatus = await moviesServices.getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count);
 
-    return res.json(multipleStatus);
+    return res.status(multipleStatus.responseData.code).json(multipleStatus.responseData);
 }
 
 export async function searchByTitle(req, res) {
     let userId = req.jwtUserData.userId;
     let title = req.params.title;
-    let genres = req.params.genres ?
-        req.params.genres.split('-').map(item => item.toLowerCase().trim())
-        : [];
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let years = req.params.years.split('-');
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));
     let page = Number(req.params.page) || 1;
+    let genres = req.query.genres ?
+        req.query.genres.split('-').map(item => item.toLowerCase().trim())
+        : [];
+    let result = await moviesServices.searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page);
 
-    let titles = await moviesServices.searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page);
-    if (titles.movies.length > 0 || titles.staff.length > 0 || titles.characters.length > 0) {
-        return res.json(titles);
-    }
-    return res.sendStatus(404);
+    return res.status(result.responseData.code).json(result.responseData);
 }
 
 export async function searchMovieById(req, res) {
@@ -121,32 +108,24 @@ export async function searchMovieById(req, res) {
     let id = req.params.id;
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
     let titleData = await moviesServices.searchMovieById(userId, id, dataLevel);
-    if (titleData) {
-        return res.json(titleData);
-    }
-    return res.sendStatus(404);
+
+    return res.status(titleData.responseData.code).json(titleData.responseData);
 }
 
 export async function searchStaffById(req, res) {
     let userId = req.jwtUserData.userId;
     let id = req.params.id;
-
     let titleData = await moviesServices.searchStaffById(userId, id);
-    if (titleData) {
-        return res.json(titleData);
-    }
-    return res.sendStatus(404);
+
+    return res.status(titleData.responseData.code).json(titleData.responseData);
 }
 
 export async function searchCharacterById(req, res) {
     let userId = req.jwtUserData.userId;
     let id = req.params.id;
-
     let titleData = await moviesServices.searchCharacterById(userId, id);
-    if (titleData) {
-        return res.json(titleData);
-    }
-    return res.sendStatus(404);
+
+    return res.status(titleData.responseData.code).json(titleData.responseData);
 }
 
 export async function likeMovie(req, res) {
@@ -156,8 +135,7 @@ export async function likeMovie(req, res) {
     let isRemove = req.query.remove === 'true';
     let likeResult = await moviesServices.likeOrDislikeService(userId, 'movies', movieId, type, isRemove);
 
-    res.statusCode = likeResult.data.code;
-    return res.json(likeResult.data);
+    return res.status(likeResult.responseData.code).json(likeResult.responseData);
 }
 
 export async function likeStaff(req, res) {
@@ -167,8 +145,7 @@ export async function likeStaff(req, res) {
     let isRemove = req.query.remove === 'true';
     let likeResult = await moviesServices.likeOrDislikeService(userId, 'staff', movieId, type, isRemove);
 
-    res.statusCode = likeResult.data.code;
-    return res.json(likeResult.data);
+    return res.status(likeResult.responseData.code).json(likeResult.responseData);
 }
 
 export async function likeCharacter(req, res) {
@@ -178,15 +155,19 @@ export async function likeCharacter(req, res) {
     let isRemove = req.query.remove === 'true';
     let likeResult = await moviesServices.likeOrDislikeService(userId, 'characters', movieId, type, isRemove);
 
-    res.statusCode = likeResult.data.code;
-    return res.json(likeResult.data);
+    return res.status(likeResult.responseData.code).json(likeResult.responseData);
 }
 
 export async function getGenresStatus(req, res) {
     let result = await moviesServices.getGenresStatus(req.url);
 
-    res.statusCode = result.data.code;
-    return res.json(result.data);
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function getMovieSources(req, res) {
+    let result = await moviesServices.getMovieSources(req.url);
+
+    return res.status(result.responseData.code).json(result.responseData);
 }
 
 export async function getGenresMovies(req, res) {
@@ -199,6 +180,5 @@ export async function getGenresMovies(req, res) {
     let page = Number(req.params.page) || 1;
     let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page);
 
-    res.statusCode = result.data.code;
-    return res.json(result.data);
+    return res.status(result.responseData.code).json(result.responseData);
 }

@@ -226,7 +226,7 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -265,7 +265,7 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -304,7 +304,7 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -344,7 +344,7 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -369,6 +369,8 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
             searchBase = "rank.top";
         } else if (sortBase === 'popular') {
             searchBase = "rank.popular";
+        } else {
+            return [];
         }
 
         let collection = await getCollection('movies');
@@ -403,7 +405,7 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -446,7 +448,7 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -591,7 +593,7 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
@@ -621,7 +623,7 @@ export async function searchOnCollectionById(collectionName, userId, id, project
         return result.length === 0 ? null : result[0];
     } catch (error) {
         saveError(error);
-        return null;
+        return 'error';
     }
 }
 
@@ -657,7 +659,7 @@ export async function searchOnCollectionByName(collectionName, userId, name, ski
         return await collection.aggregate(aggregationPipeline).toArray();
     } catch (error) {
         saveError(error);
-        return [];
+        return 'error';
     }
 }
 
