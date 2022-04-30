@@ -15,6 +15,7 @@ import {
     fixLinkInfo,
     fixLinkInfoOrder,
     linkInfoRegex,
+    releaseRegex,
 } from "../linkInfoUtils";
 import save from "../save_changes_db";
 import {saveError} from "../../error/saveError";
@@ -205,6 +206,10 @@ function getFileData($, link, type) {
         let infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
             ? $($(link).parent().parent().parent().prev().children()[1]).children()
             : $(link).parent().parent().next().children();
+        let isOva = false;
+        if (type.includes('serial') && $($(link).parent().parent().parent().prev().children()[0]).text().includes('فصل : OVA')) {
+            isOva = true;
+        }
         let infoNodeChildren = $(infoNode[1]).children();
         let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
         let quality = purgeQualityText($(infoNode[0]).text()).replace(/\s+/g, '.').replace('زیرنویس.چسبیده', '');
@@ -239,6 +244,9 @@ function getFileData($, link, type) {
         let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
         info = fixLinkInfo(info, linkHref);
         info = fixLinkInfoOrder(info);
+        if (isOva && !info.match(/Special|OVA|NCED|NCOP/)) {
+            info = info.replace(new RegExp(`\\.(${releaseRegex.source})`), (res) => '.OVA' + res);
+        }
         return [info, size].filter(value => value).join(' - ');
     } catch (error) {
         saveError(error);

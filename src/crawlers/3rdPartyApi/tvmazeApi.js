@@ -197,11 +197,13 @@ function getNextEpisode(data) {
 
 function getEpisodes(data) {
     return data._embedded.episodes.map(value => {
+        let episodeDurations = value.runtime ? value.runtime + ' min' : '0 min';
+        episodeDurations = episodeDurations.replace('30 min', '24 min');
         return getEpisodeModel(
             value.name || '',
             value.airdate,
             value.airstamp,
-            value.runtime ? value.runtime + ' min' : '0 min',
+            episodeDurations,
             value.season,
             value.number,
             '0',

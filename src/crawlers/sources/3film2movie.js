@@ -73,6 +73,7 @@ async function search_title(link, i) {
                         })
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
+                    downloadLinks = fixSeasonNumber(downloadLinks);
 
                     let sourceData = {
                         sourceName,
@@ -300,9 +301,18 @@ function fixSpecialCases(info) {
     return info.replace(/.+\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'));
 }
 
+function fixSeasonNumber(downloadLinks) {
+    for (let i = 0; i < downloadLinks.length; i++) {
+        if (downloadLinks[i].info.includes('OVA') && downloadLinks[i].season === 1) {
+            downloadLinks[i].season = 0;
+        }
+    }
+    return downloadLinks;
+}
+
 function printLinksWithBadInfo(downloadLinks, type) {
     const film2movieLinkRegex = new RegExp([
-        /[-.](((S\d\d(\.)?)|(E\d\d-))?E\d\d([-E]+\d\d)?)/,
+        /(?<!(\.OVA))[-.](((S\d\d(\.)?)|(E\d\d-))?E\d\d([-E]+\d\d)?)/,
         /([-_.]\d\d\d\d?pl?)?/,
         /(\.x265(\.10bit)?)?/,
         /(\.Farsi\.Dubbed)?/,

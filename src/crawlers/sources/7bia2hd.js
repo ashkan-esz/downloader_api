@@ -216,11 +216,12 @@ function getFileData($, link, type) {
 function getFileData_serial($, link) {
     let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
     let linkHref = $(link).attr('href').split('ihttp')[0];
-    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let quality = $(infoNodeChildren[2]).text()
     quality = replacePersianNumbers(quality);
     quality = purgeQualityText(quality).replace(/\s/g, '.');
+    let hardSub = linkHref.match(/softsub|hardsub/gi);
+    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
 
     let size = '';
     if ($(link).parent()[0].name === 'div') {
@@ -242,13 +243,15 @@ function getFileData_serial($, link) {
 function getFileData_movie($, link) {
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
     let linkHref = $(link).attr('href').split('ihttp')[0];
-    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let qualityText = $(infoNodeChildren[1]).text();
     let sizeText = $(infoNodeChildren[2]).text();
     let encoderText = $(infoNodeChildren[3]).text();
     let quality = replacePersianNumbers(qualityText);
     quality = purgeQualityText(quality).replace(/\s+/g, '.');
+    let hardSub = linkHref.match(/softsub|hardsub/gi);
+    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+
     let size = purgeSizeText(sizeText);
     let encoder = purgeEncoderText(encoderText);
     if (sizeText.includes('انکودر') && !encoderText) {

@@ -255,7 +255,8 @@ function getFileData_movie($, link) {
     if (infoText.includes('دانلود پشت صحنه') || $(link).text().includes('دانلود پشت صحنه')) {
         return 'ignore';
     }
-    let hardSub = checkHardSub(linkHref) ? 'HardSub' : '';
+    let hardSub = linkHref.match(/softsub|hardsub/gi);
+    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
     let dubbed = checkDubbed(linkHref, infoText) ? 'dubbed' : '';
     let quality, encoder, size;
     if (infoText.includes('|')) {
@@ -375,7 +376,7 @@ function printLinksWithBadInfo(downloadLinks) {
         /(\.Summary)?/,
         /(\.Oscar(\.\d\d\d\d)?)?/,
         new RegExp(`(\\.(${releaseRegex.source}))?`),
-        /(\.(HardSub|dubbed))?/,
+        /(\.(HardSub|SoftSub|dubbed))?/,
         /(\.\s\(.+\))?/,
         /( - ((\d\d\d?MB)|(\d(\.\d\d?)?GB)))?$/,
     ].map(item => item.source).join(''));

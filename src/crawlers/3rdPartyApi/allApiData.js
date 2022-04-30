@@ -358,9 +358,14 @@ async function updateSeasonsField(db_data, sourceName, site_links, totalSeasons,
 
     if (seasonsUpdateFlag) {
         fields.seasons = db_data.seasons;
-        fields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
         fields.endYear = getEndYear(db_data.seasons, db_data.status, db_data.year);
     }
+
+    let newTotalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
+    if (db_data.totalDuration !== newTotalDuration) {
+        fields.totalDuration = newTotalDuration;
+    }
+
     if (nextEpisodeUpdateFlag) {
         fields.nextEpisode = db_data.nextEpisode;
     }

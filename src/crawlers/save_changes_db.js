@@ -134,6 +134,7 @@ async function searchOnCollection(titleObj, year, type) {
         genres: 1,
         rating: 1,
         duration: 1,
+        totalDuration: 1,
         totalSeasons: 1,
         latestData: 1,
         nextEpisode: 1,
@@ -189,7 +190,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         }
 
         if (type.includes('serial') && !apiData) {
-            let seasonsUpdateFlag = handleSiteSeasonEpisodeUpdate(db_data, sourceName, downloadLinks, true);
+            let seasonsUpdateFlag = handleSiteSeasonEpisodeUpdate(db_data, sourceName, downloadLinks);
             if (seasonsUpdateFlag) {
                 updateFields.seasons = db_data.seasons;
                 updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);

@@ -206,7 +206,7 @@ export function fixLinkInfo(info, linkHref) {
         }
     }
 
-    let ovaMatch = linkHref.match(/\.(((Special|OVA|NCED|NCOP)\.\d\d\d?)|(\d\d\d?\.(Special|OVA|NCED|NCOP)))\.\d\d\d\d?p/gi);
+    let ovaMatch = linkHref.match(/\.(((Special|OVA|NCED|NCOP)\.?E?\d\d\d?)|(E?\d\d\d?\.(Special|OVA|NCED|NCOP)))\.\d\d\d\d?p/gi);
     if (ovaMatch) {
         let special = ovaMatch.pop().match(/Special|OVA|NCED|NCOP/i).pop();
         info = info + '.' + special;
@@ -290,6 +290,11 @@ export function fixLinkInfoOrder(info) {
     info = info.replace(/\.(2020|(Cut\.)?Exclusive)/gi, '')
         .replace(/\d\d\d\d٫\d\d٫\d\d/, (res) => res.replace(/٫/g, '.').split('.').reverse().join('.')) //case: 2020٫11٫19
         .replace(/\d\d٫\d\d٫\d\d\d\d/, (res) => res.replace(/٫/g, '.')) //case: 28٫09٫2020
+        .replace(/(Censored\.)?(dubbed\.)?(Special|OVA|NCED|NCOP)/, (res) => {
+            let temp = res.split('.');
+            let special = temp.pop();
+            return [special, ...temp].join('.');
+        })
         .replace('10bit.6CH.10bit', '10bit.6CH')
         .replace('10bit.10bit', '10bit');
     return info;

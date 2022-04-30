@@ -24,7 +24,7 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
         seasonsUpdateFlag = result || seasonsUpdateFlag;
     }
 
-    let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons, titleExist);
+    let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons);
     seasonsUpdateFlag = missedEpisodeResult || seasonsUpdateFlag;
 
     if (seasonsUpdateFlag) {
@@ -42,11 +42,11 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
     };
 }
 
-export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, titleExist) {
+export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links) {
     let links_seasons = groupSerialLinks(site_links);
     let seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
 
-    let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons, titleExist);
+    let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons);
 
     if (seasonsUpdateFlag || missedEpisodeResult) {
         db_data.seasons = db_data.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
@@ -172,10 +172,9 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
     return updateFlag;
 }
 
-function handleMissedSeasonEpisode(db_seasons, lastSeasonsOnly = false) {
+function handleMissedSeasonEpisode(db_seasons) {
     let missedSeasonEpisodeFlag = false;
-    let startSeasonNumber = (lastSeasonsOnly && db_seasons.length > 2) ? db_seasons.length - 2 : 0;
-    for (let i = startSeasonNumber; i < db_seasons.length; i++) {
+    for (let i = 0; i < db_seasons.length; i++) {
         let seasonNumber = db_seasons[i].seasonNumber;
         let episodes = db_seasons[i].episodes;
         const maxEpisodeNumber = Math.max(...episodes.map(item => item.episodeNumber));

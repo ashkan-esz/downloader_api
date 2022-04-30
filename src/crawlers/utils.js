@@ -384,10 +384,13 @@ export function getSeasonEpisode(input) {
                 season = temp ? temp.replace('00', '1') : 1;
             }
         }
-        if (season === 0 && episode === 0) {
+        if (season <= 1 && episode === 0) {
             let ovaMatch = input.match(/(?<=\.)(Special|OVA|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p/i);
+            if (!ovaMatch) {
+                ovaMatch = input.match(/(?<=\.)(Special|OVA|NCED|NCOP)(E?)\d\d\d?\.\d\d\d\d?p/gi);
+            }
             if (ovaMatch) {
-                episode = ovaMatch.pop().split('.')[0];
+                episode = ovaMatch.pop().replace(/^(Special|OVA|NCED|NCOP)(E?)(\.?)/gi, '').split('.')[0];
             }
         }
         season = Number(season);

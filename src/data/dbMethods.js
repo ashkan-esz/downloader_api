@@ -18,10 +18,29 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
         };
         if (year) {
             searchObj.year = year;
-            let temp = titleObj.title.split('').map(item => item.trim() + '\\s?').join('').replace(/\\s\?$/, '');
-            searchObj['$or'].push({
-                title: new RegExp('^' + temp + '$')
-            });
+            try {
+                let temp = titleObj.title
+                    .split('').map(item => item.trim() + '\\s?').join('')
+                    .replace(/\*/g, '')
+                    .replace(/\\s\?$/, '');
+                searchObj['$or'].push({
+                    title: new RegExp('^' + temp + '$')
+                });
+
+                let temp2 = titleObj.title
+                    .split('')
+                    .map(item => {
+                        if (item === ' ') {
+                            item = ':?' + item;
+                        }
+                        return item;
+                    }).join('');
+                searchObj['$or'].push({
+                    alternateTitles: new RegExp('^' + temp2 + '$')
+                });
+            } catch (error2) {
+                saveError(error2);
+            }
         }
         return await collection.find(searchObj, {projection: dataConfig}).toArray();
     } catch (error) {

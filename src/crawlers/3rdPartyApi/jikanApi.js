@@ -127,7 +127,7 @@ export function getJikanApiFields(data) {
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
                 duration: (data.duration === "Unknown" || data.duration === "1 min per ep" || data.duration.match(/\d+ sec/g))
                     ? ''
-                    : utils.convertHourToMinute(data.duration.replace('per ep', '').trim()),
+                    : utils.convertHourToMinute(data.duration.replace('per ep', '').trim()).replace('23 min', '24 min'),
                 releaseDay: (data.broadcast === null || data.broadcast === 'Unknown') ? '' : data.broadcast.split(' ')[0].replace(/s$/g, '').toLowerCase(),
                 rated: data.rating === "None" ? '' : data.rating || '',
                 animeSource: data.source,
