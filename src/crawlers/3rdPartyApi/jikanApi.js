@@ -1,13 +1,13 @@
 import axios from "axios";
 import NodeCache from "node-cache";
-import * as dbMethods from "../../data/dbMethods";
-import * as cloudStorage from "../../data/cloudStorage";
-import * as utils from "../utils";
-import {addStaffAndCharacters} from "./personCharacter";
-import {dataLevelConfig, getMovieModel} from "../../models/movie";
+import * as dbMethods from "../../data/dbMethods.js";
+import * as cloudStorage from "../../data/cloudStorage.js";
+import * as utils from "../utils.js";
+import {addStaffAndCharacters} from "./personCharacter.js";
+import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
 import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 let isRunning = false;
 let callTime = 0;

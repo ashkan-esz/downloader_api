@@ -1,5 +1,5 @@
-import getCollection from './mongoDB';
-import {saveError} from "../error/saveError";
+import getCollection from './mongoDB.js';
+import {saveError} from "../error/saveError.js";
 
 
 // run this method to create collections and their indexes

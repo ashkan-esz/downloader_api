@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "../config/index.js";
 import {
     findUser,
     addUser,
@@ -10,16 +10,16 @@ import {
     removeAuthToken,
     removeAuthSession,
     removeAllAuthSession,
-} from "../data/usersDbMethods";
-import {userModel} from "../models/user";
+} from "../data/usersDbMethods.js";
+import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
-import agenda from "../agenda";
+import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
-import {addToBlackList} from "../api/middlewares/isAuth";
-import {saveError} from "../error/saveError";
+import {addToBlackList} from "../api/middlewares/isAuth.js";
+import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
-import {generateServiceResult} from "./serviceUtils";
+import {generateServiceResult} from "./serviceUtils.js";
 
 //todo : remove account
 //todo : forget password

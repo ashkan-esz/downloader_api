@@ -1,6 +1,6 @@
 import {validationResult} from 'express-validator';
 import {getClientIp} from 'request-ip';
-import {usersServices} from '../services';
+import {usersServices} from '../services/index.js';
 
 
 export async function signup(req, res) {

@@ -1,6 +1,6 @@
-import config from "../../config";
-import {search_in_title_page, wrapper_module} from "../searchTools";
-import {getTitleAndYear, validateYear, getType, removeDuplicateLinks} from "../utils";
+import config from "../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../searchTools.js";
+import {getTitleAndYear, validateYear, getType, removeDuplicateLinks} from "../utils.js";
 import {
     purgeEncoderText,
     purgeSizeText,
@@ -10,10 +10,10 @@ import {
     linkInfoRegex,
     releaseRegex,
     encodersRegex
-} from "../linkInfoUtils";
-import save from "../save_changes_db";
+} from "../linkInfoUtils.js";
+import save from "../save_changes_db.js";
 import * as persianRex from "persian-rex";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 const sourceName = "salamdl";
 const needHeadlessBrowser = false;

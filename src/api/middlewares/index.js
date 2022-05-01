@@ -1,7 +1,7 @@
-import moviesCache from './moviesCache';
-import * as auth from './isAuth';
-import * as validation from './validation';
-import attachCurrentUser from './attachCurrentUser';
+import moviesCache from './moviesCache.js';
+import * as auth from './isAuth.js';
+import * as validation from './validation.js';
+import attachCurrentUser from './attachCurrentUser.js';
 import rateLimit from './rateLimit.js';
 
 export default {

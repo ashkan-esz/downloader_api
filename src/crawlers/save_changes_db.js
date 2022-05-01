@@ -1,14 +1,14 @@
-import {searchTitleDB, insertToDB, updateByIdDB} from "../data/dbMethods";
-import {deleteTrailerFromS3} from "../data/cloudStorage";
-import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData";
-import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter";
-import {handleSiteSeasonEpisodeUpdate, getTotalDuration} from "./seasonEpisode";
-import {handleSubUpdates} from "./subUpdates";
-import {getUploadedAnimeListSubtitles, handleSubtitleUpdate} from "./subtitle";
-import {getMovieModel} from "../models/movie";
-import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi";
-import {groupMovieLinks, updateMoviesGroupedLinks} from "./link";
-import {saveError} from "../error/saveError";
+import {searchTitleDB, insertToDB, updateByIdDB} from "../data/dbMethods.js";
+import {deleteTrailerFromS3} from "../data/cloudStorage.js";
+import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
+import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter.js";
+import {handleSiteSeasonEpisodeUpdate, getTotalDuration} from "./seasonEpisode.js";
+import {handleSubUpdates} from "./subUpdates.js";
+import {getUploadedAnimeListSubtitles, handleSubtitleUpdate} from "./subtitle.js";
+import {getMovieModel} from "../models/movie.js";
+import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
+import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
+import {saveError} from "../error/saveError.js";
 
 
 export default async function save(title, type, year, sourceData) {
@@ -258,7 +258,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
         }
 
-        let {_handleCastUpdate} = await import("./crawler");
+        let {_handleCastUpdate} = await import("./crawler.js");
         if (apiData && _handleCastUpdate) {
             let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
             if (castAndCharacters) {

@@ -1,7 +1,7 @@
 import {wordsToNumbers} from "words-to-numbers";
-import {getDecodedLink} from "./utils";
-import {getEpisodeModel_placeholder} from "../models/episode";
-import {saveError} from "../error/saveError";
+import {getDecodedLink} from "./utils.js";
+import {getEpisodeModel_placeholder} from "../models/episode.js";
+import {saveError} from "../error/saveError.js";
 
 
 export function check_download_link(original_link, matchCases, type) {

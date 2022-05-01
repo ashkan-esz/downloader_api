@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import {updateSourcesObjDB} from "../data/dbMethods";
-import {getSourcesArray} from "./sourcesArray";
-import {getPageData} from "./remoteHeadlessBrowser";
-import {getDatesBetween} from "./utils";
-import {saveError} from "../error/saveError";
+import {updateSourcesObjDB} from "../data/dbMethods.js";
+import {getSourcesArray} from "./sourcesArray.js";
+import {getPageData} from "./remoteHeadlessBrowser.js";
+import {getDatesBetween} from "./utils.js";
+import {saveError} from "../error/saveError.js";
 
 
 export async function domainChangeHandler(sourcesObj) {
@@ -37,6 +37,7 @@ async function checkSourcesUrl(sourcesUrls) {
             let responseUrl;
             try {
                 let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
+                //todo : use axios on remote browser error
                 let pageData = await getPageData(homePageLink);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;

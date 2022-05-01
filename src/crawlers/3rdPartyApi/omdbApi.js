@@ -1,9 +1,9 @@
-import config from "../../config";
+import config from "../../config/index.js";
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues, getDatesBetween} from "../utils";
-import {getEpisodeModel} from "../../models/episode";
+import {replaceSpecialCharacters, purgeObjFalsyValues, getDatesBetween} from "../utils.js";
+import {getEpisodeModel} from "../../models/episode.js";
 import * as Sentry from "@sentry/node";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 const apiKeyArray = config.omdbApiKeys;
 let apiKeyCounter = -1;

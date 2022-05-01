@@ -1,9 +1,11 @@
-import config from "../config";
+import config from "../config/index.js";
 import axios from "axios";
-import {getDecodedLink} from "./utils"
-import {saveError} from "../error/saveError";
+import {getDecodedLink} from "./utils.js"
+import {saveError} from "../error/saveError.js";
 
 let apiCallCount = 0;
+
+//todo : use axios on remote browser error
 
 export async function getPageData(url, retryCount = 0) {
     try {

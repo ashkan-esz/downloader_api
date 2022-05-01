@@ -1,4 +1,4 @@
-import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils";
+import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils.js";
 
 export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPersonID, country, birthday, deathday, originalImages, movieID, movieName, moviePoster, positions, characterName, characterRole) {
     return {

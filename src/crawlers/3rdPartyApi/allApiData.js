@@ -1,12 +1,12 @@
 import axios from "axios";
-import {getOMDBApiData, getOMDBApiFields} from "./omdbApi";
-import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi";
-import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi";
-import {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} from "../../data/cloudStorage";
-import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} from "../seasonEpisode";
-import {sortPosters, sortTrailers} from "../subUpdates";
-import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils";
-import {saveError} from "../../error/saveError";
+import {getOMDBApiData, getOMDBApiFields} from "./omdbApi.js";
+import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi.js";
+import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi.js";
+import {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} from "../../data/cloudStorage.js";
+import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} from "../seasonEpisode.js";
+import {sortPosters, sortTrailers} from "../subUpdates.js";
+import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
+import {saveError} from "../../error/saveError.js";
 
 
 export async function addApiData(titleModel, site_links, sourceName) {

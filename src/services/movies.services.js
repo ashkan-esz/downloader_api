@@ -1,8 +1,8 @@
-import * as dbMethods from '../data/dbMethods';
-import * as likeDbMethods from '../data/likeDbMethods';
-import {dataLevelConfig} from "../models/movie";
-import {generateServiceResult} from "./serviceUtils";
-import {setCache} from "../api/middlewares/moviesCache";
+import * as dbMethods from '../data/dbMethods.js';
+import * as likeDbMethods from '../data/likeDbMethods.js';
+import {dataLevelConfig} from "../models/movie.js";
+import {generateServiceResult} from "./serviceUtils.js";
+import {setCache} from "../api/middlewares/moviesCache.js";
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);

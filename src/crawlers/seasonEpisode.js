@@ -1,6 +1,6 @@
-import {get_OMDB_EpisodesData} from "./3rdPartyApi/omdbApi";
-import {getEpisodeModel_placeholder} from "../models/episode";
-import {groupSerialLinks, updateSerialLinks} from "./link";
+import {get_OMDB_EpisodesData} from "./3rdPartyApi/omdbApi.js";
+import {getEpisodeModel_placeholder} from "../models/episode.js";
+import {groupSerialLinks, updateSerialLinks} from "./link.js";
 
 export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
     let links_seasons = groupSerialLinks(site_links);

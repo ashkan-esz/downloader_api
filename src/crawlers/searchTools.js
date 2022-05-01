@@ -1,12 +1,12 @@
-import config from "../config";
+import config from "../config/index.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as cheerio from 'cheerio';
 import {default as pQueue} from "p-queue";
-import {check_download_link, getMatchCases, check_format} from "./link";
-import {getPageData} from "./remoteHeadlessBrowser";
-import {getDecodedLink, getSeasonEpisode} from "./utils";
-import {saveError} from "../error/saveError";
+import {check_download_link, getMatchCases, check_format} from "./link.js";
+import {getPageData} from "./remoteHeadlessBrowser.js";
+import {getDecodedLink, getSeasonEpisode} from "./utils.js";
+import {saveError} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 
 axiosRetry(axios, {

@@ -1,7 +1,7 @@
-import getCollection from './mongoDB';
+import getCollection from './mongoDB.js';
 import mongodb from 'mongodb';
 import {getNewDeviceSession} from "../models/user.js";
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 
 export async function findUser(username, email, projection) {

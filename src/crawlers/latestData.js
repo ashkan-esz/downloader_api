@@ -1,4 +1,6 @@
-import {getSeasonEpisode, checkBetterQuality, checkHardSub, checkDubbed} from "./utils";
+import {getSeasonEpisode, checkBetterQuality, checkHardSub, checkDubbed} from "./utils.js";
+
+//todo handle link info contain Episode(17-18)
 
 export function handleLatestDataUpdate(db_data, latestData, type) {
     let changed = false;
@@ -64,8 +66,10 @@ export function getLatestData(site_links, subtitles, type) {
     let latestSeason = type.includes('movie') ? 0 : 1;
     let latestEpisode = type.includes('movie') ? 0 : 1;
     let latestQuality = site_links.length > 0 ? site_links[0].info : '';
+    //todo : normalize hardSub/dubbed between movies and serials
     let hardSub = type.includes('movie') ? false : '';
     let dubbed = type.includes('movie') ? false : '';
+    //todo : fix sub to more like hardSub
     let sub = type.includes('movie') ? subtitles.length > 0 : 0;
     let prevStates = [1, 1, '', '', ''];
 

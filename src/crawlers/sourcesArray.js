@@ -1,10 +1,10 @@
-import digimoviez from "./sources/1digimoviez";
-import film2movie from "./sources/3film2movie";
-import salamdl from "./sources/4salamdl";
-import avamovie from "./sources/5avamovie";
-import bia2hd from "./sources/7bia2hd";
-import golchindl from "./sources/8golchindl";
-import bia2anime from "./sources/10bia2anime";
+import digimoviez from "./sources/1digimoviez.js";
+import film2movie from "./sources/3film2movie.js";
+import salamdl from "./sources/4salamdl.js";
+import avamovie from "./sources/5avamovie.js";
+import bia2hd from "./sources/7bia2hd.js";
+import golchindl from "./sources/8golchindl.js";
+import bia2anime from "./sources/10bia2anime.js";
 
 export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
     let pageCounterTime = new Date((pageCounter_time || sourcesObj.pageCounter_time));

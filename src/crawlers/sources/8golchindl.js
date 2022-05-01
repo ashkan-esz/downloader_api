@@ -1,5 +1,5 @@
-import config from "../../config";
-import {search_in_title_page, wrapper_module} from "../searchTools";
+import config from "../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     getTitleAndYear,
     validateYear,
@@ -7,7 +7,7 @@ import {
     checkDubbed,
     checkHardSub,
     removeDuplicateLinks
-} from "../utils";
+} from "../utils.js";
 import {
     purgeEncoderText,
     purgeSizeText,
@@ -16,10 +16,10 @@ import {
     fixLinkInfoOrder,
     linkInfoRegex,
     releaseRegex
-} from "../linkInfoUtils";
+} from "../linkInfoUtils.js";
 import * as persianRex from "persian-rex";
-import save from "../save_changes_db";
-import {saveError} from "../../error/saveError";
+import save from "../save_changes_db.js";
+import {saveError} from "../../error/saveError.js";
 
 const sourceName = "golchindl";
 const needHeadlessBrowser = false;

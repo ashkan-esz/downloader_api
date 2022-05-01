@@ -1,10 +1,10 @@
-import {getDatesBetween} from "./utils";
-import {getSourcesObjDB} from "../data/dbMethods";
-import {getSourcesArray} from "./sourcesArray";
-import {domainChangeHandler} from "./domainChangeHandler";
+import {getDatesBetween} from "./utils.js";
+import {getSourcesObjDB} from "../data/dbMethods.js";
+import {getSourcesArray} from "./sourcesArray.js";
+import {domainChangeHandler} from "./domainChangeHandler.js";
 import * as Sentry from "@sentry/node";
-import {saveError} from "../error/saveError";
-import {flushCachedData} from "../api/middlewares/moviesCache";
+import {saveError} from "../error/saveError.js";
+import {flushCachedData} from "../api/middlewares/moviesCache.js";
 
 export let _handleCastUpdate = true;
 let isCrawling = false;
@@ -29,6 +29,7 @@ export async function crawler(sourceName, crawlMode = 0, {
             Sentry.captureMessage('crawling cancelled : sourcesObj is null');
             return 'crawling cancelled : sourcesObj is null';
         }
+        //todo : check source object exist in 'sources' collection
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
 
         if (!handleDomainChangeOnly) {
@@ -45,6 +46,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         }
 
         if (handleDomainChangeOnly || handleDomainChange) {
+            //todo : fix bug with mode=2 override
             await domainChangeHandler(sourcesObj);
         }
 

@@ -1,10 +1,10 @@
-import config from "../config";
-import {resetMonthLikeAndViewDB} from "../data/dbMethods";
+import config from "../config/index.js";
+import {resetMonthLikeAndViewDB} from "../data/dbMethods.js";
 import Agenda from "agenda";
-import {crawler} from "../crawlers/crawler";
-import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi";
-import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi";
-import {saveError} from "../error/saveError";
+import {crawler} from "../crawlers/crawler.js";
+import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
+import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi.js";
+import {saveError} from "../error/saveError.js";
 
 let agenda = new Agenda({
     db: {address: config.databaseURL, collection: 'agendaJobs'},
@@ -31,7 +31,7 @@ export async function startAgenda() {
         });
 
         for (let i = 0; i < jobTypes.length; i++) {
-            let job = await import("../jobs/" + jobTypes[i]);
+            let job = await import("../jobs/" + jobTypes[i] + '.js');
             job.default(agenda);
         }
 

@@ -1,5 +1,5 @@
-import * as moviesServices from './movies.services';
-import * as usersServices from './users.services';
+import * as moviesServices from './movies.services.js';
+import * as usersServices from './users.services.js';
 
 export {
     moviesServices,

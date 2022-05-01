@@ -1,7 +1,7 @@
 import mongodb from "mongodb";
-import getCollection, {getSession} from "./mongoDB";
-import * as dbMethods from "./dbMethods";
-import {saveError} from "../error/saveError";
+import getCollection, {getSession} from "./mongoDB.js";
+import * as dbMethods from "./dbMethods.js";
+import {saveError} from "../error/saveError.js";
 
 
 export async function checkMovieLikedOrDisliked(userId, collectionName, id, opts = {}) {

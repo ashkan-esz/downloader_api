@@ -1,6 +1,6 @@
 import axios from "axios";
-import {uploadSubtitleToS3ByURl} from "../data/cloudStorage";
-import {saveError} from "../error/saveError";
+import {uploadSubtitleToS3ByURl} from "../data/cloudStorage.js";
+import {saveError} from "../error/saveError.js";
 
 
 export function handleSubtitleUpdate(prevSubtitles, uploadedSubtitles) {

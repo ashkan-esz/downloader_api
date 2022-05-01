@@ -1,6 +1,6 @@
-import moviesRouters from './movies.routers';
-import usersRouters from './users.routers';
-import crawlersRouters from './crawling';
+import moviesRouters from './movies.routers.js';
+import usersRouters from './users.routers.js';
+import crawlersRouters from './crawling.js';
 
 export default {
     moviesRouters,

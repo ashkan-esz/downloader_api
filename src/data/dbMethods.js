@@ -1,6 +1,6 @@
-import getCollection from './mongoDB';
+import getCollection from './mongoDB.js';
 import mongodb from 'mongodb';
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 
 export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
@@ -21,7 +21,7 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
             try {
                 let temp = titleObj.title
                     .split('').map(item => item.trim() + '\\s?').join('')
-                    .replace(/\*/g, '')
+                    .replace(/\*/g, '\\*')
                     .replace(/\\s\?$/, '');
                 searchObj['$or'].push({
                     title: new RegExp('^' + temp + '$')
@@ -34,7 +34,9 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                             item = ':?' + item;
                         }
                         return item;
-                    }).join('');
+                    })
+                    .join('')
+                    .replace(/\*/g, '\\*');
                 searchObj['$or'].push({
                     alternateTitles: new RegExp('^' + temp2 + '$')
                 });

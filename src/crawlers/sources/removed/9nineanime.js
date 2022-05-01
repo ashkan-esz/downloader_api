@@ -1,5 +1,5 @@
-import config from "../../../config";
-import {search_in_title_page, wrapper_module} from "../../searchTools";
+import config from "../../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../../searchTools.js";
 import {
     getTitleAndYear,
     getType,
@@ -7,11 +7,11 @@ import {
     replacePersianNumbers,
     persianWordToNumber,
     getDecodedLink,
-} from "../../utils";
-import {purgeSizeText, purgeQualityText} from "../../linkInfoUtils";
-import save from "../../save_changes_db";
+} from "../../utils.js";
+import {purgeSizeText, purgeQualityText} from "../../linkInfoUtils.js";
+import save from "../../save_changes_db.js";
 import * as persianRex from "persian-rex";
-import {saveError} from "../../../error/saveError";
+import {saveError} from "../../../error/saveError.js";
 
 const sourceName = "nineanime";
 const needHeadlessBrowser = false;

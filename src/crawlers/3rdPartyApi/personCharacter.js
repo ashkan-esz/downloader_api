@@ -1,13 +1,13 @@
-import * as dbMethods from "../../data/dbMethods";
-import * as cloudStorage from "../../data/cloudStorage";
-import * as utils from "../utils";
-import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "./jikanApi";
-import {getPersonModel} from "../../models/person";
-import {getCharacterModel} from "../../models/character";
+import * as dbMethods from "../../data/dbMethods.js";
+import * as cloudStorage from "../../data/cloudStorage.js";
+import * as utils from "../utils.js";
+import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "./jikanApi.js";
+import {getPersonModel} from "../../models/person.js";
+import {getCharacterModel} from "../../models/character.js";
 import isEqual from 'lodash.isequal';
 import isEmpty from 'lodash.isempty';
 import {default as pQueue} from "p-queue";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 const maxStaffOrCharacterSize = 30;
 

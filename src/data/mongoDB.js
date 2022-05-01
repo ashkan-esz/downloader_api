@@ -1,6 +1,6 @@
-import config from "../config";
+import config from "../config/index.js";
 import mongodb from "mongodb";
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 let connection = null;
 let database = null;

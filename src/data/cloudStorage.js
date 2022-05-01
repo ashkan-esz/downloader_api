@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "../config/index.js";
 import axios from "axios";
 import {AbortController} from "@aws-sdk/abort-controller";
 import {
@@ -9,7 +9,7 @@ import {
     ListObjectsCommand
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 //bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
 

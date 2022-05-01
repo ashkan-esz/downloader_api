@@ -1,5 +1,5 @@
-import config from "../../config";
-import {search_in_title_page, wrapper_module} from "../searchTools";
+import config from "../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     purgeTitle,
     getTitleAndYear,
@@ -7,7 +7,7 @@ import {
     removeDuplicateLinks,
     checkDubbed,
     getYear
-} from "../utils";
+} from "../utils.js";
 import {
     purgeEncoderText,
     purgeSizeText,
@@ -16,9 +16,9 @@ import {
     fixLinkInfoOrder,
     linkInfoRegex,
     releaseRegex,
-} from "../linkInfoUtils";
-import save from "../save_changes_db";
-import {saveError} from "../../error/saveError";
+} from "../linkInfoUtils.js";
+import save from "../save_changes_db.js";
+import {saveError} from "../../error/saveError.js";
 
 const sourceName = "digimoviez";
 const needHeadlessBrowser = true;

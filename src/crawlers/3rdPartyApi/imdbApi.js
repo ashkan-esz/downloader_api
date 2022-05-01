@@ -1,12 +1,12 @@
-import config from "../../config";
+import config from "../../config/index.js";
 import axios from "axios";
-import * as dbMethods from "../../data/dbMethods";
-import * as utils from "../utils";
-import * as cloudStorage from "../../data/cloudStorage";
-import {getMovieModel} from "../../models/movie";
+import * as dbMethods from "../../data/dbMethods.js";
+import * as utils from "../utils.js";
+import * as cloudStorage from "../../data/cloudStorage.js";
+import {getMovieModel} from "../../models/movie.js";
 import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 let imdbApiKey = {apikey: '', reachedMax: true};
 

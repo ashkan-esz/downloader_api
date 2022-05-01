@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "../config/index.js";
 import * as Sentry from "@sentry/node";
 
 export async function saveError(error) {

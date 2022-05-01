@@ -1,5 +1,5 @@
-import config from "../../config";
-import {search_in_title_page, wrapper_module} from "../searchTools";
+import config from "../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     checkDubbed,
     getDecodedLink,
@@ -9,10 +9,10 @@ import {
     replacePersianNumbers,
     sortLinks,
     validateYear,
-} from "../utils";
-import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils";
-import save from "../save_changes_db";
-import {saveError} from "../../error/saveError";
+} from "../utils.js";
+import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
+import save from "../save_changes_db.js";
+import {saveError} from "../../error/saveError.js";
 
 const sourceName = "bia2anime";
 const needHeadlessBrowser = false;

@@ -1,4 +1,4 @@
-import config from "./config";
+import config from "./config/index.js";
 import * as Sentry from "@sentry/node";
 import Tracing from "@sentry/tracing";
 import express from "express";
@@ -8,11 +8,11 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-import {loadAgenda} from './loaders';
+import {loadAgenda} from './loaders/index.js';
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
-import routes from './api/routes';
+import routes from './api/routes/index.js';
 //--------------middleware--------------
 Sentry.init({
     dsn: config.sentryDns,

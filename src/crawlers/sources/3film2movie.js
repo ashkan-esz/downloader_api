@@ -1,5 +1,5 @@
-import config from "../../config";
-import {search_in_title_page, wrapper_module} from "../searchTools";
+import config from "../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     getTitleAndYear,
     validateYear,
@@ -9,10 +9,10 @@ import {
     checkDubbed,
     getDecodedLink,
     removeDuplicateLinks
-} from "../utils";
-import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils";
-import save from "../save_changes_db";
-import {saveError} from "../../error/saveError";
+} from "../utils.js";
+import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
+import save from "../save_changes_db.js";
+import {saveError} from "../../error/saveError.js";
 
 const sourceName = "film2movie";
 const needHeadlessBrowser = true;

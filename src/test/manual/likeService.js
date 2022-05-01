@@ -3,14 +3,14 @@ import {
     searchCharacterById,
     searchMovieById,
     searchStaffById
-} from "../../services/movies.services";
+} from "../../services/movies.services.js";
 import {
     handleLikeOrDislikeTransaction,
     handleRemoveLikeOrDislikeTransaction,
     removeUserLikeBuckets
-} from "../../data/likeDbMethods";
-import {addUser} from "../../data/usersDbMethods";
-import {insertToDB, removeByIdDB} from "../../data/dbMethods";
+} from "../../data/likeDbMethods.js";
+import {addUser} from "../../data/usersDbMethods.js";
+import {insertToDB, removeByIdDB} from "../../data/dbMethods.js";
 
 
 export async function testLikeService() {

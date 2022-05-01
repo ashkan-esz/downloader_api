@@ -1,8 +1,8 @@
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils";
-import {getEpisodeModel} from "../../models/episode";
+import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils.js";
+import {getEpisodeModel} from "../../models/episode.js";
 import * as Sentry from "@sentry/node";
-import {saveError} from "../../error/saveError";
+import {saveError} from "../../error/saveError.js";
 
 
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, premiered, type, canReTry = true) {

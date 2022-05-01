@@ -1,4 +1,4 @@
-import {moviesServices} from '../services';
+import {moviesServices} from '../services/index.js';
 
 export async function getNews(req, res) {
     let userId = req.jwtUserData.userId;

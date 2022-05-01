@@ -1,5 +1,5 @@
 import * as persianRex from "persian-rex";
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 
 export function purgeTitle(title, type, keepLastNumber = true) {

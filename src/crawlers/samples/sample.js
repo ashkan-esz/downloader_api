@@ -1,6 +1,6 @@
 import fs from 'fs';
-import {getTitleAndYear} from "../utils";
-import {saveError} from "../../error/saveError";
+import {getTitleAndYear} from "../utils.js";
+import {saveError} from "../../error/saveError.js";
 import * as Path from "path";
 import {fileURLToPath} from "url";
 

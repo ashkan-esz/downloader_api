@@ -1,8 +1,8 @@
 import axios from "axios";
-import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray";
-import {handleLatestDataUpdate} from "./latestData";
-import {removeDuplicateLinks} from "./utils";
-import {saveError} from "../error/saveError";
+import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
+import {handleLatestDataUpdate} from "./latestData.js";
+import {removeDuplicateLinks} from "./utils.js";
+import {saveError} from "../error/saveError.js";
 
 export async function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName) {
     try {

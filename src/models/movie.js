@@ -1,4 +1,4 @@
-import {getLatestData} from "../crawlers/latestData";
+import {getLatestData} from "../crawlers/latestData.js";
 
 export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
     let {season, episode, quality, hardSub, dubbed, sub} = getLatestData(siteDownloadLinks, subtitles, type);

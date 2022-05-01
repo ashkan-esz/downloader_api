@@ -1,5 +1,4 @@
 import {defaultProfileImage} from "../data/cloudStorage.js";
-import {} from "../crawlers/utils";
 
 
 export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId) {

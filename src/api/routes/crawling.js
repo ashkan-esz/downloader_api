@@ -1,6 +1,6 @@
-import config from "../../config";
+import config from "../../config/index.js";
 import {Router} from "express";
-import {crawler} from "../../crawlers/crawler";
+import {crawler} from "../../crawlers/crawler.js";
 
 const router = Router();
 

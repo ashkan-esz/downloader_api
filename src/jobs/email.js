@@ -1,6 +1,6 @@
-import config from "../config";
+import config from "../config/index.js";
 import nodemailer from "nodemailer";
-import {saveError} from "../error/saveError";
+import {saveError} from "../error/saveError.js";
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
