@@ -34,7 +34,7 @@ async function search_title(link, i) {
             }
             if (
                 title.includes('تلویزیونی ماه عسل') ||
-                title.includes('ایرانی') ||
+                title.includes('ایران') ||
                 title.includes('دانلود سریال پهلوانان') ||
                 title.includes('دانلود سریال شکرستان') ||
                 title.includes('کلاه قرمزی')

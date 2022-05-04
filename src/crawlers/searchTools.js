@@ -184,6 +184,11 @@ async function getLinks(url, sourceLinkData = null) {
                     cookies = pageData.cookies;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
+                } else {
+                    let response = await axios.get(url);
+                    responseUrl = response.request.res.responseUrl;
+                    $ = cheerio.load(response.data);
+                    links = $('a');
                 }
             } catch (error) {
                 let cacheResult = await getFromGoogleCache(url);

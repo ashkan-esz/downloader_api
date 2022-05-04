@@ -181,8 +181,10 @@ function getPoster($) {
             let parent = $img[i].parent;
             if (parent.name === 'a' && $(parent).hasClass('thumb')) {
                 let href = $img[i].attribs['data-src'];
-                if (href.includes('uploads')) {
-                    return href;
+                if (href.includes('uploads') || href.includes('cdn.')) {
+                    return href
+                        .replace(/.+(?=https:)/, '')
+                        .replace(/-\d\d\dx\d\d\d(?=(\.jpg))/, '');
                 }
             }
         }

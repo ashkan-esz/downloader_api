@@ -1,3 +1,4 @@
+import axios from "axios";
 import * as Sentry from "@sentry/node";
 import {updateSourcesObjDB} from "../data/dbMethods.js";
 import {getSourcesArray} from "./sourcesArray.js";
@@ -37,10 +38,12 @@ async function checkSourcesUrl(sourcesUrls) {
             let responseUrl;
             try {
                 let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
-                //todo : use axios on remote browser error
                 let pageData = await getPageData(homePageLink);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
+                } else {
+                    let response = await axios.get(homePageLink);
+                    responseUrl = response.request.res.responseUrl;
                 }
                 if (!responseUrl) {
                     continue;

@@ -18,10 +18,15 @@ export default {
         secretAccessKey: process.env.CLOUAD_STORAGE_SECRET_ACCESS_KEY,
         websiteEndPoint: process.env.CLOUAD_STORAGE_WEBSITE_ENDPOINT,
     },
-    remoteBrowser: {
+    remoteBrowser: [{
         endpoint: process.env.REMOTE_BROWSER_ENDPOINT,
         password: process.env.REMOTE_BROWSER_PASSWORD,
-    },
+        tabsCount: Number(process.env.REMOTE_BROWSER_TABS_COUNT) || 3,
+    }, {
+        endpoint: process.env.REMOTE_BROWSER_ENDPOINT2,
+        password: process.env.REMOTE_BROWSER_PASSWORD2,
+        tabsCount: Number(process.env.REMOTE_BROWSER_TABS_COUNT2) || 3,
+    }].filter(item => item.endpoint && item.password),
     email: {
         username: process.env.EMAIL_USERNAME,
         password: process.env.EMAIL_PASSWORD,
