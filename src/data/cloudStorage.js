@@ -9,6 +9,7 @@ import {
     ListObjectsCommand
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
+import sharp from "sharp";
 import {saveError} from "../error/saveError.js";
 
 //bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
@@ -150,6 +151,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
                 return {
                     url: s3Poster,
                     originalUrl: "",
+                    originalSize: 0,
                     size: await getFileSize(s3Poster),
                 };
             }
@@ -161,11 +163,30 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
+        let body = response.data;
+
+        // reduce image size if size > 2MB
+        if (response.data.length > 2 * 1024 * 1024) {
+            let sharpQuality = (response.data.length > 10 * 1024 * 1024) ? 50 : 70;
+            let temp = await sharp(response.data).jpeg({quality: sharpQuality}).toBuffer();
+            let counter = 0;
+            while ((temp.length / (1024 * 1024)) > 2 && counter < 3) {
+                counter++;
+                if (temp.length > 3 * 1024 * 1024) {
+                    sharpQuality -= 25;
+                } else {
+                    sharpQuality -= 15;
+                }
+                temp = await sharp(response.data).jpeg({quality: sharpQuality}).toBuffer();
+            }
+            body = temp;
+        }
+
         const params = {
             ContentType: response.headers["content-type"],
-            ContentLength: response.data.length.toString(),
+            ContentLength: body.length.toString(),
             Bucket: 'poster',
-            Body: response.data,
+            Body: body,
             Key: fileName,
             ACL: 'public-read',
         };
@@ -174,7 +195,8 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         return {
             url: fileUrl,
             originalUrl: originalUrl,
-            size: Number(response.data.length.toString()),
+            originalSize: Number(response.data.length),
+            size: Number(body.length),
         };
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&

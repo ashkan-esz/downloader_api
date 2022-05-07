@@ -17,7 +17,7 @@ export async function addApiData(titleModel, site_links, sourceName) {
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
             if (s3poster.originalUrl) {
-                titleModel.posters[0].size = s3poster.size;
+                titleModel.posters[0].size = s3poster.originalSize || s3poster.size;
             }
             titleModel.posters.push({
                 url: s3poster.url,
@@ -185,12 +185,18 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
 async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter = 0) {
     try {
         //replace low quality poster of myAnimeList
-        if (newPosterUrl && prevS3Poster.originalUrl.includes('cdn.myanimelist.net')) {
+        if (!newPosterUrl) {
+            return false;
+        }
+        if (prevS3Poster.originalUrl.includes('cdn.myanimelist.net')) {
             return true;
         }
-        let prevS3SourceName = prevS3Poster.originalUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        let prevS3SourceName = prevS3Poster.originalUrl
+            .replace(/https:|http:|\/\/|www\./g, '')
+            .split('.')[0]
+            .replace(/\d+/g, '');
         let newSourceName = newPosterUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
-        if (!newPosterUrl || prevS3SourceName === newSourceName || prevS3Poster.size > 100 * 1024) {
+        if (prevS3SourceName === newSourceName || prevS3Poster.size > 300 * 1024) {
             return false;
         }
 
@@ -206,7 +212,7 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
         }
         if (newPosterSize > 0) {
             let diff = ((newPosterSize - prevS3Poster.size) / prevS3Poster.size) * 100;
-            if (diff > 25 && newPosterSize < 500 * 1024) {
+            if (diff > 25 && newPosterSize < 1.5 * 1024 * 1024) { //1.5 MB
                 return true;
             }
         }

@@ -189,6 +189,7 @@ dataLevel = {
         poster_s3: null || {
             url: String,
             originalUrl: String,
+            originalSize: Int,
             size: Int,
         },
         trailer_s3: null || {
