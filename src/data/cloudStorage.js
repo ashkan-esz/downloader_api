@@ -2,14 +2,15 @@ import config from "../config/index.js";
 import axios from "axios";
 import {AbortController} from "@aws-sdk/abort-controller";
 import {
-    S3Client,
-    PutObjectCommand,
-    HeadObjectCommand,
     DeleteObjectCommand,
-    ListObjectsCommand
+    HeadObjectCommand,
+    ListObjectsCommand,
+    PutObjectCommand,
+    S3Client
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
 import sharp from "sharp";
+import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./dbMethods.js";
 import {saveError} from "../error/saveError.js";
 
 //bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
@@ -32,6 +33,8 @@ const s3 = new S3Client({
 
 export const defaultProfileImage = `https://serverstatic.${config.cloudStorage.websiteEndPoint}/defaultProfile.png`;
 
+export const bucketNames = ['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer'];
+
 export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
@@ -47,17 +50,19 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
                 };
             }
         }
+        let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
+        let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
         let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
-        let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
-        let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let dataBuffer = await compressImage(response.data);
+
         const params = {
             ContentType: response.headers["content-type"],
-            ContentLength: response.data.length.toString(),
+            ContentLength: dataBuffer.length.toString(),
             Bucket: 'cast',
-            Body: response.data,
+            Body: dataBuffer,
             Key: fileName,
             ACL: 'public-read',
         };
@@ -66,7 +71,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         return {
             url: fileUrl,
             originalUrl: originalUrl,
-            size: Number(response.data.length.toString()),
+            size: Number(dataBuffer.length),
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -122,7 +127,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         return {
             url: `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`,
             originalUrl: originalUrl,
-            size: Number(response.data.length.toString()),
+            size: Number(response.data.length),
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -163,30 +168,13 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
-        let body = response.data;
-
-        // reduce image size if size > 2MB
-        if (response.data.length > 2 * 1024 * 1024) {
-            let sharpQuality = (response.data.length > 10 * 1024 * 1024) ? 50 : 70;
-            let temp = await sharp(response.data).jpeg({quality: sharpQuality}).toBuffer();
-            let counter = 0;
-            while ((temp.length / (1024 * 1024)) > 2 && counter < 3) {
-                counter++;
-                if (temp.length > 3 * 1024 * 1024) {
-                    sharpQuality -= 25;
-                } else {
-                    sharpQuality -= 15;
-                }
-                temp = await sharp(response.data).jpeg({quality: sharpQuality}).toBuffer();
-            }
-            body = temp;
-        }
+        let dataBuffer = await compressImage(response.data);
 
         const params = {
             ContentType: response.headers["content-type"],
-            ContentLength: body.length.toString(),
+            ContentLength: dataBuffer.length.toString(),
             Bucket: 'poster',
-            Body: body,
+            Body: dataBuffer,
             Key: fileName,
             ACL: 'public-read',
         };
@@ -196,7 +184,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             url: fileUrl,
             originalUrl: originalUrl,
             originalSize: Number(response.data.length),
-            size: Number(body.length),
+            size: Number(dataBuffer.length),
         };
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
@@ -432,10 +420,10 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
     }
 }
 
-export async function deletePosterFromS3(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
+export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
-            Bucket: 'poster',
+            Bucket: bucketName,
             Key: fileName,
         };
         let command = new DeleteObjectCommand(params);
@@ -445,12 +433,12 @@ export async function deletePosterFromS3(fileName, retryCounter = 0, retryWithSl
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
-            return await deletePosterFromS3(fileName, retryCounter, retryWithSleepCounter);
+            return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
         }
         if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
-            return await deletePosterFromS3(fileName, retryCounter, retryWithSleepCounter);
+            return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
         return false;
@@ -482,17 +470,73 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithS
     }
 }
 
-function getFileName(title, titleType, year, extra, fileType) {
-    let fileName = titleType + '-' + title + '-' + year + '-' + extra + '.' + fileType;
-    fileName = fileName.trim()
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-')
-        .replace(/^-/g, '')
-        .replace('-.', '.');
-    if (year && title.endsWith(year)) {
-        fileName = fileName.replace(('-' + year), '');
+export async function deleteUnusedFiles(retryCounter = 0) {
+    try {
+        let checkBuckets = ['poster', 'download-trailer', 'cast'];
+
+        for (let k = 0; k < checkBuckets.length; k++) {
+            let dataBaseFiles = [];
+            // files that are in use
+            if (checkBuckets[k] === 'poster') {
+                dataBaseFiles = await getAllS3PostersDB();
+                if (!dataBaseFiles) {
+                    continue;
+                }
+                dataBaseFiles = dataBaseFiles.map(item => item.poster_s3.url.split('/').pop());
+            } else if (checkBuckets[k] === 'download-trailer') {
+                dataBaseFiles = await getAllS3TrailersDB();
+                if (!dataBaseFiles) {
+                    continue;
+                }
+                dataBaseFiles = dataBaseFiles.map(item => item.trailer_s3.url.split('/').pop());
+            }
+            if (checkBuckets[k] === 'cast') {
+                dataBaseFiles = await getAllS3CastImageDB();
+                if (!dataBaseFiles) {
+                    continue;
+                }
+                dataBaseFiles = dataBaseFiles.map(item => item.imageData.url.split('/').pop());
+            }
+
+            let lastKey = '';
+            let deleteCounter = 0;
+            while (true) {
+                const params = {
+                    Bucket: checkBuckets[k],
+                    MaxKeys: 1000,
+                };
+                if (lastKey) {
+                    params.Marker = lastKey;
+                }
+                let command = new ListObjectsCommand(params);
+                let response = await s3.send(command);
+                let files = response.Contents;
+                if (!files || files.length === 0) {
+                    break;
+                }
+                let promiseArray = [];
+                for (let i = 0; i < files.length; i++) {
+                    if (dataBaseFiles.includes(files[i].Key)) {
+                        lastKey = files[i].Key;
+                    } else {
+                        deleteCounter++;
+                        let deletePromise = deleteFileFromS3(checkBuckets[k], files[i].Key);
+                        promiseArray.push(deletePromise);
+                    }
+                }
+                await Promise.allSettled(promiseArray);
+            }
+        }
+        return 'ok';
+    } catch (error) {
+        if (retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 5000)));
+            return deleteUnusedFiles(retryCounter);
+        }
+        saveError(error);
+        return 'error';
     }
-    return fileName;
 }
 
 export async function resetBucket(bucketName) {
@@ -525,6 +569,19 @@ export async function resetBucket(bucketName) {
     }
 }
 
+function getFileName(title, titleType, year, extra, fileType) {
+    let fileName = titleType + '-' + title + '-' + year + '-' + extra + '.' + fileType;
+    fileName = fileName.trim()
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+        .replace(/^-/g, '')
+        .replace('-.', '.');
+    if (year && title.endsWith(year)) {
+        fileName = fileName.replace(('-' + year), '');
+    }
+    return fileName;
+}
+
 async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         let response = await axios.head(url);
@@ -547,4 +604,28 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
         }
         return 0;
     }
+}
+
+async function compressImage(responseData) {
+    let dataBuffer = responseData;
+    // reduce image size if size > 2MB
+    if (responseData.length > 2 * 1024 * 1024) {
+        let sharpQuality = (responseData.length > 10 * 1024 * 1024) ? 45 : 65;
+        let temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
+        let counter = 0;
+        while ((temp.length / (1024 * 1024)) > 2 && counter < 4 && sharpQuality > 15) {
+            counter++;
+            if (temp.length > 3 * 1024 * 1024) {
+                sharpQuality -= 25;
+            } else {
+                sharpQuality -= 15;
+            }
+            if (sharpQuality <= 0) {
+                sharpQuality = 5;
+            }
+            temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
+        }
+        dataBuffer = temp;
+    }
+    return dataBuffer;
 }

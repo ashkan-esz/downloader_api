@@ -4,6 +4,7 @@ import Agenda from "agenda";
 import {crawler} from "../crawlers/crawler.js";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi.js";
+import {deleteUnusedFiles} from "../data/cloudStorage.js";
 import {saveError} from "../error/saveError.js";
 
 let agenda = new Agenda({
@@ -30,6 +31,10 @@ export async function startAgenda() {
             await resetMonthLikeAndViewDB();
         });
 
+        agenda.define("remove unused files from s3", async (job) => {
+            await deleteUnusedFiles();
+        });
+
         for (let i = 0; i < jobTypes.length; i++) {
             let job = await import("../jobs/" + jobTypes[i] + '.js');
             job.default(agenda);
@@ -40,6 +45,7 @@ export async function startAgenda() {
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 */12 * * *", "update jikan/imdb data");
         await agenda.every("0 1 1 * *", "reset month likes");
+        await agenda.every("0 0 * * 0", "remove unused files from s3"); //At 00:00 on Sunday.
 
     } catch (error) {
         saveError(error);

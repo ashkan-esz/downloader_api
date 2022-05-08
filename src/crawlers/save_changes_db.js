@@ -4,7 +4,6 @@ import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter.js";
 import {handleSiteSeasonEpisodeUpdate, getTotalDuration} from "./seasonEpisode.js";
 import {handleSubUpdates} from "./subUpdates.js";
-import {getUploadedAnimeListSubtitles, handleSubtitleUpdate} from "./subtitle.js";
 import {getMovieModel} from "../models/movie.js";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
@@ -26,11 +25,9 @@ export default async function save(title, type, year, sourceData) {
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
         let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles);
-        let uploadedSubtitles = sourceName === "animelist" ? await getUploadedAnimeListSubtitles(subtitles, cookies) : [];
 
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
-                titleModel.subtitles = uploadedSubtitles;
                 let result = await addApiData(titleModel, downloadLinks, sourceName);
                 if (result.titleModel.type.includes('movie')) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks);
@@ -51,7 +48,7 @@ export default async function save(title, type, year, sourceData) {
 
         let apiData = await apiDataUpdate(db_data, downloadLinks, type, poster, sourceName);
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, uploadedSubtitles, type, apiData);
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, type, apiData);
     } catch (error) {
         await saveError(error);
     }
@@ -181,7 +178,7 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, uploadedSubtitles, type, apiData) {
+async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, type, apiData) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -220,8 +217,8 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
                             db_data.trailers = null;
                         }
                         updateFields.trailers = db_data.trailers;
-                        db_data.trailer_s3 = '';
-                        updateFields.trailer_s3 = '';
+                        db_data.trailer_s3 = null;
+                        updateFields.trailer_s3 = null;
                     }
                 }
             }
@@ -251,13 +248,6 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.update_date = new Date();
         }
 
-        if (uploadedSubtitles.length > 0) {
-            let mergedSubtitles = handleSubtitleUpdate(db_data.subtitles, uploadedSubtitles);
-            if (db_data.subtitles.length !== mergedSubtitles.length) {
-                updateFields.subtitles = mergedSubtitles;
-            }
-        }
-
         let {_handleCastUpdate} = await import("./crawler.js");
         if (apiData && _handleCastUpdate) {
             let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
@@ -271,8 +261,8 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         //     let fileName = db_data.trailer_s3.split('/').pop();
         //     let removeS3Trailer = await deleteTrailerFromS3(fileName);
         //     if (removeS3Trailer) {
-        //         db_data.trailer_s3 = '';
-        //         updateFields.trailer_s3 = '';
+        //         db_data.trailer_s3 = null;
+        //         updateFields.trailer_s3 = null;
         //         db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer'));
         //         updateFields.trailers = db_data.trailers;
         //     }

@@ -368,7 +368,7 @@ async function uploadTrailer(title, year, type, imdbID) {
             return await cloudStorage.uploadTitleTrailerFromYoutubeToS3(title, type, year, youtubeTrailer);
         }
     }
-    return '';
+    return null;
 }
 
 async function handleApiCall(url) {
