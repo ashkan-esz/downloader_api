@@ -11,10 +11,12 @@
     "start": "NODE_ENV=production node --optimize_for_size --max_old_space_size=460 --gc_interval=100 src/server.js",
     "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc src/server.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config src/server.js",
-    "test": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=460 --gc_interval=100 test.js",
-    "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 test.js",
-    "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc test.js",
+    "test": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=460 --gc_interval=100 manualTest.js",
+    "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 manualTest.js",
+    "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc manualTest.js",
     "test_manual": "node src/test/manual/index.js",
+    "test_jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test_jest_coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage && open ./coverage/lcov-report/index.html",
     "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node src/server.js"
   },
   "dependencies": {
@@ -54,6 +56,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.11.9",
+    "jest": "^28.1.0",
     "nodemon": "^2.0.15"
   }
 }

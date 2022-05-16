@@ -18,6 +18,7 @@ import {
     releaseRegex,
 } from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
+import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "digimoviez";
@@ -68,7 +69,7 @@ async function search_title(link, i, $, url) {
                         sourceName,
                         pageLink,
                         downloadLinks,
-                        watchOnlineLinks: getWatchOnlineLinks($2),
+                        watchOnlineLinks: [],
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
@@ -175,18 +176,28 @@ function getTrailers($) {
     }
 }
 
-function getWatchOnlineLinks($) {
+function getWatchOnlineLinks($, type, pageLink) {
+    //NOTE: need vip account to access
     try {
         let result = [];
         let $a = $('a');
         for (let i = 0; i < $a.length; i++) {
-            let title = $($a[i]).attr('title');
-            if (title && title.includes('پخش آنلاین')) {
-                let href = $($a[i]).attr('href');
-                result.push({
-                    link: href,
-                    info: 'digimoviez-720p',
-                });
+            let infoNode = $($a[i]).parent().parent().parent().prev().children()[1];
+            let infoText = $(infoNode).text();
+            if (infoText && infoText.includes('پخش آنلاین')) {
+                let linkHref = $($a[i]).attr('href');
+                if (!linkHref.includes('/play/')) {
+                    continue;
+                }
+                let info = purgeQualityText($($(infoNode).children()[0]).text()).replace(/\s+/g, '.');
+                info = fixLinkInfo(info, linkHref);
+                info = fixLinkInfoOrder(info);
+                let sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
+                let size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
+                info = size ? (info + ' - ' + size.replace(/\s+/, '')) : info;
+                let watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceName, pageLink);
+                watchOnlineLink.link = linkHref;
+                result.push(watchOnlineLink);
             }
         }
 

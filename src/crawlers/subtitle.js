@@ -1,90 +1,78 @@
-import axios from "axios";
-import {uploadSubtitleToS3ByURl} from "../data/cloudStorage.js";
+import {updateSerialLinks} from "./link.js";
 import {saveError} from "../error/saveError.js";
 
+export const subtitleFormatsRegex = /\.(srt|ssa|ttml|sbv|dfxp|vtt|txt|zip|rar)$/i;
 
-export function handleSubtitleUpdate(prevSubtitles, uploadedSubtitles) {
-    let mergedSubtitles = [...prevSubtitles];
-    for (let i = 0; i < uploadedSubtitles.length; i++) {
-        let exist = false;
-        for (let j = 0; j < mergedSubtitles.length; j++) {
-            if (
-                uploadedSubtitles[i].urlData && mergedSubtitles[j].urlData &&
-                uploadedSubtitles[i].urlData.url === mergedSubtitles[j].urlData.url
-            ) {
-                exist = true;
+export function handleSubtitlesUpdate(db_subtitles, currentGroupedSubtitles, sourceName) {
+    try {
+        let updateFlag = false;
+        for (let i = 0; i < currentGroupedSubtitles.length; i++) {
+            let checkSeason = db_subtitles.find(item => item.seasonNumber === currentGroupedSubtitles[i].seasonNumber);
+            if (checkSeason) {
+                //season exist
+                checkSeason.checked = true;
+                let prevLinks = checkSeason.links.filter(item => item.sourceName === sourceName);
+                let currentLinks = currentGroupedSubtitles[i].links;
+                let linkUpdateResult = updateSerialLinks(checkSeason, prevLinks, [], currentLinks, []);
+                updateFlag = linkUpdateResult || updateFlag;
+            } else {
+                //new season
+                currentGroupedSubtitles[i].checked = true;
+                db_subtitles.push(currentGroupedSubtitles[i]);
+                updateFlag = true;
+            }
+        }
+
+        //handle removed subtitles
+        for (let i = 0; i < db_subtitles.length; i++) {
+            if (!db_subtitles[i].checked) {
+                let prevLength = db_subtitles[i].links.length;
+                db_subtitles[i].links = db_subtitles[i].links.filter(link => link.sourceName !== sourceName);
+                let newLength = db_subtitles[i].links.length;
+                if (prevLength !== newLength) {
+                    updateFlag = true;
+                }
+            }
+            delete db_subtitles[i].checked;
+        }
+
+        if (updateFlag) {
+            db_subtitles = db_subtitles.sort((a, b) => a.seasonNumber - b.seasonNumber);
+            for (let i = 0; i < db_subtitles.length; i++) {
+                db_subtitles[i].links = db_subtitles[i].links.sort((a, b) => a.episode - b.episode);
+            }
+        }
+
+        return updateFlag;
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
+}
+
+export function groupSubtitles(subtitles) {
+    let result = [];
+
+    for (let i = 0; i < subtitles.length; i++) {
+        let seasonExist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (result[j].seasonNumber === subtitles[i].season) {
+                seasonExist = true;
+                result[j].links.push(subtitles[i]);
                 break;
             }
         }
-        if (!exist) {
-            mergedSubtitles.push(uploadedSubtitles[i]);
-        }
-    }
-    mergedSubtitles = mergedSubtitles.sort((a, b) =>
-        Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
-    );
-    return mergedSubtitles;
-}
-
-export async function getUploadedAnimeListSubtitles(subtitles, cookies) {
-    await setSubtitlesFileName(subtitles, cookies);
-    subtitles = await uploadNewSubtitlesToCloudStorage(subtitles, cookies);
-    subtitles = subtitles.sort((a, b) =>
-        Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
-    );
-    return subtitles;
-}
-
-async function uploadNewSubtitlesToCloudStorage(subtitles, cookies) {
-    const cookiesString = cookies.map(ck => ck.name + '=' + ck.value).join(';');
-    let promiseArray = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        try {
-            if (!subtitles[i].urlData) {
-                let promise = uploadSubtitleToS3ByURl(subtitles[i].fileName, cookiesString, subtitles[i].originalUrl).then(subtitleUrlData => {
-                    if (subtitleUrlData) {
-                        subtitles[i].originalUrl = subtitles[i].originalUrl.replace(/\?token=.+$/g, '?token=');
-                        subtitles[i].urlData = subtitleUrlData;
-                    }
-                });
-                promiseArray.push(promise);
-                if (promiseArray.length > 5) {
-                    await Promise.allSettled(promiseArray);
-                    promiseArray = [];
-                }
-            }
-        } catch (error) {
-            saveError(error);
-        }
-    }
-    await Promise.allSettled(promiseArray);
-    subtitles = subtitles.filter(item => item.urlData);
-    return subtitles;
-}
-
-async function setSubtitlesFileName(subtitles, cookies) {
-    const cookiesString = cookies.map(ck => ck.name + '=' + ck.value).join(';');
-    let promiseArray = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        try {
-            let promise = axios.head(subtitles[i].originalUrl, {
-                responseType: 'stream',
-                headers: {
-                    Cookie: cookiesString
-                }
-            }).then(response => {
-                let fileName = response.headers['content-disposition'].replace('attachment; filename=', '').replace(/["']/g, '');
-                subtitles[i].fileName = `animelist-${fileName}`;
+        if (!seasonExist) {
+            result.push({
+                seasonNumber: subtitles[i].season,
+                links: [subtitles[i]],
             });
-            promiseArray.push(promise);
-            if (promiseArray.length > 10) {
-                await Promise.allSettled(promiseArray);
-                promiseArray = [];
-            }
-        } catch (error) {
-            saveError(error);
         }
     }
-    await Promise.allSettled(promiseArray);
-    return subtitles;
+
+    result = result.sort((a, b) => a.seasonNumber - b.seasonNumber);
+    for (let i = 0; i < result.length; i++) {
+        result[i].links = result[i].links.sort((a, b) => a.episode - b.episode);
+    }
+    return result;
 }

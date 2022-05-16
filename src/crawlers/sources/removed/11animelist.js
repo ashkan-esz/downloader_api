@@ -11,6 +11,8 @@ import {
 } from "../../utils.js";
 import {purgeSizeText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
+import {getSubtitleModel} from "../../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../../subtitle.js";
 import {saveError} from "../../../error/saveError.js";
 
 const sourceName = "animelist";
@@ -62,7 +64,7 @@ async function search_title(link, i, $, url) {
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: [],
-                        subtitles: [],
+                        subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
                     await save(title, type, year, sourceData);
@@ -146,6 +148,44 @@ function getPoster($, url) {
     } catch (error) {
         saveError(error);
         return '';
+    }
+}
+
+function getSubtitles($, type, pageLink) {
+    //NOTE: unable to fix due to removed source and anti bot
+    try {
+        let links = $('a');
+        let subtitles = [];
+        for (let i = 0; i < links.length; i++) {
+            let href = $(links[i]).attr('href');
+            if (href && href.includes('/sub/download/')) {
+                let dedicated = true;
+                let linkInfo = $($(links[i]).prev().prev()).attr('title');
+                if (!linkInfo) {
+                    let infoNode = $(links[i]).parent().parent().prev();
+                    if (infoNode.hasClass('subs-send-links')) {
+                        dedicated = false;
+                        linkInfo = $(infoNode).attr('title');
+                    }
+                }
+                let translator = $($(links[i]).parent().next().children()[1]).text().replace('توسط', '').trim();
+                // let episode = $($(links[i]).children()[1]).text()
+                //     .replace('تا', ' ')
+                //     .replace(/\s\s+/g, ' ')
+                //     .trim()
+                //     .replace(' ', '-');
+
+                dedicated = dedicated ? 'dedicated' : '';
+                let info = [linkInfo, translator, dedicated].filter(item => item).join('.');
+                let isDirect = !!href.match(subtitleFormatsRegex);
+                let subtitle = getSubtitleModel(href, info, type, sourceName, pageLink, isDirect);
+                subtitles.push(subtitle);
+            }
+        }
+        return subtitles;
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 

@@ -12,6 +12,9 @@ import {
 } from "../utils.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
+import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
+import {getSubtitleModel} from "../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "film2movie";
@@ -83,7 +86,7 @@ async function search_title(link, i) {
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
-                        subtitles: [],
+                        subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
                     await save(title, type, year, sourceData);
@@ -184,6 +187,55 @@ function getTrailers($) {
             }
         }
         return unique;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+function getWatchOnlineLinks($, type, pageLink) {
+    //NOTE: links from film2movie.upera.tv
+    //NOTE: cannot extract season/episode from link
+    try {
+        let result = [];
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let infoNode = type.includes('serial')
+                ? $($a[i]).parent()
+                : $($a[i]).parent().parent().prev();
+            let infoText = $(infoNode).text();
+            if (infoText && infoText.includes('پخش آنلاین')) {
+                let linkHref = $($a[i]).attr('href');
+                if (linkHref.includes('.upera.')) {
+                    let info = getFileData($, $a[i], type);
+                    let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceName, pageLink);
+                    result.push(watchOnlineLink);
+                }
+            }
+        }
+
+        result = removeDuplicateLinks(result);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+function getSubtitles($, type, pageLink) {
+    try {
+        let result = [];
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let linkHref = $($a[i]).attr('href');
+            if (linkHref && linkHref.match(subtitleFormatsRegex)) {
+                let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink);
+                result.push(subtitle);
+            }
+        }
+
+        result = removeDuplicateLinks(result);
+        return result;
     } catch (error) {
         saveError(error);
         return [];

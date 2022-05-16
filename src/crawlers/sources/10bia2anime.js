@@ -12,6 +12,8 @@ import {
 } from "../utils.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
+import {getSubtitleModel} from "../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "bia2anime";
@@ -68,7 +70,7 @@ async function search_title(link, i) {
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: [],
-                        subtitles: [],
+                        subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
                     await save(title, type, year, sourceData);
@@ -145,6 +147,96 @@ function getPoster($) {
     }
 }
 
+function getSubtitles($, type, pageLink, downloadLinks) {
+    try {
+        let result = [];
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let linkHref = $($a[i]).attr('href');
+            if (!linkHref || linkHref.match(/^https:\/\/(\d\d\d?)\.(\d\d\d?)\.(\d\d\d?)\.(\d\d\d?)\/Sub/i)) {
+                continue;
+            }
+            linkHref = linkHref.split(/(?<=zip)http/i)[0];
+            if (linkHref.match(subtitleFormatsRegex) || linkHref.match(/\/sub(titles)?\//i)) {
+                let isDirect = !!linkHref.match(subtitleFormatsRegex);
+                let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, isDirect);
+                let subtitleSiblings = $($a[i]).parent().children().toArray().filter(item => item.name !== 'br');
+                if (subtitleSiblings.length > 1) {
+                    let episodeLink = $($a[i]).prev();
+                    if (episodeLink[0] && episodeLink[0].name === 'strong' && $(episodeLink[0]).text() === '|') {
+                        episodeLink = $(episodeLink).prev();
+                    }
+                    if (episodeLink[0] && episodeLink[0].name === 'strong') {
+                        episodeLink = $(episodeLink).children()[0];
+                    }
+                    if (!episodeLink || !$(episodeLink).attr('href') || !$(episodeLink).attr('href').includes('.mkv')) {
+                        episodeLink = $($a[i]).next();
+                    }
+                    if (episodeLink && $(episodeLink).attr('href') && $(episodeLink).attr('href').includes('.mkv')) {
+                        let temp = $(episodeLink).attr('href').trim();
+                        let link = downloadLinks.find(item => item.link === temp);
+                        if (link) {
+                            subtitle.season = link.season;
+                            subtitle.episode = link.episode;
+                            subtitle.info = '';
+                            if (link.info.includes('OVA')) {
+                                subtitle.info = link.info.match(/OVA(_\d)?/g).pop();
+                            }
+                            let matchMovieName = link.info.match(/\(.+\)/g);
+                            if (matchMovieName) {
+                                subtitle.info = subtitle.info ? (subtitle.info + '.' + matchMovieName.pop()) : matchMovieName.pop();
+                            }
+                        } else {
+                            let info = getFileData($, episodeLink, type);
+                            let seasonEpisodeMatch = info.match(/^s\d{1,4}e\d{1,4}/i);
+                            if (seasonEpisodeMatch) {
+                                let seasonEpisode = seasonEpisodeMatch[0].toLowerCase();
+                                let temp = seasonEpisode.replace('s', '').split('e');
+                                subtitle.season = Number(temp[0]);
+                                subtitle.episode = Number(temp[1]);
+                                subtitle.info = '';
+                            } else if (info === 'ignore') {
+                                subtitle.info = 'OVA';
+                            }
+                        }
+                    }
+                } else if (subtitleSiblings.length === 1) {
+                    let nextNode = $($a[i]).parent().parent().next();
+                    let nextNodeLinks = $('a', nextNode[0]);
+                    let episodeLink = $(nextNodeLinks[0]).attr('href');
+                    let link = downloadLinks.find(item => item.link === episodeLink);
+                    if (!link) {
+                        let prevNode = $($a[i]).parent().parent().prev();
+                        let prevNodeLinks = $('a', prevNode[0]);
+                        let episodeLink = $(prevNodeLinks[0]).attr('href');
+                        link = downloadLinks.find(item => item.link === episodeLink);
+                    }
+                    if (!link) {
+                        let temp = linkHref.split('/');
+                        temp.pop();
+                        temp = temp.join('/');
+                        link = downloadLinks.find(item => item.link.includes(temp));
+                    }
+                    if (link) {
+                        subtitle.season = link.season;
+                        if (!subtitle.info.match(/Episode\(\d{1,4}-\d{1,4}\)/)) {
+                            subtitle.episode = 0;
+                            subtitle.info = 'AllEpisodesOf(Season ' + link.season + ')';
+                        }
+                    }
+                }
+                result.push(subtitle);
+            }
+        }
+
+        result = removeDuplicateLinks(result);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
 function getFileData($, link, type) {
     // 'S1E01.720p'  //
     try {
@@ -190,6 +282,10 @@ function getFileData_serial($, link) {
         .replace('.br.', '.')
         .match(/([.\-])\s*\d+(\.v\d+)*\s*(\.bd|\.10bit|\.special)*\s*([.\[]+)\d\d\d+p*([.\]])|\.\d+(\.web\.dual\.audio|\.\d\d\d+p|\.br|\.uncen)*\.(bia2anime|bitdownload\.ir)\.mkv|s\d+e\d+|e\d+/g);
     if (!episodeMatch) {
+        if (linkHref.match(/\.ova(\.bd)?\.\d\d\d\d?p\.bia2anime\.mkv/i)) {
+            let quality = linkHref.match(/\d\d\d\d?p/g).pop();
+            return 'S1E0.' + quality + '.OVA';
+        }
         return 'ignore';
     }
     if (episodeMatch && episodeMatch[0].match(/\.\d+\.(bitdownload\.ir|bia2anime)\.mkv/g)) {

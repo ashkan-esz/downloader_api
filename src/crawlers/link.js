@@ -127,13 +127,13 @@ function checkSerialLinkMatch(link) {
         return true;
     }
     return decodedLink.match(
-        /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi)
+            /([.\s\[(])+\s*(.*)\s*(\d\d\d+p*|dvdrip|dvd|web)\s*(.*)\s*([.\s\])])+\s*([.\[]*)(bia2anime|(animdl|animelit|animList|animeList)\.(ir|top)|x265|10bit|mkv)([.\]]*)/gi)
         || decodedLink.match(/\.\d\d\d?\.bitdownload\.ir\.mkv/gi);
 }
 
 //---------------------
 
-export function groupSerialLinks(links) {
+export function groupSerialLinks(links, watchOnlineLinks) {
     let result = [];
 
     for (let i = 0; i < links.length; i++) {
@@ -157,6 +157,7 @@ export function groupSerialLinks(links) {
                         episodeNumber: links[i].episode,
                         ...episodeModel,
                         links: [links[i]],
+                        watchOnlineLinks: [],
                     });
                 }
                 break;
@@ -172,10 +173,56 @@ export function groupSerialLinks(links) {
                     episodeNumber: links[i].episode,
                     ...episodeModel,
                     links: [links[i]],
+                    watchOnlineLinks: [],
                 }],
             });
         }
     }
+
+    //-------------------------------------------
+    for (let i = 0; i < watchOnlineLinks.length; i++) {
+        let seasonExist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (result[j].seasonNumber === watchOnlineLinks[i].season) {
+                seasonExist = true;
+                let episodeExist = false;
+                for (let k = 0; k < result[j].episodes.length; k++) {
+                    if (result[j].episodes[k].episodeNumber === watchOnlineLinks[i].episode) {
+                        episodeExist = true;
+                        result[j].episodes[k].watchOnlineLinks.push(watchOnlineLinks[i]);
+                        break;
+                    }
+                }
+                if (!episodeExist) {
+                    let episodeModel = getEpisodeModel_placeholder(watchOnlineLinks[i].season, watchOnlineLinks[i].episode);
+                    delete episodeModel.season;
+                    delete episodeModel.episode;
+                    result[j].episodes.push({
+                        episodeNumber: watchOnlineLinks[i].episode,
+                        ...episodeModel,
+                        links: [],
+                        watchOnlineLinks: [watchOnlineLinks[i]],
+                    });
+                }
+                break;
+            }
+        }
+        if (!seasonExist) {
+            let episodeModel = getEpisodeModel_placeholder(watchOnlineLinks[i].season, watchOnlineLinks[i].episode);
+            delete episodeModel.season;
+            delete episodeModel.episode;
+            result.push({
+                seasonNumber: watchOnlineLinks[i].season,
+                episodes: [{
+                    episodeNumber: watchOnlineLinks[i].episode,
+                    ...episodeModel,
+                    links: [],
+                    watchOnlineLinks: [watchOnlineLinks[i]],
+                }],
+            });
+        }
+    }
+    //-------------------------------------------
 
     result = result.sort((a, b) => a.seasonNumber - b.seasonNumber);
     for (let i = 0; i < result.length; i++) {
@@ -185,14 +232,14 @@ export function groupSerialLinks(links) {
     return result;
 }
 
-export function groupMovieLinks(links) {
+export function groupMovieLinks(links, watchOnlineLinks) {
     let qualities = [
-        {quality: '2160p', links: []},
-        {quality: '1080p', links: []},
-        {quality: '720p', links: []},
-        {quality: '480p', links: []},
-        {quality: '360p', links: []},
-        {quality: 'others', links: []}
+        {quality: '2160p', links: [], watchOnlineLinks: []},
+        {quality: '1080p', links: [], watchOnlineLinks: []},
+        {quality: '720p', links: [], watchOnlineLinks: []},
+        {quality: '480p', links: [], watchOnlineLinks: []},
+        {quality: '360p', links: [], watchOnlineLinks: []},
+        {quality: 'others', links: [], watchOnlineLinks: []}
     ];
 
     for (let i = 0; i < links.length; i++) {
@@ -209,6 +256,20 @@ export function groupMovieLinks(links) {
         }
     }
 
+    for (let i = 0; i < watchOnlineLinks.length; i++) {
+        let matchQuality = false;
+        for (let j = 0; j < qualities.length; j++) {
+            if (watchOnlineLinks[i].info.includes(qualities[j].quality)) {
+                qualities[j].watchOnlineLinks.push(watchOnlineLinks[i]);
+                matchQuality = true;
+                break;
+            }
+        }
+        if (!matchQuality) {
+            qualities.find(item => item.quality === 'others').watchOnlineLinks.push(links[i]);
+        }
+    }
+
     return qualities;
 }
 
@@ -221,8 +282,10 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
             checkQuality.checked = true;
             //get source links
             let prevLinks = checkQuality.links.filter(item => item.sourceName === sourceName);
+            let prevOnlineLinks = checkQuality.watchOnlineLinks.filter(item => item.sourceName === sourceName);
             let currentLinks = currentGroupedLinks[i].links;
-            let linkUpdateResult = updateSerialLinks(checkQuality, prevLinks, currentLinks);
+            let currentOnlineLinks = currentGroupedLinks[i].watchOnlineLinks;
+            let linkUpdateResult = updateSerialLinks(checkQuality, prevLinks, prevOnlineLinks, currentLinks, currentOnlineLinks);
             updateFlag = linkUpdateResult || updateFlag;
         } else {
             //new quality
@@ -236,9 +299,12 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
     for (let i = 0; i < prevGroupedLinks.length; i++) {
         if (!prevGroupedLinks[i].checked) {
             let prevLength = prevGroupedLinks[i].links.length;
+            let prevOnlineLength = prevGroupedLinks[i].watchOnlineLinks.length;
             prevGroupedLinks[i].links = prevGroupedLinks[i].links.filter(link => link.sourceName !== sourceName);
+            prevGroupedLinks[i].watchOnlineLinks = prevGroupedLinks[i].watchOnlineLinks.filter(link => link.sourceName !== sourceName);
             let newLength = prevGroupedLinks[i].links.length;
-            if (prevLength !== newLength) {
+            let newOnlineLength = prevGroupedLinks[i].watchOnlineLinks.length;
+            if (prevLength !== newLength || prevOnlineLength !== newOnlineLength) {
                 updateFlag = true;
             }
         }
@@ -248,24 +314,47 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
     return updateFlag;
 }
 
-export function updateSerialLinks(checkEpisode, prevLinks, currentLinks) {
+export function updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, currentLinks, currentOnlineLinks) {
     let updateFlag = false;
-    if (prevLinks.length !== currentLinks.length) {
+
+    let linksUpdateNeed = prevLinks.length !== currentLinks.length;
+    if (!linksUpdateNeed) {
+        for (let k = 0; k < prevLinks.length; k++) {
+            //check changed links
+            if (!checkEqualLinks(prevLinks[k], currentLinks[k])) {
+                linksUpdateNeed = true;
+                break;
+            }
+        }
+    }
+    if (linksUpdateNeed) {
         //remove prev link
         let removeLinks = prevLinks.map(item => item.link);
         checkEpisode.links = checkEpisode.links.filter(item => !removeLinks.includes(item.link));
         //add current links
         checkEpisode.links = [...checkEpisode.links, ...currentLinks];
         updateFlag = true;
-    } else {
-        for (let k = 0; k < prevLinks.length; k++) {
-            //replace changed links
-            if (!checkEqualLinks(prevLinks[k], currentLinks[k])) {
-                prevLinks[k] = currentLinks[k];
-                updateFlag = true;
+    }
+
+    let onlineLinksUpdateNeed = prevOnlineLinks.length !== currentOnlineLinks.length;
+    if (!onlineLinksUpdateNeed) {
+        for (let k = 0; k < prevOnlineLinks.length; k++) {
+            //check changed links
+            if (!checkEqualLinks(prevOnlineLinks[k], currentOnlineLinks[k])) {
+                onlineLinksUpdateNeed = true;
+                break;
             }
         }
     }
+    if (onlineLinksUpdateNeed) {
+        //remove prev link
+        let removeLinks = prevOnlineLinks.map(item => item.link);
+        checkEpisode.watchOnlineLinks = checkEpisode.watchOnlineLinks.filter(item => !removeLinks.includes(item.link));
+        //add current links
+        checkEpisode.watchOnlineLinks = [...checkEpisode.watchOnlineLinks, ...currentOnlineLinks];
+        updateFlag = true;
+    }
+
     return updateFlag;
 }
 

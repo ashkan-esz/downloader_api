@@ -4,17 +4,15 @@ import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 
-export async function handleSubUpdates(db_data, poster, trailers, watchOnlineLinks, titleModel, type, sourceName) {
+export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName) {
     try {
         let posterChange = await handlePosterUpdate(db_data, poster, sourceName);
         let trailerChange = handleTrailerUpdate(db_data, trailers);
-        let watchOnlineLinksChange = handleWatchOnlineLinksUpdate(db_data, watchOnlineLinks);
         let latestDataChange = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
         return {
             posterChange,
             trailerChange,
-            watchOnlineLinksChange,
             latestDataChange,
         };
     } catch (error) {
@@ -22,7 +20,6 @@ export async function handleSubUpdates(db_data, poster, trailers, watchOnlineLin
         return {
             posterChange: false,
             trailerChange: false,
-            watchOnlineLinksChange: false,
             latestDataChange: false,
         };
     }
@@ -106,29 +103,6 @@ function handleTrailerUpdate(db_data, site_trailers) {
         db_data.trailers = sortTrailers(db_data.trailers);
     }
     return trailersChanged;
-}
-
-function handleWatchOnlineLinksUpdate(db_data, siteWatchOnlineLinks) {
-    let onlineLinkChanged = false;
-    for (let i = 0; i < siteWatchOnlineLinks.length; i++) {
-        let linkExist = false;
-        for (let j = 0; j < db_data.watchOnlineLinks.length; j++) {
-            if (siteWatchOnlineLinks[i].info === db_data.watchOnlineLinks[j].info) {//this trailer exist
-                if (siteWatchOnlineLinks[i].link !== db_data.watchOnlineLinks[j].link) { //replace link
-                    db_data.watchOnlineLinks[j].link = siteWatchOnlineLinks[i].link;
-                    onlineLinkChanged = true;
-                }
-                linkExist = true;
-                break;
-            }
-        }
-        if (!linkExist) { //new onlineLink
-            db_data.watchOnlineLinks.push(siteWatchOnlineLinks[i]);
-            onlineLinkChanged = true;
-        }
-    }
-    db_data.watchOnlineLinks = removeDuplicateLinks(db_data.watchOnlineLinks);
-    return onlineLinkChanged;
 }
 
 export function sortPosters(posters) {

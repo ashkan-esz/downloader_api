@@ -21,6 +21,10 @@ import {
     releaseRegex
 } from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
+import {wordsToNumbers} from "words-to-numbers";
+import {getSubtitleModel} from "../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../subtitle.js";
+import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "bia2hd";
@@ -59,11 +63,11 @@ async function search_title(link, i) {
                         sourceName,
                         pageLink,
                         downloadLinks,
-                        watchOnlineLinks: getWatchOnlineLinks($2),
+                        watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
-                        subtitles: [],
+                        subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
                     await save(title, type, year, sourceData);
@@ -175,24 +179,85 @@ function getTrailers($) {
     }
 }
 
-function getWatchOnlineLinks($) {
+function getWatchOnlineLinks($, type, pageLink) {
     try {
         let result = [];
-        let a = $('a');
-        for (let i = 0; i < a.length; i++) {
-            let text = $(a[i]).text();
-            if (text && text.toLowerCase().includes('پخش آنلاین')) {
-                let href = $(a[i]).attr('href');
-                let info = getFileData_movie($, a[i]);
-                let quality = info.includes('1080') ? '1080p' : info.includes('480') ? '480p' : '720p';
-                result.push({
-                    link: href,
-                    info: 'bia2hd-' + quality,
-                });
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let text = $($a[i]).text();
+            if (text && text.toLowerCase().includes('پخش آنلاین') || $($a[i]).hasClass('play-online')) {
+                let linkHref = $($a[i]).attr('href');
+                let info = linkHref.includes('1080') ? '1080p' : linkHref.includes('480') ? '480p' : '720p';
+                if ($($($a[i]).parent()[0]).hasClass('download-links')) {
+                    info = getFileData($, $a[i], type);
+                }
+                let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceName, pageLink);
+                result.push(watchOnlineLink);
             }
         }
 
         result = removeDuplicateLinks(result);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+function getSubtitles($, type, pageLink) {
+    try {
+        let result = [];
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let linkHref = $($a[i]).attr('href');
+            if (linkHref) {
+                if (linkHref.match(subtitleFormatsRegex)) {
+                    let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, true);
+                    result.push(subtitle);
+                } else if (linkHref.includes('/subtitles/')) {
+                    let temp = linkHref.replace(/\/farsi_persian$/i, '').split('/').pop().replace(/-/g, ' ').toLowerCase();
+                    temp = temp.replace(' sconed ', ' second ');
+                    temp = wordsToNumbers(temp);
+                    let seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
+                    let season = seasonMatch ? seasonMatch.pop().replace(/(season)|\d\d\d\d/gi, '').trim() : '';
+                    let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, false);
+                    if (season) {
+                        let seasonNumber = Number(season);
+                        subtitle.info = (subtitle.episode === 0)
+                            ? subtitle.info.replace(/\(season \d\d?\)/i, `(Season ${seasonNumber})`)
+                            : `AllEpisodesOf(Season ${seasonNumber})`;
+                        subtitle.season = seasonNumber;
+                        subtitle.episode = 0;
+                    } else if (!subtitle.info && subtitle.episode !== 0) {
+                        subtitle.info = 'AllEpisodesOf(Season 1)';
+                        subtitle.episode = 0;
+                    }
+                    result.push(subtitle);
+                }
+            }
+        }
+
+        result = removeDuplicateLinks(result);
+        if (type.includes('serial')) {
+            let filterDuplicateLinksByInfo = [];
+            for (let i = 0; i < result.length; i++) {
+                let found = false;
+                for (let j = 0; j < filterDuplicateLinksByInfo.length; j++) {
+                    if (
+                        result[i].info === filterDuplicateLinksByInfo[j].info &&
+                        result[i].season === filterDuplicateLinksByInfo[j].season &&
+                        result[i].episode === filterDuplicateLinksByInfo[j].episode
+                    ) {
+                        found = true;
+                        filterDuplicateLinksByInfo[j].link = result[i].link;
+                    }
+                }
+                if (!found) {
+                    filterDuplicateLinksByInfo.push(result[i]);
+                }
+            }
+            return filterDuplicateLinksByInfo;
+        }
         return result;
     } catch (error) {
         saveError(error);

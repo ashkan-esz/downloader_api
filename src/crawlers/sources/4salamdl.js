@@ -13,6 +13,8 @@ import {
 } from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
 import * as persianRex from "persian-rex";
+import {getSubtitleModel} from "../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "salamdl";
@@ -76,7 +78,7 @@ async function search_title(link, i) {
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
-                        subtitles: [],
+                        subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
                     await save(title, type, year, sourceData);
@@ -169,6 +171,26 @@ function getTrailers($) {
                 }
             }
         }
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+function getSubtitles($, type, pageLink) {
+    try {
+        let result = [];
+        let $a = $('a');
+        for (let i = 0; i < $a.length; i++) {
+            let linkHref = $($a[i]).attr('href');
+            if (linkHref && linkHref.match(subtitleFormatsRegex)) {
+                let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink);
+                result.push(subtitle);
+            }
+        }
+
+        result = removeDuplicateLinks(result);
         return result;
     } catch (error) {
         saveError(error);

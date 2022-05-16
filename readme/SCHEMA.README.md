@@ -117,9 +117,11 @@ dataLevel = {
             season: Int,
             episode: Int,
             quality: String,
-            hardSub: Boolean || String, //its Boolean for movies and String in format S\d+E\d+ for series 
-            dubbed: Boolean || String, //its Boolean for movies and String in format S\d+E\d+ for series
-            subtitle: Int,
+            hardSub: String, //String in format S\d+E\d+
+            dubbed: String, //for series 's1e5' shows last episode with hardsub/dubbed/..
+            subtitle: String, //for movies 's1e1' means hardsub/dubbed/.. exist
+            censored: String,
+            watchOnlineLink: String,
         },
         update_date: Date,
         nextEpisode: null || {
@@ -151,7 +153,15 @@ dataLevel = {
                 pageLink: String,
                 season: Int,
                 episode: Int,
-            })
+            }),
+            watchOnlineLinks: Array({
+                link: String,
+                info: String,
+                sourceName: String,
+                pageLink: String,
+                season: Int,
+                episode: Int,
+            }),
         }),
         seasons: Array({
             seasonNumber: Int,
@@ -171,14 +181,30 @@ dataLevel = {
                     pageLink: String,
                     season: Int,
                     episode: Int,
-                })
+                }),
+                watchOnlineLinks: Array({
+                    link: String,
+                    info: String,
+                    sourceName: String,
+                    pageLink: String,
+                    season: Int,
+                    episode: Int,
+                }),
             })
         }),
-        watchOnlineLinks: Array({
-            link: String,
-            info: String
+        subtitles: Array({
+            seasonNumber: Int,
+            links: Array({
+                link: String,
+                info: String, //Episodes(\d\d-\d\d) or AllEpisodesOf(Season \d\d)
+                sourceName: String,
+                pageLink: String,
+                season: Int,
+                episode: Int,
+                direct: Boolean,
+            })
         }),
-        subtitles: Array,
+        sources: Array(String),
         view: Int,
         like_month: Int,
         view_month: Int,

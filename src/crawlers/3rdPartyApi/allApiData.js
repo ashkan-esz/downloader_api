@@ -9,7 +9,7 @@ import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from
 import {saveError} from "../../error/saveError.js";
 
 
-export async function addApiData(titleModel, site_links, sourceName) {
+export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
@@ -54,7 +54,7 @@ export async function addApiData(titleModel, site_links, sourceName) {
     }
 
     if (titleModel.type.includes('serial')) {
-        let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -95,7 +95,7 @@ export async function addApiData(titleModel, site_links, sourceName) {
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, sourceName) {
+export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (getDatesBetween(now, apiUpdateDate).hours < 8) {
@@ -143,7 +143,7 @@ export async function apiDataUpdate(db_data, site_links, siteType, sitePoster, s
     }
 
     if (db_data.type.includes('serial')) {
-        let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -355,12 +355,12 @@ function getNewGenres(data, apiGenres, isAnime, isAnimation) {
     }
 }
 
-async function updateSeasonsField(db_data, sourceName, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
+async function updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
     let fields = {};
     let {
         seasonsUpdateFlag,
         nextEpisodeUpdateFlag
-    } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
+    } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
 
     if (seasonsUpdateFlag) {
         fields.seasons = db_data.seasons;
