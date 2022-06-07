@@ -39,7 +39,8 @@ async function search_title(link, i) {
                 title.includes('ایران') ||
                 title.includes('ماجرای نیمروز') ||
                 title.includes('سهیلا') ||
-                title.includes('رسوایی')
+                title.includes('رسوایی') ||
+                title.includes('دانلود فصل')
             ) {
                 return;
             }
@@ -68,6 +69,7 @@ async function search_title(link, i) {
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
+                    year = fixWrongYear(title, type, year);
                     downloadLinks = removeDuplicateLinks(downloadLinks, true);
 
                     let sourceData = {
@@ -106,6 +108,13 @@ function fixYear($) {
         saveError(error);
         return '';
     }
+}
+
+function fixWrongYear(title, type, year) {
+    if (title === 'room 104' && type === 'serial') {
+        return '2017'; // 2019 --> 2017
+    }
+    return year;
 }
 
 function getPersianSummary($) {

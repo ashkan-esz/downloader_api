@@ -162,6 +162,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                 }
 
                 updateFields = {...updateFields, ...jikanApiFields.updateFields};
+                if (db_data.type.includes('movie') && updateFields.year) {
+                    updateFields.endYear = updateFields.year;
+                }
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
                 let currentRating = updateFields.rating ? updateFields.rating : db_data.rating;
                 currentRating.myAnimeList = jikanApiFields.myAnimeListScore;

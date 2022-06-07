@@ -22,7 +22,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         titleSynonyms: titleObj.titleSynonyms,
         qualities: [],
         seasons: [],
-        sources: [sourceName],
+        sources: sourceName ? [sourceName] : [],
         likesCount: 0,
         dislikesCount: 0,
         view: 0,

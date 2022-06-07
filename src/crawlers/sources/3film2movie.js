@@ -40,7 +40,8 @@ async function search_title(link, i) {
                 title.includes('ایران') ||
                 title.includes('دانلود سریال پهلوانان') ||
                 title.includes('دانلود سریال شکرستان') ||
-                title.includes('کلاه قرمزی')
+                title.includes('کلاه قرمزی') ||
+                title.includes('دانلود فصل')
             ) {
                 return;
             }

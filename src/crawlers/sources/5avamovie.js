@@ -61,6 +61,7 @@ async function search_title(link, i) {
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
+                    year = fixWrongYear(title, type, year);
                     downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
@@ -111,6 +112,19 @@ function fixYear($) {
         saveError(error);
         return '';
     }
+}
+
+function fixWrongYear(title, type, year) {
+    if (title === 'the blacklist' && type === 'serial') {
+        return '2013'; // 2016 --> 2013
+    } else if (title === 'i am the night' && type === 'serial') {
+        return '2019'; // 2011 --> 2019
+    }else if (title === 'living with yourself' && type === 'serial') {
+        return '2019'; // 2010 --> 2019
+    }else if (title === 'the l word generation q' && type === 'serial') {
+        return '2019'; // 2021 --> 2019
+    }
+    return year;
 }
 
 function getPersianSummary($) {

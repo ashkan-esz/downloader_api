@@ -150,7 +150,7 @@ async function searchOnCollection(titleObj, year, type) {
 
     let reSearch = false;
     let searchResults = await searchTitleDB(titleObj, searchTypes, year, dataConfig);
-    if (searchResults.length === 0 && searchTypes[0].includes('serial') && year) {
+    if (searchResults.length === 0 && (searchTypes[0].includes('serial') || searchTypes[0].includes('anime')) && year) {
         reSearch = true;
         searchResults = await searchTitleDB(titleObj, searchTypes, '', dataConfig);
     }
@@ -208,8 +208,11 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.subtitles = db_data.subtitles;
         }
 
-        if (!db_data.sources.includes(sourceName)) {
+        if (!db_data.sources.includes(sourceName) && (downloadLinks.length > 0 || watchOnlineLinks.length > 0)) {
             db_data.sources.push(sourceName);
+            updateFields.sources = db_data.sources;
+        } else if (db_data.sources.includes(sourceName) && (downloadLinks.length === 0 && watchOnlineLinks.length === 0)) {
+            db_data.sources = db_data.sources.filter(item => item !== sourceName);
             updateFields.sources = db_data.sources;
         }
 

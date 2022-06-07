@@ -25,6 +25,9 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
             data = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
             if (data === null) {
                 data = await handle_OMDB_ApiKeys(url);
+                if (data.Year && (Number(data.Year) - Number(titleYear) > 7)) {
+                    return null;
+                }
             }
         } else {
             data = await handle_OMDB_ApiKeys(url);

@@ -256,7 +256,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
     }
     titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
-    titleModel.summary.english = imdbData.plot.replace(/([.…])+$/, '');
+    titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
     titleModel.awards = imdbData.awards || '';
     titleModel.genres = imdbData.genres ? imdbData.genres.toLowerCase().split(',').map(item => item.trim()).filter(item => item !== 'n/a') : [];
     titleModel.country = imdbData.countries ? imdbData.countries.toLowerCase() : '';
@@ -265,9 +265,14 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
     titleModel.rating.imdb = Number(imdbData.imDbRating);
     titleModel.rating.metacritic = Number(imdbData.metacriticRating);
     titleModel.rating.rottenTomatoes = imdbData.ratings ? Number(imdbData.ratings.rottenTomatoes) : 0;
-    if (status === 'unknown' && imdbData.tvSeriesInfo && imdbData.tvSeriesInfo.yearEnd) {
-        titleModel.endYear = imdbData.tvSeriesInfo.yearEnd.split('-')[0];
-        titleModel.status = 'ended';
+    if (status === 'unknown' && imdbData.tvSeriesInfo) {
+        if (imdbData.tvSeriesInfo.yearEnd) {
+            titleModel.endYear = imdbData.tvSeriesInfo.yearEnd.split('-')[0];
+            titleModel.status = 'ended';
+        } else if (imdbData.tvSeriesInfo.yearEnd === '') {
+            titleModel.endYear = '';
+            titleModel.status = 'running';
+        }
     }
 
     await dbMethods.insertToDB('movies', titleModel);
@@ -349,10 +354,20 @@ async function getTitleDataFromDB(title, year, type) {
         posters: 1,
     }
 
-    let temp = await dbMethods.searchTitleDB(titleObj, [type], year, dataConfig);
+    let searchTypes = [type];
+    if (type.includes('anime')) {
+        searchTypes.push(type.replace('anime_', ''));
+    } else {
+        searchTypes.push(('anime_' + type));
+    }
+    let temp = await dbMethods.searchTitleDB(titleObj, searchTypes, year, dataConfig);
     if (temp.length === 0) {
         let minusYear = (Number(year) - 1).toString();
-        temp = await dbMethods.searchTitleDB(titleObj, [type], minusYear, dataConfig);
+        temp = await dbMethods.searchTitleDB(titleObj, searchTypes, minusYear, dataConfig);
+    }
+    if (temp.length === 0) {
+        let plusYear = (Number(year) + 1).toString();
+        temp = await dbMethods.searchTitleDB(titleObj, searchTypes, plusYear, dataConfig);
     }
 
     return temp.length > 0 ? temp[0] : null;
