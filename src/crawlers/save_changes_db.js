@@ -256,7 +256,9 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
-            updateFields.update_date = new Date();
+            if (subUpdates.PrimaryLatestDataChange) {
+                updateFields.update_date = new Date();
+            }
         }
 
         let {_handleCastUpdate} = await import("./crawler.js");

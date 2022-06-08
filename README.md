@@ -106,6 +106,7 @@ To run this project, you will need to add the following environment variables to
 | **`IMDB_API_KEY`**                     | see [imdb-api.com](https://imdb-api.com/)                                                                                  | `true`                  |
 | **`OMDB_API_KEY{i}`**                  | `i` start from 1 to infinite. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                              | `true`                  |
 | **`PRINT_ERRORS`**                     |                                                                                                                            | `false (default:false)` |
+| **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                        | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                            | `false`                 |
 | **`EMAIL_USERNAME`**                   |                                                                                                                            | `true`                  |
 | **`EMAIL_PASSWORD`**                   |                                                                                                                            | `true`                  |

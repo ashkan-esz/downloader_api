@@ -3,7 +3,8 @@ import {checkBetterQuality, checkDubbed, checkHardSub, getSeasonEpisode} from ".
 
 export function handleLatestDataUpdate(db_data, latestData, type) {
     let prevLatestData = db_data.latestData;
-    let updateFlag = false;
+    let latestDataChange = false;
+    let PrimaryLatestDataChange = false;
 
     if (type.includes('serial')) {
         if ((latestData.season > prevLatestData.season) ||
@@ -14,40 +15,42 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
             db_data.latestData.season = latestData.season;
             db_data.latestData.episode = latestData.episode;
             db_data.latestData.quality = latestData.quality;
-            updateFlag = true;
+            latestDataChange = true;
+            PrimaryLatestDataChange = true;
         }
     } else if (checkBetterQuality(latestData.quality, prevLatestData.quality)) {
         // movie, better quality
         db_data.latestData.quality = latestData.quality;
-        updateFlag = true;
+        latestDataChange = true;
+        PrimaryLatestDataChange = true;
     }
 
     if (checkLatestDataFieldChange(prevLatestData.hardSub, latestData.hardSub)) {
         db_data.latestData.hardSub = latestData.hardSub;
-        updateFlag = true;
+        latestDataChange = true;
     }
 
     if (checkLatestDataFieldChange(prevLatestData.dubbed, latestData.dubbed)) {
         db_data.latestData.dubbed = latestData.dubbed;
-        updateFlag = true;
+        latestDataChange = true;
     }
 
     if (checkLatestDataFieldChange(prevLatestData.censored, latestData.censored)) {
         db_data.latestData.censored = latestData.censored;
-        updateFlag = true;
+        latestDataChange = true;
     }
 
     if (checkLatestDataFieldChange(prevLatestData.subtitle, latestData.subtitle)) {
         db_data.latestData.subtitle = latestData.subtitle;
-        updateFlag = true;
+        latestDataChange = true;
     }
 
     if (checkLatestDataFieldChange(prevLatestData.watchOnlineLink, latestData.watchOnlineLink)) {
         db_data.latestData.watchOnlineLink = latestData.watchOnlineLink;
-        updateFlag = true;
+        latestDataChange = true;
     }
 
-    return (updateFlag);
+    return {latestDataChange, PrimaryLatestDataChange};
 }
 
 function checkLatestDataFieldChange(prevField, currentField) {

@@ -17,14 +17,18 @@ const jobTypes = ["email"];
 export async function startAgenda() {
     try {
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            await removeCompletedJobs();
-            await crawler('', 0);
+            if (config.disableCrawler !== 'true') {
+                await removeCompletedJobs();
+                await crawler('', 0);
+            }
         });
 
         agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
-            await removeCompletedJobs();
-            await updateImdbData();
-            await updateJikanData();
+            if (config.disableCrawler !== 'true') {
+                await removeCompletedJobs();
+                await updateImdbData();
+                await updateJikanData();
+            }
         });
 
         agenda.define("reset month likes", async (job) => {

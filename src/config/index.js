@@ -6,6 +6,7 @@ export default {
     nodeEnv: process.env.NODE_ENV,
     port: process.env.PORT || 3000,
     printErrors: process.env.PRINT_ERRORS,
+    disableCrawler: process.env.DISABLE_CRAWLER,
     crawlerConcurrency: process.env.CRAWLER_CONCURRENCY,
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,

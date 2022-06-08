@@ -8,12 +8,13 @@ export async function handleSubUpdates(db_data, poster, trailers, titleModel, ty
     try {
         let posterChange = await handlePosterUpdate(db_data, poster, sourceName);
         let trailerChange = handleTrailerUpdate(db_data, trailers);
-        let latestDataChange = handleLatestDataUpdate(db_data, titleModel.latestData, type);
+        let {latestDataChange, PrimaryLatestDataChange} = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
         return {
             posterChange,
             trailerChange,
             latestDataChange,
+            PrimaryLatestDataChange,
         };
     } catch (error) {
         saveError(error);
@@ -21,6 +22,7 @@ export async function handleSubUpdates(db_data, poster, trailers, titleModel, ty
             posterChange: false,
             trailerChange: false,
             latestDataChange: false,
+            PrimaryLatestDataChange: false,
         };
     }
 }
