@@ -1,19 +1,19 @@
 # API Parameters
 
-| param name                 |  Values  | Description                                      | Required |
-| -------------------------- | -------- |--------------------------------------------------| -------- |
-| **`types`**                 | _movie_, _serial_, _anime_movie_, _anime_serial_ | join values by `-` example: `movie-anime_serial` | `true` |
-| **`dataLevel`**         | _low_, _medium_, _high_|                                                  |`true` |
-| **`sortBase`** | _animeTopComingSoon_, _animeTopAiring_, _comingSoon_, _inTheaters_, _boxOffice_, _top_, _popular_, |                                                  | `true` |
-| **`years`** | Two Number joined by '-' | example: 2010-2021                               | `true` |
-| **`imdbScores`** | Two Number in range [0-10] joined by '-' | example: 5-9                                     | `true` |
-| **`malScores`** | Two Number in range [0-10] joined by '-' | example: 5-9                                     | `true` |
-| **`page`** | Number start from 1 | paginating result , 12 item exists in page       | `true` |
-| **`count`** | Number start from 1 | number of item returned in each page       | `true` |
-| **`dayNumber`** | Number in range [0-6] | number of day in week                            | `true` |
-| **`title`** | String | name of movie/staff/character to search          | `true` |
-| **`id`** | Mongodb id object | id of movie/staff/character to get               | `true` |
-| **`genres`** | Array of String joined by '-' | example: action or action-comedy-drama                             | `true` |
+| param name       | Values                                                                                             | Description                                      | Required |
+|------------------|----------------------------------------------------------------------------------------------------|--------------------------------------------------|----------|
+| **`types`**      | _movie_, _serial_, _anime_movie_, _anime_serial_                                                   | join values by `-` example: `movie-anime_serial` | `true`   |
+| **`dataLevel`**  | _low_, _medium_, _high_                                                                            |                                                  | `true`   |
+| **`sortBase`**   | _animeTopComingSoon_, _animeTopAiring_, _comingSoon_, _inTheaters_, _boxOffice_, _top_, _popular_, |                                                  | `true`   |
+| **`years`**      | Two Number joined by '-'                                                                           | example: 2010-2021                               | `true`   |
+| **`imdbScores`** | Two Number in range [0-10] joined by '-'                                                           | example: 5-9                                     | `true`   |
+| **`malScores`**  | Two Number in range [0-10] joined by '-'                                                           | example: 5-9                                     | `true`   |
+| **`page`**       | Number start from 1                                                                                | paginating result , 12 item exists in page       | `true`   |
+| **`count`**      | Number start from 1                                                                                | number of item returned in each page             | `true`   |
+| **`dayNumber`**  | Number in range [0-6]                                                                              | number of day in week                            | `true`   |
+| **`title`**      | String                                                                                             | name of movie/staff/character to search          | `true`   |
+| **`id`**         | Mongodb id object                                                                                  | id of movie/staff/character to get               | `true`   |
+| **`genres`**     | Array of String joined by '-'                                                                      | example: action or action-comedy-drama           | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 

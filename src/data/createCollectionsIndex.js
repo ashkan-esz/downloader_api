@@ -51,7 +51,7 @@ export async function createCollectionsAndIndexes() {
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: likesCount, _id)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, trailers, (sort: year, add_date)
         //usage: rank.*, type, rating.imdb, rating.myAnimeList, (sort: rank)
-        //usage: status, releaseDay, type, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)
+        //usage: status, nextEpisode.releaseStamp, update_date, endYear, releaseDay, type, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)
         //usage: genres, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
 
 

@@ -2,6 +2,7 @@ import getCollection from './mongoDB.js';
 import mongodb from 'mongodb';
 import {saveError} from "../error/saveError.js";
 
+//todo : npm install express-mongo-sanitize
 
 export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
     try {
@@ -470,13 +471,39 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
 export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, projection) {
     try {
         dayNumber = dayNumber % 7;
+        types = types.filter(item => item.includes('serial'));
         const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         let collection = await getCollection('movies');
+
+        let lastWeek = new Date();
+        const year = lastWeek.getFullYear().toString();
+        let passedDays = Math.max(0, lastWeek.getDay() - dayNumber);
+        lastWeek.setDate(lastWeek.getDate() - 7 - passedDays);
+        lastWeek.setHours(0, 0, 0, 0);
+        let twoWeekInFuture = new Date();
+        twoWeekInFuture.setDate(twoWeekInFuture.getDate() + 15);
+
+        let filter =  {
+            $or: [
+                {
+                    status: "running",
+                    $or: [
+                        {'nextEpisode.releaseStamp': {$gte: lastWeek.toISOString(), $lte: twoWeekInFuture.toISOString()}},
+                        {update_date: {$gte: lastWeek}}
+                    ]
+                },
+                {
+                    status: {$ne: "running"},
+                    update_date: {$gte: lastWeek},
+                    endYear: year,
+                }
+            ],
+        }
 
         let aggregationPipeline = [
             {
                 $match: {
-                    status: "running",
+                    ...filter,
                     releaseDay: daysOfWeek[dayNumber],
                     ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
                 }
