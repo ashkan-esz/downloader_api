@@ -23,7 +23,52 @@ export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPers
             characterRole: characterRole,
             characterImage: '',
         }],
-        likesCount: 0,
-        dislikesCount: 0,
+        userStats: userStats_staff,
+    }
+}
+
+export const userStats_staff = {
+    //like,dislike
+    like_staff_count: 0,
+    dislike_staff_count: 0,
+    //follow
+    follow_staff_count: 0,
+}
+
+export const dataLevelConfig_staff = {
+    low: {
+        name: 1,
+        rawName: 1,
+        gender: 1,
+        imageData: 1,
+        userStats: {
+            //like,dislike
+            like_staff: 1,
+            like_staff_count: 1,
+            dislike_staff: 1,
+            dislike_staff_count: 1,
+            //follow
+            follow_staff: 1,
+            follow_staff_count: 1,
+        }
+    },
+    medium: {
+        name: 1,
+        rawName: 1,
+        gender: 1,
+        imageData: 1,
+        userStats: {
+            //like,dislike
+            like_staff: 1,
+            like_staff_count: 1,
+            dislike_staff: 1,
+            dislike_staff_count: 1,
+            //follow
+            follow_staff: 1,
+            follow_staff_count: 1,
+        }
+    },
+    high: {
+        //all
     }
 }

@@ -7,15 +7,14 @@ import {saveError} from "../error/saveError.js";
 export async function createCollectionsAndIndexes() {
     try {
         console.log('creating mongodb collection and indexes');
-        const likeBucketCollections = ['moviesLikeBucket', 'staffLikeBucket', 'charactersLikeBucket'];
-        for (let i = 0; i < likeBucketCollections.length; i++) {
-            let collection = await getCollection(likeBucketCollections[i]);
-            await collection.createIndex({userId: 1, type: 1, itemCount: 1});
-            //usage: userId, likes
-            //usage: userId, type, itemCount
-            //usage: userId, type, (sort pageNumber)
-            //usage: userId, type, likes
-        }
+
+        let userStats = await getCollection('userStats');
+        await userStats.createIndex({userId: 1, pageNumber: 1});
+        //usage: userId, $or{[statType],[statType2]}
+        //usage: userId, [statCounterField], sort:{pageNumber: 1} --more usage
+        //usage: userId, [statType],
+        //usage: userId, pageNumber, sort:{pageNumber: -1} --more usage
+        //usage: userId, [statCounterField], sort:{pageNumber: -1}
 
 
         let moviesCollection = await getCollection('movies');
@@ -27,7 +26,7 @@ export async function createCollectionsAndIndexes() {
         await moviesCollection.createIndex({type: 1, releaseState: 1, 'rating.imdb': 1, 'rating.myAnimeList': 1});
         await moviesCollection.createIndex({year: -1, insert_date: -1});
         await moviesCollection.createIndex({update_date: -1, year: -1});
-        await moviesCollection.createIndex({likesCount: -1, _id: -1});
+        await moviesCollection.createIndex({'userStats.like_movie': -1, _id: -1});
         await moviesCollection.createIndex({
             type: 1, //index prefix
             'rank.animeTopComingSoon': 1,
@@ -48,7 +47,7 @@ export async function createCollectionsAndIndexes() {
         //usage: imdbID
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: update_date, year)
-        //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: likesCount, _id)
+        //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: 'userStats.like_movie', _id)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, trailers, (sort: year, add_date)
         //usage: rank.*, type, rating.imdb, rating.myAnimeList, (sort: rank)
         //usage: status, nextEpisode.releaseStamp, update_date, endYear, releaseDay, type, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)

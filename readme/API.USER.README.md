@@ -1,17 +1,17 @@
 # API Parameters
 
-| param name                 |  Values  | Description                                      | Required |
-| -------------------------- | -------- |--------------------------------------------------| -------- |
-| **`username`** | string | match <code>/^[a-z&#124;0-9_]+$/gi</code> and length in range [6-50] | `true` |
-| **`email`**    | string |                                                                      | `true` |
-| **`password`** | string | at least one number and capital letter  and length in range [8-50]   | `true` |
-| **`confirmPassword`** | string |                                                               | `true` |
-| **`deviceInfo`**  | String | includes fields _appName_, _appVersion_, _os_, _deviceModel_      | `true` |
-| **`appName`**     | String |                                                  | `true` |
-| **`appVersion`**  | String |                                                  | `true` |
-| **`os`**          | String |                                                  | `true` |
-| **`deviceModel`** | String |                                                  | `true` |
-| **`deviceId`**    | String | unique id of session                             | `true` |
+| param name            | Values | Description                                                          | Required |
+|-----------------------|--------|----------------------------------------------------------------------|----------|
+| **`username`**        | string | match <code>/^[a-z&#124;0-9_]+$/gi</code> and length in range [6-50] | `true`   |
+| **`email`**           | string |                                                                      | `true`   |
+| **`password`**        | string | at least one number and capital letter  and length in range [8-50]   | `true`   |
+| **`confirmPassword`** | string |                                                                      | `true`   |
+| **`deviceInfo`**      | String | includes fields _appName_, _appVersion_, _os_, _deviceModel_         | `true`   |
+| **`appName`**         | String |                                                                      | `true`   |
+| **`appVersion`**      | String |                                                                      | `true`   |
+| **`os`**              | String |                                                                      | `true`   |
+| **`deviceModel`**     | String |                                                                      | `true`   |
+| **`deviceId`**        | String | unique id of session                                                 | `true`   |
 
 > they are case-insensitive.
 

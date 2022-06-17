@@ -1,4 +1,4 @@
-import * as likeService from './likeService.js';
+import * as likeService from './mtest_userStatsService.js';
 
 startManualTest();
 

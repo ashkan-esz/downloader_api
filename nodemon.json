@@ -1,6 +1,6 @@
 {
   "ignore": [
-    "test.js",
+    "manualTest.js",
     "todo.js",
     "logs/*",
     "*.md"

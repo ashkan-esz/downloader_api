@@ -128,34 +128,24 @@ export async function searchCharacterById(req, res) {
     return res.status(titleData.responseData.code).json(titleData.responseData);
 }
 
-export async function likeMovie(req, res) {
+export async function userStatsService(req, res) {
     let userId = req.jwtUserData.userId;
-    let type = req.params.type; //like|dislike
+    let statType = req.params.statType.toLowerCase();
     let movieId = req.params.id;
     let isRemove = req.query.remove === 'true';
-    let likeResult = await moviesServices.likeOrDislikeService(userId, 'movies', movieId, type, isRemove);
+    let userStatsResult = await moviesServices.userStatsService(userId, statType, movieId, isRemove);
 
-    return res.status(likeResult.responseData.code).json(likeResult.responseData);
+    return res.status(userStatsResult.responseData.code).json(userStatsResult.responseData);
 }
 
-export async function likeStaff(req, res) {
+export async function getUserStatsList(req, res) {
     let userId = req.jwtUserData.userId;
-    let type = req.params.type; //like|dislike
-    let movieId = req.params.id;
-    let isRemove = req.query.remove === 'true';
-    let likeResult = await moviesServices.likeOrDislikeService(userId, 'staff', movieId, type, isRemove);
+    let statType = req.params.statType.toLowerCase();
+    let dataLevel = req.params.dataLevel.toLowerCase().trim();
+    let page = Number(req.params.page) || 1;
+    let userStatsListResult = await moviesServices.getUserStatsList(userId, statType, dataLevel, page);
 
-    return res.status(likeResult.responseData.code).json(likeResult.responseData);
-}
-
-export async function likeCharacter(req, res) {
-    let userId = req.jwtUserData.userId;
-    let type = req.params.type; //like|dislike
-    let movieId = req.params.id;
-    let isRemove = req.query.remove === 'true';
-    let likeResult = await moviesServices.likeOrDislikeService(userId, 'characters', movieId, type, isRemove);
-
-    return res.status(likeResult.responseData.code).json(likeResult.responseData);
+    return res.status(userStatsListResult.responseData.code).json(userStatsListResult.responseData);
 }
 
 export async function getGenresStatus(req, res) {
@@ -173,7 +163,7 @@ export async function getMovieSources(req, res) {
 export async function getGenresMovies(req, res) {
     let userId = req.jwtUserData.userId;
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
-    let genres = req.params.genres.split('-').map(item => item.toLowerCase().trim());
+    let genres = req.params.genres.split('-').map(item => item.replace('_', '-').toLowerCase().trim());
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));

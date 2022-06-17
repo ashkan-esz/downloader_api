@@ -17,18 +17,8 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         activeSessions: [
             getNewDeviceSession(deviceInfo, deviceId, ''),
         ],
+        favoriteGenres: [],
         friends: [],
-        favorites: {
-            titles: [],
-            staff: [],
-            characters: [],
-        },
-        status: {
-            watched: [],
-            watching: [],
-            dropped: [],
-            wantToWatch: [],
-        },
         registrationDate: new Date(),
         role: 'user',
     }

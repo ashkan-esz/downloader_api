@@ -1,8 +1,10 @@
 import * as dbMethods from '../data/dbMethods.js';
-import * as likeDbMethods from '../data/likeDbMethods.js';
+import * as userStatsDbMethods from '../data/db/userStats.js';
 import {dataLevelConfig} from "../models/movie.js";
 import {generateServiceResult} from "./serviceUtils.js";
 import {setCache} from "../api/middlewares/moviesCache.js";
+import {dataLevelConfig_staff} from "../models/person.js";
+import {dataLevelConfig_character} from "../models/character.js";
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
@@ -13,7 +15,6 @@ export async function getNews(userId, types, dataLevel, imdbScores, malScores, p
     } else if (newMovies.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(newMovies);
     return generateServiceResult({data: newMovies}, 200, '');
 }
 
@@ -26,7 +27,6 @@ export async function getUpdates(userId, types, dataLevel, imdbScores, malScores
     } else if (updateMovies.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(updateMovies);
     return generateServiceResult({data: updateMovies}, 200, '');
 }
 
@@ -39,7 +39,6 @@ export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malSc
     } else if (topsByLikesMovies.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(topsByLikesMovies);
     return generateServiceResult({data: topsByLikesMovies}, 200, '');
 }
 
@@ -52,7 +51,6 @@ export async function getTrailers(userId, types, dataLevel, imdbScores, malScore
     } else if (trailersData.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(trailersData);
     return generateServiceResult({data: trailersData}, 200, '');
 }
 
@@ -65,7 +63,6 @@ export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbSc
     } else if (sortedData.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(sortedData);
     return generateServiceResult({data: sortedData}, 200, '');
 }
 
@@ -78,7 +75,6 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
     } else if (seriesOfDay.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(seriesOfDay);
     return generateServiceResult({data: seriesOfDay}, 200, '');
 }
 
@@ -110,30 +106,16 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
     } else if (multiple.inTheaters.length === 0 && multiple.comingSoon.length === 0 && multiple.news.length === 0 && multiple.update.length === 0) {
         return generateServiceResult({data: multiple}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(multiple.inTheaters);
-    addFieldLikeOrDislike(multiple.comingSoon);
-    addFieldLikeOrDislike(multiple.news);
-    addFieldLikeOrDislike(multiple.update);
     return generateServiceResult({data: multiple}, 200, '');
 }
 
 export async function searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let staffAndCharactersProjection = dataLevel === 'high'
-        ? {}
-        : {
-            name: 1,
-            rawName: 1,
-            gender: 1,
-            imageData: 1,
-            likesCount: 1,
-            dislikesCount: 1,
-        };
     let searchDataArray = await Promise.allSettled([
         dbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, staffAndCharactersProjection),
-        dbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, staffAndCharactersProjection),
+        dbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel]),
+        dbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel]),
     ]);
     let searchData = {
         movies: searchDataArray[0].value,
@@ -152,9 +134,6 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
     } else if (searchData.movies.length === 0 && searchData.staff.length === 0 && searchData.characters.length === 0) {
         return generateServiceResult({data: searchData}, 404, 'Movie/Staff/Character not found');
     }
-    addFieldLikeOrDislike(searchData.movies);
-    addFieldLikeOrDislike(searchData.staff);
-    addFieldLikeOrDislike(searchData.characters);
     return generateServiceResult({data: searchData}, 200, '');
 }
 
@@ -165,7 +144,6 @@ export async function searchMovieById(userId, id, dataLevel) {
     } else if (!movieData) {
         return generateServiceResult({data: null}, 404, 'Movie not found');
     }
-    addFieldLikeOrDislike([movieData]);
     return generateServiceResult({data: movieData}, 200, '');
 }
 
@@ -176,7 +154,6 @@ export async function searchStaffById(userId, id) {
     } else if (!staffData) {
         return generateServiceResult({data: null}, 404, 'Staff not found');
     }
-    addFieldLikeOrDislike([staffData]);
     return generateServiceResult({data: staffData}, 200, '');
 }
 
@@ -187,19 +164,18 @@ export async function searchCharacterById(userId, id) {
     } else if (!characterData) {
         return generateServiceResult({data: null}, 404, 'Character not found');
     }
-    addFieldLikeOrDislike([characterData]);
     return generateServiceResult({data: characterData}, 200, '');
 }
 
-export async function likeOrDislikeService(userId, docType, id, likeOrDislike, isRemove) {
+export async function userStatsService(userId, statType, id, isRemove) {
     if (isRemove) {
-        let removeResult = await likeDbMethods.handleRemoveLikeOrDislikeTransaction(userId, docType, id, likeOrDislike);
+        let removeResult = await userStatsDbMethods.handleRemoveUserStatsTransaction(userId, statType, id);
         const code = removeResult === 'error' ? 500 : removeResult === 'notfound' ? 404 : 200;
         const errorMessage = removeResult === 'error' ? 'Server error, try again later' : removeResult === 'notfound' ? 'Document not found' : '';
         return generateServiceResult({}, code, errorMessage);
     }
 
-    let result = await likeDbMethods.handleLikeOrDislikeTransaction(userId, docType, id, likeOrDislike);
+    let result = await userStatsDbMethods.handleAddUserStatsTransaction(userId, statType, id);
     if (result === 'error') {
         return generateServiceResult({}, 500, 'Server error, try again later');
     }
@@ -210,6 +186,27 @@ export async function likeOrDislikeService(userId, docType, id, likeOrDislike, i
         return generateServiceResult({}, 409, 'Already exist');
     }
     return generateServiceResult({}, 200, '');
+}
+
+export async function getUserStatsList(userId, statType, dataLevel, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let projection;
+    if (statType.includes('staff')) {
+        projection = dataLevelConfig_staff[dataLevel];
+    } else if (statType.includes('character')) {
+        projection = dataLevelConfig_character[dataLevel];
+    } else {
+        projection = dataLevelConfig[dataLevel];
+    }
+
+    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, skip, limit, projection);
+    if (userStatsList === 'error') {
+        return generateServiceResult({data: []}, 500, 'Server error, try again later');
+    } else if (userStatsList.length === 0) {
+        return generateServiceResult({data: []}, 404, 'Documents not found');
+    }
+    return generateServiceResult({data: userStatsList}, 200, '');
 }
 
 export async function getGenresStatus(routeUrl) {
@@ -238,7 +235,6 @@ export async function getGenresMovies(userId, genres, types, imdbScores, malScor
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, 'Movies not found');
     }
-    addFieldLikeOrDislike(result);
     return generateServiceResult({data: result}, 200, '');
 }
 
@@ -274,13 +270,4 @@ function getSkipLimit(page, limit) {
         skip: limit * (page - 1),
         limit,
     };
-}
-
-export function addFieldLikeOrDislike(docs) {
-    for (let i = 0; i < docs.length; i++) {
-        docs[i].likeOrDislike = docs[i].likeBucket.length > 0
-            ? docs[i].likeBucket[0].type
-            : '';
-        delete docs[i].likeBucket;
-    }
 }

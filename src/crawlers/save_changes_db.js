@@ -136,8 +136,6 @@ async function searchOnCollection(titleObj, year, type) {
         totalSeasons: 1,
         latestData: 1,
         nextEpisode: 1,
-        likesCount: 1,
-        dislikesCount: 1,
         releaseDay: 1,
     };
 

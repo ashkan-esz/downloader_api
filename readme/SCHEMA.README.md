@@ -10,18 +10,8 @@ profile = {
     bio: String,
     profileImages: Array(String),
     defaultProfile: String,
+    favoriteGenres: Array(String),
     friends: Array,
-    favorites: {
-        titles: Array,
-        staff: Array,
-        characters: Array
-    },
-    status: {
-        watched: Array,
-        watching: Array,
-        dropped: Array,
-        wantToWatch: Array
-    },
     registrationDate: Date,
     role: String, // enum('test-user', 'user', 'dev', 'admin')
     thisDevice: #Session, //see below
@@ -87,9 +77,7 @@ dataLevel = {
             metacritic: Int,
             myAnimeList: Int
         },
-        likesCount: Int,
-        dislikesCount: Int,
-        likeOrDislike: String, // enum('', 'like', 'dislike')
+        userStats: #userStats,
     },
     medium: {
         ...low, //all fields from low datalevel also exist
@@ -138,72 +126,16 @@ dataLevel = {
             gross: String,
             weeks: Int,
         },
+        userStats: #userStats,
     },
     high: {
         ...low,
         ...medium,
         titleSynonyms: Array(String),
-        qualities: Array({ // for movie titles check qualities and check seasons for series titles
-            quality: String,
-            links: Array({
-                link: String,
-                info: String,
-                qualitySample: String,
-                sourceName: String,
-                pageLink: String,
-                season: Int,
-                episode: Int,
-            }),
-            watchOnlineLinks: Array({
-                link: String,
-                info: String,
-                sourceName: String,
-                pageLink: String,
-                season: Int,
-                episode: Int,
-            }),
-        }),
-        seasons: Array({
-            seasonNumber: Int,
-            episodes: Array({
-                episodeNumber: Int,
-                title: String,
-                released: String,
-                releaseStamp: String,
-                duration: String,
-                imdbRating: String,
-                imdbID: String,
-                links: Array({
-                    link: String,
-                    info: String,
-                    qualitySample: String,
-                    sourceName: String,
-                    pageLink: String,
-                    season: Int,
-                    episode: Int,
-                }),
-                watchOnlineLinks: Array({
-                    link: String,
-                    info: String,
-                    sourceName: String,
-                    pageLink: String,
-                    season: Int,
-                    episode: Int,
-                }),
-            })
-        }),
-        subtitles: Array({
-            seasonNumber: Int,
-            links: Array({
-                link: String,
-                info: String, //Episodes(\d\d-\d\d) or AllEpisodesOf(Season \d\d)
-                sourceName: String,
-                pageLink: String,
-                season: Int,
-                episode: Int,
-                direct: Boolean,
-            })
-        }),
+        // for movie titles check qualities and check seasons for series titles
+        qualities: Array(#QUALITY),
+        seasons: Array(#SEASON),
+        subtitles: Array(#SUBTITLE),
         sources: Array(String),
         view: Int,
         like_month: Int,
@@ -236,25 +168,11 @@ dataLevel = {
         rated: String,
         movieLang: String,
         country: String,
-        actorsAndCharacters: Array({
-            id: Object,
-            name: String,
-            gender: String, //enum('Male', 'Female')
-            country: String,
-            image: String,
-            positions: Array(String),
-            characterData: null || {
-                id: Object,
-                name: String,
-                gender: String, //enum('Male', 'Female')
-                image: String,
-                role: String,
-            }
-        }),
+        actorsAndCharacters: Array(#actor_and_character),
         staff: {
-            directors: Array, //same format of actorsAndCharacters
-            writers: Array, //same format of actorsAndCharacters
-            others: Array, //same format of actorsAndCharacters
+            directors: Array(#actor_and_character),
+            writers: Array(#actor_and_character),
+            others: Array(#actor_and_character),
         },
         awards: String,
         animeType: String,
@@ -266,7 +184,150 @@ dataLevel = {
             rawTitle: String,
             relation: String, //enum('Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off')
         }),
+        userStats: #userStats,
     }
+}
+```
+
+
+## Season
+```javascript
+#SEASON = {
+    seasonNumber: Int,
+    episodes: Array({
+        episodeNumber: Int,
+        title: String,
+        released: String,
+        releaseStamp: String,
+        duration: String,
+        imdbRating: String,
+        imdbID: String,
+        links: Array({
+            link: String,
+            info: String,
+            qualitySample: String,
+            sourceName: String,
+            pageLink: String,
+            season: Int,
+            episode: Int,
+        }),
+        watchOnlineLinks: Array({
+            link: String,
+            info: String,
+            sourceName: String,
+            pageLink: String,
+            season: Int,
+            episode: Int,
+        }),
+    })
+}
+```
+
+
+## Quality
+```javascript
+#QUALITY = {
+    quality: String,
+    links: Array({
+        link: String,
+        info: String,
+        qualitySample: String,
+        sourceName: String,
+        pageLink: String,
+        season: Int,
+        episode: Int,
+    }),
+    watchOnlineLinks: Array({
+        link: String,
+        info: String,
+        sourceName: String,
+        pageLink: String,
+        season: Int,
+        episode: Int,
+    }),
+}
+```
+
+
+## Subtitle
+```javascript
+#SUBTITLE = {
+    seasonNumber: Int,
+    links: Array({
+        link: String,
+        info: String, //Episodes(\d\d-\d\d) or AllEpisodesOf(Season \d\d)
+        sourceName: String,
+        pageLink: String,
+        season: Int,
+        episode: Int,
+        direct: Boolean,
+    })
+}
+```
+
+
+## Actor_And_Character
+```javascript
+#actor_and_Character = {
+    id: Object,
+    name: String,
+    gender: String, //enum('Male', 'Female')
+    country: String,
+    image: String,
+    positions: Array(String),
+    characterData: null || {
+        id: Object,
+        name: String,
+        gender: String, //enum('Male', 'Female')
+        image: String,
+        role: String,
+    }
+}
+```
+
+
+## User Stats
+```javascript
+#userStats = {
+    //-- movies only
+    //like,dislike
+    like_movie: Boolean,
+    like_movie_count: Int,
+    dislike_movie: Boolean,
+    dislike_movie_count: Int,
+    //others
+    save: Boolean,
+    save_count: Int,
+    future_list: Boolean,
+    future_list_count: Int,
+    //below field includes only when (dataLevel == high)
+    follow_movie: Boolean,
+    follow_movie_count: Int,
+    dropped: Boolean,
+    dropped_count: Int,
+    finished: Boolean,
+    finished_count: Int,
+    score: Double,
+    score_count: Int,
+}
+
+#userStats_staff = {
+    //like,dislike
+    like_staff: Boolean,
+    like_staff_count: Int,
+    dislike_staff: Boolean,
+    dislike_staff_count: Int,
+    //follow
+    follow_staff: Boolean,
+    follow_staff_count: Int,
+}
+
+#userStats_character = {
+    //like,dislike
+    like_character: Boolean,
+    like_character_count: Int,
+    dislike_character: Boolean,
+    dislike_character_count: Int,
 }
 ```
 
@@ -299,9 +360,7 @@ staffData = {
         characterRole: String,
         characterImage: String,
     }),
-    likesCount: Int,
-    dislikesCount: Int,
-    likeOrDislike: String, // enum('', 'like', 'dislike')
+    userStats: #userStats_staff,
 }
 ```
 
@@ -330,9 +389,7 @@ characterData = {
         actorName: String,
         actorImage: String,
     }),
-    likesCount: Int,
-    dislikesCount: Int,
-    likeOrDislike: String, // enum('', 'like', 'dislike')
+    userStats: #userStats_character,
 }
 ```
 
