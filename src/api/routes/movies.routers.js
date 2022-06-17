@@ -48,14 +48,12 @@ router.get('/staff/searchById/:id',
 router.get('/characters/searchById/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.searchCharacterById);
 
-//movies/likeOrDislike/:type/:id?remove=(true|false)
-router.put('/likeOrDislike/:type/:id', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.likeMovie);
+//movies/addUserStats/:statType/:id?remove=(true|false)
+router.put('/addUserStats/:statType/:id', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.userStatsService);
 
-//movies/likeOrDislike/staff/:type/:id?remove=(true|false)
-router.put('/likeOrDislike/staff/:type/:id', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.likeStaff);
-
-//movies/likeOrDislike/characters/:type/:id?remove=(true|false)
-router.put('/likeOrDislike/characters/:type/:id', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.likeCharacter);
+//movies/userStatsList/:statType/:dataLevel/:page
+router.get('/userStatsList/:statType/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, moviesControllers.getUserStatsList);
 
 //movies/status/genres
 router.get('/status/genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, middlewares.moviesCache, moviesControllers.getGenresStatus);

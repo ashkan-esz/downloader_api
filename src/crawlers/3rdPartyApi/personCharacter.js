@@ -441,7 +441,7 @@ function updateStaffAndCharactersFields(prevFields, currentFields) {
         let newFields = {...prevFields};
         let keys = Object.keys(currentFields);
         for (let i = 0; i < keys.length; i++) {
-            if (keys[i] === 'likesCount' || keys[i] === 'dislikesCount') {
+            if (keys[i] === 'userStats') {
                 continue;
             }
             if (keys[i] === 'insertFlag' || keys[i] === 'updateFlag') {

@@ -19,7 +19,44 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
             actorName: fixJapaneseCharacter(actorName),
             actorImage: '',
         }],
-        likesCount: 0,
-        dislikesCount: 0,
+        userStats: userStats_character,
+    }
+}
+
+export const userStats_character = {
+    //like,dislike
+    like_character_count: 0,
+    dislike_character_count: 0,
+}
+
+export const dataLevelConfig_character = {
+    low: {
+        name: 1,
+        rawName: 1,
+        gender: 1,
+        imageData: 1,
+        userStats: {
+            //like,dislike
+            like_character: 1,
+            like_character_count: 1,
+            dislike_character: 1,
+            dislike_character_count: 1,
+        }
+    },
+    medium: {
+        name: 1,
+        rawName: 1,
+        gender: 1,
+        imageData: 1,
+        userStats: {
+            //like,dislike
+            like_character: 1,
+            like_character_count: 1,
+            dislike_character: 1,
+            dislike_character_count: 1,
+        }
+    },
+    high: {
+        //all
     }
 }

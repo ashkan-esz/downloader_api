@@ -23,8 +23,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         qualities: [],
         seasons: [],
         sources: sourceName ? [sourceName] : [],
-        likesCount: 0,
-        dislikesCount: 0,
+        userStats: userStats,
         view: 0,
         like_month: 0,
         view_month: 0,
@@ -92,6 +91,69 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
     };
 }
 
+export const userStats = {
+    like_movie_count: 0,
+    dislike_movie_count: 0,
+    //follow
+    follow_movie_count: 0,
+    //others
+    save_count: 0,
+    future_list_count: 0,
+    dropped_count: 0,
+    finished_count: 0,
+    score_count: 0,
+}
+
+export const userStats_projection = {
+    low: {
+        like_movie: 1,
+        like_movie_count: 1,
+        dislike_movie: 1,
+        dislike_movie_count: 1,
+        //save
+        save: 1,
+        save_count: 1,
+        //future list
+        future_list: 1,
+        future_list_count: 1,
+    },
+    medium:{
+        like_movie: 1,
+        like_movie_count: 1,
+        dislike_movie: 1,
+        dislike_movie_count: 1,
+        //save
+        save: 1,
+        save_count: 1,
+        //future list
+        future_list: 1,
+        future_list_count: 1,
+    },
+    high:{
+        like_movie: 1,
+        like_movie_count: 1,
+        dislike_movie: 1,
+        dislike_movie_count: 1,
+        //save
+        save: 1,
+        save_count: 1,
+        //future list
+        future_list: 1,
+        future_list_count: 1,
+        //--- high only fields
+        //follow
+        follow_movie: 1,
+        follow_movie_count: 1,
+        //others
+        dropped: 1,
+        dropped_count: 1,
+        finished: 1,
+        finished_count: 1,
+        score: 1,
+        score_count: 1,
+    }
+}
+
 export const dataLevelConfig = {
     low: {
         title: 1,
@@ -101,8 +163,7 @@ export const dataLevelConfig = {
         type: 1,
         rawTitle: 1,
         rating: 1,
-        likesCount: 1,
-        dislikesCount: 1,
+        userStats: userStats_projection.low,
     },
     medium: {
         releaseState: 1,
@@ -116,8 +177,7 @@ export const dataLevelConfig = {
         alternateTitles: 1,
         rating: 1,
         summary: 1,
-        likesCount: 1,
-        dislikesCount: 1,
+        userStats: userStats_projection.medium,
         genres: 1,
         trailers: 1,
         latestData: 1,

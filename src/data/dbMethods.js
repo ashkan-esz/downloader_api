@@ -1,6 +1,9 @@
 import getCollection from './mongoDB.js';
 import mongodb from 'mongodb';
 import {saveError} from "../error/saveError.js";
+import {userStats} from "../models/movie.js";
+import {userStats_staff} from "../models/person.js";
+import {userStats_character} from "../models/character.js";
 
 //todo : npm install express-mongo-sanitize
 
@@ -273,12 +276,12 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -312,12 +315,12 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -341,7 +344,7 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
             },
             {
                 $sort: {
-                    likesCount: -1,
+                    'userStats.like_movie': -1,
                     _id: -1,
                 }
             },
@@ -351,12 +354,12 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -391,12 +394,12 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -452,12 +455,12 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -483,12 +486,17 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
         let twoWeekInFuture = new Date();
         twoWeekInFuture.setDate(twoWeekInFuture.getDate() + 15);
 
-        let filter =  {
+        let filter = {
             $or: [
                 {
                     status: "running",
                     $or: [
-                        {'nextEpisode.releaseStamp': {$gte: lastWeek.toISOString(), $lte: twoWeekInFuture.toISOString()}},
+                        {
+                            'nextEpisode.releaseStamp': {
+                                $gte: lastWeek.toISOString(),
+                                $lte: twoWeekInFuture.toISOString()
+                            }
+                        },
                         {update_date: {$gte: lastWeek}}
                     ]
                 },
@@ -521,12 +529,12 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -603,12 +611,12 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -649,7 +657,7 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, 'movies'),
+            ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
         if (title) {
@@ -671,7 +679,7 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -695,12 +703,12 @@ export async function searchOnCollectionById(collectionName, userId, id, project
             {
                 $limit: 1,
             },
-            getLookupOnLikeBucketStage(userId, collectionName),
+            ...getLookupOnUserStatsStage(userId, collectionName),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -732,12 +740,12 @@ export async function searchOnCollectionByName(collectionName, userId, name, ski
             {
                 $limit: limit,
             },
-            getLookupOnLikeBucketStage(userId, collectionName),
+            ...getLookupOnUserStatsStage(userId, collectionName),
         ];
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
-                $project: {...projection, likeBucket: 1},
+                $project: projection,
             });
         }
 
@@ -751,17 +759,15 @@ export async function searchOnCollectionByName(collectionName, userId, name, ski
 //-----------------------------------
 //-----------------------------------
 
-export async function changeMoviesLikeOrDislike(collectionName, id, type, value, type2, value2, opts = {}) {
+export async function changeUserStatOnRelatedCollection(collectionName, id, statCounterField, value, statCounterField2, value2, opts = {}, retryCounter) {
     try {
         let collection = await getCollection(collectionName);
 
-        //like --> likesCount
-        //dislike --> dislikesCount
         const dataUpdate = {
-            [`${type}sCount`]: value
+            [`userStats.${statCounterField}`]: value
         }
-        if (type2) {
-            dataUpdate[`${type2}sCount`] = value2;
+        if (statCounterField2) {
+            dataUpdate[`userStats.${statCounterField2}`] = value2;
         }
 
         let updateResult = await collection.updateOne({
@@ -775,7 +781,11 @@ export async function changeMoviesLikeOrDislike(collectionName, id, type, value,
         }
         return 'ok';
     } catch (error) {
-        saveError(error);
+        if (
+            retryCounter !== 0 ||
+            error.message !== 'WriteConflict error: this operation conflicted with another operation. Please retry your operation or multi-document transaction.') {
+            saveError(error);
+        }
         return 'error';
     }
 }
@@ -803,26 +813,113 @@ function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
     };
 }
 
-function getLookupOnLikeBucketStage(userId, collectionName) {
-    return ({
-        $lookup: {
-            let: {movieId: "$_id"},
-            from: (collectionName + 'LikeBucket'),
-            pipeline: [
-                {
-                    $match: {
-                        $expr: {
-                            $and: [
-                                {$eq: ["$userId", new mongodb.ObjectId(userId)]},
-                                {$in: ["$$movieId", "$likes"]}
-                            ]
+function getLookupOnUserStatsStage(userId, collectionName) {
+    //----------------------
+    let {defaultFieldValues, projection} = getDefaultFieldValuesAndProjection(collectionName);
+    //----------------------
+    let stats = Object.keys({...defaultFieldValues});
+    let checkStatArray = [];
+    let addStatFieldsArray = {
+        $addFields: {}
+    };
+    for (let i = 0; i < stats.length; i++) {
+        let stat = stats[i];
+        checkStatArray.push({
+            $in: ["$$movieId", `$${stat}`]
+        });
+        addStatFieldsArray["$addFields"][stat] = {
+            $cond: [{$in: ["$$movieId", `$${stat}`]}, true, false]
+        }
+    }
+    //----------------------
+    return [
+        {
+            $lookup: {
+                let: {movieId: "$_id"},
+                from: 'userStats',
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {$eq: ["$userId", new mongodb.ObjectId(userId)]},
+                                    {$or: checkStatArray},
+                                ],
+                            }
                         }
-                    }
-                },
-                {$project: {"type": 1}},
+                    },
+                    addStatFieldsArray,
+                    {
+                        $project: projection,
+                    },
+                    {$limit: 1}
+                ],
+                as: 'userStats2',
+            }
+        },
+        {
+            $addFields: {
+                userStats: {
+                    $mergeObjects: [defaultFieldValues, {$arrayElemAt: ['$userStats2', 0]}, '$userStats']
+                }
+            }
+        },
+        {
+            $project: {
+                userStats2: 0,
+            }
+        }
+    ];
+}
+
+function getDefaultFieldValuesAndProjection(collectionName) {
+    let defaultFieldValues; //booleans --> all false
+    let projection;
+    if (collectionName.includes('staff')) {
+        defaultFieldValues = {...userStats_staff};
+        projection = {...userStats, ...userStats_character};
+    } else if (collectionName.includes('character')) {
+        defaultFieldValues = {...userStats_character};
+        projection = {...userStats, ...userStats_staff};
+    } else {
+        defaultFieldValues = {...userStats};
+        projection = {...userStats_staff, ...userStats_character};
+    }
+
+    let defaultKeys = Object.keys(defaultFieldValues);
+    for (let i = 0; i < defaultKeys.length; i++) {
+        let temp = defaultKeys[i].replace('_count', '');
+        defaultFieldValues[temp] = false;
+        delete defaultFieldValues[defaultKeys[i]];
+    }
+
+    let projectionKeys = Object.keys(projection);
+    for (let i = 0; i < projectionKeys.length; i++) {
+        let temp = projectionKeys[i].replace('_count', '');
+        projection[temp] = 0;
+    }
+    projection._id = 0;
+    projection.userId = 0;
+    projection.pageNumber = 0;
+
+    return {defaultFieldValues, projection};
+}
+
+export function getLookupOnMoviesStage(collectionName, localField, projection) {
+    //used in getting user stats list
+    let lookupConfig = {
+        $lookup: {
+            from: collectionName,
+            localField: localField,
+            foreignField: '_id',
+            pipeline: [
                 {$limit: 1}
             ],
-            as: 'likeBucket',
+            as: 'data',
         }
-    });
+    }
+    if (projection && Object.keys(projection).length > 0) {
+        lookupConfig['$lookup']['pipeline'].push({$project: projection});
+    }
+    return lookupConfig;
 }
