@@ -582,7 +582,13 @@ export async function getGenresStatusDB() {
         ];
 
         let genres = await collection.aggregate(aggregationPipeline).toArray();
-        return genres.filter(item => item.genre !== 'n/a');
+        genres = genres
+            .filter(item => item.genre !== 'n/a')
+            .map(item => {
+            item.genre = item.genre.replace('-', '_');
+            return item;
+        });
+        return genres;
     } catch (error) {
         saveError(error);
         return 'error';

@@ -161,7 +161,7 @@ Example: https://downloader-node-api.herokuapp.com/movies/status/movieSources?te
 
 Example: https://downloader-node-api.herokuapp.com/movies/genres/action/movie-serial/low/0-10/0-10/1?testUser=true
 
-Example: https://downloader-node-api.herokuapp.com/movies/genres/drama/serial/medium/5-10/0-10/1?testUser=true
+Example: https://downloader-node-api.herokuapp.com/movies/genres/sci_fi/serial/medium/5-10/0-10/1?testUser=true
 
 Example: https://downloader-node-api.herokuapp.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1?testUser=true
 
@@ -173,6 +173,13 @@ Example: https://downloader-node-api.herokuapp.com/movies/genres/action-comedy/a
 
 ### GET /movies/userStatsList/[statType]/[dataLevel]/[page]
 > return array of movies. ([movies schema](SCHEMA.README.md#Movie-Data))
+
+Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/like_movie/low/1?testUser=true
+
+Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/follow_movie/low/1?testUser=true
+
+Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/save/low/1?testUser=true
+
 
 
 # API

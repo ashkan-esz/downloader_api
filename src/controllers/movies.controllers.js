@@ -163,7 +163,7 @@ export async function getMovieSources(req, res) {
 export async function getGenresMovies(req, res) {
     let userId = req.jwtUserData.userId;
     let dataLevel = req.params.dataLevel.toLowerCase().trim();
-    let genres = req.params.genres.split('-').map(item => item.toLowerCase().trim());
+    let genres = req.params.genres.split('-').map(item => item.replace('_', '-').toLowerCase().trim());
     let types = req.params.types.split('-').map(item => item.toLowerCase().trim());
     let imdbScores = req.params.imdbScores.split('-').map(item => Number(item));
     let malScores = req.params.malScores.split('-').map(item => Number(item));

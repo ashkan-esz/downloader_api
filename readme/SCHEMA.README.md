@@ -292,42 +292,42 @@ dataLevel = {
     //-- movies only
     //like,dislike
     like_movie: Boolean,
-    like_movie_count: 0,
+    like_movie_count: Int,
     dislike_movie: Boolean,
-    dislike_movie_count: 0,
+    dislike_movie_count: Int,
     //others
     save: Boolean,
-    save_count: 0,
+    save_count: Int,
     future_list: Boolean,
-    future_list_count: 0,
+    future_list_count: Int,
     //below field includes only when (dataLevel == high)
     follow_movie: Boolean,
-    follow_movie_count: 0,
+    follow_movie_count: Int,
     dropped: Boolean,
-    dropped_count: 0,
+    dropped_count: Int,
     finished: Boolean,
-    finished_count: 0,
-    score: Int,
-    score_count: 0,
+    finished_count: Int,
+    score: Double,
+    score_count: Int,
 }
 
 #userStats_staff = {
     //like,dislike
     like_staff: Boolean,
-    like_staff_count: 0,
+    like_staff_count: Int,
     dislike_staff: Boolean,
-    dislike_staff_count: 0,
+    dislike_staff_count: Int,
     //follow
     follow_staff: Boolean,
-    follow_staff_count: 0,
+    follow_staff_count: Int,
 }
 
 #userStats_character = {
     //like,dislike
     like_character: Boolean,
-    like_character_count: 0,
+    like_character_count: Int,
     dislike_character: Boolean,
-    dislike_character_count: 0,
+    dislike_character_count: Int,
 }
 ```
 
