@@ -23,6 +23,8 @@ export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPers
             characterRole: characterRole,
             characterImage: '',
         }],
+        insert_date: new Date(),
+        update_date: 0,
         userStats: userStats_staff,
     }
 }

@@ -360,6 +360,8 @@ staffData = {
         characterRole: String,
         characterImage: String,
     }),
+    insert_date: Date,
+    update_date: Date,
     userStats: #userStats_staff,
 }
 ```
@@ -389,6 +391,8 @@ characterData = {
         actorName: String,
         actorImage: String,
     }),
+    insert_date: Date,
+    update_date: Date,
     userStats: #userStats_character,
 }
 ```

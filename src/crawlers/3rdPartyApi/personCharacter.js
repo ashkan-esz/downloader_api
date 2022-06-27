@@ -236,6 +236,7 @@ async function insertData(staff, characters) {
         let insertFlag = staff[i].insertFlag;
         delete staff[i].insertFlag;
         if (insertFlag) {
+            delete staff[i].updateFlag;
             promiseQueue.add(() => dbMethods.insertToDB('staff', staff[i]).then(insertedId => {
                 if (insertedId) {
                     staff[i]._id = insertedId;
@@ -248,6 +249,7 @@ async function insertData(staff, characters) {
         let insertFlag = characters[i].insertFlag;
         delete characters[i].insertFlag;
         if (insertFlag) {
+            delete characters[i].updateFlag;
             promiseQueue.add(() => dbMethods.insertToDB('characters', characters[i]).then(insertedId => {
                 if (insertedId) {
                     characters[i]._id = insertedId;
@@ -265,14 +267,20 @@ async function updateData(staff, characters) {
     for (let i = 0; i < staff.length; i++) {
         let updateFlag = staff[i].updateFlag;
         delete staff[i].updateFlag;
+        delete staff[i].insert_date;
+        delete staff[i].userStats;
         if (updateFlag) {
+            staff[i].update_date = new Date();
             promiseQueue.add(() => dbMethods.updateByIdDB('staff', staff[i]._id, staff[i]));
         }
     }
     for (let i = 0; i < characters.length; i++) {
         let updateFlag = characters[i].updateFlag;
         delete characters[i].updateFlag;
+        delete characters[i].insert_date;
+        delete characters[i].userStats;
         if (updateFlag) {
+            characters[i].update_date = new Date();
             promiseQueue.add(() => dbMethods.updateByIdDB('characters', characters[i]._id, characters[i]));
         }
     }
@@ -287,7 +295,8 @@ function embedStaffAndCharacters(movieID, staff, characters) {
             if (thisCredit.movieID.toString() === movieID.toString()) {
                 let thisCharacter = characters.find(x => x.rawName === thisCredit.characterName);
                 if (thisCharacter) {
-                    if (!isEqual(thisCredit.characterID, thisCharacter._id) && isTrulyValue(thisCharacter._id)) {
+                    //update/set characterId and characterImage of staff credit
+                    if (!isEqual(thisCredit.characterID, thisCharacter._id) && thisCharacter._id) {
                         thisCredit.characterID = thisCharacter._id;
                         staff[i].updateFlag = true;
                     }
@@ -307,7 +316,8 @@ function embedStaffAndCharacters(movieID, staff, characters) {
             if (thisCredit.movieID.toString() === movieID.toString()) {
                 let thisStaff = staff.find(x => x.rawName === thisCredit.actorName);
                 if (thisStaff) {
-                    if (!isEqual(thisCredit.actorID, thisStaff._id) && isTrulyValue(thisStaff._id)) {
+                    //update/set actorId and actorImage of character credit
+                    if (!isEqual(thisCredit.actorID, thisStaff._id) && thisStaff._id) {
                         thisCredit.actorID = thisStaff._id;
                         characters[i].updateFlag = true;
                     }
@@ -351,12 +361,18 @@ function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCas
         if (tvmazeCast[i].character.image) {
             originalImages = [tvmazeCast[i].character.image.medium, tvmazeCast[i].character.image.original];
         }
-        let character = getCharacterModel(
+        let newCharacter = getCharacterModel(
             tvmazeCast[i].character.name, '', '',
             tvmazeCast[i].character.id, 0, originalImages,
             movieID, movieName, moviePoster, '', tvmazeCast[i].person.name,
         );
-        tvmazeCharacters.push(character);
+        //one character mey have separate voice actor and actor
+        let findExistingCharacter = tvmazeCharacters.find(item => item.name === newCharacter.name);
+        if (findExistingCharacter) {
+            findExistingCharacter.credits.push(newCharacter.credits[0]);
+        } else {
+            tvmazeCharacters.push(newCharacter);
+        }
     }
     return {tvmazeActors, tvmazeCharacters};
 }
@@ -444,7 +460,8 @@ function updateStaffAndCharactersFields(prevFields, currentFields) {
             if (keys[i] === 'userStats') {
                 continue;
             }
-            if (keys[i] === 'insertFlag' || keys[i] === 'updateFlag') {
+            if (keys[i] === 'insertFlag' || keys[i] === 'updateFlag' ||
+                keys[i] === 'insert_date' || keys[i] === 'update_date') {
                 newFields[keys[i]] = currentFields[keys[i]];
                 continue;
             }
@@ -478,7 +495,8 @@ function updateCredits(prevCredits, newCredits) {
             if (
                 credits[j].movieID.toString() === newCredits[i].movieID.toString() &&
                 (
-                    !credits[j].characterName || credits[j].characterName === newCredits[i].characterName
+                    (credits[j].characterName === undefined || credits[j].characterName === newCredits[i].characterName) && // for staff
+                    (credits[j].actorName === undefined || credits[j].actorName === newCredits[i].actorName) // for character
                 )
             ) {
                 for (let k = 0; k < keys.length; k++) {
