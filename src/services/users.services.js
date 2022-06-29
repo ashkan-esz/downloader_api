@@ -10,6 +10,8 @@ import {
     removeAuthToken,
     removeAuthSession,
     removeAllAuthSession,
+    findUserById,
+    updateUserByID,
 } from "../data/usersDbMethods.js";
 import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
@@ -20,11 +22,11 @@ import {addToBlackList} from "../api/middlewares/isAuth.js";
 import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult} from "./serviceUtils.js";
+import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 
 //todo : remove account
 //todo : forget password
 //todo : edit profile data
-//todo : profile images
 
 export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
@@ -274,6 +276,79 @@ export async function verifyEmail(token) {
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+}
+
+export async function uploadProfileImage(jwtUserData, fileData) {
+    const fileName = fileData.location.split('/').pop();
+    try {
+        let userData = await findUserById(jwtUserData.userId, {profileImages: 1});
+        if (userData === 'error') {
+            await removeProfileImageFromS3(fileName);
+            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        } else if (!userData) {
+            await removeProfileImageFromS3(fileName);
+            return generateServiceResult({data: null}, 404, 'Cannot find user');
+        }
+
+        if (userData.profileImages.length > 19) {
+            await removeProfileImageFromS3(fileName);
+            return generateServiceResult({data: null}, 409, 'Exceeded 20 profile image');
+        }
+
+        userData.profileImages.unshift(fileData.location);
+        let updateResult = await updateUserByID(jwtUserData.userId, {profileImages: userData.profileImages});
+        if (updateResult !== 'ok') {
+            await removeProfileImageFromS3(fileName);
+            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        }
+        return generateServiceResult({
+            data: {
+                profileImages: userData.profileImages
+            }
+        }, 200, '');
+    } catch (error) {
+        saveError(error);
+        await removeProfileImageFromS3(fileName);
+        return generateServiceResult({data: null}, 500, 'Server error, try again later');
+    }
+}
+
+export async function removeProfileImage(jwtUserData, fileName) {
+    try {
+        fileName = fileName.split('/').pop();
+        let userData = await findUserById(jwtUserData.userId, {profileImages: 1});
+        if (userData === 'error') {
+            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        } else if (!userData) {
+            return generateServiceResult({data: null}, 404, 'Cannot find user');
+        }
+
+        let fileExist = false;
+        let newProfileImageArray = [];
+        for (let i = 0; i < userData.profileImages.length; i++) {
+            if (userData.profileImages[i].includes(fileName)) {
+                fileExist = true;
+            } else {
+                newProfileImageArray.push(userData.profileImages[i]);
+            }
+        }
+        if (!fileExist) {
+            return generateServiceResult({data: null}, 409, 'Cannot find profile image');
+        }
+
+        let updateResult = await updateUserByID(jwtUserData.userId, {profileImages: newProfileImageArray});
+        if (updateResult !== 'ok') {
+            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        }
+        return generateServiceResult({
+            data: {
+                profileImages: newProfileImageArray
+            }
+        }, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({data: null}, 500, 'Server error, try again later');
     }
 }
 

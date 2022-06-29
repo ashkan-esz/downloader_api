@@ -8,7 +8,13 @@ export default async function attachCurrentUser(req, res, next) {
         });
     }
     let userData = await findUserById(req.jwtUserData.userId);
-    if (!userData) {
+    if (userData === 'error') {
+        return res.status(500).json({
+            data: null,
+            code: 500,
+            errorMessage: 'Server error, try again later',
+        });
+    } else if (!userData) {
         return res.status(401).json({
             data: null,
             code: 401,

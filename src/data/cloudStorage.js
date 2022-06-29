@@ -13,7 +13,6 @@ import sharp from "sharp";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./dbMethods.js";
 import {saveError} from "../error/saveError.js";
 
-//bucket names: serverstatic / cast / download-subtitle / poster / download-trailer /
 
 const s3 = new S3Client({
     region: 'default',
@@ -31,9 +30,25 @@ const s3 = new S3Client({
 // 503: too many request to prefix
 // 504: gateway timeout
 
-export const defaultProfileImage = `https://serverstatic.${config.cloudStorage.websiteEndPoint}/defaultProfile.png`;
+export const bucketsEndpointSuffix = config.cloudStorage.endpoint.replace(/https?:\/\//, '');
 
-export const bucketNames = ['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer'];
+const defaultProfileUrl = `https://serverstatic.${bucketsEndpointSuffix}/defaultProfile.png`;
+export const defaultProfileImage = (await getFileSize(defaultProfileUrl)) > 0 ? defaultProfileUrl : '';
+
+export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image']);
+
+export const bucketNamesObject = Object.freeze({
+    staticFiles: 'serverstatic',
+    cast: 'cast',
+    downloadSubtitle: 'download-subtitle',
+    poster: 'poster',
+    downloadTrailer: 'download-trailer',
+    profileImage: 'profile-image',
+})
+
+export function getS3Client() {
+    return s3;
+}
 
 export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
@@ -51,7 +66,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             }
         }
         let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
-        let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
         let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
@@ -117,7 +132,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         const params = {
             ContentType: response.headers["content-type"],
             ContentLength: response.data.length.toString(),
-            Bucket: 'download-subtitle',
+            Bucket: bucketNamesObject.downloadSubtitle,
             Body: response.data,
             Key: fileName,
             ACL: 'public-read',
@@ -125,7 +140,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         let command = new PutObjectCommand(params);
         await s3.send(command);
         return {
-            url: `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`,
+            url: `https://${bucketNamesObject.downloadSubtitle}.${bucketsEndpointSuffix}/${fileName}`,
             originalUrl: originalUrl,
             size: Number(response.data.length),
         };
@@ -163,7 +178,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         }
 
         let fileName = getFileName(title, type, year, '', 'jpg');
-        let fileUrl = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
         let response = await axios.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
@@ -229,7 +244,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         }
 
         let fileName = getFileName(title, type, year, '', 'mp4');
-        let fileUrl = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+        let fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
         return await new Promise(async (resolve, reject) => {
             const abortController = new AbortController();
             let videoReadStream = null;
@@ -248,7 +263,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                 });
 
                 const params = {
-                    Bucket: 'download-trailer',
+                    Bucket: bucketNamesObject.downloadTrailer,
                     Body: videoReadStream,
                     Key: fileName,
                     ACL: 'public-read',
@@ -288,7 +303,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
 
 export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
-    let fileUrl = `https://cast.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
     try {
         const params = {
             Bucket: 'cast',
@@ -320,10 +335,10 @@ export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, r
 }
 
 export async function checkSubtitleExist(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
-    let fileUrl = `https://download-subtitle.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileUrl = `https://${bucketNamesObject.downloadSubtitle}.${bucketsEndpointSuffix}/${fileName}`;
     try {
         const params = {
-            Bucket: 'download-subtitle',
+            Bucket: bucketNamesObject.downloadSubtitle,
             Key: fileName,
         };
         let command = new HeadObjectCommand(params);
@@ -353,7 +368,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0, retryWithSl
 
 export async function checkTitlePosterExist(title, type, year, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(title, type, year, '', 'jpg');
-    let fileUrl = `https://poster.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
     try {
         const params = {
             Bucket: 'poster',
@@ -386,10 +401,10 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0,
 
 export async function checkTitleTrailerExist(title, type, year, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(title, type, year, '', 'mp4');
-    let fileUrl = `https://download-trailer.${config.cloudStorage.websiteEndPoint}/${fileName}`;
+    let fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
     try {
         const params = {
-            Bucket: 'download-trailer',
+            Bucket: bucketNamesObject.downloadTrailer,
             Key: fileName,
         };
         let command = new HeadObjectCommand(params);
@@ -420,6 +435,10 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
     }
 }
 
+export async function removeProfileImageFromS3(fileName) {
+    return await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
+}
+
 export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
@@ -428,7 +447,7 @@ export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, r
         };
         let command = new DeleteObjectCommand(params);
         await s3.send(command);
-        return true;
+        return 'ok';
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
             retryCounter++;
@@ -441,14 +460,14 @@ export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, r
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
-        return false;
+        return 'error';
     }
 }
 
 export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
-            Bucket: 'download-trailer',
+            Bucket: bucketNamesObject.downloadTrailer,
             Key: fileName,
         };
         let command = new DeleteObjectCommand(params);
@@ -472,25 +491,25 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithS
 
 export async function deleteUnusedFiles(retryCounter = 0) {
     try {
-        let checkBuckets = ['poster', 'download-trailer', 'cast'];
+        let checkBuckets = [bucketNamesObject.poster, bucketNamesObject.downloadTrailer, bucketNamesObject.cast];
 
         for (let k = 0; k < checkBuckets.length; k++) {
             let dataBaseFiles = [];
             // files that are in use
-            if (checkBuckets[k] === 'poster') {
+            if (checkBuckets[k] === bucketNamesObject.poster) {
                 dataBaseFiles = await getAllS3PostersDB();
                 if (!dataBaseFiles) {
                     continue;
                 }
                 dataBaseFiles = dataBaseFiles.map(item => item.poster_s3.url.split('/').pop());
-            } else if (checkBuckets[k] === 'download-trailer') {
+            } else if (checkBuckets[k] === bucketNamesObject.downloadTrailer) {
                 dataBaseFiles = await getAllS3TrailersDB();
                 if (!dataBaseFiles) {
                     continue;
                 }
                 dataBaseFiles = dataBaseFiles.map(item => item.trailer_s3.url.split('/').pop());
             }
-            if (checkBuckets[k] === 'cast') {
+            if (checkBuckets[k] === bucketNamesObject.cast) {
                 dataBaseFiles = await getAllS3CastImageDB();
                 if (!dataBaseFiles) {
                     continue;

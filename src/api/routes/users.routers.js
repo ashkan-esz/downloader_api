@@ -34,5 +34,11 @@ router.get('/sendVerifyEmail', middlewares.rateLimit, middlewares.auth.attachAut
 //users/verifyEmail/:token
 router.get('/verifyEmail/:token', middlewares.rateLimit, usersControllers.verifyEmail);
 
+//users/uploadProfileImage
+router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.uploadUserProfile, usersControllers.uploadProfileImage);
+
+//users/removeProfileImage/:filename
+router.delete('/removeProfileImage/:filename', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.removeProfileImage);
 
 export default router;

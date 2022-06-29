@@ -130,3 +130,16 @@ export async function verifyEmail(req, res) {
 
     return res.status(verifyResult.responseData.code).json(verifyResult.responseData);
 }
+
+export async function uploadProfileImage(req, res) {
+    let uploadProfileResult = await usersServices.uploadProfileImage(req.jwtUserData, req.file);
+
+    return res.status(uploadProfileResult.responseData.code).json(uploadProfileResult.responseData);
+}
+
+export async function removeProfileImage(req, res) {
+    let fileName = req.params.filename;
+    let removeProfileResult = await usersServices.removeProfileImage(req.jwtUserData, fileName);
+
+    return res.status(removeProfileResult.responseData.code).json(removeProfileResult.responseData);
+}

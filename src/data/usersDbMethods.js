@@ -31,13 +31,13 @@ export async function findUser(username, email, projection) {
     }
 }
 
-export async function findUserById(userId) {
+export async function findUserById(userId, projection = {}) {
     try {
         let collection = await getCollection('users');
-        return await collection.findOne({_id: new mongodb.ObjectId(userId)});
+        return await collection.findOne({_id: new mongodb.ObjectId(userId)}, {projection: projection});
     } catch (error) {
         saveError(error);
-        return null;
+        return 'error';
     }
 }
 
@@ -55,11 +55,16 @@ export async function addUser(userData) {
 export async function updateUserByID(userId, updateFields) {
     try {
         let collection = await getCollection('users');
-        await collection.findOneAndUpdate({_id: new mongodb.ObjectId(userId)}, {
+        let result = await collection.updateOne({_id: new mongodb.ObjectId(userId)}, {
             $set: updateFields
         });
+        if (result.modifiedCount === 0) {
+            return 'notfound';
+        }
+        return 'ok';
     } catch (error) {
         saveError(error);
+        return 'error';
     }
 }
 

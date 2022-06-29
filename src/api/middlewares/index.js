@@ -3,6 +3,7 @@ import * as auth from './isAuth.js';
 import * as validation from './validation.js';
 import attachCurrentUser from './attachCurrentUser.js';
 import rateLimit from './rateLimit.js';
+import uploadUserProfile from './uploadUserProfile.js';
 
 export default {
     moviesCache,
@@ -10,4 +11,5 @@ export default {
     auth,
     attachCurrentUser,
     rateLimit,
+    uploadUserProfile,
 }

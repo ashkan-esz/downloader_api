@@ -12,6 +12,7 @@
 | **`os`**              | String |                                                                      | `true`   |
 | **`deviceModel`**     | String |                                                                      | `true`   |
 | **`deviceId`**        | String | unique id of session                                                 | `true`   |
+| **`filename`**        | String |                                                                      | `true`   |
 
 > they are case-insensitive.
 
@@ -29,6 +30,8 @@
 - [GET /users/activeSessions](#get-usersactivesessions)
 - [GET /users/sendVerifyEmail](#get-userssendverifyemail)
 - [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
+- [POST /users/uploadProfileImage/](#post-usersuploadprofileimage)
+- [DELETE /users/removeProfileImage/[filename]](#delete-usersremoveprofileimagefilename)
 
 
 ## auth
@@ -102,6 +105,18 @@ Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUse
 > verify given email token. create activation link on server side.
 
 Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
+
+### POST /users/uploadProfileImage
+> receive profileImage from request body.
+> 
+> returns new profileImages array.
+> 
+> file size limited to `1mb` and accept `jpg` formats only, (error code 400).
+> 
+> **Note: 20 profile image per user, (error code 409)**.
+
+### DELETE /users/removeProfileImage/[filename]
+> returns new profileImages array.
 
 
 

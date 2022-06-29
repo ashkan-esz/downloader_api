@@ -26,8 +26,8 @@ app.set('trust proxy', 1);
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 app.use(helmet());
-app.use(bodyParser.urlencoded({extended: false}));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false, limit: '10mb'}));
+app.use(bodyParser.json({limit: '10mb'}));
 app.use(cookieParser());
 app.use(cors());
 app.use(compression());
@@ -58,12 +58,19 @@ app.use(Sentry.Handlers.errorHandler({
 }));
 
 app.use(function (req, res) {
-    res.status(404).send({url: req.originalUrl + ' not found'})
+    res.status(404).json({
+        errorMessage: 'url: ' + req.originalUrl + ' not found',
+        code: 404,
+        sentryErrorId: res.sentry,
+    });
 });
 
 app.use((err, req, res, next) => {
-    res.statusCode = 500;
-    res.send(`Internal Server Error (${res.sentry})`);
+    res.status(500).json({
+        errorMessage: err.message || err.code || 'Internal Server Error',
+        code: (err.message === 'File too large' || (err.message && err.message.includes('Not an jpg image'))) ? 400 : 500,
+        sentryErrorId: res.sentry,
+    });
 });
 
 app.listen(config.port, () => {
