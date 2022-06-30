@@ -1,18 +1,20 @@
 # API Parameters
 
-| param name            | Values | Description                                                          | Required |
-|-----------------------|--------|----------------------------------------------------------------------|----------|
-| **`username`**        | string | match <code>/^[a-z&#124;0-9_]+$/gi</code> and length in range [6-50] | `true`   |
-| **`email`**           | string |                                                                      | `true`   |
-| **`password`**        | string | at least one number and capital letter  and length in range [8-50]   | `true`   |
-| **`confirmPassword`** | string |                                                                      | `true`   |
-| **`deviceInfo`**      | String | includes fields _appName_, _appVersion_, _os_, _deviceModel_         | `true`   |
-| **`appName`**         | String |                                                                      | `true`   |
-| **`appVersion`**      | String |                                                                      | `true`   |
-| **`os`**              | String |                                                                      | `true`   |
-| **`deviceModel`**     | String |                                                                      | `true`   |
-| **`deviceId`**        | String | unique id of session                                                 | `true`   |
-| **`filename`**        | String |                                                                      | `true`   |
+| param name            | Values                        | Description                                                          | Required |
+|-----------------------|-------------------------------|----------------------------------------------------------------------|----------|
+| **`username`**        | string                        | match <code>/^[a-z&#124;0-9_]+$/gi</code> and length in range [6-50] | `true`   |
+| **`email`**           | string                        |                                                                      | `true`   |
+| **`password`**        | string                        | at least one number and capital letter  and length in range [8-50]   | `true`   |
+| **`confirmPassword`** | string                        |                                                                      | `true`   |
+| **`deviceInfo`**      | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_         | `true`   |
+| **`appName`**         | String                        |                                                                      | `true`   |
+| **`appVersion`**      | String                        |                                                                      | `true`   |
+| **`os`**              | String                        |                                                                      | `true`   |
+| **`deviceModel`**     | String                        |                                                                      | `true`   |
+| **`deviceId`**        | String                        | unique id of session                                                 | `true`   |
+| **`filename`**        | String                        |                                                                      | `true`   |
+| **`genres`**          | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi              | `true`   |
+
 
 > they are case-insensitive.
 
@@ -32,6 +34,7 @@
 - [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
 - [POST /users/uploadProfileImage/](#post-usersuploadprofileimage)
 - [DELETE /users/removeProfileImage/[filename]](#delete-usersremoveprofileimagefilename)
+- [PUT /users/setFavoriteGenres/[genres]](#put-userssetfavoritegenresgenres)
 
 
 ## auth
@@ -106,6 +109,7 @@ Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUse
 
 Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
 
+
 ### POST /users/uploadProfileImage
 > receive profileImage from request body.
 > 
@@ -115,11 +119,18 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 > 
 > **Note: 20 profile image per user, (error code 409)**.
 
+
 ### DELETE /users/removeProfileImage/[filename]
 > returns new profileImages array.
+
+
+### PUT /users/setFavoriteGenres/[genres]
+> **Note: maximum number of genres is 6, (error code 409)**
+
 
 
 
 # API
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [schema](SCHEMA.README.md).

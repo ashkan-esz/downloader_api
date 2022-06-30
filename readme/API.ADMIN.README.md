@@ -1,8 +1,8 @@
 ## API Parameters
 
-| param name                 |  Values  | Description                                      | Required |
-| -------------------------- | -------- |--------------------------------------------------| -------- |
-| **`password`** | String | password of crawler starter api                  | `true` |
+| param name     | Values | Description                     | Required |
+|----------------|--------|---------------------------------|----------|
+| **`password`** | String | password of crawler starter api | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -19,12 +19,12 @@ Example: https://downloader-node-api.herokuapp.com/crawler/{PASSWORD}/?sourceNam
 
 additional parameters:
 
-| param name                 |  Values  | Description                              | Required |
-| -------------------------- | -------- | ---------------------------------------- | -------- |
-| **`mode`**                 | 0 , 1 , 2 | crawling mode | `false (default: 0)` |
-| **`sourceName`**         | string | source name to crawl | `true` |
-| **`handleDomainChange`** | true , false | crawler flag | `false (default: true)` |
-| **`handleCastUpdate`** | true , false | crawler flag | `false (default: true)` |
+| param name               | Values       | Description          | Required                |
+|--------------------------|--------------|----------------------|-------------------------|
+| **`mode`**               | 0 , 1 , 2    | crawling mode        | `false (default: 0)`    |
+| **`sourceName`**         | string       | source name to crawl | `true`                  |
+| **`handleDomainChange`** | true , false | crawler flag         | `false (default: true)` |
+| **`handleCastUpdate`**   | true , false | crawler flag         | `false (default: true)` |
 
 ### PUT /crawler/domainChange/[password]
 
@@ -35,3 +35,4 @@ Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWOR
 # API
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [schema](SCHEMA.README.md).

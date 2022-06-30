@@ -119,9 +119,9 @@ function fixWrongYear(title, type, year) {
         return '2013'; // 2016 --> 2013
     } else if (title === 'i am the night' && type === 'serial') {
         return '2019'; // 2011 --> 2019
-    }else if (title === 'living with yourself' && type === 'serial') {
+    } else if (title === 'living with yourself' && type === 'serial') {
         return '2019'; // 2010 --> 2019
-    }else if (title === 'the l word generation q' && type === 'serial') {
+    } else if (title === 'the l word generation q' && type === 'serial') {
         return '2019'; // 2021 --> 2019
     }
     return year;
@@ -150,6 +150,10 @@ function getPoster($) {
             if (parent.name === 'a') {
                 let href = $img[i].attribs['src'];
                 if (href.includes('uploads')) {
+                    return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
+                }
+                href = $img[i].attribs['data-lazy-src'];
+                if (!href.includes('/Logo.') && href.includes('uploads')) {
                     return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
                 }
             }

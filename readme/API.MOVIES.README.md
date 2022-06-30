@@ -13,7 +13,7 @@
 | **`dayNumber`**  | Number in range [0-6]                                                                                                                                                                                                      | number of day in week                                              | `true`   |
 | **`title`**      | String                                                                                                                                                                                                                     | name of movie/staff/character to search                            | `true`   |
 | **`id`**         | Mongodb id object                                                                                                                                                                                                          | id of movie/staff/character to get                                 | `true`   |
-| **`genres`**     | Array of String joined by '-'                                                                                                                                                                                              | example: action or action-comedy-drama                             | `true`   |
+| **`genres`**     | Array of String joined by '-'                                                                                                                                                                                              | example: action or action-comedy-drama or action-sci_fi            | `true`   |
 | **`statType`**   | enum( _like_movie_, _dislike_movie_, <br/>_like_staff_, _dislike_staff_, <br/>_like_character_, _dislike_character_, <br/>_follow_movie_, _follow_staff_, <br/>_future_list_, _dropped_, _finished_, <br/>_save_, _score_) | values with no suffix (_staff or _character) only works for movies | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
@@ -185,3 +185,4 @@ Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/save/low
 # API
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
+- Open [schema](SCHEMA.README.md).

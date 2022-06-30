@@ -41,4 +41,7 @@ router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.
 //users/removeProfileImage/:filename
 router.delete('/removeProfileImage/:filename', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.removeProfileImage);
 
+//users/setFavoriteGenres/:genres
+router.put('/setFavoriteGenres/:genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.setFavoriteGenres);
+
 export default router;

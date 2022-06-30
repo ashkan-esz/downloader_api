@@ -352,6 +352,28 @@ export async function removeProfileImage(jwtUserData, fileName) {
     }
 }
 
+export async function setFavoriteGenres(jwtUserData, genres) {
+    try {
+        if (genres.length > 6) {
+            return generateServiceResult({}, 409, 'Exceeded number of genres limit (6)');
+        }
+
+        let updateResult = await updateUserByID(jwtUserData.userId, {favoriteGenres: genres});
+        if (updateResult === 'error') {
+            return generateServiceResult({}, 500, 'Server error, try again later');
+        } else if (updateResult === 'notfound') {
+            return generateServiceResult({}, 404, 'Cannot find user');
+        }
+        return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, 'Server error, try again later');
+    }
+}
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
 export function getJwtPayload(userData, userId = '') {
     return {
         userId: (userData._id || userId).toString(),

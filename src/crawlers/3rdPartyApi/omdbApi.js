@@ -123,7 +123,9 @@ export function getOMDBApiFields(data, type) {
             writersNames: data.Writer.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             actorsNames: data.Actors.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim().replace('N/A', '').replace(/([.…])+$/, '') : '',
-            genres: data.Genre ? data.Genre.toLowerCase().split(',').map(value => value.trim()).filter(item => item !== 'n/a') : [],
+            genres: data.Genre
+                ? data.Genre.toLowerCase().split(',').map(value => value.trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a')
+                : [],
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
             omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
             year: data.Year.split(/[-–]/g)[0],

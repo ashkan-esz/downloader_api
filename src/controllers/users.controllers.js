@@ -143,3 +143,28 @@ export async function removeProfileImage(req, res) {
 
     return res.status(removeProfileResult.responseData.code).json(removeProfileResult.responseData);
 }
+
+export async function setFavoriteGenres(req, res) {
+    let genres = req.params.genres.split('-').map(item => item.replace(/_/g, '-').toLowerCase());
+    genres = removeDuplicateElements(genres);
+    let updateResult = await usersServices.setFavoriteGenres(req.jwtUserData, genres);
+
+    return res.status(updateResult.responseData.code).json(updateResult.responseData);
+}
+
+function removeDuplicateElements(input) {
+    let result = [];
+    for (let i = 0; i < input.length; i++) {
+        let exist = false;
+        for (let j = 0; j < result.length; j++) {
+            if (input[i] === result[j]) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist) {
+            result.push(input[i]);
+        }
+    }
+    return result;
+}
