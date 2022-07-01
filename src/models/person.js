@@ -1,6 +1,9 @@
 import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils.js";
 
-export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPersonID, country, birthday, deathday, originalImages, movieID, movieName, moviePoster, positions, characterName, characterRole) {
+export function getPersonModel(
+    rawName, gender, about, tvmazePersonID, jikanPersonID,
+    country, birthday, deathday, originalImages,
+    movieID, movieName, movieType, moviePoster, positions, characterName, characterRole) {
     return {
         name: replaceSpecialCharacters(fixJapaneseCharacter(rawName).toLowerCase()),
         rawName: fixJapaneseCharacter(rawName),
@@ -16,6 +19,7 @@ export function getPersonModel(rawName, gender, about, tvmazePersonID, jikanPers
         credits: [{
             movieID,
             movieName: movieName,
+            movieType: movieType,
             moviePoster: moviePoster,
             positions,
             characterID: '',

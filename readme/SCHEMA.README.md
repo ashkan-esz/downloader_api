@@ -353,6 +353,7 @@ staffData = {
     credits: Array({
         movieID: String,
         movieName: String,
+        movieType: String,
         moviePoster: String,
         positions: Array(String),
         characterID: String,
@@ -385,6 +386,7 @@ characterData = {
     credits: Array({
         movieID: String,
         movieName: String,
+        movieType: String,
         moviePoster: String,
         role: String,
         actorID: String,

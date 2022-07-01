@@ -11,7 +11,7 @@ import {saveError} from "../../error/saveError.js";
 
 const maxStaffOrCharacterSize = 30;
 
-export async function addStaffAndCharacters(movieID, movieName, moviePoster, allApiData, castUpdateDate) {
+export async function addStaffAndCharacters(movieID, movieName, movieType, moviePoster, allApiData, castUpdateDate) {
     if (utils.getDatesBetween(new Date(), new Date(castUpdateDate)).days < 30) {
         return null;
     }
@@ -25,7 +25,7 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
             let {
                 tvmazeActors,
                 tvmazeCharacters
-            } = getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeApiFields.cast);
+            } = getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, tvmazeApiFields.cast);
             staff = tvmazeActors;
             characters = tvmazeCharacters;
         }
@@ -33,9 +33,9 @@ export async function addStaffAndCharacters(movieID, movieName, moviePoster, all
         if (jikanApiFields) {
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
-                let jikanStaff = await getJikanStaff(movieID, movieName, moviePoster, jikanCharatersStaff.staff, staff);
-                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanCharatersStaff.characters, staff);
-                let jikanCharacters = await getJikanCharaters(movieID, movieName, moviePoster, jikanCharatersStaff.characters, characters);
+                let jikanStaff = await getJikanStaff(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.staff, staff);
+                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.characters, staff);
+                let jikanCharacters = await getJikanCharaters(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.characters, characters);
                 staff = [...staff, ...jikanStaff, ...jikanVoiceActors];
                 characters = [...characters, ...jikanCharacters];
             }
@@ -333,7 +333,7 @@ function embedStaffAndCharacters(movieID, staff, characters) {
     return {staff, characters};
 }
 
-function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCast) {
+function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, tvmazeCast) {
     let tvmazeActors = [];
     for (let i = 0; i < tvmazeCast.length; i++) {
         let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name : '';
@@ -344,7 +344,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCas
             tvmazeCast[i].person.id, 0,
             countryName, tvmazeCast[i].person.birthday, tvmazeCast[i].person.deathday,
             originalImages,
-            movieID, movieName, moviePoster, positions, tvmazeCast[i].character.name, ''
+            movieID, movieName, movieType, moviePoster, positions, tvmazeCast[i].character.name, ''
         );
         //one actor play as multiple character
         let findExistingStaff = tvmazeActors.find(item => item.name === newStaff.name);
@@ -364,7 +364,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCas
         let newCharacter = getCharacterModel(
             tvmazeCast[i].character.name, '', '',
             tvmazeCast[i].character.id, 0, originalImages,
-            movieID, movieName, moviePoster, '', tvmazeCast[i].person.name,
+            movieID, movieName, movieType, moviePoster, '', tvmazeCast[i].person.name,
         );
         //one character mey have separate voice actor and actor
         let findExistingCharacter = tvmazeCharacters.find(item => item.name === newCharacter.name);
@@ -377,7 +377,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, moviePoster, tvmazeCas
     return {tvmazeActors, tvmazeCharacters};
 }
 
-async function getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanCharactersArray, staff) {
+async function getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, jikanCharactersArray, staff) {
     let voiceActors = [];
     for (let i = 0; i < jikanCharactersArray.length; i++) {
         let thisCharacterVoiceActors = jikanCharactersArray[i].voice_actors;
@@ -390,17 +390,17 @@ async function getJikanStaff_voiceActors(movieID, movieName, moviePoster, jikanC
             }
         }
     }
-    return await getJikanStaff(movieID, movieName, moviePoster, voiceActors, staff);
+    return await getJikanStaff(movieID, movieName, movieType, moviePoster, voiceActors, staff);
 }
 
-async function getJikanStaff(movieID, movieName, moviePoster, jikanStaffArray, staff) {
+async function getJikanStaff(movieID, movieName, movieType, moviePoster, jikanStaffArray, staff) {
     const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanStaffArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].mal_id).then(staffApiData => {
             if (staffApiData) {
                 let newStaff = makeNewStaffOrCharacterFromJikanData(
-                    movieID, movieName, moviePoster,
+                    movieID, movieName, movieType, moviePoster,
                     jikanStaffArray[i], staffApiData, 'staff'
                 );
                 //one actor play as multiple character
@@ -426,14 +426,14 @@ async function getJikanStaff(movieID, movieName, moviePoster, jikanStaffArray, s
     return result;
 }
 
-async function getJikanCharaters(movieID, movieName, moviePoster, jikanCharatersArray, characters) {
+async function getJikanCharaters(movieID, movieName, movieType, moviePoster, jikanCharatersArray, characters) {
     const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanCharatersArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].mal_id).then(characterApiData => {
             if (characterApiData) {
                 let newCharacter = makeNewStaffOrCharacterFromJikanData(
-                    movieID, movieName, moviePoster,
+                    movieID, movieName, movieType, moviePoster,
                     jikanCharatersArray[i], characterApiData, 'character'
                 );
                 let existingCharacterIndex = characters.findIndex(item => item.name === newCharacter.name);
@@ -527,7 +527,7 @@ function isTrulyValue(value) {
     return !isEmpty(value);
 }
 
-function makeNewStaffOrCharacterFromJikanData(movieID, movieName, moviePoster, SemiData, fullApiData, type) {
+function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, moviePoster, SemiData, fullApiData, type) {
     let gender = '';
     if (fullApiData.about) {
         fullApiData.about = fullApiData.about.replace(
@@ -544,7 +544,7 @@ function makeNewStaffOrCharacterFromJikanData(movieID, movieName, moviePoster, S
             fullApiData.name, gender, fullApiData.about,
             0, fullApiData.mal_id,
             '', '', '', [originalImage],
-            movieID, movieName, moviePoster, SemiData.positions,
+            movieID, movieName, movieType, moviePoster, SemiData.positions,
             (SemiData.characterName || ''), (SemiData.characterRole || '')
         );
     } else {
@@ -559,7 +559,7 @@ function makeNewStaffOrCharacterFromJikanData(movieID, movieName, moviePoster, S
         return getCharacterModel(
             fullApiData.name, gender, fullApiData.about,
             0, fullApiData.mal_id, [originalImage],
-            movieID, movieName, moviePoster, SemiData.role, actorName,
+            movieID, movieName, movieType, moviePoster, SemiData.role, actorName,
         );
     }
 }

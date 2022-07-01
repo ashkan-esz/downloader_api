@@ -292,7 +292,7 @@ async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
     let poster = titleData.poster_s3
         ? titleData.poster_s3.url
         : titleData.posters.length > 0 ? titleData.posters[0].url : '';
-    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, poster, allApiData, titleData.castUpdateDate);
+    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, poster, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
             ...temp,
