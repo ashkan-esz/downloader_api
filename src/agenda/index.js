@@ -12,7 +12,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = ["email"];
+const jobTypes = ["email", "computeUserJob"];
 
 export async function startAgenda() {
     try {
@@ -50,6 +50,7 @@ export async function startAgenda() {
         await agenda.every("0 */12 * * *", "update jikan/imdb data");
         await agenda.every("0 1 1 * *", "reset month likes");
         await agenda.every("0 0 * * 0", "remove unused files from s3"); //At 00:00 on Sunday.
+        await agenda.every("0 1 * * 0", "compute users favorite genres"); //At 01:00 on Sunday.
 
     } catch (error) {
         saveError(error);

@@ -128,6 +128,8 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 > **Note: maximum number of genres is 6, (error code 409)**
 
 
+# Computed Data
+- every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.
 
 
 # API

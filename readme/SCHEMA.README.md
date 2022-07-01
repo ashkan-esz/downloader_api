@@ -11,6 +11,14 @@ profile = {
     profileImages: Array(String),
     defaultProfile: String,
     favoriteGenres: Array(String),
+    computed: {
+        favoriteGenres: Array({
+            genre: String,
+            count: Int,
+            percent: Double,
+        }),
+        lastUpdate: Date,
+    },
     friends: Array,
     registrationDate: Date,
     role: String, // enum('test-user', 'user', 'dev', 'admin')

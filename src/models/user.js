@@ -19,6 +19,10 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         ],
         favoriteGenres: [],
         friends: [],
+        computed: {
+            favoriteGenres: [],
+            lastUpdate: 0,
+        },
         registrationDate: new Date(),
         role: 'user',
     }
