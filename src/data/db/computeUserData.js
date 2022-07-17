@@ -1,6 +1,6 @@
 import getCollection from "../mongoDB.js";
 import mongodb from "mongodb";
-import {getLookupOnMoviesStage} from "../dbMethods.js";
+import {getLookupOnMoviesStage} from "./moviesDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 
 export async function getNotComputedUsersId(limit = 10) {
@@ -13,7 +13,10 @@ export async function getNotComputedUsersId(limit = 10) {
         lastWeek.setHours(0, 0, 0, 0);
 
         return collection.find({
-                'computed.lastUpdate': {$lte: lastWeek}
+                $or: [
+                    {'computed.lastUpdate': {$lte: lastWeek}},
+                    {'computed.lastUpdate': 0},
+                ]
             }, {
                 projection: {
                     _id: 1

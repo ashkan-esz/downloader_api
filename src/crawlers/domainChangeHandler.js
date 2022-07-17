@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as Sentry from "@sentry/node";
-import {updateSourcesObjDB} from "../data/dbMethods.js";
+import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils.js";
@@ -36,8 +36,8 @@ async function checkSourcesUrl(sourcesUrls) {
     try {
         for (let i = 0; i < sourcesUrls.length; i++) {
             let responseUrl;
+            let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
             try {
-                let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
                 let pageData = await getPageData(homePageLink);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
@@ -49,6 +49,10 @@ async function checkSourcesUrl(sourcesUrls) {
                     continue;
                 }
             } catch (error) {
+                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = homePageLink;
+                }
                 await saveError(error);
                 continue;
             }

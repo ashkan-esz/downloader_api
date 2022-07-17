@@ -4,18 +4,19 @@ import {
     searchMovieById,
     searchStaffById
 } from "../../services/movies.services.js";
-import {addUser} from "../../data/usersDbMethods.js";
-import {insertToDB, removeByIdDB} from "../../data/dbMethods.js";
+import {addUser} from "../../data/db/usersDbMethods.js";
+import {insertToDB, removeByIdDB} from "../../data/db/crawlerMethodsDB.js";
 import {
     handleAddUserStatsTransaction,
     handleRemoveUserStatsTransaction,
     removeUserStatsBucketsAll
-} from "../../data/db/userStats.js";
+} from "../../data/db/userStatsDbMethods.js";
 import getCollection from "../../data/mongoDB.js";
 import {userStats} from "../../models/movie.js";
 import {userStats_character} from "../../models/character.js";
 import {userStats_staff} from "../../models/person.js";
 
+//todo : add test for other services like 'score'
 
 export async function testLikeService() {
     try {

@@ -205,6 +205,7 @@ function handleMissedSeasonEpisode(db_seasons) {
                     episodeNumber: j,
                     ...episodeModel,
                     links: [],
+                    watchOnlineLinks: [],
                 });
                 missedSeasonEpisodeFlag = true;
             }

@@ -33,21 +33,21 @@ export function getPersonModel(
     }
 }
 
-export const userStats_staff = {
+export const userStats_staff = Object.freeze({
     //like,dislike
     like_staff_count: 0,
     dislike_staff_count: 0,
     //follow
     follow_staff_count: 0,
-}
+});
 
-export const dataLevelConfig_staff = {
-    low: {
+export const dataLevelConfig_staff = Object.freeze({
+    low: Object.freeze({
         name: 1,
         rawName: 1,
         gender: 1,
         imageData: 1,
-        userStats: {
+        userStats: Object.freeze({
             //like,dislike
             like_staff: 1,
             like_staff_count: 1,
@@ -56,14 +56,14 @@ export const dataLevelConfig_staff = {
             //follow
             follow_staff: 1,
             follow_staff_count: 1,
-        }
-    },
-    medium: {
+        })
+    }),
+    medium: Object.freeze({
         name: 1,
         rawName: 1,
         gender: 1,
         imageData: 1,
-        userStats: {
+        userStats: Object.freeze({
             //like,dislike
             like_staff: 1,
             like_staff_count: 1,
@@ -72,9 +72,9 @@ export const dataLevelConfig_staff = {
             //follow
             follow_staff: 1,
             follow_staff_count: 1,
-        }
-    },
-    high: {
+        })
+    }),
+    high: Object.freeze({
         //all
-    }
-}
+    })
+});

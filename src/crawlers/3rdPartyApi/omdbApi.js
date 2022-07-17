@@ -284,6 +284,11 @@ async function handle_OMDB_ApiKeys(url) {
                         Sentry.captureMessage('more omdb api keys are needed');
                         return null;
                     }
+                } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = url;
+                    await saveError(error);
+                    return null;
                 } else {
                     if (!error.response || error.response.status !== 500) {
                         saveError(error);

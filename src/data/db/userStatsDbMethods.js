@@ -1,13 +1,13 @@
 import mongodb from "mongodb";
 import getCollection, {getSession} from "../mongoDB.js";
-import * as dbMethods from "../dbMethods.js";
+import * as moviesDbMethods from "./moviesDbMethods.js";
 import {saveError} from "../../error/saveError.js";
-import {getLookupOnMoviesStage} from "../dbMethods.js";
 import {userStats} from "../../models/movie.js";
 import {userStats_character} from "../../models/character.js";
 import {userStats_staff} from "../../models/person.js";
 
 const bucketSizePerArray = 1000;
+const transactionRetryDelay = 100;
 
 //todo : fix/add feature score
 
@@ -34,7 +34,7 @@ export async function handleRemoveUserStatsTransaction(userId, statType, id, ret
 
             const statCounterField = `${statType}_count`;
             const relatedCollection = statType.includes('staff') ? 'staff' : statType.includes('character') ? 'characters' : 'movies';
-            let statUpdateResult = await dbMethods.changeUserStatOnRelatedCollection(
+            let statUpdateResult = await moviesDbMethods.changeUserStatOnRelatedCollection(
                 relatedCollection, id, statCounterField, -1, '', 0, {session}, retryCounter);
             internalResult = statUpdateResult; //'error' | 'notfound' | 'ok'
             //'notfound' --> movieId exist in user list but movie doesnt exist
@@ -47,7 +47,7 @@ export async function handleRemoveUserStatsTransaction(userId, statType, id, ret
 
         await session.endSession();
         if (internalResult === 'error' && retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
             retryCounter++;
             internalResult = await handleRemoveUserStatsTransaction(userId, statType, id, retryCounter);
         }
@@ -56,7 +56,7 @@ export async function handleRemoveUserStatsTransaction(userId, statType, id, ret
         saveError(error);
         await session.endSession();
         if (retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
             retryCounter++;
             return await handleRemoveUserStatsTransaction(userId, statType, id, retryCounter);
         }
@@ -118,7 +118,7 @@ export async function handleAddUserStatsTransaction(userId, statType, id, retryC
             }
 
             const relatedCollection = statType.includes('staff') ? 'staff' : statType.includes('character') ? 'characters' : 'movies';
-            let statUpdateResult = await dbMethods.changeUserStatOnRelatedCollection(
+            let statUpdateResult = await moviesDbMethods.changeUserStatOnRelatedCollection(
                 relatedCollection, id, statCounterField, 1, statCounterField2, -1, {session}, retryCounter);
             //notfound --> movie doesnt exist
             internalResult = statUpdateResult;
@@ -130,7 +130,7 @@ export async function handleAddUserStatsTransaction(userId, statType, id, retryC
 
         await session.endSession();
         if (internalResult === 'error' && retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
             retryCounter++;
             internalResult = await handleAddUserStatsTransaction(userId, statType, id, retryCounter);
         }
@@ -139,7 +139,7 @@ export async function handleAddUserStatsTransaction(userId, statType, id, retryC
         saveError(error);
         await session.endSession();
         if (retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
             retryCounter++;
             return await handleAddUserStatsTransaction(userId, statType, id, retryCounter);
         }
@@ -380,7 +380,7 @@ export async function getUserStatsListDB(userId, statType, skip, limit, projecti
             {
                 $limit: limit,
             },
-            getLookupOnMoviesStage(relatedCollection, statType, projection),
+            moviesDbMethods.getLookupOnMoviesStage(relatedCollection, statType, projection),
             {
                 $addFields: {
                     data: {$arrayElemAt: ['$data', 0]},

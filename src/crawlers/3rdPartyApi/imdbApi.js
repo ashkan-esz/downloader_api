@@ -1,6 +1,6 @@
 import config from "../../config/index.js";
 import axios from "axios";
-import * as dbMethods from "../../data/dbMethods.js";
+import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as utils from "../utils.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import {getMovieModel} from "../../models/movie.js";
@@ -23,33 +23,33 @@ export async function updateImdbData() {
 
     //top
     if (!imdbApiKey.reachedMax) {
-        await dbMethods.updateMovieCollectionDB({'rank.top': -1});
+        await crawlerMethodsDB.updateMovieCollectionDB({'rank.top': -1});
         await add_Top_popular('movie', 'top');
         await add_Top_popular('serial', 'top');
     }
 
     //popular
     if (!imdbApiKey.reachedMax) {
-        await dbMethods.updateMovieCollectionDB({'rank.popular': -1});
+        await crawlerMethodsDB.updateMovieCollectionDB({'rank.popular': -1});
         await add_Top_popular('movie', 'popular');
         await add_Top_popular('serial', 'popular');
     }
 
     //inTheaters
     if (!imdbApiKey.reachedMax) {
-        await dbMethods.updateMovieCollectionDB({'rank.inTheaters': -1});
+        await crawlerMethodsDB.updateMovieCollectionDB({'rank.inTheaters': -1});
         await add_inTheaters_comingSoon('movie', 'inTheaters');
     }
 
     //comingSoon
     if (!imdbApiKey.reachedMax) {
-        await dbMethods.updateMovieCollectionDB({'rank.comingSoon': -1});
+        await crawlerMethodsDB.updateMovieCollectionDB({'rank.comingSoon': -1});
         await add_inTheaters_comingSoon('movie', 'comingSoon');
     }
 
     //box office
     if (!imdbApiKey.reachedMax) {
-        await dbMethods.updateMovieCollectionDB({'rank.boxOffice': -1});
+        await crawlerMethodsDB.updateMovieCollectionDB({'rank.boxOffice': -1});
         await addBoxOfficeData();
     }
 }
@@ -94,40 +94,44 @@ async function add_Top_popular(type, mode) {
 }
 
 async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mode, rank) {
-    let updateFields = {};
+    try {
+        let updateFields = {};
 
-    if (mode === 'top') {
-        titleDataFromDB.rank.top = rank;
-    } else {
-        titleDataFromDB.rank.popular = rank;
-    }
-    updateFields.rank = titleDataFromDB.rank;
+        if (mode === 'top') {
+            titleDataFromDB.rank.top = rank;
+        } else {
+            titleDataFromDB.rank.popular = rank;
+        }
+        updateFields.rank = titleDataFromDB.rank;
 
-    //title exist in db , fix imdbID and imdb rating if needed
-    if (!titleDataFromDB.imdbID) {
-        updateFields.imdbID = semiImdbData.id;
-    }
-    if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
-        titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
-        updateFields.rating = titleDataFromDB.rating;
-    }
+        //title exist in db , fix imdbID and imdb rating if needed
+        if (!titleDataFromDB.imdbID) {
+            updateFields.imdbID = semiImdbData.id;
+        }
+        if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
+            titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
+            updateFields.rating = titleDataFromDB.rating;
+        }
 
-    if (titleDataFromDB.posters.length === 0) {
-        let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
-        if (imdbPoster) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
-            if (s3poster) {
-                updateFields.poster_s3 = s3poster;
-                updateFields.posters = [{
-                    url: s3poster.url,
-                    info: 's3Poster',
-                    size: s3poster.size,
-                }];
+        if (titleDataFromDB.posters.length === 0) {
+            let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
+            if (imdbPoster) {
+                let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
+                if (s3poster) {
+                    updateFields.poster_s3 = s3poster;
+                    updateFields.posters = [{
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                    }];
+                }
             }
         }
-    }
 
-    await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+        await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+    } catch (error) {
+        saveError(error);
+    }
 }
 
 async function add_inTheaters_comingSoon(type, mode) {
@@ -159,125 +163,133 @@ async function add_inTheaters_comingSoon(type, mode) {
 }
 
 async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData, type, mode, rank) {
-    let updateFields = {};
+    try {
+        let updateFields = {};
 
-    if (mode === 'inTheaters') {
-        titleDataFromDB.rank.inTheaters = rank;
-    } else {
-        titleDataFromDB.rank.comingSoon = rank;
-    }
-    updateFields.rank = titleDataFromDB.rank;
-
-    //title exist in db , fix imdbID and imdb rating if needed
-    if (!titleDataFromDB.imdbID) {
-        updateFields.imdbID = semiImdbData.id;
-    }
-    if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
-        titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
-        updateFields.rating = titleDataFromDB.rating;
-    }
-    if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== mode) {
-        updateFields.releaseState = mode;
-    }
-
-    if (semiImdbData.releaseState) {
-        let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
-        let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
-        let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
-        if (titleDataFromDB.premiered !== temp) {
-            updateFields.premiered = temp;
+        if (mode === 'inTheaters') {
+            titleDataFromDB.rank.inTheaters = rank;
+        } else {
+            titleDataFromDB.rank.comingSoon = rank;
         }
-    }
+        updateFields.rank = titleDataFromDB.rank;
 
-    if (titleDataFromDB.posters.length === 0) {
-        let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
-        if (imdbPoster) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
-            if (s3poster) {
-                updateFields.poster_s3 = s3poster;
-                updateFields.posters = [{
-                    url: s3poster.url,
-                    info: 's3Poster',
-                    size: s3poster.size,
+        //title exist in db , fix imdbID and imdb rating if needed
+        if (!titleDataFromDB.imdbID) {
+            updateFields.imdbID = semiImdbData.id;
+        }
+        if (Number(semiImdbData.imDbRating) !== titleDataFromDB.rating.imdb) {
+            titleDataFromDB.rating.imdb = Number(semiImdbData.imDbRating);
+            updateFields.rating = titleDataFromDB.rating;
+        }
+        if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== mode) {
+            updateFields.releaseState = mode;
+        }
+
+        if (semiImdbData.releaseState) {
+            let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
+            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
+            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+            if (titleDataFromDB.premiered !== temp) {
+                updateFields.premiered = temp;
+            }
+        }
+
+        if (titleDataFromDB.posters.length === 0) {
+            let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
+            if (imdbPoster) {
+                let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
+                if (s3poster) {
+                    updateFields.poster_s3 = s3poster;
+                    updateFields.posters = [{
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                    }];
+                }
+            }
+        }
+
+        if (!titleDataFromDB.trailers) {
+            let s3Trailer = await uploadTrailer(semiImdbData.title, semiImdbData.year, type, semiImdbData.id);
+            if (s3Trailer) {
+                updateFields.trailer_s3 = s3Trailer;
+                updateFields.trailers = [{
+                    url: s3Trailer.url,
+                    info: 's3Trailer-720p'
                 }];
             }
         }
-    }
 
-    if (!titleDataFromDB.trailers) {
-        let s3Trailer = await uploadTrailer(semiImdbData.title, semiImdbData.year, type, semiImdbData.id);
-        if (s3Trailer) {
-            updateFields.trailer_s3 = s3Trailer;
-            updateFields.trailers = [{
-                url: s3Trailer.url,
-                info: 's3Trailer-720p'
-            }];
-        }
+        await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+    } catch (error) {
+        saveError(error);
     }
-
-    await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
 }
 
 async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank, semiImdbData) {
-    let titleObj = {
-        title: utils.replaceSpecialCharacters(semiImdbData.title.toLowerCase()),
-        rawTitle: imdbData.title,
-        alternateTitles: [imdbData.title, imdbData.originalTitle].filter(value => value && value !== semiImdbData.title),
-        titleSynonyms: [],
-    }
-    let titleModel = getMovieModel(
-        titleObj, '', type, [],
-        '', imdbData.year, '', '',
-        [], [], []
-    );
-    titleModel.insert_date = 0;
-    titleModel.apiUpdateDate = 0;
-    titleModel.status = status;
-    titleModel.releaseState = releaseState;
-    if (mode === 'top') {
-        titleModel.rank.top = rank;
-    } else if (mode === 'popular') {
-        titleModel.rank.popular = rank;
-    } else if (mode === 'inTheaters') {
-        titleModel.rank.inTheaters = rank;
-    } else {
-        titleModel.rank.comingSoon = rank;
-    }
-
-    await uploadPosterAndTrailer(titleModel, imdbData, releaseState);
-
-    titleModel.imdbID = imdbData.id;
-    if (imdbData.releaseDate) {
-        titleModel.premiered = imdbData.releaseDate;
-    }
-    if (imdbData.releaseState) {
-        let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
-        let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
-        titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
-    }
-    titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
-    titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
-    titleModel.awards = imdbData.awards || '';
-    titleModel.genres = imdbData.genres
-        ? imdbData.genres.toLowerCase().split(',').map(item => item.trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a')
-        : [];
-    titleModel.country = imdbData.countries ? imdbData.countries.toLowerCase() : '';
-    titleModel.movieLang = imdbData.languages ? imdbData.languages.toLowerCase() : '';
-    titleModel.rated = imdbData.contentRating;
-    titleModel.rating.imdb = Number(imdbData.imDbRating);
-    titleModel.rating.metacritic = Number(imdbData.metacriticRating);
-    titleModel.rating.rottenTomatoes = imdbData.ratings ? Number(imdbData.ratings.rottenTomatoes) : 0;
-    if (status === 'unknown' && imdbData.tvSeriesInfo) {
-        if (imdbData.tvSeriesInfo.yearEnd) {
-            titleModel.endYear = imdbData.tvSeriesInfo.yearEnd.split('-')[0];
-            titleModel.status = 'ended';
-        } else if (imdbData.tvSeriesInfo.yearEnd === '') {
-            titleModel.endYear = '';
-            titleModel.status = 'running';
+    try {
+        let titleObj = {
+            title: utils.replaceSpecialCharacters(semiImdbData.title.toLowerCase()),
+            rawTitle: imdbData.title,
+            alternateTitles: [imdbData.title, imdbData.originalTitle].filter(value => value && value !== semiImdbData.title),
+            titleSynonyms: [],
         }
-    }
+        let titleModel = getMovieModel(
+            titleObj, '', type, [],
+            '', imdbData.year, '', '',
+            [], [], []
+        );
+        titleModel.insert_date = 0;
+        titleModel.apiUpdateDate = 0;
+        titleModel.status = status;
+        titleModel.releaseState = releaseState;
+        if (mode === 'top') {
+            titleModel.rank.top = rank;
+        } else if (mode === 'popular') {
+            titleModel.rank.popular = rank;
+        } else if (mode === 'inTheaters') {
+            titleModel.rank.inTheaters = rank;
+        } else {
+            titleModel.rank.comingSoon = rank;
+        }
 
-    await dbMethods.insertToDB('movies', titleModel);
+        await uploadPosterAndTrailer(titleModel, imdbData, releaseState);
+
+        titleModel.imdbID = imdbData.id;
+        if (imdbData.releaseDate) {
+            titleModel.premiered = imdbData.releaseDate;
+        }
+        if (imdbData.releaseState) {
+            let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
+            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
+            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+        }
+        titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
+        titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
+        titleModel.awards = imdbData.awards || '';
+        titleModel.genres = imdbData.genres
+            ? imdbData.genres.toLowerCase().split(',').map(item => item.trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a')
+            : [];
+        titleModel.country = imdbData.countries ? imdbData.countries.toLowerCase() : '';
+        titleModel.movieLang = imdbData.languages ? imdbData.languages.toLowerCase() : '';
+        titleModel.rated = imdbData.contentRating;
+        titleModel.rating.imdb = Number(imdbData.imDbRating);
+        titleModel.rating.metacritic = Number(imdbData.metacriticRating);
+        titleModel.rating.rottenTomatoes = imdbData.ratings ? Number(imdbData.ratings.rottenTomatoes) : 0;
+        if (status === 'unknown' && imdbData.tvSeriesInfo) {
+            if (imdbData.tvSeriesInfo.yearEnd) {
+                titleModel.endYear = imdbData.tvSeriesInfo.yearEnd.split('-')[0];
+                titleModel.status = 'ended';
+            } else if (imdbData.tvSeriesInfo.yearEnd === '') {
+                titleModel.endYear = '';
+                titleModel.status = 'running';
+            }
+        }
+
+        await crawlerMethodsDB.insertToDB('movies', titleModel);
+    } catch (error) {
+        saveError(error);
+    }
 }
 
 async function addBoxOfficeData() {
@@ -296,7 +308,7 @@ async function addBoxOfficeData() {
                 weeks: Number(boxOfficeData.items[i].weeks),
             }
         };
-        let updatePromise = dbMethods.findOneAndUpdateMovieCollection(
+        let updatePromise = crawlerMethodsDB.findOneAndUpdateMovieCollection(
             {imdbID: boxOfficeData.items[i].id},
             updateFields
         );
@@ -306,7 +318,7 @@ async function addBoxOfficeData() {
 }
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
-    let imdbPoster = imdbData.image.replace(/\.*_v1.*al_/gi, '');
+    let imdbPoster = imdbData.image ? imdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
     if (imdbPoster) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
         if (s3poster) {
@@ -362,14 +374,14 @@ async function getTitleDataFromDB(title, year, type) {
     } else {
         searchTypes.push(('anime_' + type));
     }
-    let temp = await dbMethods.searchTitleDB(titleObj, searchTypes, year, dataConfig);
+    let temp = await crawlerMethodsDB.searchTitleDB(titleObj, searchTypes, year, dataConfig);
     if (temp.length === 0) {
         let minusYear = (Number(year) - 1).toString();
-        temp = await dbMethods.searchTitleDB(titleObj, searchTypes, minusYear, dataConfig);
+        temp = await crawlerMethodsDB.searchTitleDB(titleObj, searchTypes, minusYear, dataConfig);
     }
     if (temp.length === 0) {
         let plusYear = (Number(year) + 1).toString();
-        temp = await dbMethods.searchTitleDB(titleObj, searchTypes, plusYear, dataConfig);
+        temp = await crawlerMethodsDB.searchTitleDB(titleObj, searchTypes, plusYear, dataConfig);
     }
 
     return temp.length > 0 ? temp[0] : null;
@@ -416,6 +428,11 @@ async function handleApiCall(url) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
+            } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                error.isAxiosError = true;
+                error.url = url;
+                await saveError(error);
+                return null;
             } else {
                 if (error.response && error.response.status !== 404) {
                     await saveError(error);

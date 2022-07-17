@@ -66,9 +66,10 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
+    let code = (err.message === 'File too large' || (err.message && err.message.includes('Not an jpg image'))) ? 400 : 500;
     res.status(500).json({
         errorMessage: err.message || err.code || 'Internal Server Error',
-        code: (err.message === 'File too large' || (err.message && err.message.includes('Not an jpg image'))) ? 400 : 500,
+        code: code,
         sentryErrorId: res.sentry,
     });
 });

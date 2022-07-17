@@ -1,4 +1,4 @@
-import {searchTitleDB, insertToDB, updateByIdDB} from "../data/dbMethods.js";
+import {searchTitleDB, insertToDB, updateByIdDB} from "../data/db/crawlerMethodsDB.js";
 import {deleteTrailerFromS3} from "../data/cloudStorage.js";
 import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter.js";

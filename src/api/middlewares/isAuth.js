@@ -1,7 +1,7 @@
 import config from "../../config/index.js";
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
-import {findUser} from "../../data/usersDbMethods.js";
+import {findUser} from "../../data/db/usersDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 
 const refreshTokenBlackList = new NodeCache({stdTTL: 60 * 60});

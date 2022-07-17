@@ -6,16 +6,16 @@ import {saveError} from "../../error/saveError.js";
 
 
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, premiered, type, canReTry = true) {
+    title = title.toLowerCase()
+        .replace(' all seasons', '')
+        .replace(' all', '')
+        .replace(' full episodes', '');
+    title = replaceSpecialCharacters(title);
+    const url = `https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
-            title = title.toLowerCase()
-                .replace(' all seasons', '')
-                .replace(' all', '')
-                .replace(' full episodes', '');
-            title = replaceSpecialCharacters(title);
-
-            let response = await axios.get(`https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`);
+            let response = await axios.get(url);
             let data = response.data;
             let titleMatch = checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premiered);
             if (titleMatch) {
@@ -37,6 +37,10 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 }
                 return null;
             } else {
+                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = url;
+                }
                 await saveError(error);
                 return null;
             }
@@ -133,6 +137,11 @@ async function handleApiCall(url) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
+            } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                error.isAxiosError = true;
+                error.url = url;
+                await saveError(error);
+                return null;
             } else {
                 if (error.response && error.response.status !== 404) {
                     await saveError(error);

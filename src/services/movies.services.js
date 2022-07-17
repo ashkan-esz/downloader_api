@@ -1,5 +1,6 @@
-import * as dbMethods from '../data/dbMethods.js';
-import * as userStatsDbMethods from '../data/db/userStats.js';
+import * as moviesDbMethods from '../data/db/moviesDbMethods.js';
+import * as crawlerMethodsDB from '../data/db/crawlerMethodsDB.js';
+import * as userStatsDbMethods from '../data/db/userStatsDbMethods.js';
 import {dataLevelConfig} from "../models/movie.js";
 import {generateServiceResult} from "./serviceUtils.js";
 import {setCache} from "../api/middlewares/moviesCache.js";
@@ -9,7 +10,7 @@ import {dataLevelConfig_character} from "../models/character.js";
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await dbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let newMovies = await moviesDbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (newMovies === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (newMovies.length === 0) {
@@ -21,7 +22,7 @@ export async function getNews(userId, types, dataLevel, imdbScores, malScores, p
 export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await dbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let updateMovies = await moviesDbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (updateMovies.length === 0) {
@@ -33,7 +34,7 @@ export async function getUpdates(userId, types, dataLevel, imdbScores, malScores
 export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let topsByLikesMovies = await dbMethods.getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let topsByLikesMovies = await moviesDbMethods.getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (topsByLikesMovies === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (topsByLikesMovies.length === 0) {
@@ -45,7 +46,7 @@ export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malSc
 export async function getTrailers(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let trailersData = await dbMethods.getNewTrailers(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let trailersData = await moviesDbMethods.getNewTrailers(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (trailersData === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (trailersData.length === 0) {
@@ -57,7 +58,7 @@ export async function getTrailers(userId, types, dataLevel, imdbScores, malScore
 export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let sortedData = await dbMethods.getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let sortedData = await moviesDbMethods.getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (sortedData === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (sortedData.length === 0) {
@@ -69,7 +70,7 @@ export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbSc
 export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let seriesOfDay = await dbMethods.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
+    let seriesOfDay = await moviesDbMethods.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
     if (seriesOfDay === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (seriesOfDay.length === 0) {
@@ -82,10 +83,10 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
     let {skip, limit} = getSkipLimit(page, count);
 
     let result = await Promise.allSettled([
-        dbMethods.getSortedMovies(userId, 'inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getSortedMovies(userId, 'comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
+        moviesDbMethods.getSortedMovies(userId, 'inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getSortedMovies(userId, 'comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
     ]);
     let multiple = {
         inTheaters: result[0].value,
@@ -113,9 +114,9 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
     let {skip, limit} = getSkipLimit(page, 12);
 
     let searchDataArray = await Promise.allSettled([
-        dbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        dbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel]),
-        dbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel]),
+        moviesDbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel]),
+        moviesDbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel]),
     ]);
     let searchData = {
         movies: searchDataArray[0].value,
@@ -138,7 +139,7 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
 }
 
 export async function searchMovieById(userId, id, dataLevel) {
-    let movieData = await dbMethods.searchOnCollectionById("movies", userId, id, dataLevelConfig[dataLevel]);
+    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, dataLevelConfig[dataLevel]);
     if (movieData === 'error') {
         return generateServiceResult({data: null}, 500, 'Server error, try again later');
     } else if (!movieData) {
@@ -148,7 +149,7 @@ export async function searchMovieById(userId, id, dataLevel) {
 }
 
 export async function searchStaffById(userId, id) {
-    let staffData = await dbMethods.searchOnCollectionById("staff", userId, id, {});
+    let staffData = await moviesDbMethods.searchOnCollectionById("staff", userId, id, {});
     if (staffData === 'error') {
         return generateServiceResult({data: null}, 500, 'Server error, try again later');
     } else if (!staffData) {
@@ -158,7 +159,7 @@ export async function searchStaffById(userId, id) {
 }
 
 export async function searchCharacterById(userId, id) {
-    let characterData = await dbMethods.searchOnCollectionById("characters", userId, id, {});
+    let characterData = await moviesDbMethods.searchOnCollectionById("characters", userId, id, {});
     if (characterData === 'error') {
         return generateServiceResult({data: null}, 500, 'Server error, try again later');
     } else if (!characterData) {
@@ -168,6 +169,7 @@ export async function searchCharacterById(userId, id) {
 }
 
 export async function userStatsService(userId, statType, id, isRemove) {
+    //todo : handle invalid statType
     if (isRemove) {
         let removeResult = await userStatsDbMethods.handleRemoveUserStatsTransaction(userId, statType, id);
         const code = removeResult === 'error' ? 500 : removeResult === 'notfound' ? 404 : 200;
@@ -189,6 +191,7 @@ export async function userStatsService(userId, statType, id, isRemove) {
 }
 
 export async function getUserStatsList(userId, statType, dataLevel, page) {
+    //todo : handle invalid statType
     let {skip, limit} = getSkipLimit(page, 12);
 
     let projection;
@@ -210,7 +213,7 @@ export async function getUserStatsList(userId, statType, dataLevel, page) {
 }
 
 export async function getGenresStatus(routeUrl) {
-    let genres = await dbMethods.getGenresStatusDB();
+    let genres = await moviesDbMethods.getGenresStatusDB();
     if (genres === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (genres.length === 0) {
@@ -229,7 +232,7 @@ export async function getGenresStatus(routeUrl) {
 export async function getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let result = await dbMethods.getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    let result = await moviesDbMethods.getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (result === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     } else if (result.length === 0) {
@@ -239,7 +242,7 @@ export async function getGenresMovies(userId, genres, types, imdbScores, malScor
 }
 
 export async function getMovieSources(routeUrl) {
-    let result = await dbMethods.getSourcesObjDB();
+    let result = await crawlerMethodsDB.getSourcesObjDB();
     if (!result || result === 'error') {
         return generateServiceResult({data: []}, 500, 'Server error, try again later');
     }

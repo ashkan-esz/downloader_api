@@ -12,7 +12,7 @@ import {
     removeAllAuthSession,
     findUserById,
     updateUserByID,
-} from "../data/usersDbMethods.js";
+} from "../data/db/usersDbMethods.js";
 import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda/index.js";
@@ -339,6 +339,10 @@ export async function removeProfileImage(jwtUserData, fileName) {
 
         let updateResult = await updateUserByID(jwtUserData.userId, {profileImages: newProfileImageArray});
         if (updateResult !== 'ok') {
+            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        }
+        let removeResult = await removeProfileImageFromS3(fileName);
+        if (removeResult !== 'ok') {
             return generateServiceResult({data: null}, 500, 'Server error, try again later');
         }
         return generateServiceResult({

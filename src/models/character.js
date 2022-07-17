@@ -26,40 +26,40 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
     }
 }
 
-export const userStats_character = {
+export const userStats_character = Object.freeze({
     //like,dislike
     like_character_count: 0,
     dislike_character_count: 0,
-}
+});
 
-export const dataLevelConfig_character = {
-    low: {
+export const dataLevelConfig_character = Object.freeze({
+    low: Object.freeze({
         name: 1,
         rawName: 1,
         gender: 1,
         imageData: 1,
-        userStats: {
+        userStats: Object.freeze({
             //like,dislike
             like_character: 1,
             like_character_count: 1,
             dislike_character: 1,
             dislike_character_count: 1,
-        }
-    },
-    medium: {
+        })
+    }),
+    medium: Object.freeze({
         name: 1,
         rawName: 1,
         gender: 1,
         imageData: 1,
-        userStats: {
+        userStats: Object.freeze({
             //like,dislike
             like_character: 1,
             like_character_count: 1,
             dislike_character: 1,
             dislike_character_count: 1,
-        }
-    },
-    high: {
+        })
+    }),
+    high: Object.freeze({
         //all
-    }
-}
+    })
+});

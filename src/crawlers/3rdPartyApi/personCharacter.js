@@ -1,4 +1,4 @@
-import * as dbMethods from "../../data/dbMethods.js";
+import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import * as utils from "../utils.js";
 import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "./jikanApi.js";
@@ -207,7 +207,7 @@ async function addImageToStaffAndCharacters(dataArray) {
 async function fetchDataFromDB(staff_characters, type) {
     const promiseQueue = new pQueue.default({concurrency: 20});
     for (let i = 0; i < staff_characters.length; i++) {
-        promiseQueue.add(() => dbMethods.searchStaffAndCharactersDB(
+        promiseQueue.add(() => crawlerMethodsDB.searchStaffAndCharactersDB(
             type,
             staff_characters[i].name,
             staff_characters[i].tvmazePersonID,
@@ -237,7 +237,7 @@ async function insertData(staff, characters) {
         delete staff[i].insertFlag;
         if (insertFlag) {
             delete staff[i].updateFlag;
-            promiseQueue.add(() => dbMethods.insertToDB('staff', staff[i]).then(insertedId => {
+            promiseQueue.add(() => crawlerMethodsDB.insertToDB('staff', staff[i]).then(insertedId => {
                 if (insertedId) {
                     staff[i]._id = insertedId;
                 }
@@ -250,7 +250,7 @@ async function insertData(staff, characters) {
         delete characters[i].insertFlag;
         if (insertFlag) {
             delete characters[i].updateFlag;
-            promiseQueue.add(() => dbMethods.insertToDB('characters', characters[i]).then(insertedId => {
+            promiseQueue.add(() => crawlerMethodsDB.insertToDB('characters', characters[i]).then(insertedId => {
                 if (insertedId) {
                     characters[i]._id = insertedId;
                 }
@@ -271,7 +271,7 @@ async function updateData(staff, characters) {
         delete staff[i].userStats;
         if (updateFlag) {
             staff[i].update_date = new Date();
-            promiseQueue.add(() => dbMethods.updateByIdDB('staff', staff[i]._id, staff[i]));
+            promiseQueue.add(() => crawlerMethodsDB.updateByIdDB('staff', staff[i]._id, staff[i]));
         }
     }
     for (let i = 0; i < characters.length; i++) {
@@ -281,7 +281,7 @@ async function updateData(staff, characters) {
         delete characters[i].userStats;
         if (updateFlag) {
             characters[i].update_date = new Date();
-            promiseQueue.add(() => dbMethods.updateByIdDB('characters', characters[i]._id, characters[i]));
+            promiseQueue.add(() => crawlerMethodsDB.updateByIdDB('characters', characters[i]._id, characters[i]));
         }
     }
     await promiseQueue.onIdle();

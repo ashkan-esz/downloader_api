@@ -11,6 +11,10 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+//todo : better html for emails
+//todo : add sendgrid api
+//todo : fix bug
+
 export default function (agenda) {
     agenda.define("registration email", {concurrency: 50}, async (job) => {
         try {

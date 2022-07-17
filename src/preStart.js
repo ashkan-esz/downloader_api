@@ -1,6 +1,6 @@
 import {createCollectionsAndIndexes} from "./data/createCollectionsIndex.js";
 import {userModel} from "./models/user.js";
-import {addUser, findUser, setTokenForNewUser} from "./data/usersDbMethods.js";
+import {addUser, findUser, setTokenForNewUser} from "./data/db/usersDbMethods.js";
 import * as bcrypt from "bcrypt";
 import {v4 as uuidv4} from "uuid";
 import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";

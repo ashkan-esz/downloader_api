@@ -1,4 +1,4 @@
-import {findUserById} from "../../data/usersDbMethods.js";
+import {findUserById} from "../../data/db/usersDbMethods.js";
 
 export default async function attachCurrentUser(req, res, next) {
     if (!req.isAuth && req.authCode) {

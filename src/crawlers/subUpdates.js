@@ -151,8 +151,8 @@ async function getFileSize(url, retryCounter = 0) {
             return await getFileSize(url, retryCounter);
         }
 
-        if (((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') || !url.includes('salamdl.')) {
-            //do not save salamdl 404|ENOTFOUND images errors
+        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
+            //do not save 404|ENOTFOUND images errors
             saveError(error);
         }
         return 0;

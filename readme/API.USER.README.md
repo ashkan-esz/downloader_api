@@ -32,7 +32,7 @@
 - [GET /users/activeSessions](#get-usersactivesessions)
 - [GET /users/sendVerifyEmail](#get-userssendverifyemail)
 - [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
-- [POST /users/uploadProfileImage/](#post-usersuploadprofileimage)
+- [POST /users/uploadProfileImage](#post-usersuploadprofileimage)
 - [DELETE /users/removeProfileImage/[filename]](#delete-usersremoveprofileimagefilename)
 - [PUT /users/setFavoriteGenres/[genres]](#put-userssetfavoritegenresgenres)
 
@@ -112,6 +112,7 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 
 ### POST /users/uploadProfileImage
 > receive profileImage from request body.
+>> **Note: send data as formData and don't forget to set contentType**
 > 
 > returns new profileImages array.
 > 
@@ -122,6 +123,8 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 
 ### DELETE /users/removeProfileImage/[filename]
 > returns new profileImages array.
+>
+>> image url: https://profile-image.s3.xxxxx.com/user-userId-timestamp.jpg --> filename: user-userId-timestamp.jpg
 
 
 ### PUT /users/setFavoriteGenres/[genres]

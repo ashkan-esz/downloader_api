@@ -1,5 +1,5 @@
 import config from "../config/index.js";
-import {resetMonthLikeAndViewDB} from "../data/dbMethods.js";
+import {resetMonthLikeAndViewDB} from "../data/db/crawlerMethodsDB.js";
 import Agenda from "agenda";
 import {crawler} from "../crawlers/crawler.js";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";

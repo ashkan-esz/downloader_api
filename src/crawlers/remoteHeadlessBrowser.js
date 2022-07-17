@@ -10,12 +10,12 @@ let remoteBrowsers = config.remoteBrowser.map(item => {
 });
 
 export async function getPageData(url, cookieOnly = false, retryCount = 0) {
+    let decodedUrl = getDecodedLink(url);
+    if (decodedUrl === url) {
+        url = encodeURIComponent(url);
+    }
     let selectedBrowser;
     try {
-        let decodedUrl = getDecodedLink(url);
-        if (decodedUrl === url) {
-            url = encodeURIComponent(url);
-        }
         if (remoteBrowsers.length === 0) {
             // no remote browser provided
             return null;
@@ -50,6 +50,10 @@ export async function getPageData(url, cookieOnly = false, retryCount = 0) {
                 await new Promise(resolve => setTimeout(resolve, 4000));
                 return await getPageData(url, cookieOnly, retryCount);
             }
+        }
+        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            error.isAxiosError = true;
+            error.url = url;
         }
         await saveError(error);
         return null;

@@ -91,7 +91,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
     };
 }
 
-export const userStats = {
+export const userStats = Object.freeze({
     like_movie_count: 0,
     dislike_movie_count: 0,
     //follow
@@ -102,10 +102,10 @@ export const userStats = {
     dropped_count: 0,
     finished_count: 0,
     score_count: 0,
-}
+});
 
-export const userStats_projection = {
-    low: {
+export const userStats_projection = Object.freeze({
+    low: Object.freeze({
         like_movie: 1,
         like_movie_count: 1,
         dislike_movie: 1,
@@ -116,8 +116,8 @@ export const userStats_projection = {
         //future list
         future_list: 1,
         future_list_count: 1,
-    },
-    medium:{
+    }),
+    medium: Object.freeze({
         like_movie: 1,
         like_movie_count: 1,
         dislike_movie: 1,
@@ -128,8 +128,8 @@ export const userStats_projection = {
         //future list
         future_list: 1,
         future_list_count: 1,
-    },
-    high:{
+    }),
+    high: Object.freeze({
         like_movie: 1,
         like_movie_count: 1,
         dislike_movie: 1,
@@ -151,11 +151,11 @@ export const userStats_projection = {
         finished_count: 1,
         score: 1,
         score_count: 1,
-    }
-}
+    })
+});
 
-export const dataLevelConfig = {
-    low: {
+export const dataLevelConfig = Object.freeze({
+    low: Object.freeze({
         title: 1,
         year: 1,
         premiered: 1,
@@ -164,8 +164,8 @@ export const dataLevelConfig = {
         rawTitle: 1,
         rating: 1,
         userStats: userStats_projection.low,
-    },
-    medium: {
+    }),
+    medium: Object.freeze({
         releaseState: 1,
         rank: 1,
         title: 1,
@@ -186,6 +186,6 @@ export const dataLevelConfig = {
         releaseDay: 1,
         status: 1,
         boxOfficeData: 1,
-    },
-    high: {}
-}
+    }),
+    high: Object.freeze({})
+});

@@ -217,7 +217,7 @@ function getSubtitles($, type, pageLink) {
                 } else if (linkHref.includes('/subtitles/')) {
                     let temp = linkHref.replace(/\/farsi_persian$/i, '').split('/').pop().replace(/-/g, ' ').toLowerCase();
                     temp = temp.replace(' sconed ', ' second ');
-                    temp = wordsToNumbers(temp);
+                    temp = wordsToNumbers(temp).toString();
                     let seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
                     let season = seasonMatch ? seasonMatch.pop().replace(/(season)|\d\d\d\d/gi, '').trim() : '';
                     let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, false);

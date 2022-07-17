@@ -1,6 +1,6 @@
 import axios from "axios";
 import NodeCache from "node-cache";
-import * as dbMethods from "../../data/dbMethods.js";
+import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import * as utils from "../utils.js";
 import {addStaffAndCharacters} from "./personCharacter.js";
@@ -20,58 +20,63 @@ export function flushJikanCachedData() {
 }
 
 export async function getJikanApiData(title, year, type, jikanID) {
+    try {
+        // get jikan data directly with jikanID
+        if (jikanID) {
+            let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
+            let fullData = await handleApiCall(animeUrl);
+            if (fullData) {
+                let allTitles = getTitlesFromData(fullData);
+                if (checkTitle(title, type, allTitles)) {
+                    return getModifiedJikanApiData(allTitles, fullData);
+                }
+            }
+        }
 
-    // get jikan data directly with jikanID
-    if (jikanID) {
-        let animeUrl = `https://api.jikan.moe/v3/anime/${jikanID}`;
-        let fullData = await handleApiCall(animeUrl);
-        if (fullData) {
+        let jikanSearchResult = await getJikanSearchResult(title, year);
+        if (!jikanSearchResult) {
+            return null;
+        }
+
+        if (
+            type.includes('serial') &&
+            jikanSearchResult.results.length > 1 &&
+            jikanSearchResult.results[0].title.replace(/the|\(tv\)|\s+/gi, '') === jikanSearchResult.results[1].title.replace(/the|\(tv\)|\s+/gi, '') &&
+            (jikanSearchResult.results[0].type.match(/ova|ona/gi) && Number(jikanSearchResult.results[0].episodes) < Number(jikanSearchResult.results[1].episodes))
+        ) {
+            jikanSearchResult.results.shift();
+        }
+
+        for (let i = 0; i < jikanSearchResult.results.length; i++) {
+            if (
+                (
+                    type.includes('serial') &&
+                    jikanSearchResult.results[i].start_date &&
+                    jikanSearchResult.results[i].start_date.split('-')[0] !== year &&
+                    Number(jikanSearchResult.results[i].episodes) === 0
+                ) ||
+                (type.includes('movie') && Number(jikanSearchResult.results[i].episodes) > 1)
+            ) {
+                continue;
+            }
+
+            let animeUrl = `https://api.jikan.moe/v3/anime/${jikanSearchResult.results[i].mal_id}`;
+            let fullData = await handleApiCall(animeUrl);
+            if (!fullData) {
+                continue;
+            }
+
             let allTitles = getTitlesFromData(fullData);
+
             if (checkTitle(title, type, allTitles)) {
                 return getModifiedJikanApiData(allTitles, fullData);
             }
         }
-    }
-
-    let jikanSearchResult = await getJikanSearchResult(title, year);
-    if (!jikanSearchResult) {
+        return null;
+    } catch (error) {
+        saveError(error);
         return null;
     }
-
-    if (
-        type.includes('serial') &&
-        jikanSearchResult.results[0].title.replace(/the|\(tv\)|\s+/gi, '') === jikanSearchResult.results[1].title.replace(/the|\(tv\)|\s+/gi, '') &&
-        (jikanSearchResult.results[0].type.match(/ova|ona/gi) && Number(jikanSearchResult.results[0].episodes) < Number(jikanSearchResult.results[1].episodes))
-    ) {
-        jikanSearchResult.results.shift();
-    }
-
-    for (let i = 0; i < jikanSearchResult.results.length; i++) {
-        if (
-            (
-                type.includes('serial') &&
-                jikanSearchResult.results[i].start_date &&
-                jikanSearchResult.results[i].start_date.split('-')[0] !== year &&
-                Number(jikanSearchResult.results[i].episodes) === 0
-            ) ||
-            (type.includes('movie') && Number(jikanSearchResult.results[i].episodes) > 1)
-        ) {
-            continue;
-        }
-
-        let animeUrl = `https://api.jikan.moe/v3/anime/${jikanSearchResult.results[i].mal_id}`;
-        let fullData = await handleApiCall(animeUrl);
-        if (!fullData) {
-            continue;
-        }
-
-        let allTitles = getTitlesFromData(fullData);
-
-        if (checkTitle(title, type, allTitles)) {
-            return getModifiedJikanApiData(allTitles, fullData);
-        }
-    }
-    return null;
 }
 
 async function getJikanSearchResult(title, year) {
@@ -329,6 +334,12 @@ async function handleApiCall(url, timeoutSec = 0) {
                 if (error.message === 'hard timeout') {
                     return null;
                 }
+                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = url;
+                    await saveError(error);
+                    return null;
+                }
                 if (
                     error.code === 'ECONNABORTED' ||
                     !error.response ||
@@ -386,10 +397,10 @@ function getTitlesFromData(fullData) {
 
 export async function updateJikanData() {
     //reset rank
-    await dbMethods.updateMovieCollectionDB({'rank.animeTopComingSoon': -1});
+    await crawlerMethodsDB.updateMovieCollectionDB({'rank.animeTopComingSoon': -1});
     await add_comingSoon_topAiring_Titles('comingSoon', 2);
     //reset rank
-    await dbMethods.updateMovieCollectionDB({'rank.animeTopAiring': -1});
+    await crawlerMethodsDB.updateMovieCollectionDB({'rank.animeTopAiring': -1});
     await add_comingSoon_topAiring_Titles('topAiring', 2);
 }
 
@@ -409,7 +420,7 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
 
         let comingSoon_topAiring_titles = apiData.top;
         for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
-            let titleDataFromDB = await dbMethods.searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
+            let titleDataFromDB = await crawlerMethodsDB.searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
                 ...dataLevelConfig['medium'],
                 jikanID: 1,
                 castUpdateDate: 1,
@@ -502,7 +513,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         }
     }
 
-    await dbMethods.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+    await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
 }
 
 async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
@@ -541,7 +552,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
         titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         titleModel.genres = jikanApiFields.genres;
-        let insertedId = await dbMethods.insertToDB('movies', titleModel);
+        let insertedId = await crawlerMethodsDB.insertToDB('movies', titleModel);
 
         if (insertedId && jikanApiFields) {
             let allApiData = {
@@ -549,7 +560,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
             };
             let castAndCharacters = await getCastAndCharacterFields(insertedId, titleModel, allApiData);
             if (castAndCharacters) {
-                await dbMethods.updateByIdDB('movies', insertedId, castAndCharacters);
+                await crawlerMethodsDB.updateByIdDB('movies', insertedId, castAndCharacters);
             }
         }
     }
@@ -586,7 +597,7 @@ export async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
     try {
         let newRelatedTitles = [];
         for (let i = 0; i < jikanRelatedTitles.length; i++) {
-            let searchResult = await dbMethods.searchOnMovieCollectionDB(
+            let searchResult = await crawlerMethodsDB.searchOnMovieCollectionDB(
                 {jikanID: jikanRelatedTitles[i].jikanID},
                 dataLevelConfig['medium']
             );
@@ -617,7 +628,7 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
             obj[key] = titleModel[key];
             return obj;
         }, {});
-    let searchResults = await dbMethods.searchForAnimeRelatedTitlesByJikanIDDB(jikanID);
+    let searchResults = await crawlerMethodsDB.searchForAnimeRelatedTitlesByJikanIDDB(jikanID);
     for (let i = 0; i < searchResults.length; i++) {
         let updateFlag = false;
         let thisTitleRelatedTitles = searchResults[i].relatedTitles;
@@ -632,7 +643,7 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
             }
         }
         if (updateFlag) {
-            await dbMethods.updateByIdDB(
+            await crawlerMethodsDB.updateByIdDB(
                 'movies',
                 searchResults[i]._id,
                 {

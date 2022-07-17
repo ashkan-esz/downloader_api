@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
 import sharp from "sharp";
-import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./dbMethods.js";
+import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {saveError} from "../error/saveError.js";
 
 
@@ -99,6 +99,12 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
         }
+        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            error.isAxiosError = true;
+            error.url = originalUrl;
+            await saveError(error);
+            return null;
+        }
         if ((!error.response || error.response.status !== 404) || !originalUrl.includes('cdn.myanimelist.')) {
             //do not save myanimelist 404 images errors
             saveError(error);
@@ -154,6 +160,10 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
+        }
+        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            error.isAxiosError = true;
+            error.url = originalUrl;
         }
         saveError(error);
         return null;
@@ -219,8 +229,8 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
-        if (((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') || !originalUrl.includes('salamdl.')) {
-            //do not save salamdl 404|ENOTFOUND images errors
+        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
+            //do not save 404|ENOTFOUND images errors
             saveError(error);
         }
         return null;

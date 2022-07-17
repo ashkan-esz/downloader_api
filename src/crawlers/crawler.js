@@ -1,5 +1,5 @@
 import {getDatesBetween} from "./utils.js";
-import {getSourcesObjDB} from "../data/dbMethods.js";
+import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
 import * as Sentry from "@sentry/node";

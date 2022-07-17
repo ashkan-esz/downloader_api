@@ -173,8 +173,13 @@ async function getLinks(url, sourceLinkData = null) {
                     let cacheResult = await getFromGoogleCache(url);
                     $ = cacheResult.$;
                     links = cacheResult.links;
+                    checkGoogleCache = true;
                 }
-                checkGoogleCache = true;
+                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = url;
+                    await saveError(error);
+                }
             }
         } else {
             try {
@@ -195,6 +200,12 @@ async function getLinks(url, sourceLinkData = null) {
                 $ = cacheResult.$;
                 links = cacheResult.links;
                 checkGoogleCache = true;
+
+                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    error.isAxiosError = true;
+                    error.url = url;
+                    await saveError(error);
+                }
             }
         }
         if (links.length < 5 && !checkGoogleCache) {
@@ -226,7 +237,11 @@ async function getFromGoogleCache(url) {
         await new Promise((resolve => setTimeout(resolve, 100)));
         return {$, links};
     } catch (error) {
-        if (error.response && error.response.status !== 404 && error.response.status !== 429) {
+        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            error.isAxiosError = true;
+            error.url = getDecodedLink(url);
+            await saveError(error);
+        } else if (error.response && error.response.status !== 404 && error.response.status !== 429) {
             saveError(error);
         }
         return {$: null, links: []};
