@@ -8,10 +8,12 @@ import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 
-let imdbApiKey = {apikey: '', reachedMax: true};
+let imdbApiKey = [];
 
 export async function updateImdbData() {
-    imdbApiKey = {apikey: config.imdbApiKey.trim(), reachedMax: false};
+    imdbApiKey = config.imdbApiKey.map(item => {
+        return {apikey: item.trim(), reachedMax: false, callCounter: 0};
+    });
 
     // check reached daily limit
     let testApiLimit = await handleApiCall('https://imdb-api.com/en/API/Top250Movies/$apikey$');
@@ -22,33 +24,33 @@ export async function updateImdbData() {
     //todo : fix delay between reset and set
 
     //top
-    if (!imdbApiKey.reachedMax) {
+    if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.updateMovieCollectionDB({'rank.top': -1});
         await add_Top_popular('movie', 'top');
         await add_Top_popular('serial', 'top');
     }
 
     //popular
-    if (!imdbApiKey.reachedMax) {
+    if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.updateMovieCollectionDB({'rank.popular': -1});
         await add_Top_popular('movie', 'popular');
         await add_Top_popular('serial', 'popular');
     }
 
     //inTheaters
-    if (!imdbApiKey.reachedMax) {
+    if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.updateMovieCollectionDB({'rank.inTheaters': -1});
         await add_inTheaters_comingSoon('movie', 'inTheaters');
     }
 
     //comingSoon
-    if (!imdbApiKey.reachedMax) {
+    if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.updateMovieCollectionDB({'rank.comingSoon': -1});
         await add_inTheaters_comingSoon('movie', 'comingSoon');
     }
 
     //box office
-    if (!imdbApiKey.reachedMax) {
+    if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.updateMovieCollectionDB({'rank.boxOffice': -1});
         await addBoxOfficeData();
     }
@@ -185,10 +187,16 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
             updateFields.releaseState = mode;
         }
 
+        if (semiImdbData.releaseDate) {
+            let temp = semiImdbData.releaseDate;
+            if (titleDataFromDB.premiered !== temp) {
+                updateFields.premiered = temp;
+            }
+        }
         if (semiImdbData.releaseState) {
             let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
-            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
-            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
+            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[2].trim();
             if (titleDataFromDB.premiered !== temp) {
                 updateFields.premiered = temp;
             }
@@ -261,8 +269,8 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         }
         if (imdbData.releaseState) {
             let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
-            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[0].trim());
-            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[1].trim();
+            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
+            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[2].trim();
         }
         titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
         titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
@@ -401,13 +409,15 @@ async function uploadTrailer(title, year, type, imdbID) {
 }
 
 async function handleApiCall(url) {
-    if (!url || imdbApiKey.reachedMax) {
+    if (!url || !imdbApiKey.find(item => !item.reachedMax)) {
         return null;
     }
+    let selectedApiKey = imdbApiKey.filter(item => !item.reachedMax).sort((a, b) => a.callCounter - b.callCounter)[0];
     let waitCounter = 0;
     while (waitCounter < 10) {
         try {
-            let temp = url.replace('$apikey$', imdbApiKey.apikey);
+            let temp = url.replace('$apikey$', selectedApiKey.apikey);
+            selectedApiKey.callCounter++;
             let response = await axios.get(temp);
             let data = response.data;
             if (data.errorMessage &&
@@ -415,8 +425,15 @@ async function handleApiCall(url) {
                     data.errorMessage.includes('Maximum usage') ||
                     data.errorMessage.includes('Invalid API Key')
                 )) {
-                imdbApiKey.reachedMax = true;
+                selectedApiKey.reachedMax = true;
                 Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                //get next active api key
+                selectedApiKey = imdbApiKey.filter(item => !item.reachedMax).sort((a, b) => a.callCounter - b.callCounter)[0];
+                if (selectedApiKey) {
+                    waitCounter = 0;
+                    continue;
+                }
+                //no active api key
                 return null;
             }
             if (data.errorMessage) {

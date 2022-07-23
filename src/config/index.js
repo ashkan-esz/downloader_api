@@ -11,7 +11,7 @@ export default {
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,
     crawlerStarterPassword: process.env.UPDATE_PASSWORD,
-    imdbApiKey: process.env.IMDB_API_KEY,
+    imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
     omdbApiKeys: getOmdbApiKeys(),
     cloudStorage: {
         endpoint: process.env.CLOUAD_STORAGE_ENDPOINT,

@@ -103,8 +103,8 @@ To run this project, you will need to add the following environment variables to
 | **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                                  | `true`                  |
 | **`CLOUAD_STORAGE_ACCESS_KEY`**        |                                                                                                                            | `true`                  |
 | **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |                                                                                                                            | `true`                  |
-| **`IMDB_API_KEY`**                     | see [imdb-api.com](https://imdb-api.com/)                                                                                  | `true`                  |
-| **`OMDB_API_KEY{i}`**                  | `i` start from 1 to infinite. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                              | `true`                  |
+| **`IMDB_API_KEY`**                     | keys split by `-` see [imdb-api.com](https://imdb-api.com/)                                                                | `true`                  |
+| **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                          | `true`                  |
 | **`PRINT_ERRORS`**                     |                                                                                                                            | `false (default:false)` |
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                        | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                            | `false`                 |

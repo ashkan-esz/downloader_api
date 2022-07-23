@@ -93,7 +93,7 @@ export async function login(username_email, password, deviceInfo, ip) {
             if (!result) {
                 return generateServiceResult({}, 500, 'Server error, try again later');
             } else if (result === 'cannot find user') {
-                return generateServiceResult({}, 400, 'Cannot find user');
+                return generateServiceResult({}, 404, 'Cannot find user');
             }
             agenda.schedule('in 4 seconds', 'login email', {
                 deviceInfo,
