@@ -117,7 +117,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
 
         if (titleDataFromDB.posters.length === 0) {
             let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
-            if (imdbPoster) {
+            if (imdbPoster && !imdbPoster.includes('nopicture.')) {
                 let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
                 if (s3poster) {
                     updateFields.poster_s3 = s3poster;
@@ -204,7 +204,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
 
         if (titleDataFromDB.posters.length === 0) {
             let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
-            if (imdbPoster) {
+            if (imdbPoster && !imdbPoster.includes('nopicture.')) {
                 let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
                 if (s3poster) {
                     updateFields.poster_s3 = s3poster;
@@ -327,7 +327,7 @@ async function addBoxOfficeData() {
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
     let imdbPoster = imdbData.image ? imdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
-    if (imdbPoster) {
+    if (imdbPoster && !imdbPoster.includes('nopicture.')) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;

@@ -298,10 +298,13 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
     }
 }
 
+//-----------------------------------
+//-----------------------------------
+
 export async function getGenresStatusDB() {
     try {
-        let collection = await getCollection('movies');
-        let aggregationPipeline = [
+        const collection = await getCollection('movies');
+        const aggregationPipeline = [
             {
                 $sort: {
                     year: -1,
@@ -338,13 +341,69 @@ export async function getGenresStatusDB() {
         genres = genres
             .filter(item => item.genre !== 'n/a')
             .map(item => {
-            item.genre = item.genre.replace('-', '_');
-            return item;
-        });
+                item.genre = item.genre.replace('-', '_');
+                return item;
+            });
+
+        let genresPosters = genres.map(item => item.poster && item.poster.url).filter(item => item);
+
+        //fix genres with no poster
+        for (let i = 0; i < genres.length; i++) {
+            if (!genres[i].poster) {
+                let temp = await getGenreTop5MoviePoster(genres[i].genre);
+                let found = false;
+                for (let j = 0; j < temp.length; j++) {
+                    if (!genresPosters.includes(temp[j].posters[0].url)) {
+                        genres[i].poster = temp[j].posters[0];
+                        genresPosters.push(temp[j].posters[0].url);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    genres[i].poster = temp[0].posters[0];
+                    genresPosters.push(temp[0].posters[0].url);
+                }
+            }
+        }
+
         return genres;
     } catch (error) {
         saveError(error);
         return 'error';
+    }
+}
+
+export async function getGenreTop5MoviePoster(genre) {
+    try {
+        const collection = await getCollection('movies');
+        const aggregationPipeline = [
+            {
+                $match: {
+                    genres: genre,
+                    posters: {$ne: []},
+                }
+            },
+            {
+                $sort: {
+                    year: -1,
+                    insert_date: -1,
+                }
+            },
+            {
+                $project: {
+                    title: 1,
+                    posters: 1,
+                }
+            },
+            {
+                $limit: 5,
+            }
+        ];
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 

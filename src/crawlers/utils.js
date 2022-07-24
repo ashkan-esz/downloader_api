@@ -115,7 +115,7 @@ export function replaceSpecialCharacters(input) {
         .replace(/[ôöøóō◯õ]|ö/g, 'o')
         .replace(/[üúûùū]/g, 'u')
         .replace(/ñ/g, 'n')
-        .replace(/[ıí]/g, 'i')
+        .replace(/[ıíï]/g, 'i')
         .replace(/(^|\s)iii/gi, ' 3')
         .replace(' ii', ' 2')
         .replace(' ∬', ' 2')

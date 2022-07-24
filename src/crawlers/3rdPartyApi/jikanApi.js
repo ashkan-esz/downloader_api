@@ -474,7 +474,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
 
     if (titleDataFromDB.posters.length === 0) {
         let jikanPoster = semiJikanData.image_url;
-        if (jikanPoster) {
+        if (jikanPoster && !jikanPoster.includes('/icon/')) {
             let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanPoster);
             if (s3poster) {
                 updateFields.poster_s3 = s3poster;
@@ -568,7 +568,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
 
 async function uploadPosterAndTrailer(titleModel, jikanData) {
     let jikanPoster = jikanData.image_url;
-    if (jikanPoster) {
+    if (jikanPoster && !jikanPoster.includes('/icon/')) {
         let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, jikanPoster);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
