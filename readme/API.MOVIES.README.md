@@ -45,141 +45,214 @@
 ### GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return recent movies (new released movies). ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/news/serial-anime_serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/news/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/news/serial/high/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/news/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/news/serial-anime_serial/medium/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/news/serial/high/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies sorted by update date (movies with new episode or higher quality). ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/updates/serial-anime_serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/updates/movie-anime_serial/medium/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/updates/serial/high/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/updates/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/updates/movie-anime_serial/medium/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/updates/serial/high/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies sorted by inApp like count. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/topsByLikes/serial-anime_serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/topsByLikes/anime_serial/medium/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/topsByLikes/movie/high/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/topsByLikes/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/topsByLikes/anime_serial/medium/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/topsByLikes/movie/high/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/trailers/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies with new added trailer. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/trailers/serial-anime_serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/trailers/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/trailers/serial-movie/high/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/trailers/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/trailers/serial-anime_serial/medium/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/trailers/serial-movie/high/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies sorted by something like 'comingSoon'. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/sortedMovies/comingSoon/serial-anime_serial/high/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/medium/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/sortedMovies/comingSoon/serial-anime_serial/high/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]
 > return series that get release on that day. ([movies schema](SCHEMA.README.md#Movie-Data))
 > 
 > dataLevel is set as 'medium'.
 
-Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/0/serial-anime_serial/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/1/serial-anime_serial/6-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/seriesOfDay/6/serial-anime_serial/0-10/0-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/seriesOfDay/0/serial-anime_serial/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/seriesOfDay/1/serial-anime_serial/6-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/seriesOfDay/6/serial-anime_serial/0-10/0-10/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/multiple/status/[types]/[dataLevel]/[imdbScores]/[malScores]/[count]/[page]
 > return fields { __inTheaters__, __comingSoon__, __news__, __update__ } as array of movie-data.  ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/movie-serial/low/0-10/0-10/3/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/multiple/status/serial/high/0-10/0-10/6/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/multiple/status/movie-serial/low/0-10/0-10/3/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/multiple/status/serial/high/0-10/0-10/6/1?testUser=true
+</details>
+<br />
 
 ### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page]
 > return { __movies__, __staff__, __characters__ }.  ([movies schema](SCHEMA.README.md#Movie-Data))
 > 
 > also receive field `genres` as query parameter (optional).
 
-Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/medium/2000-2022/0-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/high/2000-2022/0-10/0-10/1?genres=action-drama&testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/medium/2000-2022/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/high/2000-2022/0-10/0-10/1?genres=action-drama&testUser=true
+</details>
+<br />
 
 ### GET /movies/searchByID/[id]/[dataLevel]
 > return searching movie-data. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
+- https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?testUser=true
+</details>
+<br />
 
 ### GET /movies/staff/searchById/[id]
 > return searching staff data. ([staff schema](SCHEMA.README.md#Staff-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/staff/searchById/626b956d20fd53af87dc9cad?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
+- https://downloader-node-api.herokuapp.com/movies/staff/searchById/626b956d20fd53af87dc9cad?testUser=true
+</details>
+<br />
 
 ### GET /movies/characters/searchById/[id]
 > return searching character data. ([character schema](SCHEMA.README.md#Character-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/characters/searchById/619a2ee6b1d34100166fd94d?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
+- https://downloader-node-api.herokuapp.com/movies/characters/searchById/619a2ee6b1d34100166fd94d?testUser=true
+</details>
+<br />
 
 ### GET /movies/status/genres
 > returns all available genres with their count. ([genres schema](SCHEMA.README.md#Genres))
 
-Example: https://downloader-node-api.herokuapp.com/movies/status/genres?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
+- https://downloader-node-api.herokuapp.com/movies/status/genres?testUser=true
+</details>
+<br />
 
 ### GET /movies/status/movieSources
 > returns movie sources with latest url. ([movie sources schema](SCHEMA.README.md#Movie-Sources))
 
-Example: https://downloader-node-api.herokuapp.com/movies/status/movieSources?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
+- https://downloader-node-api.herokuapp.com/movies/status/movieSources?testUser=true
+</details>
+<br />
 
 ### GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return array of movies match with searching genres. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/genres/action/movie-serial/low/0-10/0-10/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/genres/sci_fi/serial/medium/5-10/0-10/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/genres/action/movie-serial/low/0-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/genres/sci_fi/serial/medium/5-10/0-10/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1?testUser=true
+</details>
+<br />
+<br />
 
 ## User Stats Api
 
 ### PUT /movies/addUserStats/[statType]/[id]
 > also receive query parameters `remove=[true|false]`
 
+<br />
+
 ### GET /movies/userStatsList/[statType]/[dataLevel]/[page]
 > return array of movies. ([movies schema](SCHEMA.README.md#Movie-Data))
 
-Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/like_movie/low/1?testUser=true
+<details>
+<summary>
+Examples
+</summary>
 
-Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/follow_movie/low/1?testUser=true
-
-Example: https://downloader-node-api.herokuapp.com/movies/userStatsList/save/low/1?testUser=true
-
+- https://downloader-node-api.herokuapp.com/movies/userStatsList/like_movie/low/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/userStatsList/follow_movie/low/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/userStatsList/save/low/1?testUser=true
+</details>
+<br />
 
 
 # API

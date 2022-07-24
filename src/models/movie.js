@@ -155,6 +155,14 @@ export const userStats_projection = Object.freeze({
 });
 
 export const dataLevelConfig = Object.freeze({
+    dlink: Object.freeze({
+        title: 1,
+        type: 1,
+        year: 1,
+        posters: 1,
+        qualities: 1,
+        seasons: 1,
+    }),
     low: Object.freeze({
         title: 1,
         year: 1,

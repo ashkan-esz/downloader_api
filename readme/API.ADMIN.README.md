@@ -11,6 +11,9 @@
 - [PUT /crawler/[password]](#put-crawlerpassword)
 - [PUT /crawler/domainChange/[password]](#put-crawlerdomainchangepassword)
 
+<br />
+<br />
+
 ### PUT /crawler/[password]
 
 > do not use this
@@ -26,11 +29,15 @@ additional parameters:
 | **`handleDomainChange`** | true , false | crawler flag         | `false (default: true)` |
 | **`handleCastUpdate`**   | true , false | crawler flag         | `false (default: true)` |
 
+<br />
+
 ### PUT /crawler/domainChange/[password]
 
 > do not use this
 
 Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWORD}
+
+<br />
 
 # API
 - Open [user api docs](API.USER.README.md).

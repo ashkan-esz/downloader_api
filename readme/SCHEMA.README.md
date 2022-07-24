@@ -67,6 +67,18 @@ deviceInfo = {
 
 ```javascript
 dataLevel = {
+    dlink: {
+        title: String,
+        type: String,
+        year: String,
+        posters: Array({
+            url: String,
+            info: String,
+            size: Int
+        }),
+        qualities: Array(#QUALITY),
+        seasons: Array(#SEASON),
+    },
     low: {
         _id: Object,
         title: String,
@@ -197,8 +209,8 @@ dataLevel = {
 }
 ```
 
-
 ## Season
+
 ```javascript
 #SEASON = {
     seasonNumber: Int,
@@ -231,8 +243,8 @@ dataLevel = {
 }
 ```
 
-
 ## Quality
+
 ```javascript
 #QUALITY = {
     quality: String,
@@ -256,8 +268,8 @@ dataLevel = {
 }
 ```
 
-
 ## Subtitle
+
 ```javascript
 #SUBTITLE = {
     seasonNumber: Int,
@@ -273,8 +285,8 @@ dataLevel = {
 }
 ```
 
-
 ## Actor_And_Character
+
 ```javascript
 #actor_and_Character = {
     id: Object,
@@ -293,8 +305,8 @@ dataLevel = {
 }
 ```
 
-
 ## User Stats
+
 ```javascript
 #userStats = {
     //-- movies only

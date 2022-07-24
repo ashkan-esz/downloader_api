@@ -1,19 +1,19 @@
 # API Parameters
 
-| param name            | Values                        | Description                                                          | Required |
-|-----------------------|-------------------------------|----------------------------------------------------------------------|----------|
-| **`username`**        | string                        | match <code>/^[a-z&#124;0-9_]+$/gi</code> and length in range [6-50] | `true`   |
-| **`email`**           | string                        |                                                                      | `true`   |
-| **`password`**        | string                        | at least one number and capital letter  and length in range [8-50]   | `true`   |
-| **`confirmPassword`** | string                        |                                                                      | `true`   |
-| **`deviceInfo`**      | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_         | `true`   |
-| **`appName`**         | String                        |                                                                      | `true`   |
-| **`appVersion`**      | String                        |                                                                      | `true`   |
-| **`os`**              | String                        |                                                                      | `true`   |
-| **`deviceModel`**     | String                        |                                                                      | `true`   |
-| **`deviceId`**        | String                        | unique id of session                                                 | `true`   |
-| **`filename`**        | String                        |                                                                      | `true`   |
-| **`genres`**          | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi              | `true`   |
+| param name            | Values                        | Description                                                           | Required |
+|-----------------------|-------------------------------|-----------------------------------------------------------------------|----------|
+| **`username`**        | string                        | match <code>/^[a-z&#124;0-9_-]+$/gi</code> and length in range [6-50] | `true`   |
+| **`email`**           | string                        |                                                                       | `true`   |
+| **`password`**        | string                        | at least one number and capital letter  and length in range [8-50]    | `true`   |
+| **`confirmPassword`** | string                        |                                                                       | `true`   |
+| **`deviceInfo`**      | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_          | `true`   |
+| **`appName`**         | String                        |                                                                       | `true`   |
+| **`appVersion`**      | String                        |                                                                       | `true`   |
+| **`os`**              | String                        |                                                                       | `true`   |
+| **`deviceModel`**     | String                        |                                                                       | `true`   |
+| **`deviceId`**        | String                        | unique id of session                                                  | `true`   |
+| **`filename`**        | String                        |                                                                       | `true`   |
+| **`genres`**          | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi               | `true`   |
 
 
 > they are case-insensitive.
@@ -49,12 +49,49 @@
 >
 > `users/getToken` route also generates new refreshToken and must replace the existing on client
 
+<br/>
 
 ### POST /users/signup
 > receives { __username__, __email__, __password__, __confirmPassword__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
 >
 > return Tokens and also `refreshToken`. ([Tokens schema](SCHEMA.README.md#Tokens))
 
+<details>
+<summary>
+Example Code
+</summary>
+
+```Dart
+--- (Dart - flutter)
+
+Future<String> signUpUser(String userName, String email, String password,
+    String confirmPassword) async {
+  try {
+    final response = await dio.post(
+      'users/signup?noCookie=true',
+      data: jsonEncode(<String, dynamic>{
+        'username': userName,
+        'email': email,
+        'password': password,
+        'confirmPassword': confirmPassword,
+        'deviceInfo': deviceInfo,
+      }),
+    );
+    if (response.statusCode == 201) {
+      userClient = UserClient.fromJson(response.data);
+      Preferences.writeUser(userClient);
+      return '201';
+    } else {
+      return response.data["errorMessage"];
+    }
+  }catch(error){
+    return 'wrong username or password';
+  }
+}
+```
+</details>
+
+<br/>
 
 ### POST /users/login
 > receives { __username_email__, __password__, __deviceInfo__ } in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
@@ -63,38 +100,77 @@
 > 
 > return Tokens and also `refreshToken`. ([Tokens schema](SCHEMA.README.md#Tokens))
 
+<details>
+<summary>
+Example Code
+</summary>
+
+```Dart
+--- (Dart - flutter)
+
+Future<String> logInUser(String userName, String password) async {
+  try {
+    final response = await dio.post(
+      'users/login?noCookie=true',
+      data: jsonEncode(<String, dynamic>{
+        'username_email': userName,
+        'password': password,
+        'deviceInfo': deviceInfo,
+      }),
+    );
+    if (response.statusCode == 200) {
+      userClient = UserClient.fromJson(response.data);
+      await Preferences.writeUser(userClient);
+      return '200';
+    } else {
+      return response.data['errorMessage'];
+    }
+  } catch (error) {
+    return 'wrong username or password';
+  }
+}
+```
+</details>
+
+<br/>
 
 ### PUT /users/getToken
 > receives __deviceInfo__ in request body. ([DeviceInfo schema](SCHEMA.README.md#Device-Info))
 > 
 > return __Tokens__ and also `refreshToken`. ([Tokens schema](SCHEMA.README.md#Tokens))
 
+<br/>
 
 ### PUT /users/logout
 > return __accessToken__ as empty string and also reset/remove `refreshToken` cookie if use in browser. in other environments reset `refreshToken` from client after successful logout.
 
+<br/>
 
 ### PUT /users/forceLogout/[deviceId]
 > return remaining active sessions in field __activeSessions__. ([session schema](SCHEMA.README.md#Session))
 
+<br/>
 
 ### PUT /users/forceLogoutAll
 > force logout all session except current session.
 > 
 > return __activeSessions__ as empty array.
 
+<br/>
 
 ### GET /users/myProfile
 > return users profile data. ([profile schema](SCHEMA.README.md#Profile))
 
 Example: https://downloader-node-api.herokuapp.com/users/myProfile?testUser=true
 
+<br/>
 
 ### GET /users/activeSessions
 > return users current session and other active sections. ([session schema](SCHEMA.README.md#Session))
 
 Example: https://downloader-node-api.herokuapp.com/users/activeSessions?testUser=true
 
+<br/>
 
 ### GET /users/sendVerifyEmail
 > send an email with an activation link. the link will expire after 6 hour.
@@ -103,12 +179,14 @@ Example: https://downloader-node-api.herokuapp.com/users/activeSessions?testUser
 
 Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUser=true
 
+<br/>
 
 ### GET /users/verifyEmail/[token]
 > verify given email token. create activation link on server side.
 
 Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
 
+<br/>
 
 ### POST /users/uploadProfileImage
 > receive profileImage from request body.
@@ -120,20 +198,51 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 > 
 > **Note: 20 profile image per user, (error code 409)**.
 
+<details>
+<summary>
+Example Code
+</summary>
+
+```Dart
+--- (Dart - flutter)
+
+Future<List<String>> addProfileImage(File file) async {
+  try {
+    String fileName = file.path.split('/').last;
+    FormData formData = FormData.fromMap({
+      'profileImage': await MultipartFile.fromFile(file.path, filename:fileName, contentType: MediaType("image", "jpg"))});
+
+    final response = await dio.post(
+      'users/uploadProfileImage?noCookie=true',
+      data: formData,
+    );
+    return response.data['data']['profileImages'].cast<String>();
+  } catch (error) {
+    print('sth wrong  :  $error');
+    return [];
+  }
+}
+```
+</details>
+
+<br/>
 
 ### DELETE /users/removeProfileImage/[filename]
 > returns new profileImages array.
 >
 >> image url: https://profile-image.s3.xxxxx.com/user-userId-timestamp.jpg --> filename: user-userId-timestamp.jpg
 
+<br/>
 
 ### PUT /users/setFavoriteGenres/[genres]
 > **Note: maximum number of genres is 6, (error code 409)**
 
+<br/>
 
 # Computed Data
 - every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.
 
+<br />
 
 # API
 - Open [admin api docs](API.ADMIN.README.md).

@@ -21,7 +21,7 @@ export const signupValidation = [
         .isLength({min: 6}).withMessage(USERNAME_LENGTH_MUST_BE_MORE_THAN_6)
         .isLength({max: 50}).withMessage(USERNAME_LENGTH_MUST_BE_LESS_THAN_50)
         .custom((value, {req, loc, path}) => {
-            if (!value.match(/^[a-z|0-9_]+$/gi)) {
+            if (!value.match(/^[a-z|\d_-]+$/gi)) {
                 // trow error if password is equal with username
                 throw new Error(USERNAME_BAD_FORMAT);
             } else {
@@ -32,7 +32,7 @@ export const signupValidation = [
     check('email')
         .exists().withMessage(EMAIL_IS_EMPTY)
         .isEmail().withMessage(EMAIL_IS_IN_WRONG_FORMAT)
-        .trim().escape().normalizeEmail(),
+        .trim().escape().normalizeEmail({gmail_remove_dots: false}),
     check('password')
         .exists().withMessage(PASSWORD_IS_EMPTY)
         .isLength({min: 8}).withMessage(PASSWORD_LENGTH_MUST_BE_MORE_THAN_8)

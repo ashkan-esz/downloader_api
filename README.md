@@ -132,6 +132,10 @@ To run this project, you will need to add the following environment variables to
 - Open [user api docs](readme/API.USER.README.md).
 - Open [movie api docs](readme/API.MOVIES.README.md).
 
+## Clients
+- [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter)
+- [downloader_app](https://github.com/ashkan-esz/downloader_app) (React Native)
+
 ## Contributing
 
 Contributions are always welcome!
