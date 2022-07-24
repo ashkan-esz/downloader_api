@@ -208,24 +208,42 @@ export async function addUserStatDB(collectionName, userId, statType, id, opts =
     try {
         let collection = await getCollection(collectionName);
         const statCounterField = `${statType}_count`;
+        const statCounterFull = `${statType}_full`;
+
+        // case : 992  1000  105  0
+        // full :  T     T    F   F
+        // --> insert on 105
 
         let firstBucketWithSpace = await collection.find({
+            // bucket with empty space
             userId: new mongodb.ObjectId(userId),
-            [statCounterField]: {$lt: bucketSizePerArray}
+            [statCounterField]: {$lt: bucketSizePerArray},
+            [statCounterFull]: false,
         }, {
-            projection: {pageNumber: 1}
+            projection: {
+                pageNumber: 1,
+                [statCounterField]: 1,
+            }
         }).sort({pageNumber: 1}).limit(1).toArray();
 
         if (firstBucketWithSpace.length > 0) {
+            let updateField = {};
+            if (firstBucketWithSpace[0][statCounterField] === bucketSizePerArray - 1) {
+                updateField[statCounterFull] = true;
+            }
             let updateResult = await collection.updateOne({
                 _id: firstBucketWithSpace[0]._id,
             }, {
                 $push: {
-                    [statType]: new mongodb.ObjectId(id),
+                    [statType]: {
+                        $each: [new mongodb.ObjectId(id)],
+                        $position: 0,
+                    }
                 },
                 $inc: {
                     [statCounterField]: 1,
-                }
+                },
+                $set: updateField,
             }, opts);
         } else {
             //need new bucket
@@ -254,32 +272,45 @@ export function createUserStatsObject(userId, pageNumber) {
         //like,dislike
         like_movie: [],
         like_movie_count: 0,
+        like_movie_full: false,
         dislike_movie: [],
         dislike_movie_count: 0,
+        dislike_movie_full: false,
         like_staff: [],
         like_staff_count: 0,
+        like_staff_full: false,
         dislike_staff: [],
         dislike_staff_count: 0,
+        dislike_staff_full: false,
         like_character: [],
         like_character_count: 0,
+        like_character_full: false,
         dislike_character: [],
         dislike_character_count: 0,
+        dislike_character_full: false,
         //follow
         follow_movie: [],
         follow_movie_count: 0,
+        follow_movie_full: false,
         follow_staff: [],
         follow_staff_count: 0,
+        follow_staff_full: false,
         //others
         save: [],
         save_count: 0,
+        save_full: false,
         future_list: [],
         future_list_count: 0,
+        future_list_full: false,
         dropped: [],
         dropped_count: 0,
+        dropped_full: false,
         finished: [],
         finished_count: 0,
+        finished_full: false,
         score: [],
         score_count: 0,
+        score_full: false,
     });
 }
 
@@ -329,6 +360,10 @@ export async function getUserStatsListDB(userId, statType, skip, limit, projecti
             ? 'staff'
             : statType.includes('character') ? 'characters' : 'movies';
         const statCounterField = `${statType}_count`;
+
+        // 8 7 6 5
+        // 4 3 2 1
+        // ---> 8 7 6 5 4 3 2 1
 
         let lastBucketNumber = 1;
         let bucketNumberSkip = 0;
