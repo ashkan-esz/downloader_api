@@ -64,6 +64,8 @@ for example ::
 ### 4. Setup cloud storage
 
 Config your own preferred cloud storage provider (s3) and create buckets with names of [serverstatic, cast, download-subtitle, poster, download-trailer].
+
+you can run npm script `npm run pre_start` to create buckes automatically.
 > Don't forget to add file 'defaultProfile.png' in bucket 'serverstatic'.
 
 **Note: all of them must be public and enable static website.**

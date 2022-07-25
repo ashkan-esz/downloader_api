@@ -152,8 +152,8 @@ function getPoster($) {
                 if (href.includes('uploads')) {
                     return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
                 }
-                href = $img[i].attribs['data-lazy-src'];
-                if (!href.includes('/Logo.') && href.includes('uploads')) {
+                href = $img[i].attribs['data-src'] || $img[i].attribs['data-lazy-src'];
+                if (href && !href.includes('/Logo.') && href.includes('uploads')) {
                     return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
                 }
             }

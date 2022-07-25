@@ -71,6 +71,7 @@ export async function createCollectionsAndIndexes() {
         //usage: activeSessions.refreshToken
         //usage: _id, activeSessions.refreshToken
         console.log('creating mongodb collection and indexes --done!');
+        console.log();
     } catch (error) {
         saveError(error);
     }

@@ -3,9 +3,11 @@ import axios from "axios";
 import {AbortController} from "@aws-sdk/abort-controller";
 import {
     DeleteObjectCommand,
+    DeleteObjectsCommand,
     HeadObjectCommand,
     ListObjectsCommand,
     PutObjectCommand,
+    CreateBucketCommand,
     S3Client
 } from "@aws-sdk/client-s3";
 import ytdl from "ytdl-core";
@@ -311,6 +313,9 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
     }
 }
 
+//------------------------------------------
+//------------------------------------------
+
 export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter = 0, retryWithSleepCounter = 0) {
     let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
     let fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
@@ -445,6 +450,9 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
     }
 }
 
+//------------------------------------------
+//------------------------------------------
+
 export async function removeProfileImageFromS3(fileName) {
     return await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
 }
@@ -468,6 +476,33 @@ export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, r
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter = 0, retryWithSleepCounter = 0) {
+    try {
+        const params = {
+            Bucket: bucketName,
+            Delete: {
+                Objects: filesNames.map(item => ({Key: item})),
+            },
+        };
+        let command = new DeleteObjectsCommand(params);
+        await s3.send(command);
+        return 'ok';
+    } catch (error) {
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 200)));
+            return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
         return 'error';
@@ -597,6 +632,56 @@ export async function resetBucket(bucketName) {
         }
     }
 }
+
+//------------------------------------------
+//------------------------------------------
+
+export async function createBuckets() {
+    try {
+        console.log(`creating s3 buckets (${bucketNames.join(', ')})`);
+        let promiseArray = [];
+        for (let i = 0; i < bucketNames.length; i++) {
+            let prom = createBucket(bucketNames[i]);
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        console.log('creating s3 buckets --done!');
+        console.log();
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter = 0) {
+    try {
+        const params = {
+            Bucket: bucketName,
+            ACL: 'public-read', // 'private' | 'public-read'
+        };
+        let command = new CreateBucketCommand(params);
+        let result = await s3.send(command);
+        return true;
+    } catch (error) {
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 200)));
+            return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.message === 'Cannot read property \'#text\' of undefined') {
+            return true;
+        }
+        saveError(error);
+        return false;
+    }
+}
+
+//------------------------------------------
+//------------------------------------------
 
 function getFileName(title, titleType, year, extra, fileType) {
     let fileName = titleType + '-' + title + '-' + year + '-' + extra + '.' + fileType;
