@@ -146,7 +146,7 @@ async function getFileSize(url, retryCounter = 0) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(url) === url && retryCounter < 1) {
             retryCounter++;
-            let fileName = url.split('/').pop();
+            let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter);
         }

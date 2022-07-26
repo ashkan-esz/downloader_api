@@ -224,7 +224,7 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(newPosterUrl) === newPosterUrl && retryCounter < 1) {
             retryCounter++;
-            let fileName = newPosterUrl.split('/').pop();
+            let fileName = newPosterUrl.replace(/\/$/, '').split('/').pop();
             newPosterUrl = newPosterUrl.replace(fileName, encodeURIComponent(fileName));
             return await checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter);
         }

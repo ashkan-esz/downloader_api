@@ -168,17 +168,26 @@ async function getLinks(url, sourceLinkData = null) {
                 $ = cheerio.load(response.data);
                 links = $('a');
             } catch (error) {
-                let pageNotFound = error.response && error.response.status === 404;
-                if (!pageNotFound) {
-                    let cacheResult = await getFromGoogleCache(url);
-                    $ = cacheResult.$;
-                    links = cacheResult.links;
-                    checkGoogleCache = true;
-                }
                 if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    if (decodeURIComponent(url) === url) {
+                        let temp = url.replace(/\/$/, '').split('/').pop();
+                        if (temp) {
+                            url = url.replace(temp, encodeURIComponent(temp));
+                            return await getLinks(url, sourceLinkData);
+                        }
+                    }
                     error.isAxiosError = true;
                     error.url = url;
+                    error.filePath = 'searchTools';
                     await saveError(error);
+                } else {
+                    let pageNotFound = error.response && error.response.status === 404;
+                    if (!pageNotFound) {
+                        let cacheResult = await getFromGoogleCache(url);
+                        $ = cacheResult.$;
+                        links = cacheResult.links;
+                        checkGoogleCache = true;
+                    }
                 }
             }
         } else {
@@ -196,15 +205,23 @@ async function getLinks(url, sourceLinkData = null) {
                     links = $('a');
                 }
             } catch (error) {
-                let cacheResult = await getFromGoogleCache(url);
-                $ = cacheResult.$;
-                links = cacheResult.links;
-                checkGoogleCache = true;
-
                 if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                    if (decodeURIComponent(url) === url) {
+                        let temp = url.replace(/\/$/, '').split('/').pop();
+                        if (temp) {
+                            url = url.replace(temp, encodeURIComponent(temp));
+                            return await getLinks(url, sourceLinkData);
+                        }
+                    }
                     error.isAxiosError = true;
                     error.url = url;
+                    error.filePath = 'searchTools';
                     await saveError(error);
+                } else {
+                    let cacheResult = await getFromGoogleCache(url);
+                    $ = cacheResult.$;
+                    links = cacheResult.links;
+                    checkGoogleCache = true;
                 }
             }
         }
@@ -221,7 +238,7 @@ async function getLinks(url, sourceLinkData = null) {
     }
 }
 
-async function getFromGoogleCache(url) {
+async function getFromGoogleCache(url, retryCounter = 0) {
     try {
         let decodedLink = getDecodedLink(url);
         if (config.nodeEnv === 'dev') {
@@ -238,8 +255,18 @@ async function getFromGoogleCache(url) {
         return {$, links};
     } catch (error) {
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            if (retryCounter === 0) {
+                let temp = url.replace(/\/$/, '').split('/').pop();
+                if (temp) {
+                    let tempEncode = encodeURIComponent(encodeURIComponent(temp));
+                    url = url.replace(temp, tempEncode);
+                    retryCounter++;
+                    return await getFromGoogleCache(url, retryCounter);
+                }
+            }
             error.isAxiosError = true;
             error.url = getDecodedLink(url);
+            error.filePath = 'searchTools';
             await saveError(error);
         } else if (error.response && error.response.status !== 404 && error.response.status !== 429) {
             saveError(error);

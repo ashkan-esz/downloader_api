@@ -50,11 +50,23 @@ async function checkSourcesUrl(sourcesUrls) {
                 }
             } catch (error) {
                 if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                    error.isAxiosError = true;
-                    error.url = homePageLink;
+                    let temp = homePageLink.replace(/\/$/, '').split('/').pop();
+                    let url = homePageLink.replace(temp, encodeURIComponent(temp));
+                    try {
+                        let response = await axios.get(url);
+                        responseUrl = response.request.res.responseUrl;
+                    } catch (error2) {
+                        error2.isAxiosError = true;
+                        error2.url = homePageLink;
+                        error2.url2 = url;
+                        error2.filePath = 'domainChangeHandler';
+                        await saveError(error2);
+                        continue;
+                    }
+                } else {
+                    await saveError(error);
+                    continue;
                 }
-                await saveError(error);
-                continue;
             }
 
             let newUrl = getNewURl(sourcesUrls[i].url, responseUrl);

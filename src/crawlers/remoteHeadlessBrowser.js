@@ -9,6 +9,8 @@ let remoteBrowsers = config.remoteBrowser.map(item => {
     return item;
 });
 
+//todo : use normal axios.get on first time
+
 export async function getPageData(url, cookieOnly = false, retryCount = 0) {
     let decodedUrl = getDecodedLink(url);
     if (decodedUrl === url) {
@@ -54,6 +56,7 @@ export async function getPageData(url, cookieOnly = false, retryCount = 0) {
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
             error.isAxiosError = true;
             error.url = url;
+            error.filePath = 'remoteHeadlessBrowser';
         }
         await saveError(error);
         return null;

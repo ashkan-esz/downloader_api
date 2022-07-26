@@ -102,8 +102,18 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            if (decodeURIComponent(originalUrl) === originalUrl) {
+                let temp = originalUrl.replace(/\/$/, '').split('/').pop();
+                if (temp) {
+                    let url = originalUrl.replace(temp, encodeURIComponent(temp));
+                    retryCounter++;
+                    await new Promise((resolve => setTimeout(resolve, 200)));
+                    return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, url, retryCounter, retryWithSleepCounter);
+                }
+            }
             error.isAxiosError = true;
             error.url = originalUrl;
+            error.filePath = 'cloudStorage > uploadCastImageToS3ByURl';
             await saveError(error);
             return null;
         }
@@ -166,6 +176,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
             error.isAxiosError = true;
             error.url = originalUrl;
+            error.filePath = 'cloudStorage > uploadSubtitleToS3ByURl';
         }
         saveError(error);
         return null;
@@ -217,7 +228,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(originalUrl) === originalUrl && retryCounter < 3) {
             retryCounter++;
-            let fileName = originalUrl.split('/').pop();
+            let fileName = originalUrl.replace(/\/$/, '').split('/').pop();
             originalUrl = originalUrl.replace(fileName, encodeURIComponent(fileName));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
@@ -704,7 +715,7 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(url) === url && retryCounter < 1) {
             retryCounter++;
-            let fileName = url.split('/').pop();
+            let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
         }
