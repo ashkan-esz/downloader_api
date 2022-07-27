@@ -464,8 +464,14 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
 //------------------------------------------
 //------------------------------------------
 
-export async function removeProfileImageFromS3(fileName) {
-    return await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
+export async function removeProfileImageFromS3(fileName, retryCounter = 0) {
+    let result = await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
+    if (result === 'error' && retryCounter < 2) {
+        retryCounter++;
+        await new Promise((resolve => setTimeout(resolve, 200)));
+        return await removeProfileImageFromS3(fileName, retryCounter);
+    }
+    return result;
 }
 
 export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, retryWithSleepCounter = 0) {

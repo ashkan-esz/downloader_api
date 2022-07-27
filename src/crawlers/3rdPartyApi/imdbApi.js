@@ -116,7 +116,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
         }
 
         if (titleDataFromDB.posters.length === 0) {
-            let imdbPoster = semiImdbData.image.replace(/\.*_v1.*al_/gi, '');
+            let imdbPoster = semiImdbData.image ? semiImdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
             if (imdbPoster && !imdbPoster.includes('nopicture.')) {
                 let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
                 if (s3poster) {

@@ -261,3 +261,60 @@ export async function removeAllAuthSession(userId, prevRefreshToken) {
         return null;
     }
 }
+
+//----------------------------
+//----------------------------
+
+export async function uploadProfileImageDB(userId, imageUrl) {
+    try {
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate(
+            {
+                _id: new mongodb.ObjectId(userId),
+                profileImageCounter: {$lt: 20}
+            }, {
+                $push: {
+                    profileImages: {
+                        $each: [imageUrl],
+                        $position: 0,
+                    },
+                },
+                $inc: {
+                    profileImageCounter: 1
+                }
+            }, {
+                returnDocument: 'after',
+                projection: {profileImages: 1}
+            });
+        return result.value;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeProfileImageDB(userId, fileName) {
+    try {
+        let fileNameRegex = new RegExp(fileName.replace(/\./g, '\\.') + '$');
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate(
+            {
+                _id: new mongodb.ObjectId(userId),
+                profileImages: fileNameRegex
+            }, {
+                $pull: {
+                    profileImages: fileNameRegex,
+                },
+                $inc: {
+                    profileImageCounter: -1
+                }
+            }, {
+                returnDocument: 'after',
+                projection: {profileImages: 1}
+            });
+        return result.value;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

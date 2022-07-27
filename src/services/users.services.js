@@ -10,8 +10,9 @@ import {
     removeAuthToken,
     removeAuthSession,
     removeAllAuthSession,
-    findUserById,
     updateUserByID,
+    uploadProfileImageDB,
+    removeProfileImageDB,
 } from "../data/db/usersDbMethods.js";
 import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
@@ -21,7 +22,7 @@ import {v4 as uuidv4} from 'uuid';
 import {addToBlackList} from "../api/middlewares/isAuth.js";
 import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
-import {generateServiceResult} from "./serviceUtils.js";
+import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 
 //todo : remove account
@@ -32,13 +33,13 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
         let findUserResult = await findUser(username, email, {username: 1, email: 1});
         if (findUserResult === 'error') {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (findUserResult) {
             if (findUserResult.username === username.toLowerCase()) {
-                return generateServiceResult({}, 403, 'This username already exists');
+                return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
             }
             if (findUserResult.email === email) {
-                return generateServiceResult({}, 403, 'This email already exists');
+                return generateServiceResult({}, 403, errorMessage.emailAlreadyExist);
             }
         }
 
@@ -51,7 +52,7 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
         let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId);
         let userId = await addUser(userData);
         if (!userId) {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         }
         const user = getJwtPayload(userData, userId);
         const tokens = generateAuthTokens(user);
@@ -70,7 +71,7 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
         }, 201, '', tokens);
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -80,9 +81,9 @@ export async function login(username_email, password, deviceInfo, ip) {
     try {
         let userData = await findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
         if (userData === 'error') {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
-            return generateServiceResult({}, 404, 'Cannot find user');
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
@@ -91,9 +92,9 @@ export async function login(username_email, password, deviceInfo, ip) {
             let deviceId = uuidv4();
             let result = await setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
             if (!result) {
-                return generateServiceResult({}, 500, 'Server error, try again later');
+                return generateServiceResult({}, 500, errorMessage.serverError);
             } else if (result === 'cannot find user') {
-                return generateServiceResult({}, 404, 'Cannot find user');
+                return generateServiceResult({}, 404, errorMessage.userNotFound);
             }
             agenda.schedule('in 4 seconds', 'login email', {
                 deviceInfo,
@@ -106,11 +107,11 @@ export async function login(username_email, password, deviceInfo, ip) {
                 userId: userData._id,
             }, 200, '', tokens);
         } else {
-            return generateServiceResult({}, 403, 'Username and password do not match');
+            return generateServiceResult({}, 403, errorMessage.userPassNotMatch);
         }
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -126,9 +127,9 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
         deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
         let result = await updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
-            return generateServiceResult({}, 401, 'Invalid RefreshToken');
+            return generateServiceResult({}, 401, errorMessage.invalidRefreshToken);
         }
         return generateServiceResult({
             accessToken: tokens.accessToken,
@@ -139,7 +140,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
         }, 200, '', tokens);
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -147,9 +148,9 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
     try {
         let result = await removeAuthToken(jwtUserData.userId, prevRefreshToken);
         if (!result) {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
-            return generateServiceResult({}, 403, 'Invalid RefreshToken');
+            return generateServiceResult({}, 403, errorMessage.invalidRefreshToken);
         }
         let device = result.activeSessions.find(item => item.refreshToken === prevRefreshToken);
         try {
@@ -164,7 +165,7 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
         return generateServiceResult({accessToken: ''}, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -172,9 +173,9 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
     try {
         let result = await removeAuthSession(jwtUserData.userId, deviceId, prevRefreshToken);
         if (!result) {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
-            return generateServiceResult({}, 403, 'Invalid deviceId');
+            return generateServiceResult({}, 403, errorMessage.invalidDeviceId);
         }
         let device = result.activeSessions.find(item => item.deviceId === deviceId);
         addToBlackList(device.refreshToken, 'logout', null);
@@ -182,7 +183,7 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
         return generateServiceResult({activeSessions: restOfSessions}, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -190,9 +191,9 @@ export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
     try {
         let result = await removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
         if (!result) {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
-            return generateServiceResult({}, 403, 'Invalid RefreshToken');
+            return generateServiceResult({}, 403, errorMessage.invalidRefreshToken);
         }
         let activeSessions = result.activeSessions;
         for (let i = 0; i < activeSessions.length; i++) {
@@ -203,7 +204,7 @@ export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
         return generateServiceResult({activeSessions: []}, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -215,12 +216,13 @@ export async function getUserProfile(userData, refreshToken) {
         delete userData.password;
         delete userData.emailVerifyToken;
         delete userData.emailVerifyToken_expire;
+        delete userData.profileImageCounter;
         userData.username = userData.rawUsername; //outside of server rawUsername is the actual username
         delete userData.rawUsername;
         return generateServiceResult(userData, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -235,7 +237,7 @@ export async function getUserActiveSessions(userData, refreshToken) {
         return generateServiceResult({thisDevice, activeSessions}, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -255,12 +257,12 @@ export async function sendVerifyEmail(userData, host) {
 
             return generateServiceResult({}, 200, '');
         } else if (updateResult === 'notfound') {
-            return generateServiceResult({}, 404, 'Cannot find user email');
+            return generateServiceResult({}, 404, errorMessage.emailNotFound);
         }
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
@@ -270,38 +272,35 @@ export async function verifyEmail(token) {
         if (verify === 'ok') {
             return generateServiceResult({message: 'email verified'}, 200, '');
         } else if (verify === 'notfound') {
-            return generateServiceResult({}, 404, 'Invalid/Stale Token');
+            return generateServiceResult({}, 404, errorMessage.invalidToken);
         }
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
 export async function uploadProfileImage(jwtUserData, fileData) {
-    const fileName = fileData.location.split('/').pop();
     try {
-        let userData = await findUserById(jwtUserData.userId, {profileImages: 1});
+        if (!fileData) {
+            return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
+        }
+
+        const fileName = fileData.location.split('/').pop();
+        let userData = await uploadProfileImageDB(jwtUserData.userId, fileData.location);
         if (userData === 'error') {
             await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
         } else if (!userData) {
+            //inCase if two image upload in same time
             await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 404, 'Cannot find user');
+            return generateServiceResult({data: null}, 404, errorMessage.exceedProfileImage);
         }
 
-        if (userData.profileImages.length > 19) {
-            await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 409, 'Exceeded 20 profile image');
-        }
-
-        userData.profileImages.unshift(fileData.location);
-        let updateResult = await updateUserByID(jwtUserData.userId, {profileImages: userData.profileImages});
-        if (updateResult !== 'ok') {
-            await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 500, 'Server error, try again later');
-        }
         return generateServiceResult({
             data: {
                 profileImages: userData.profileImages
@@ -309,69 +308,56 @@ export async function uploadProfileImage(jwtUserData, fileData) {
         }, 200, '');
     } catch (error) {
         saveError(error);
-        await removeProfileImageFromS3(fileName);
-        return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        if (fileData && fileData.location) {
+            const fileName = fileData.location.split('/').pop();
+            await removeProfileImageFromS3(fileName);
+        }
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
 }
 
 export async function removeProfileImage(jwtUserData, fileName) {
     try {
         fileName = fileName.split('/').pop();
-        let userData = await findUserById(jwtUserData.userId, {profileImages: 1});
+        let userData = await removeProfileImageDB(jwtUserData.userId, fileName);
         if (userData === 'error') {
-            return generateServiceResult({data: null}, 500, 'Server error, try again later');
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
         } else if (!userData) {
-            return generateServiceResult({data: null}, 404, 'Cannot find user');
+            return generateServiceResult({data: null}, 404, errorMessage.profileImageNotFound);
         }
 
-        let fileExist = false;
-        let newProfileImageArray = [];
-        for (let i = 0; i < userData.profileImages.length; i++) {
-            if (userData.profileImages[i].includes(fileName)) {
-                fileExist = true;
-            } else {
-                newProfileImageArray.push(userData.profileImages[i]);
-            }
-        }
-        if (!fileExist) {
-            return generateServiceResult({data: null}, 409, 'Cannot find profile image');
-        }
+        await removeProfileImageFromS3(fileName);
 
-        let updateResult = await updateUserByID(jwtUserData.userId, {profileImages: newProfileImageArray});
-        if (updateResult !== 'ok') {
-            return generateServiceResult({data: null}, 500, 'Server error, try again later');
-        }
-        let removeResult = await removeProfileImageFromS3(fileName);
-        if (removeResult !== 'ok') {
-            return generateServiceResult({data: null}, 500, 'Server error, try again later');
-        }
         return generateServiceResult({
             data: {
-                profileImages: newProfileImageArray
+                profileImages: userData.profileImages
             }
         }, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({data: null}, 500, 'Server error, try again later');
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
 }
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
 
 export async function setFavoriteGenres(jwtUserData, genres) {
     try {
         if (genres.length > 6) {
-            return generateServiceResult({}, 409, 'Exceeded number of genres limit (6)');
+            return generateServiceResult({}, 409, errorMessage.exceedGenres);
         }
 
         let updateResult = await updateUserByID(jwtUserData.userId, {favoriteGenres: genres});
         if (updateResult === 'error') {
-            return generateServiceResult({}, 500, 'Server error, try again later');
+            return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (updateResult === 'notfound') {
-            return generateServiceResult({}, 404, 'Cannot find user');
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
         return generateServiceResult({}, 200, '');
     } catch (error) {
         saveError(error);
-        return generateServiceResult({}, 500, 'Server error, try again later');
+        return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 

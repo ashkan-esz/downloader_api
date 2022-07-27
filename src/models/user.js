@@ -13,6 +13,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         password: password,
         bio: '',
         profileImages: [],
+        profileImageCounter: 0,
         defaultProfile: defaultProfileImage,
         activeSessions: [
             getNewDeviceSession(deviceInfo, deviceId, ''),
