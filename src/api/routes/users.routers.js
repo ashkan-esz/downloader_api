@@ -16,7 +16,7 @@ router.put('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.g
 //users/logout
 router.put('/logout', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.logout);
 
-//users/forceLogout
+//users/forceLogout/:deviceId
 router.put('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogout);
 
 //users/forceLogoutAll
@@ -42,6 +42,10 @@ router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.
 router.delete('/removeProfileImage/:filename', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.removeProfileImage);
 
 //users/setFavoriteGenres/:genres
-router.put('/setFavoriteGenres/:genres', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.setFavoriteGenres);
+router.put('/setFavoriteGenres/:genres',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['genres']),
+    middlewares.validateApiParams.apiParams_sendError,
+    usersControllers.setFavoriteGenres);
 
 export default router;

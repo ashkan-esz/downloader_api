@@ -169,7 +169,6 @@ export async function searchCharacterById(userId, id) {
 }
 
 export async function userStatsService(userId, statType, id, isRemove) {
-    //todo : handle invalid statType
     if (isRemove) {
         let removeResult = await userStatsDbMethods.handleRemoveUserStatsTransaction(userId, statType, id);
         const code = removeResult === 'error' ? 500 : removeResult === 'notfound' ? 404 : 200;
@@ -191,7 +190,6 @@ export async function userStatsService(userId, statType, id, isRemove) {
 }
 
 export async function getUserStatsList(userId, statType, dataLevel, page) {
-    //todo : handle invalid statType
     let {skip, limit} = getSkipLimit(page, 12);
 
     let projection;

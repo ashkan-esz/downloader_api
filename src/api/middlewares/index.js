@@ -5,6 +5,8 @@ import attachCurrentUser from './attachCurrentUser.js';
 import rateLimit from './rateLimit.js';
 import uploadUserProfile from './uploadUserProfile.js';
 import * as userPermission from './userPermission.js';
+import * as validateApiParams from './validateApiParams.js';
+
 
 export default {
     moviesCache,
@@ -14,4 +16,5 @@ export default {
     rateLimit,
     uploadUserProfile,
     userPermission,
+    validateApiParams,
 }

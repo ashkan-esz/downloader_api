@@ -7,6 +7,7 @@ export async function signup(req, res) {
     const errorsAfterValidation = validationResult(req);
     if (!errorsAfterValidation.isEmpty()) {
         return res.status(400).json({
+            data: null,
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
         });
@@ -36,6 +37,7 @@ export async function login(req, res) {
     const errorsAfterValidation = validationResult(req);
     if (!errorsAfterValidation.isEmpty()) {
         return res.status(400).json({
+            data: null,
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
         });
@@ -145,8 +147,7 @@ export async function removeProfileImage(req, res) {
 }
 
 export async function setFavoriteGenres(req, res) {
-    let genres = req.params.genres.split('-').map(item => item.replace(/_/g, '-').toLowerCase());
-    genres = removeDuplicateElements(genres);
+    let genres = removeDuplicateElements(req.params.genres);
     let updateResult = await usersServices.setFavoriteGenres(req.jwtUserData, genres);
 
     return res.status(updateResult.responseData.code).json(updateResult.responseData);
