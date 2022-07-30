@@ -192,11 +192,7 @@ test('update movies grouped links', () => {
 
     let currentGroupLinks = [
         {quality: '2160p', links: [], watchOnlineLinks: []},
-        {
-            quality: '1080p',
-            links: [],
-            watchOnlineLinks: []
-        },
+        {quality: '1080p', links: [], watchOnlineLinks: []},
         {
             quality: '720p',
             links: [{
@@ -228,11 +224,7 @@ test('update movies grouped links', () => {
 
     let newGroupLinks = [
         {quality: '2160p', links: [], watchOnlineLinks: []},
-        {
-            quality: '1080p',
-            links: [],
-            watchOnlineLinks: []
-        },
+        {quality: '1080p', links: [], watchOnlineLinks: []},
         {
             quality: '720p',
             links: [
@@ -400,11 +392,11 @@ test('update serial episode/movie quality links', () => {
         // other fields
         links: [
             {
-                link: 'link1',
-                info: '720p.WEB-DL',
-                qualitySample: 'qualitySample1',
-                pageLink: 'pageLink1',
-                sourceName: 'sourceName1',
+                link: 'link3',
+                info: '1080p.x265',
+                qualitySample: 'qualitySample2',
+                pageLink: 'pageLink2',
+                sourceName: 'sourceName2',
                 season: 2,
                 episode: 1,
             },
@@ -418,16 +410,24 @@ test('update serial episode/movie quality links', () => {
                 episode: 1,
             },
             {
-                link: 'link3',
-                info: '1080p.x265',
-                qualitySample: 'qualitySample2',
-                pageLink: 'pageLink2',
-                sourceName: 'sourceName2',
+                link: 'link1',
+                info: '720p.WEB-DL',
+                qualitySample: 'qualitySample1',
+                pageLink: 'pageLink1',
+                sourceName: 'sourceName1',
                 season: 2,
                 episode: 1,
-            }
+            },
         ],
         watchOnlineLinks: [
+            {
+                link: 'link5',
+                info: '720p.HDTV',
+                pageLink: 'pageLink3',
+                sourceName: 'sourceName3',
+                season: 2,
+                episode: 1,
+            },
             {
                 link: 'link4',
                 info: '480p',
@@ -436,14 +436,6 @@ test('update serial episode/movie quality links', () => {
                 season: 2,
                 episode: 1,
             },
-            {
-                link: 'link5',
-                info: '720p.HDTV',
-                pageLink: 'pageLink3',
-                sourceName: 'sourceName3',
-                season: 2,
-                episode: 1,
-            }
         ]
     }
 
@@ -494,18 +486,18 @@ test('update serial episode/movie quality links', () => {
         ],
         watchOnlineLinks: [
             {
-                link: 'link4',
-                info: '480p',
-                pageLink: 'pageLink2',
-                sourceName: 'sourceName2',
-                season: 2,
-                episode: 1,
-            },
-            {
                 link: 'link5',
                 info: '720p.HDTV',
                 pageLink: 'pageLink3',
                 sourceName: 'sourceName3',
+                season: 2,
+                episode: 1,
+            },
+            {
+                link: 'link4',
+                info: '480p',
+                pageLink: 'pageLink2',
+                sourceName: 'sourceName2',
                 season: 2,
                 episode: 1,
             },

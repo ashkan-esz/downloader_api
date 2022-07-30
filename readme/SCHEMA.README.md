@@ -79,6 +79,7 @@ dataLevel = {
         }),
         qualities: Array(#QUALITY),
         seasons: Array(#SEASON),
+        sources: Array(String),
     },
     low: {
         _id: Object,

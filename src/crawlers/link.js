@@ -1,5 +1,5 @@
 import {wordsToNumbers} from "words-to-numbers";
-import {getDecodedLink} from "./utils.js";
+import {checkBetterQuality, getDecodedLink} from "./utils.js";
 import {getEpisodeModel_placeholder} from "../models/episode.js";
 import {saveError} from "../error/saveError.js";
 
@@ -227,6 +227,12 @@ export function groupSerialLinks(links, watchOnlineLinks) {
     result = result.sort((a, b) => a.seasonNumber - b.seasonNumber);
     for (let i = 0; i < result.length; i++) {
         result[i].episodes = result[i].episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
+
+        //sort links
+        for (let j = 0; j < result[i].episodes; j++) {
+            result[i].episodes[j].links = sortLinksByQuality(result[i].episodes[j].links);
+            result[i].episodes[j].watchOnlineLinks = sortLinksByQuality(result[i].episodes[j].watchOnlineLinks);
+        }
     }
 
     return result;
@@ -268,6 +274,12 @@ export function groupMovieLinks(links, watchOnlineLinks) {
         if (!matchQuality) {
             qualities.find(item => item.quality === 'others').watchOnlineLinks.push(links[i]);
         }
+    }
+
+    //sort links
+    for (let i = 0; i < qualities.length; i++) {
+        qualities[i].links = sortLinksByQuality(qualities[i].links);
+        qualities[i].watchOnlineLinks = sortLinksByQuality(qualities[i].watchOnlineLinks);
     }
 
     return qualities;
@@ -333,6 +345,7 @@ export function updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, curr
         checkEpisode.links = checkEpisode.links.filter(item => !removeLinks.includes(item.link));
         //add current links
         checkEpisode.links = [...checkEpisode.links, ...currentLinks];
+        checkEpisode.links = sortLinksByQuality(checkEpisode.links);
         updateFlag = true;
     }
 
@@ -352,6 +365,7 @@ export function updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, curr
         checkEpisode.watchOnlineLinks = checkEpisode.watchOnlineLinks.filter(item => !removeLinks.includes(item.link));
         //add current links
         checkEpisode.watchOnlineLinks = [...checkEpisode.watchOnlineLinks, ...currentOnlineLinks];
+        checkEpisode.watchOnlineLinks = sortLinksByQuality(checkEpisode.watchOnlineLinks);
         updateFlag = true;
     }
 
@@ -367,4 +381,8 @@ export function checkEqualLinks(link1, link2) {
         link1.season === link2.season &&
         link1.episode === link2.episode
     );
+}
+
+export function sortLinksByQuality(links) {
+    return links.sort((a, b) => checkBetterQuality(a.info, b.info) ? -1 : 1);
 }

@@ -162,6 +162,7 @@ export const dataLevelConfig = Object.freeze({
         posters: 1,
         qualities: 1,
         seasons: 1,
+        sources: 1,
     }),
     low: Object.freeze({
         title: 1,
