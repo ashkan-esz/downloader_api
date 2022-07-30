@@ -1,19 +1,19 @@
 # API Parameters
 
-| param name            | Values                        | Description                                                           | Required |
-|-----------------------|-------------------------------|-----------------------------------------------------------------------|----------|
-| **`username`**        | string                        | match <code>/^[a-z&#124;0-9_-]+$/gi</code> and length in range [6-50] | `true`   |
-| **`email`**           | string                        |                                                                       | `true`   |
-| **`password`**        | string                        | at least one number and capital letter  and length in range [8-50]    | `true`   |
-| **`confirmPassword`** | string                        |                                                                       | `true`   |
-| **`deviceInfo`**      | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_          | `true`   |
-| **`appName`**         | String                        |                                                                       | `true`   |
-| **`appVersion`**      | String                        |                                                                       | `true`   |
-| **`os`**              | String                        |                                                                       | `true`   |
-| **`deviceModel`**     | String                        |                                                                       | `true`   |
-| **`deviceId`**        | String                        | unique id of session                                                  | `true`   |
-| **`filename`**        | String                        |                                                                       | `true`   |
-| **`genres`**          | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi               | `true`   |
+| param name                   | Values                        | Description                                                           | Required |
+|------------------------------|-------------------------------|-----------------------------------------------------------------------|----------|
+| **`username`**               | string                        | match <code>/^[a-z&#124;0-9_-]+$/gi</code> and length in range [6-50] | `true`   |
+| **`email`**                  | string                        |                                                                       | `true`   |
+| **`password`**               | string                        | at least one number and capital letter  and length in range [8-50]    | `true`   |
+| **`confirmPassword`**        | string                        |                                                                       | `true`   |
+| **`deviceInfo`**             | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_          | `true`   |
+| **`deviceInfo.appName`**     | String                        |                                                                       | `true`   |
+| **`deviceInfo.appVersion`**  | String                        |                                                                       | `true`   |
+| **`deviceInfo.os`**          | String                        |                                                                       | `true`   |
+| **`deviceInfo.deviceModel`** | String                        |                                                                       | `true`   |
+| **`deviceId`**               | String                        | unique id of session                                                  | `true`   |
+| **`filename`**               | String                        |                                                                       | `true`   |
+| **`genres`**                 | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi               | `true`   |
 
 
 > they are case-insensitive.
@@ -37,17 +37,68 @@
 - [PUT /users/setFavoriteGenres/[genres]](#put-userssetfavoritegenresgenres)
 
 
-## auth
+## Auth
 > put `accessToken` in each request header.
 >
 > also send `refreshToken` cookie in each request.
->> for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `noCookie=true` parameter in api routes to receive it.
+>> **NOTE: for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `noCookie=true` parameter in api routes to receive it.**
 >
 > api routes send code 403 when `accessToken` is invalid or out of date. (getToken again)
 >
 > api routes send code 401 when `refreshToken` is invalid or out of date or revoked. (must log in again)
 >
 > `users/getToken` route also generates new refreshToken and must replace the existing on client
+
+<details>
+<summary>
+More Info
+</summary>
+
+- #### for web browsers:
+  1. Save `accessToken` into a variable.
+  2. Put `accessToken` in headers for all the requests.
+  3. When user `login` or `signup` you will get `accessToken`.
+  4. After some time `accessToken` will get invalid and server gives 403 error.
+  5. After getting 403 error, use `getToken` api to get new `accessToken` and replace it in client.
+  6. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
+  7. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
+  8. If you get 401 error, you should remove and `accessToken` and redirect user to login page.
+  9. When user is logged in and closes the browser, after opening browser again `accessToken` doesn't exist, so you should call `getToken` api before calling apis.
+
+
+<br/>
+
+- #### for clients without ability to use cookie, like mobile apps:
+  1. add `?noCookie=true` at the end of login/signup/getToken api url.
+  2. Save `accessToken` and `refreshToken` into variables.
+  3. Put `accessToken` and `refreshToken` in headers for all the requests.
+  4. When user `login` or `signup` you will get `accessToken` and `refreshToken`.
+  5. After some time `accessToken` will get invalid and server gives 403 error.
+  6. After getting 403 error, use `getToken` api to get new `accessToken` and `refreshToken` and replace them in client.
+  7. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
+  8. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
+  9. If you get 401 error, you should remove `accessToken` and `refreshToken` redirect user to login page.
+  10. When user is logged in and closes the browser, after opening browser again `accessToken` and `refreshToken` doesn't exist, so you should call `getToken` api before calling apis.
+</details>
+
+<br/>
+
+<details>
+<summary>
+DeviceInfo Example
+</summary>
+
+```javascript
+deviceInfo = {
+    appName:"downloader_app",
+    appVersion:"1.0.0",
+    os:"Android",
+    deviceModel:"SM-A525F",
+}
+```
+
+</details>
+
 
 <br/>
 

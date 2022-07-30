@@ -18,6 +18,7 @@ export default {
         accessKeyId: process.env.CLOUAD_STORAGE_ACCESS_KEY,
         secretAccessKey: process.env.CLOUAD_STORAGE_SECRET_ACCESS_KEY,
         websiteEndPoint: process.env.CLOUAD_STORAGE_WEBSITE_ENDPOINT,
+        bucketNamePrefix: process.env.BUCKET_NAME_PREFIX || '',
     },
     remoteBrowser: [{
         endpoint: process.env.REMOTE_BROWSER_ENDPOINT,
