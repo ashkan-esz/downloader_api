@@ -66,7 +66,8 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_
 }
 
 export async function search_in_title_page(sourceName, title, page_link, type, getFileData, getQualitySample = null,
-                                           extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null, extraChecker = null) {
+                                           extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null,
+                                           extraChecker = null, getSeasonEpisodeFromInfo = false) {
     try {
         let {$, links, cookies} = await getLinks(page_link, sourceLinkData);
         if ($ === null || $ === undefined) {
@@ -88,7 +89,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
                     let season = 0, episode = 0;
                     if (type.includes('serial')) {
-                        if (type.includes('anime')) {
+                        if (type.includes('anime') || getSeasonEpisodeFromInfo) {
                             ({season, episode} = getSeasonEpisode(link_info));
                             if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p\./)) {
                                 ({season, episode} = getSeasonEpisode(link));

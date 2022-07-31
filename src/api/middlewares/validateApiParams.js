@@ -110,7 +110,6 @@ const validations = Object.freeze({
     //-----------------------------
 
     genres_query: query('genres')
-        .isString().withMessage('Invalid parameter genres :: String')
         .customSanitizer(value => {
             return value
                 ? value.split('-').map(item => item.replace(/_/g, '-').toLowerCase().trim())

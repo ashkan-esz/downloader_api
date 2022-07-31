@@ -49,21 +49,27 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample
+                    , null, null, null, linkCheck, true);
+
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
                         ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
                     }
-                    if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
+                    if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample
+                            , null, null, null, linkCheck, true);
+
                         if (!pageSearchResult) {
                             return;
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
+                    const qualitySampleLinks = downloadLinks.map(item => item.qualitySample).filter(item => item);
+                    downloadLinks = downloadLinks.filter(item => !qualitySampleLinks.includes(item.link));
 
                     let sourceData = {
                         sourceName,
@@ -209,10 +215,44 @@ function getWatchOnlineLinks($, type, pageLink) {
     }
 }
 
+function linkCheck($, link) {
+    let linkHref = $(link).attr('href');
+    return (linkHref.includes('digimovie') && linkHref.endsWith('lm_action=download'));
+}
+
 function getFileData($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
     try {
+        let seasonEpisode = '';
+        let linkText = $(link).text() || '';
+        try {
+            if (type.includes('serial') || linkText.includes('دانلود قسمت')) {
+                if (!linkText) {
+                    return 'ignore';
+                }
+
+                linkText = linkText.replace('دانلود قسمت', '').trim();
+                let episodeNumber;
+                if (linkText === 'ویژه') {
+                    episodeNumber = 0;
+                } else if (!isNaN(linkText)) {
+                    episodeNumber = Number(linkText);
+                } else {
+                    return 'ignore';
+                }
+                let seasonInfo = $($($(link).parent().parent().parent().prev().children()[0]).children()[1]).text();
+                let seasonNumber = seasonInfo.match(/فصل\s*:\s*\d+/g).pop().match(/\d+/g).pop();
+                if (!seasonNumber || Number(seasonNumber) === 0) {
+                    return 'ignore';
+                }
+                seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
+            }
+        } catch (error) {
+            saveError(error);
+            return 'ignore';
+        }
+
         let linkHref = $(link).attr('href');
         let infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
             ? $($(link).parent().parent().parent().prev().children()[1]).children()
@@ -252,7 +292,7 @@ function getFileData($, link, type) {
             seasonStack = ' (whole season in one file)'
             size = '';
         }
-        let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
+        let info = [seasonEpisode, quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
         info = fixLinkInfo(info, linkHref);
         info = fixLinkInfoOrder(info);
         if (isOva && !info.match(/Special|OVA|NCED|NCOP/)) {
@@ -272,7 +312,7 @@ function getQualitySample($, link, type) {
         }
         let nextNode = $(link).next().next()[0];
         let sampleUrl = nextNode ? nextNode.attribs.href : '';
-        if (sampleUrl.includes('.jpg')) {
+        if (sampleUrl.includes('.jpg') || sampleUrl.endsWith('lm_action=download')) {
             return sampleUrl;
         }
         return '';

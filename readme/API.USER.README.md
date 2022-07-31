@@ -71,14 +71,15 @@ More Info
 - #### for clients without ability to use cookie, like mobile apps:
   1. add `?noCookie=true` at the end of login/signup/getToken api url.
   2. Save `accessToken` and `refreshToken` into variables.
-  3. Put `accessToken` and `refreshToken` in headers for all the requests.
-  4. When user `login` or `signup` you will get `accessToken` and `refreshToken`.
-  5. After some time `accessToken` will get invalid and server gives 403 error.
-  6. After getting 403 error, use `getToken` api to get new `accessToken` and `refreshToken` and replace them in client.
-  7. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
-  8. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
-  9. If you get 401 error, you should remove `accessToken` and `refreshToken` redirect user to login page.
-  10. When user is logged in and closes the browser, after opening browser again `accessToken` and `refreshToken` doesn't exist, so you should call `getToken` api before calling apis.
+  3. `refreshToken` should be saved to client storage secretly.
+  4. Put `accessToken` and `refreshToken` in headers for all the requests.
+  5. When user `login` or `signup` you will get `accessToken` and `refreshToken`.
+  6. After some time `accessToken` will get invalid and server gives 403 error.
+  7. After getting 403 error, use `getToken` api to get new `accessToken` and `refreshToken` and replace them in client.
+  8. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
+  9. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
+  10. If you get 401 error, you should remove `accessToken` and `refreshToken` redirect user to login page.
+  11. When user is logged in and closes the browser, after opening browser again `accessToken` and `refreshToken` doesn't exist, so you should call `getToken` api before calling apis.
 </details>
 
 <br/>

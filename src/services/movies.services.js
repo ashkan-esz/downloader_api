@@ -115,8 +115,8 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
 
     let searchDataArray = await Promise.allSettled([
         moviesDbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        moviesDbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel]),
-        moviesDbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel]),
+        moviesDbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel.replace('dlink', 'high')]),
+        moviesDbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel.replace('dlink', 'high')]),
     ]);
     let searchData = {
         movies: searchDataArray[0].value,
