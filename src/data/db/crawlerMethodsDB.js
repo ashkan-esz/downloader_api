@@ -211,3 +211,55 @@ export async function updateSourcesObjDB(updateFields) {
 
 //-----------------------------------
 //-----------------------------------
+
+export async function resetTempRank() {
+    try {
+        let collection = await getCollection('movies');
+        await collection.updateMany({}, {
+            $set: {
+                tempRank: -1,
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function replaceRankWithTempRank(rankField) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.updateMany({}, [
+            {
+                $set: {
+                    [`rank.${rankField}`]: '$tempRank',
+                },
+            },
+            {
+                $unset: 'tempRank',
+            }
+        ]);
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function changeMoviesReleaseStateDB(currentState, newState) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.updateMany({
+            releaseState: currentState
+        }, {
+            $set: {
+                releaseState: newState
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

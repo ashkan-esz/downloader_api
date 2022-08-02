@@ -57,11 +57,11 @@ More Info
 - #### for web browsers:
   1. Save `accessToken` into a variable.
   2. Put `accessToken` in headers for all the requests.
-  3. When user `login` or `signup` you will get `accessToken`.
+  3. When user `login` or `signup` you will receive `accessToken`.
   4. After some time `accessToken` will get invalid and server gives 403 error.
-  5. After getting 403 error, use `getToken` api to get new `accessToken` and replace it in client.
-  6. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
-  7. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
+  5. After getting 403 error, use `getToken` api to receive new `accessToken` and replace it in client.
+  6. Along with `accessToken` you receive `accessToken_expire` witch shows the time `accessToken` get invalid.
+  7. It's better to watch for it before request and call `getToken` to receive new `accessToken` this way you prevent from getting 403 error.
   8. If you get 401 error, you should remove and `accessToken` and redirect user to login page.
   9. When user is logged in and closes the browser, after opening browser again `accessToken` doesn't exist, so you should call `getToken` api before calling apis.
 
@@ -75,9 +75,9 @@ More Info
   4. Put `accessToken` and `refreshToken` in headers for all the requests.
   5. When user `login` or `signup` you will get `accessToken` and `refreshToken`.
   6. After some time `accessToken` will get invalid and server gives 403 error.
-  7. After getting 403 error, use `getToken` api to get new `accessToken` and `refreshToken` and replace them in client.
-  8. Along with `accessToken` you get `accessToken_expire` witch shows the time `accessToken` get invalid.
-  9. It's better to watch for it before request and call `getToken` to get new `accessToken` this way you prevent from getting 403 error.
+  7. After getting 403 error, use `getToken` api to receive new `accessToken` and `refreshToken` and replace them in client.
+  8. Along with `accessToken` you receive `accessToken_expire` witch shows the time `accessToken` get invalid.
+  9. It's better to watch for it before request and call `getToken` to receive new `accessToken` this way you prevent from getting 403 error.
   10. If you get 401 error, you should remove `accessToken` and `refreshToken` redirect user to login page.
   11. When user is logged in and closes the browser, after opening browser again `accessToken` and `refreshToken` doesn't exist, so you should call `getToken` api before calling apis.
 </details>

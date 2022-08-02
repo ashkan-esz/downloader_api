@@ -21,38 +21,45 @@ export async function updateImdbData() {
         return;
     }
 
-    //todo : fix delay between reset and set
-
     //top
     if (imdbApiKey.find(item => !item.reachedMax)) {
-        await crawlerMethodsDB.updateMovieCollectionDB({'rank.top': -1});
+        await crawlerMethodsDB.resetTempRank();
         await add_Top_popular('movie', 'top');
         await add_Top_popular('serial', 'top');
+        await crawlerMethodsDB.replaceRankWithTempRank('top');
     }
 
     //popular
     if (imdbApiKey.find(item => !item.reachedMax)) {
-        await crawlerMethodsDB.updateMovieCollectionDB({'rank.popular': -1});
+        await crawlerMethodsDB.resetTempRank();
         await add_Top_popular('movie', 'popular');
         await add_Top_popular('serial', 'popular');
+        await crawlerMethodsDB.replaceRankWithTempRank('popular');
     }
 
     //inTheaters
     if (imdbApiKey.find(item => !item.reachedMax)) {
-        await crawlerMethodsDB.updateMovieCollectionDB({'rank.inTheaters': -1});
+        await crawlerMethodsDB.resetTempRank();
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters', 'inTheaters_temp');
         await add_inTheaters_comingSoon('movie', 'inTheaters');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters_temp', 'waiting');
+        await crawlerMethodsDB.replaceRankWithTempRank('inTheaters');
     }
 
     //comingSoon
     if (imdbApiKey.find(item => !item.reachedMax)) {
-        await crawlerMethodsDB.updateMovieCollectionDB({'rank.comingSoon': -1});
+        await crawlerMethodsDB.resetTempRank();
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp');
         await add_inTheaters_comingSoon('movie', 'comingSoon');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp', 'waiting');
+        await crawlerMethodsDB.replaceRankWithTempRank('comingSoon');
     }
 
     //box office
     if (imdbApiKey.find(item => !item.reachedMax)) {
-        await crawlerMethodsDB.updateMovieCollectionDB({'rank.boxOffice': -1});
+        await crawlerMethodsDB.resetTempRank();
         await addBoxOfficeData();
+        await crawlerMethodsDB.replaceRankWithTempRank('boxOffice');
     }
 }
 
@@ -74,7 +81,7 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const updatePromiseQueue = new pQueue.default({concurrency: 25});
     const insertPromiseQueue = new pQueue.default({concurrency: 5});
 
     for (let i = 0; i < top_popular.length; i++) {
@@ -99,12 +106,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
     try {
         let updateFields = {};
 
-        if (mode === 'top') {
-            titleDataFromDB.rank.top = rank;
-        } else {
-            titleDataFromDB.rank.popular = rank;
-        }
-        updateFields.rank = titleDataFromDB.rank;
+        updateFields.tempRank = rank;
 
         //title exist in db , fix imdbID and imdb rating if needed
         if (!titleDataFromDB.imdbID) {
@@ -146,7 +148,7 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const updatePromiseQueue = new pQueue.default({concurrency: 25});
     const insertPromiseQueue = new pQueue.default({concurrency: 5});
 
     for (let i = 0; i < theatres_soon.length; i++) {
@@ -168,12 +170,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
     try {
         let updateFields = {};
 
-        if (mode === 'inTheaters') {
-            titleDataFromDB.rank.inTheaters = rank;
-        } else {
-            titleDataFromDB.rank.comingSoon = rank;
-        }
-        updateFields.rank = titleDataFromDB.rank;
+        updateFields.tempRank = rank;
 
         //title exist in db , fix imdbID and imdb rating if needed
         if (!titleDataFromDB.imdbID) {
@@ -193,10 +190,15 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
                 updateFields.premiered = temp;
             }
         }
+        if (semiImdbData.year && !isNaN(semiImdbData.year)) {
+            if (titleDataFromDB.year !== semiImdbData.year) {
+                updateFields.year = semiImdbData.year;
+            }
+        }
         if (semiImdbData.releaseState) {
             let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
             let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
-            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[2].trim();
+            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
             if (titleDataFromDB.premiered !== temp) {
                 updateFields.premiered = temp;
             }
@@ -242,24 +244,30 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
             alternateTitles: [imdbData.title, imdbData.originalTitle].filter(value => value && value !== semiImdbData.title),
             titleSynonyms: [],
         }
+        let imdbYear = imdbData.year;
+        let yearMatch = titleObj.title.match(/\d\d\d\d/g);
+        yearMatch = yearMatch ? yearMatch.pop() : null;
+        const currentYear = new Date().getFullYear();
+        if (yearMatch && (Number(yearMatch) === currentYear - 1 || Number(yearMatch) === currentYear)) {
+            titleObj.title = titleObj.title.replace(yearMatch, '').trim();
+            titleObj.rawTitle = titleObj.rawTitle.replace('(' + yearMatch + ')', '').replace(yearMatch, '').trim();
+            titleObj.rawTitle = titleObj.rawTitle.replace('(I)', '1').replace('(II)', '2').replace('(III)', '3').trim();
+            if (isNaN(imdbYear)) {
+                imdbYear = yearMatch.toString();
+            }
+        } else if (isNaN(imdbYear)) {
+            imdbYear = '';
+        }
         let titleModel = getMovieModel(
             titleObj, '', type, [],
-            '', imdbData.year, '', '',
+            '', imdbYear, '', '',
             [], [], []
         );
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
         titleModel.status = status;
         titleModel.releaseState = releaseState;
-        if (mode === 'top') {
-            titleModel.rank.top = rank;
-        } else if (mode === 'popular') {
-            titleModel.rank.popular = rank;
-        } else if (mode === 'inTheaters') {
-            titleModel.rank.inTheaters = rank;
-        } else {
-            titleModel.rank.comingSoon = rank;
-        }
+        titleModel.tempRank = rank;
 
         await uploadPosterAndTrailer(titleModel, imdbData, releaseState);
 
@@ -270,7 +278,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         if (imdbData.releaseState) {
             let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
             let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
-            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[2].trim();
+            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
         }
         titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
         titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
@@ -309,7 +317,7 @@ async function addBoxOfficeData() {
     let promiseArray = [];
     for (let i = 0; i < boxOfficeData.items.length; i++) {
         let updateFields = {
-            'rank.boxOffice': Number(boxOfficeData.items[i].rank),
+            'tempRank': Number(boxOfficeData.items[i].rank),
             boxOfficeData: {
                 weekend: boxOfficeData.items[i].weekend || '',
                 gross: boxOfficeData.items[i].gross || '',
@@ -363,12 +371,24 @@ async function getTitleDataFromDB(title, year, type) {
         alternateTitles: [],
         titleSynonyms: [],
     }
+
+    let yearMatch = titleObj.title.match(/\d\d\d\d/g);
+    yearMatch = yearMatch ? yearMatch.pop() : null;
+    const currentYear = new Date().getFullYear();
+    if (yearMatch && (Number(yearMatch) === currentYear - 1 || Number(yearMatch) === currentYear)) {
+        titleObj.title = titleObj.title.replace(yearMatch, '').trim();
+        if (isNaN(year)) {
+            year = yearMatch.toString();
+        }
+    } else if (isNaN(year)) {
+        year = '';
+    }
+
     let dataConfig = {
         title: 1,
         type: 1,
         premiered: 1,
         year: 1,
-        rank: 1,
         imdbID: 1,
         rating: 1,
         releaseState: 1,
