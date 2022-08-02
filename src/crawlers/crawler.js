@@ -29,8 +29,10 @@ export async function crawler(sourceName, crawlMode = 0, {
             Sentry.captureMessage('crawling cancelled : sourcesObj is null');
             return 'crawling cancelled : sourcesObj is null';
         }
-        //todo : check source object exist in 'sources' collection
+
+        const sourcesNames = Object.keys(sourcesObj);
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
+        sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
 
         if (!handleDomainChangeOnly) {
             if (!sourceName) {
@@ -46,8 +48,7 @@ export async function crawler(sourceName, crawlMode = 0, {
         }
 
         if (handleDomainChangeOnly || handleDomainChange) {
-            //todo : fix bug with mode=2 override
-            await domainChangeHandler(sourcesObj);
+            await domainChangeHandler(sourcesObj, sourceName, crawlMode);
         }
 
         isCrawling = false;

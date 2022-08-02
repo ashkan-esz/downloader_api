@@ -7,7 +7,7 @@ import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 
 
-export async function domainChangeHandler(sourcesObj) {
+export async function domainChangeHandler(sourcesObj, crawledSourceName, crawlMode) {
     try {
         let pageCounter_time = sourcesObj.pageCounter_time;
         delete sourcesObj._id;
@@ -23,7 +23,7 @@ export async function domainChangeHandler(sourcesObj) {
         if (changedSources.length > 0) {
             Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
-            await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources);
+            await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, crawledSourceName, crawlMode);
             Sentry.captureMessage('source domain changed');
         }
     } catch (error) {
@@ -97,7 +97,7 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     }
 }
 
-async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources) {
+async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, crawledSourceName, crawlMode) {
     let sourcesArray = getSourcesArray(sourcesObj, 2, pageCounter_time);
     for (let i = 0; i < changedSources.length; i++) {
         try {
@@ -107,7 +107,9 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources)
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
-                await findSource.starter();
+                if (crawlMode !== 2 || (crawledSourceName && crawledSourceName !== sourceName)) {
+                    await findSource.starter();
+                }
                 //update source data
                 let updateSourceField = {};
                 updateSourceField[sourceName] = sourcesObj[sourceName];

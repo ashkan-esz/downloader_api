@@ -76,6 +76,7 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
 }
 
 export async function login(username_email, password, deviceInfo, ip) {
+    //todo : terminate sessions inactive for 6 month
     //todo : check device already exist
     //todo : limit number of device
     try {
