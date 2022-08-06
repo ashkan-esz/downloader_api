@@ -21,10 +21,12 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
         let url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${searchType}&plot=full`;
         let data;
+        let yearIgnored = false;
         if (titleYear) {
             data = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
             if (data === null) {
                 data = await handle_OMDB_ApiKeys(url);
+                yearIgnored = true;
                 if (data && data.Year && (Number(data.Year) - Number(titleYear) > 7)) {
                     return null;
                 }
@@ -53,7 +55,7 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
             return null;
         }
 
-        return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) ? data : null;
+        return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) ? data : null;
     } catch (error) {
         if (!error.response || error.response.status !== 500) {
             await saveError(error);
@@ -168,21 +170,36 @@ function extractRatings(ratings) {
     return ratingObj;
 }
 
-export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, lastSeasonsOnly = false) {
+export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, premiered, lastSeasonsOnly = false) {
     try {
+        let titleYear = premiered.split('-')[0];
         let episodes = [];
         totalSeasons = isNaN(totalSeasons) ? 0 : Number(totalSeasons);
         let startSeasonNumber = (lastSeasonsOnly && totalSeasons > 1) ? totalSeasons - 1 : 1;
         let promiseArray = [];
 
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
-            let seasonResult = await handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`);
-            if (seasonResult !== null && seasonResult.Title.toLowerCase() !== omdbTitle.toLowerCase()) {
+            const url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`;
+            let seasonResult = null;
+            let includeYear = false;
+            if (titleYear) {
+                seasonResult = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
+                if (seasonResult === null) {
+                    seasonResult = await handle_OMDB_ApiKeys(url);
+                } else {
+                    includeYear = true;
+                }
+            } else {
+                seasonResult = await handle_OMDB_ApiKeys(url);
+            }
+
+            if (seasonResult !== null && seasonResult.Title.toLowerCase() === omdbTitle.toLowerCase()) {
                 let thisSeasonEpisodes = seasonResult.Episodes;
                 let seasonsEpisodeNumber = Number(thisSeasonEpisodes[thisSeasonEpisodes.length - 1].Episode);
 
                 for (let k = 1; k <= seasonsEpisodeNumber; k++) {
-                    let episodeResultPromise = getSeasonEpisode_episode(omdbTitle, episodes, thisSeasonEpisodes, j, k);
+                    let searchYear = includeYear ? `&y=${titleYear}` : '';
+                    let episodeResultPromise = getSeasonEpisode_episode(omdbTitle, searchYear, episodes, thisSeasonEpisodes, j, k);
                     promiseArray.push(episodeResultPromise);
                 }
             }
@@ -202,8 +219,9 @@ export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, lastSeasons
     }
 }
 
-function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
-    return handle_OMDB_ApiKeys(`https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series`).then(episodeResult => {
+function getSeasonEpisode_episode(omdbTitle, searchYear, episodes, seasonEpisodes, j, k) {
+    const url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series` + searchYear;
+    return handle_OMDB_ApiKeys(url).then(episodeResult => {
         let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
         if (episodeResult === null) {
             let episodeModel = getEpisodeModel(
@@ -229,14 +247,17 @@ function getSeasonEpisode_episode(omdbTitle, episodes, seasonEpisodes, j, k) {
     });
 }
 
-function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, type) {
+function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) {
     let originalTitle = title;
     title = replaceSpecialCharacters(originalTitle);
     alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
     titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
     let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
     let apiYear = data.Year.split(/[-–]/g)[0];
-    let matchYear = (type.includes('movie')) ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
+    let matchYear = (type.includes('movie') || yearIgnored) ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
+    if (!matchYear) {
+        return false;
+    }
     let splitTitle = title.split(' ');
     let splitApiTitle = apiTitle.split(' ');
     let titlesMatched = true;

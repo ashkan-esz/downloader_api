@@ -1,6 +1,7 @@
 import config from "../../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../../searchTools.js";
-import {getType, checkDubbed, getTitleAndYear} from "../../utils.js";
+import {getType, checkDubbed} from "../../utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeQualityText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
 import * as persianRex from "persian-rex";

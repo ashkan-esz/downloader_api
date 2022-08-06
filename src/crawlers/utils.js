@@ -1,106 +1,10 @@
-import * as persianRex from "persian-rex";
 import {saveError} from "../error/saveError.js";
 
-
-export function purgeTitle(title, type, keepLastNumber = true) {
-    let currentYear = new Date().getFullYear();
-    let titleIncludesSeason = title.includes('فصل');
-    title = replacePersianNumbers(title);
-    const savedTitle = title;
-    title = title.replace(/\d%/, (res) => res.replace('%', 'percent'));
-    title = replaceSpecialCharacters(title.trim());
-    let matchsinamaii = title.match(/سینمایی \d/g);
-    title = title
-        .replace('شماره ۱', '')
-        .replace('دوبله فارسی انیمیشن 2 ', ' ')
-        .replace('فیلم 100', '100')
-        .replace('فیلم 19', '19')
-        .replace(/سینمایی \d/g, '');
-
-    if (title.includes('فیلم 1')) {
-        let splitTitle = title.split('');
-        let index = splitTitle.indexOf('فیلم');
-        if (splitTitle[index + 1] === '1') {
-            title = title.replace('فیلم 1', '');
-        }
-    }
-
-    let title_array = title.split(' ').filter((text) => text && !persianRex.hasLetter.test(text));
-
-    if (!isNaN(title_array[0]) && !isNaN(title_array[1]) && (isNaN(title_array[2]) || title_array[2] > 2000)) {
-        if (savedTitle.match(/\d\d?:\d\d?/)) {
-            //case: دانلود فیلم ۳:۱۰ to yuma 2007
-            let t = title_array.shift();
-            title_array[0] = t + ':' + title_array[0];
-        } else if (savedTitle.match(/\d\d?\/\d\d?/)) {
-            //case: دانلود فیلم ۱/۱ ۲۰۱۸
-            let t = title_array.shift();
-            title_array[0] = t + '/' + title_array[0];
-        }
-    }
-
-    if (title_array[0] && title_array[0].match(/^\d+[a-zA-Z]+/)) {
-        //14cameras --> 14 cameras
-        title_array[0] = title_array[0].replace(/^\d+/, (number) => number + ' ');
-    }
-
-    if (title.includes('قسمت های ویژه') && !title.toLowerCase().includes('ova')) {
-        title_array.push('OVA');
-    }
-    if (matchsinamaii) {
-        let movieNumber = matchsinamaii[0].replace('سینمایی', '').trim();
-        movieNumber = Number(movieNumber);
-        title_array.push(movieNumber);
-    }
-
-    if (title_array.length > 1) {
-        if (!isNaN(title_array[0]) && Number(title_array[0]) < 5) {
-            title_array.shift();
-        }
-        let year = title_array[title_array.length - 1];
-        if (!isNaN(year) && Number(year) > 1900 && !keepLastNumber) {
-            title_array.pop();
-        } else if (!isNaN(title_array[0]) && Number(title_array[0]) > 1000 && Number(title_array[0]) <= (currentYear + 1)) {
-            let yearAtStart = title_array.shift();
-            if (isNaN(year)) {
-                title_array.push(yearAtStart);
-            }
-        }
-    }
-
-    if (type.includes('serial') && titleIncludesSeason && title_array.length > 1) {
-        let season = title_array[title_array.length - 1];
-        if ((!isNaN(season) || persianRex.number.test(season)) && Number(season) < 10) {
-            title_array.pop();
-        }
-    }
-
-    if (title_array.length > 2) {
-        let year = Number(title_array[title_array.length - 2]);
-        let number = Number(title_array[title_array.length - 1]);
-        if (year > 1900 && year <= (currentYear + 1) && number < 10) {
-            title_array.pop();
-            title_array.pop();
-        }
-    }
-
-    let firstPart = title_array[0];
-    let thirdPart = title_array.length > 1 ? title_array[2] : '';
-    let lastPart = title_array.length > 3 ? title_array[title_array.length - 2] : '';
-    if (
-        (firstPart === lastPart && !isNaN(firstPart)) ||
-        (thirdPart && firstPart === thirdPart && Number(firstPart) < 5)
-    ) {
-        title_array.shift();
-    }
-
-    return title_array;
-}
 
 export function replaceSpecialCharacters(input) {
     return input
         .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
-        .replace(/["'’‘٫.:?¿!#%,()~♥△Ωωψ]/g, '')
+        .replace(/[”“"'’‘٫.:?¿!#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
@@ -112,7 +16,7 @@ export function replaceSpecialCharacters(input) {
         .replace(/[ß♭]/g, 'b')
         .replace(/ç/g, 'c')
         .replace(/ş/g, 's')
-        .replace(/[ôöøóō◯õ]|ö/g, 'o')
+        .replace(/[ôöøóō◯õò]|ö/g, 'o')
         .replace(/[üúûùū]/g, 'u')
         .replace(/ñ/g, 'n')
         .replace(/[ıíï]/g, 'i')
@@ -182,79 +86,6 @@ export function getType(title) {
         return 'movie';
     }
     return 'serial';
-}
-
-export function getTitleAndYear(title, year, type) {
-    try {
-        let splitTitle = purgeTitle(title.toLowerCase(), type);
-        year = splitTitle[splitTitle.length - 1];
-        if (!isNaN(year) && Number(year) > 1900 && Number(year) < 2100) {
-            if (splitTitle.length === 2 && Number(splitTitle[0]) > Number(year) && Number(splitTitle[0]) < 2030) {
-                year = splitTitle[0];
-                title = splitTitle[1];
-            } else {
-                splitTitle.pop();
-                title = splitTitle.join(" ");
-                let currentYear = new Date().getFullYear();
-                if (Number(year) === currentYear + 1) {
-                    year = currentYear.toString();
-                } else if (Number(year) > currentYear + 1) {
-                    year = '';
-                }
-            }
-        } else if (splitTitle.length === 2 && Number(splitTitle[0]) > 2000 && Number(splitTitle[0]) < 2030 && Number(splitTitle[1]) < 1500) {
-            year = splitTitle[0];
-            title = splitTitle[1];
-        } else if (isNaN(year) && Number(splitTitle[0]) > 2000 && Number(splitTitle[0]) < 2030) {
-            year = splitTitle.shift();
-            title = splitTitle.join(" ");
-        } else {
-            title = splitTitle.join(" ");
-            year = '';
-        }
-        title = title
-            .replace(/^\d+ (d|st|th|below)(?=\s)/i, (res) => res.replace(' ', ''))
-            .replace(/^\d \d \d .+ \d \d \d$/, (res) => res.replace(/\s\d \d \d$/, '').trim())
-            .replace(/^\d{2,5} .+ \d{2,5}$/, (res) => res.replace(/\s\d{2,5}$/, '').trim())
-            .replace(/^\d{2,6} \d{2,6}$/, (res) => {
-                let temp = res.split(' ');
-                return (temp[0] === temp[1]) ? temp[0] : res;
-            })
-            .replace(/^\d\d?:\d\d? .+ \d\d?\s\d\d?$/, (res) => {
-                let temp = res.split(' ');
-                let lastPart = temp[temp.length - 2] + ' ' + temp[temp.length - 1];
-                if (temp.length > 2 && temp[0] === lastPart.replace(' ', ':')) {
-                    temp.pop();
-                    temp.pop();
-                    return temp.join(' ');
-                }
-                return res;
-            })
-            .replace(/^9 jkl$/i, '9jkl')
-            .replace('10 x10', '10x10')
-            .replace('100percent', '100 percent')
-            .replace('2 the jungle book', 'the jungle book 2')
-            .replace('5 transformers the last knight', 'transformers the last knight')
-            .replace('6 recep ivedik', 'recep ivedik 6')
-            .replace('5 ice age collision course', 'ice age collision course');
-
-        let yearMatch = title.match(/\s\d\d\d\d$/g);
-        if (yearMatch) {
-            let number = Number(yearMatch.pop().trim());
-            if (number >= 1995 && number <= 2030) {
-                number = number.toString();
-                if (!year || year === number) {
-                    year = number;
-                    title = title.replace(number, '').trim();
-                }
-            }
-        }
-
-        return {title, year: year || ''};
-    } catch (error) {
-        saveError(error);
-        return {title, year: year || ''};
-    }
 }
 
 export function validateYear(year) {

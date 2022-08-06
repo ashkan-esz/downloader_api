@@ -9,7 +9,7 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
 
     //omdb api
     if (omdbApiFields) {
-        let omdbEpisodes = await get_OMDB_EpisodesData(omdbApiFields.omdbTitle, totalSeasons, titleExist);
+        let omdbEpisodes = await get_OMDB_EpisodesData(omdbApiFields.omdbTitle, totalSeasons, db_data.premiered, titleExist);
         if (omdbEpisodes) {
             let result = updateSeasonEpisodeData(db_data.seasons, omdbEpisodes);
             seasonsUpdateFlag = result || seasonsUpdateFlag;

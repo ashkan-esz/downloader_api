@@ -3,13 +3,13 @@ import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     checkDubbed,
     getDecodedLink,
-    getTitleAndYear,
     persianWordToNumber,
     removeDuplicateLinks,
     replacePersianNumbers,
     sortLinks,
     validateYear,
 } from "../utils.js";
+import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -84,11 +84,11 @@ async function search_title(link, i) {
 
 function fixYear($) {
     try {
-        let state = 0;
-        let postInfo = $('li:contains("سال انتشار")');
+        let state = 1;
+        let postInfo = $('li:contains("سال های پخش")');
         if (postInfo.length === 0) {
-            state = 1;
-            postInfo = $('li:contains("سال های پخش")');
+            state = 0;
+            postInfo = $('li:contains("سال انتشار")');
         }
         if (postInfo.length === 1) {
             let temp = $(postInfo).text().replace('سال های پخش', '').replace('سال انتشار', '').toLowerCase().trim();

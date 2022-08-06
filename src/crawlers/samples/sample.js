@@ -1,8 +1,9 @@
 import fs from 'fs';
-import {getTitleAndYear} from "../utils.js";
+import {getTitleAndYear} from "../movieTitle.js";
 import {saveError} from "../../error/saveError.js";
 import * as Path from "path";
 import {fileURLToPath} from "url";
+import inquirer from 'inquirer';
 
 
 export async function saveSampleTitle(sourceName, originalTitle, title, originalType, type, year, replace = false) {
@@ -54,9 +55,10 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
     }
 }
 
-export async function checkPrevTitleWithNewMethod() {
+export async function checkPrevTitleWithNewMethod(sourceName = null, updateData = false) {
     try {
-        let titles = await getSampleTitles();
+        let sourceFileName = !sourceName ? null : sourceName + '.json';
+        let titles = await getSampleTitles(sourceFileName);
         let counter = 0;
         for (let i = 0; i < titles.length; i++) {
             const {
@@ -71,22 +73,68 @@ export async function checkPrevTitleWithNewMethod() {
                 console.log(titles[i].sourceName, '|', titles[i].originalTitle, '|', titles[i].type);
                 console.log(`prev state    --> title: ${titles[i].title}, year: ${titles[i].year}`);
                 console.log(`current state --> title: ${newTitle}, year: ${newYear}`);
-                console.log('-------------------------');
                 counter++;
+
+                if (updateData) {
+                    const questions = [
+                        {
+                            type: 'input',
+                            name: 'ans',
+                            message: "update this movie data? (y/n)",
+                        },
+                    ];
+                    let answers = await inquirer.prompt(questions);
+                    if (answers.ans.toLowerCase() === 'y') {
+                        await updateMovieData(titles[i], newTitle, newYear);
+                    }
+                }
+                console.log('-------------------------');
             }
         }
+        console.log('-------------END-----------');
         return counter;
     } catch (error) {
         saveError(error);
     }
 }
 
-export async function getSampleTitles() {
+async function updateMovieData(movieData, newTitle, newYear) {
     try {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = Path.dirname(__filename);
         const pathToTitles = Path.join(__dirname, 'titles');
-        const files = fs.readdirSync(pathToTitles);
+        const pathToFile = Path.join(pathToTitles, `${movieData.sourceName}.json`);
+        let titlesFile = fs.readFileSync(pathToFile, 'utf8');
+        let titles = JSON.parse(titlesFile);
+
+        for (let i = 0; i < titles.length; i++) {
+            if (
+                titles[i].originalTitle === movieData.originalTitle &&
+                titles[i].title === movieData.title &&
+                titles[i].originalType === movieData.originalType &&
+                titles[i].type === movieData.type &&
+                titles[i].year === movieData.year
+            ) {
+                titles[i].title = newTitle;
+                titles[i].year = newYear;
+                fs.writeFileSync(pathToFile, JSON.stringify(titles), 'utf8');
+                break;
+            }
+        }
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+export async function getSampleTitles(sourceNames = null) {
+    try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = Path.dirname(__filename);
+        const pathToTitles = Path.join(__dirname, 'titles');
+        let files = fs.readdirSync(pathToTitles);
+        if (sourceNames) {
+            files = files.filter(item => sourceNames.includes(item))
+        }
         let titles = [];
         let promiseArray = [];
         for (let i = 0; i < files.length; i++) {

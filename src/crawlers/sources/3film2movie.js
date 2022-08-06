@@ -1,7 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
-    getTitleAndYear,
     validateYear,
     replacePersianNumbers,
     getType,
@@ -10,6 +9,7 @@ import {
     getDecodedLink,
     removeDuplicateLinks
 } from "../utils.js";
+import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
@@ -19,8 +19,10 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "film2movie";
 const needHeadlessBrowser = true;
+let prevTitles = [];
 
 export default async function film2movie({movie_url, page_count}) {
+    prevTitles = [];
     await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
@@ -50,6 +52,15 @@ async function search_title(link, i) {
                 typeFix = type.replace('serial', 'movie');
             }
             ({title, year} = getTitleAndYear(title, year, type));
+
+            if (!prevTitles.find(item => (item.title === title && item.year === year && item.type === type))) {
+                prevTitles.push({title, type, year});
+                if (prevTitles.length > 50) {
+                    prevTitles = prevTitles.slice(prevTitles.length - 30);
+                }
+            } else {
+                return;
+            }
 
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);

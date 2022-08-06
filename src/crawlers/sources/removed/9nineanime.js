@@ -1,13 +1,13 @@
 import config from "../../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../../searchTools.js";
 import {
-    getTitleAndYear,
     getType,
     checkDubbed,
     replacePersianNumbers,
     persianWordToNumber,
     getDecodedLink,
 } from "../../utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeSizeText, purgeQualityText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
 import * as persianRex from "persian-rex";

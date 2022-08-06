@@ -397,11 +397,13 @@ function getTitlesFromData(fullData) {
 
 export async function updateJikanData() {
     //reset rank
-    await crawlerMethodsDB.updateMovieCollectionDB({'rank.animeTopComingSoon': -1});
+    await crawlerMethodsDB.resetTempRank();
     await add_comingSoon_topAiring_Titles('comingSoon', 2);
+    await crawlerMethodsDB.replaceRankWithTempRank('animeTopComingSoon');
     //reset rank
-    await crawlerMethodsDB.updateMovieCollectionDB({'rank.animeTopAiring': -1});
+    await crawlerMethodsDB.resetTempRank();
     await add_comingSoon_topAiring_Titles('topAiring', 2);
+    await crawlerMethodsDB.replaceRankWithTempRank('animeTopAiring');
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
@@ -441,17 +443,15 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     let updateFields = {};
 
     if (mode === 'comingSoon') {
-        titleDataFromDB.rank.animeTopComingSoon = semiJikanData.rank;
         if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== 'comingSoon') {
             updateFields.releaseState = 'comingSoon';
         }
     } else {
-        titleDataFromDB.rank.animeTopAiring = semiJikanData.rank;
         if (titleDataFromDB.releaseState === 'comingSoon') {
             updateFields.releaseState = 'waiting';
         }
     }
-    updateFields.rank = titleDataFromDB.rank;
+    updateFields.tempRank = semiJikanData.rank;
 
     let type = semiJikanData.type === 'Movie' ? 'anime_movie' : 'anime_serial';
     let title = utils.replaceSpecialCharacters(semiJikanData.title.toLowerCase());
@@ -539,12 +539,11 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
         if (mode === 'comingSoon') {
-            titleModel.rank.animeTopComingSoon = semiJikanData.rank;
             titleModel.releaseState = 'comingSoon';
         } else {
-            titleModel.rank.animeTopAiring = semiJikanData.rank;
             titleModel.releaseState = 'waiting';
         }
+        titleModel.tempRank = semiJikanData.rank;
         titleModel.movieLang = 'japanese';
         titleModel.country = 'japan';
         titleModel.endYear = jikanApiFields.endYear;

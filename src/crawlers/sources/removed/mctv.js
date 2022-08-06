@@ -1,12 +1,12 @@
 import config from "../../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../../searchTools.js";
 import {
-    getTitleAndYear,
     getType,
     checkDubbed,
     checkHardSub,
     removeDuplicateLinks
 } from "../../utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeEncoderText, purgeSizeText, purgeQualityText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
 import {saveError} from "../../../error/saveError.js";

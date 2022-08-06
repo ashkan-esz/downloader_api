@@ -101,7 +101,6 @@ export async function handleAddUserStatsTransaction(userId, statType, id, retryC
                     }
                 }
             } else {
-                //todo : check a way to insert to array if not exist (check its not full and exist)
                 let checkLikeExist = await checkUserStatExist(collectionName, userId, statType, id, {session});
                 if (checkLikeExist) {
                     //already saved this movie

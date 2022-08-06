@@ -1,7 +1,6 @@
 import config from "../../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../../searchTools.js";
 import {
-    getTitleAndYear,
     validateYear,
     checkDubbed,
     replacePersianNumbers,
@@ -9,6 +8,7 @@ import {
     getDecodedLink,
     sortLinks
 } from "../../utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeSizeText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";
 import {getSubtitleModel} from "../../../models/subtitle.js";

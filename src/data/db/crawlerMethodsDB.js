@@ -263,3 +263,66 @@ export async function changeMoviesReleaseStateDB(currentState, newState) {
         return 'error';
     }
 }
+
+//-----------------------------------
+//-----------------------------------
+
+export async function getDuplicateTitleInsertion(sourceName) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection.aggregate([
+            {
+                $match: {
+                    sources: [sourceName],
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        title: "$title",
+                        year: "$year",
+                        premiered: "$premiered",
+                        endYear: "$endYear",
+                    },
+                    count: {"$sum": 1},
+                    insert_dates: {$push: "$insert_date"},
+                    ids: {$push: "$_id"},
+                    userStats: {$push: "$userStats"},
+                }
+            },
+            {
+                $match: {
+                    _id: {"$ne": null},
+                    count: {"$gt": 1}
+                }
+            },
+            {
+                $sort: {count: -1}
+            },
+            {
+                $project: {
+                    title: "$_id",
+                    _id: 0,
+                    count: 1,
+                    insert_dates: 1,
+                    ids: 1,
+                    userStats: 1,
+                }
+            }
+        ]).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function removeMovieById(id) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.deleteOne({_id: id});
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

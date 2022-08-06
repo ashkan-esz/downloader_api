@@ -1,13 +1,12 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
-    purgeTitle,
-    getTitleAndYear,
     getType,
     removeDuplicateLinks,
     checkDubbed,
     getYear
 } from "../utils.js";
+import {getTitleAndYear, purgeTitle} from "../movieTitle.js";
 import {
     purgeEncoderText,
     purgeSizeText,
@@ -292,9 +291,12 @@ function getFileData($, link, type) {
             seasonStack = ' (whole season in one file)'
             size = '';
         }
-        let info = [seasonEpisode, quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
+        let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
         info = fixLinkInfo(info, linkHref);
         info = fixLinkInfoOrder(info);
+        if (seasonEpisode) {
+            info = seasonEpisode + '.' + info;
+        }
         if (isOva && !info.match(/Special|OVA|NCED|NCOP/)) {
             info = info.replace(new RegExp(`\\.(${releaseRegex.source})`), (res) => '.OVA' + res);
         }

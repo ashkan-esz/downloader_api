@@ -88,7 +88,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
                     let season = 0, episode = 0;
-                    if (type.includes('serial')) {
+                    if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
                             ({season, episode} = getSeasonEpisode(link_info));
                             if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p\./)) {
