@@ -223,32 +223,8 @@ function getFileData($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
     try {
-        let seasonEpisode = '';
-        let linkText = $(link).text() || '';
-        try {
-            if (type.includes('serial') || linkText.includes('دانلود قسمت')) {
-                if (!linkText) {
-                    return 'ignore';
-                }
-
-                linkText = linkText.replace('دانلود قسمت', '').trim();
-                let episodeNumber;
-                if (linkText === 'ویژه') {
-                    episodeNumber = 0;
-                } else if (!isNaN(linkText)) {
-                    episodeNumber = Number(linkText);
-                } else {
-                    return 'ignore';
-                }
-                let seasonInfo = $($($(link).parent().parent().parent().prev().children()[0]).children()[1]).text();
-                let seasonNumber = seasonInfo.match(/فصل\s*:\s*\d+/g).pop().match(/\d+/g).pop();
-                if (!seasonNumber || Number(seasonNumber) === 0) {
-                    return 'ignore';
-                }
-                seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
-            }
-        } catch (error) {
-            saveError(error);
+        let seasonData = getSeasonEpisode($, link, type);
+        if (seasonData === 'ignore') {
             return 'ignore';
         }
 
@@ -294,8 +270,11 @@ function getFileData($, link, type) {
         let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
         info = fixLinkInfo(info, linkHref);
         info = fixLinkInfoOrder(info);
-        if (seasonEpisode) {
-            info = seasonEpisode + '.' + info;
+        if (seasonData.seasonEpisode) {
+            info = seasonData.seasonEpisode + '.' + info;
+        }
+        if (seasonData.seasonName) {
+            info = info + '.' + seasonData.seasonName;
         }
         if (isOva && !info.match(/Special|OVA|NCED|NCOP/)) {
             info = info.replace(new RegExp(`\\.(${releaseRegex.source})`), (res) => '.OVA' + res);
@@ -304,6 +283,48 @@ function getFileData($, link, type) {
     } catch (error) {
         saveError(error);
         return '';
+    }
+}
+
+function getSeasonEpisode($, link, type) {
+    try {
+        let seasonEpisode = '';
+        let seasonName = '';
+        let linkText = $(link).text() || '';
+        if (type.includes('serial') || linkText.includes('دانلود قسمت')) {
+            if (!linkText) {
+                return 'ignore';
+            }
+
+            linkText = linkText.replace('دانلود قسمت', '').trim();
+            let episodeNumber;
+            if (linkText === 'ویژه') {
+                episodeNumber = 0;
+            } else if (!isNaN(linkText)) {
+                episodeNumber = Number(linkText);
+            } else {
+                return 'ignore';
+            }
+            let seasonInfo = $($($(link).parent().parent().parent().prev().children()[0]).children()[1]).text();
+            seasonInfo = seasonInfo.replace(/\d+قسمت/, '').trim();
+            let seasonMatch = seasonInfo.match(/فصل\s*:\s*\d+/g);
+            if (seasonMatch) {
+                let seasonNumber = seasonMatch.pop().match(/\d+/g).pop();
+                if (!seasonNumber || Number(seasonNumber) === 0) {
+                    return 'ignore';
+                }
+                seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
+            } else if (!seasonInfo.match(/\d/)) {
+                seasonEpisode = 'S1E' + episodeNumber;
+                seasonName = seasonInfo.replace('فصل :', '').trim().replace(/\s+/g, '_');
+            } else {
+                return 'ignore';
+            }
+        }
+        return {seasonEpisode, seasonName};
+    } catch (error) {
+        saveError(error);
+        return 'ignore';
     }
 }
 
