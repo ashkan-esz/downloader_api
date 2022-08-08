@@ -49,9 +49,9 @@ export async function updateImdbData() {
     //comingSoon
     if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.resetTempRank();
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp',['movie','serial']);
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp', ['movie', 'serial']);
         await add_inTheaters_comingSoon('movie', 'comingSoon');
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp', 'waiting',['movie','serial']);
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp', 'waiting', ['movie', 'serial']);
         await crawlerMethodsDB.replaceRankWithTempRank('comingSoon');
     }
 
@@ -238,26 +238,11 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
 
 async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank, semiImdbData) {
     try {
-        let titleObj = {
-            title: utils.replaceSpecialCharacters(semiImdbData.title.toLowerCase()),
-            rawTitle: imdbData.title,
-            alternateTitles: [imdbData.title, imdbData.originalTitle].filter(value => value && value !== semiImdbData.title),
-            titleSynonyms: [],
-        }
-        let imdbYear = imdbData.year;
-        let yearMatch = titleObj.title.match(/\d\d\d\d/g);
-        yearMatch = yearMatch ? yearMatch.pop() : null;
-        if (yearMatch) {
-            titleObj.title = titleObj.title.replace(yearMatch, '').trim();
-            titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
-            titleObj.rawTitle = titleObj.rawTitle.replace('(' + yearMatch + ')', '').replace(yearMatch, '').trim();
-            titleObj.rawTitle = titleObj.rawTitle.replace('(I)', '1').replace('(II)', '2').replace('(III)', '3').trim();
-            if (isNaN(imdbYear)) {
-                imdbYear = yearMatch.toString();
-            }
-        } else if (isNaN(imdbYear)) {
-            imdbYear = '';
-        }
+        let {
+            titleObj,
+            imdbYear
+        } = createTitleObj(semiImdbData.title, imdbData.title, imdbData.originalTitle, imdbData.year);
+
         let titleModel = getMovieModel(
             titleObj, '', type, [],
             '', imdbYear, '', '',
@@ -365,24 +350,8 @@ async function getTitleDataFromIMDB(id) {
 }
 
 async function getTitleDataFromDB(title, year, type) {
-    title = utils.replaceSpecialCharacters(title.toLowerCase());
-    let titleObj = {
-        title: title,
-        alternateTitles: [],
-        titleSynonyms: [],
-    }
-
-    let yearMatch = titleObj.title.match(/\d\d\d\d/g);
-    yearMatch = yearMatch ? yearMatch.pop() : null;
-    if (yearMatch) {
-        titleObj.title = titleObj.title.replace(yearMatch, '').trim();
-        titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
-        if (isNaN(year)) {
-            year = yearMatch.toString();
-        }
-    } else if (isNaN(year)) {
-        year = '';
-    }
+    let {titleObj, imdbYear} = createTitleObj(title, '', '', year);
+    year = imdbYear;
 
     let dataConfig = {
         title: 1,
@@ -480,4 +449,35 @@ async function handleApiCall(url) {
     }
     Sentry.captureMessage(`lots of imdb api call: ${url}`);
     return null;
+}
+
+function createTitleObj(title, rawTitle, originalTitle, imdbYear) {
+    let titleObj = {
+        title: utils.replaceSpecialCharacters(title.toLowerCase()),
+        rawTitle: rawTitle,
+        alternateTitles: [rawTitle, originalTitle].filter(value => value && value !== title),
+        titleSynonyms: [],
+    }
+
+    let yearMatch = titleObj.title.match(/\d\d\d\d/g);
+    yearMatch = yearMatch ? yearMatch.pop() : null;
+    if (yearMatch) {
+        titleObj.title = titleObj.title.replace(yearMatch, '').trim();
+        titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
+        titleObj.rawTitle = titleObj.rawTitle.replace('(' + yearMatch + ')', '').replace(yearMatch, '').trim();
+        titleObj.rawTitle = titleObj.rawTitle.replace('(I)', '1').replace('(II)', '2').replace('(III)', '3').trim();
+        titleObj.rawTitle = titleObj.rawTitle.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
+        if (isNaN(imdbYear)) {
+            imdbYear = yearMatch.toString();
+        }
+    } else {
+        titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
+        titleObj.rawTitle = titleObj.rawTitle.replace('(I)', '1').replace('(II)', '2').replace('(III)', '3').trim();
+        titleObj.rawTitle = titleObj.rawTitle.replace(/ i$/i, ' 1').replace(/ ii$/i, ' 2').replace(/ iii$/i, ' 3').trim();
+        if (isNaN(imdbYear)) {
+            imdbYear = '';
+        }
+    }
+
+    return {titleObj, imdbYear};
 }
