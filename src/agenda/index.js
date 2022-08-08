@@ -26,8 +26,10 @@ export async function startAgenda() {
         agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
             if (config.disableCrawler !== 'true') {
                 await removeCompletedJobs();
-                await updateImdbData();
-                await updateJikanData();
+                await Promise.allSettled([
+                    updateImdbData(),
+                    updateJikanData(),
+                ]);
             }
         });
 

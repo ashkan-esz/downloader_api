@@ -212,12 +212,13 @@ export async function updateSourcesObjDB(updateFields) {
 //-----------------------------------
 //-----------------------------------
 
-export async function resetTempRank() {
+export async function resetTempRank(isAnime = false) {
     try {
+        let tempRankFieldName = isAnime ? 'tempRank_anime' : 'tempRank';
         let collection = await getCollection('movies');
         await collection.updateMany({}, {
             $set: {
-                tempRank: -1,
+                [tempRankFieldName]: -1,
             }
         });
         return 'ok';
@@ -227,17 +228,18 @@ export async function resetTempRank() {
     }
 }
 
-export async function replaceRankWithTempRank(rankField) {
+export async function replaceRankWithTempRank(rankField, isAnime = false) {
     try {
+        let tempRankFieldName = isAnime ? 'tempRank_anime' : 'tempRank';
         let collection = await getCollection('movies');
         await collection.updateMany({}, [
             {
                 $set: {
-                    [`rank.${rankField}`]: '$tempRank',
+                    [`rank.${rankField}`]: `$${tempRankFieldName}`,
                 },
             },
             {
-                $unset: 'tempRank',
+                $unset: tempRankFieldName,
             }
         ]);
         return 'ok';
@@ -247,11 +249,12 @@ export async function replaceRankWithTempRank(rankField) {
     }
 }
 
-export async function changeMoviesReleaseStateDB(currentState, newState) {
+export async function changeMoviesReleaseStateDB(currentState, newState, types) {
     try {
         let collection = await getCollection('movies');
         await collection.updateMany({
-            releaseState: currentState
+            releaseState: currentState,
+            type: {$in: types},
         }, {
             $set: {
                 releaseState: newState

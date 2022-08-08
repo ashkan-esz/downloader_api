@@ -40,18 +40,18 @@ export async function updateImdbData() {
     //inTheaters
     if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.resetTempRank();
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters', 'inTheaters_temp');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters', 'inTheaters_temp', ['movie', 'serial']);
         await add_inTheaters_comingSoon('movie', 'inTheaters');
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters_temp', 'waiting');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('inTheaters_temp', 'waiting', ['movie', 'serial']);
         await crawlerMethodsDB.replaceRankWithTempRank('inTheaters');
     }
 
     //comingSoon
     if (imdbApiKey.find(item => !item.reachedMax)) {
         await crawlerMethodsDB.resetTempRank();
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp',['movie','serial']);
         await add_inTheaters_comingSoon('movie', 'comingSoon');
-        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp', 'waiting');
+        await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp', 'waiting',['movie','serial']);
         await crawlerMethodsDB.replaceRankWithTempRank('comingSoon');
     }
 
@@ -247,9 +247,9 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         let imdbYear = imdbData.year;
         let yearMatch = titleObj.title.match(/\d\d\d\d/g);
         yearMatch = yearMatch ? yearMatch.pop() : null;
-        const currentYear = new Date().getFullYear();
-        if (yearMatch && (Number(yearMatch) === currentYear - 1 || Number(yearMatch) === currentYear)) {
+        if (yearMatch) {
             titleObj.title = titleObj.title.replace(yearMatch, '').trim();
+            titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
             titleObj.rawTitle = titleObj.rawTitle.replace('(' + yearMatch + ')', '').replace(yearMatch, '').trim();
             titleObj.rawTitle = titleObj.rawTitle.replace('(I)', '1').replace('(II)', '2').replace('(III)', '3').trim();
             if (isNaN(imdbYear)) {
@@ -374,9 +374,9 @@ async function getTitleDataFromDB(title, year, type) {
 
     let yearMatch = titleObj.title.match(/\d\d\d\d/g);
     yearMatch = yearMatch ? yearMatch.pop() : null;
-    const currentYear = new Date().getFullYear();
-    if (yearMatch && (Number(yearMatch) === currentYear - 1 || Number(yearMatch) === currentYear)) {
+    if (yearMatch) {
         titleObj.title = titleObj.title.replace(yearMatch, '').trim();
+        titleObj.title = titleObj.title.replace(/ i$/, ' 1').replace(/ ii$/, ' 2').replace(/ iii$/, ' 3').trim();
         if (isNaN(year)) {
             year = yearMatch.toString();
         }
