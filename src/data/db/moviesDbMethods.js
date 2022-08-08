@@ -708,7 +708,7 @@ function getDefaultFieldValuesAndProjection(collectionName) {
     for (let i = 0; i < defaultKeys.length; i++) {
         let temp = defaultKeys[i].replace('_count', '');
         defaultFieldValues[temp] = false;
-        let temp2 = defaultKeys[i].replace('_count','_full');
+        let temp2 = defaultKeys[i].replace('_count', '_full');
         projection[temp2] = 0;
         delete defaultFieldValues[defaultKeys[i]];
     }
@@ -717,7 +717,7 @@ function getDefaultFieldValuesAndProjection(collectionName) {
     for (let i = 0; i < projectionKeys.length; i++) {
         let temp = projectionKeys[i].replace('_count', '');
         projection[temp] = 0;
-        let temp2 = projectionKeys[i].replace('_count','_full');
+        let temp2 = projectionKeys[i].replace('_count', '_full');
         projection[temp2] = 0;
     }
     projection._id = 0;

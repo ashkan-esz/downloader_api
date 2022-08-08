@@ -121,7 +121,8 @@ const validations = Object.freeze({
         .customSanitizer(value => {
             return value || false
         })
-        .isBoolean().withMessage('Invalid parameter remove :: (true|false)'),
+        .isBoolean().withMessage('Invalid parameter remove :: (true|false)')
+        .toBoolean(),
 
     //-----------------------------
     //-----------------------------

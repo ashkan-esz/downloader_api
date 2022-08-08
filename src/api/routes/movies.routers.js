@@ -91,7 +91,7 @@ router.put('/addUserStats/:statType/:id',
 //movies/userStatsList/:statType/:dataLevel/:page
 router.get('/userStatsList/:statType/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['statType', 'statType', 'page']),
+    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUserStatsList);
 

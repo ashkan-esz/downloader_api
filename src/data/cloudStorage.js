@@ -98,7 +98,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
@@ -170,7 +170,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
@@ -239,7 +239,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
@@ -349,7 +349,7 @@ export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, r
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
@@ -381,7 +381,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0, retryWithSl
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
@@ -414,7 +414,7 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0,
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
@@ -491,7 +491,7 @@ export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, r
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
@@ -518,7 +518,7 @@ export async function deleteMultipleFilesFromS3(bucketName, filesNames, retryCou
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
@@ -543,7 +543,7 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithS
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
@@ -686,7 +686,7 @@ async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter 
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
@@ -727,7 +727,7 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && error.response.status >= 500 && retryWithSleepCounter < 2) {
+        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
