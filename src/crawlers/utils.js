@@ -3,7 +3,7 @@ import {saveError} from "../error/saveError.js";
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–-]/g, ' ')
+        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]/g, ' ')
         .replace(/[”“"'’‘٫.:?¿!#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
@@ -239,31 +239,49 @@ export function getSeasonEpisode(input) {
     }
 }
 
-export function checkBetterQuality(quality, prevQuality) {
+export function checkBetterQuality(quality, prevQuality, withSubIsBetter = true) {
     if (quality === prevQuality) {
         return false;
     }
-    let x265 = quality.includes('x265');
-    let prevX265 = prevQuality.includes('x265');
+
     quality = quality.split('- ')[0].toLowerCase()
-        .replace(/\.x265|\.10bit/g, '')
-        .replace(/[-._]/g, ' ');
+        .replace(/[-._]/g, ' ')
+        .trim();
     prevQuality = prevQuality.split('- ')[0].toLowerCase()
-        .replace(/\.x265|\.10bit/g, '')
-        .replace(/[-._]/g, ' ');
-    const sortedQualities = ['cam', 'ts', 'tc', 'dvdscr', 'r6', 'r5',
-        'dvdrip', 'r2', 'web rip', 'hd rip', 'brrip', 'bdrip',
-        '720p web rip', '720p hd rip', '720p web dl',
-        '720p bluray', '1080p web rip', '1080p web dl', '1080p bluray',
-        'imax', 'full hd', '2160p', '1080p ac3', '4k', '8k'];
-    const encodes = ['valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg', 'evo',
-        'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
+        .replace(/[-._]/g, ' ')
+        .trim();
+
+    let resolution = Number(quality.split(' ')[0].replace('p', ''));
+    let prevResolution = Number(prevQuality.split(' ')[0].replace('p', ''));
+    if (resolution !== prevResolution) {
+        return resolution > prevResolution;
+    }
+
+    const sortedQualities = [
+        'cam', 'hd cam', 'ts', 'tc',
+        'dvdscr', 'r6', 'r5', 'dvdrip', 'r2',
+        'hd rip', 'web rip',
+        'hd tv',
+        'br rip', 'bd rip',
+        'web dl', 'bluray',
+        'imax', 'ac3', '4k', '8k'
+    ];
+
+    const encodes = [
+        'valamovie', 'tmkv', 'ganool', 'pahe', 'rarbg',
+        'evo', 'psa', 'nitro', 'f2m', 'xredd', 'yify',
+        'shaanig', 'mkvcage', 'imax',
+    ];
+
+    let x265 = quality.includes('x265');
+    let bit10 = quality.includes('10bit');
+    let prevX265 = prevQuality.includes('x265');
+    let prevBit10 = prevQuality.includes('10bit');
 
     let prevQualityIndex = -1;
-    let prevEncodeIndex = -1;
     let qualityIndex = -1;
-    let encodeIndex = -1;
     let isBetter;
+
     for (let i = 0; i < sortedQualities.length; i++) {
         if (prevQuality.includes(sortedQualities[i])) {
             prevQualityIndex = i;
@@ -272,24 +290,52 @@ export function checkBetterQuality(quality, prevQuality) {
             qualityIndex = i;
         }
     }
-    if (qualityIndex === prevQualityIndex) {
-        if ((!prevX265 && x265) ||
-            (!prevQuality.includes('10bit') && quality.includes('10bit'))) {
-            isBetter = true;
-        } else {
-            for (let i = 0; i < encodes.length; i++) {
-                if (prevQuality.includes(encodes[i])) {
-                    prevEncodeIndex = i;
+
+    if (qualityIndex !== prevQualityIndex) {
+        isBetter = (qualityIndex > prevQualityIndex);
+    } else if (x265 !== prevX265 || bit10 !== prevBit10) {
+        //check x265, 10bit
+        isBetter = (x265 && !prevX265) || (bit10 && !prevBit10);
+    } else {
+        //check censored, dubbed, SoftSub, HardSub
+        let t1 = !!quality.match(/censored|dubbed|sub/);
+        let t2 = !!prevQuality.match(/censored|dubbed|sub/);
+        if (t1 !== t2) {
+            //one of them has it
+            if (withSubIsBetter) {
+                isBetter = quality.includes('sub');
+            } else {
+                isBetter = !t1 && t2;
+            }
+        } else if (t1 && t2) {
+            //both has it
+            const order = ['censored', 'duubed', 'hardsub', 'softsub'];
+            let i1, i2;
+            for (let i = 0; i < order.length; i++) {
+                if (quality.includes(order[i])) {
+                    i1 = i;
                 }
+                if (prevQuality.includes(order[i])) {
+                    i2 = i;
+                }
+            }
+            isBetter = i1 > i2;
+        } else {
+            //none of them
+            let prevEncodeIndex = -1;
+            let encodeIndex = -1;
+            for (let i = 0; i < encodes.length; i++) {
                 if (quality.includes(encodes[i])) {
                     encodeIndex = i;
+                }
+                if (prevQuality.includes(encodes[i])) {
+                    prevEncodeIndex = i;
                 }
             }
             isBetter = (encodeIndex === -1) ? false : encodeIndex > prevEncodeIndex;
         }
-    } else {
-        isBetter = (qualityIndex > prevQualityIndex);
     }
+
     return isBetter;
 }
 

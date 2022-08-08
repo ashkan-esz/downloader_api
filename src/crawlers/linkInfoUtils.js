@@ -1,5 +1,5 @@
 //----------------------------------------
-export const releaseRegex = /WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|HDTS|BR-RIP|DVDRip|DVDScr|WEBSCR|Mobile|CAMRip|HD-CAM/;
+export const releaseRegex = /WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|HDTS|BR-RIP|BD-RIP|DVDRip|DVDScr|WEBSCR|Mobile|CAMRip|HD-CAM/;
 
 export const encodersRegex = new RegExp([
     /RARBG?|Pa[Hh]e|PSA|YTS|[Rr][Mm][Tt]eam|EVO|R?MT|Y[Ii]?F[IY]/,
@@ -136,6 +136,7 @@ export function purgeQualityText(qualityText) {
         .replace(/weba?[-_]*d\s/gi, 'WEB-DL ')
         .replace(/web(-)*rip/gi, 'WEB-RIP')
         .replace(/BR(-)?RIP/gi, 'BR-RIP')
+        .replace(/BD(-)?RIP/gi, 'BD-RIP')
         .replace(/DvdRip/gi, 'DVDRip')
         .replace(/hdrip/gi, 'HD-RIP')
         .replace(/hdtv/gi, 'HDTV')
@@ -189,6 +190,7 @@ export function fixLinkInfo(info, linkHref) {
             .replace(/web(-)*rip/gi, 'WEB-RIP')
             .replace(/hd-?rip/gi, 'HD-RIP')
             .replace(/BR(-)?RIP/gi, 'BR-RIP')
+            .replace(/BD(-)?RIP/gi, 'BD-RIP')
             .replace(/DvdRip/gi, 'DVDRip')
             .replace('hdtv', 'HDTV');
     }

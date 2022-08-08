@@ -384,5 +384,5 @@ export function checkEqualLinks(link1, link2) {
 }
 
 export function sortLinksByQuality(links) {
-    return links.sort((a, b) => checkBetterQuality(a.info, b.info) ? -1 : 1);
+    return links.sort((a, b) => checkBetterQuality(a.info, b.info, false) ? -1 : 1);
 }
