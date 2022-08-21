@@ -359,13 +359,18 @@ dataLevel = {
 staffData = {
     name: String,
     rawName: String,
-    gender: String, // enum('Male', 'Female')
+    gender: String, // enum('', 'male', 'female', 'sexless')
     about: String,
     tvmazePersonID: Int,
     jikanPersonID: Int,
     country: String,
     birthday: String,
     deathday: String,
+    age: Int,
+    height: String,
+    weight: String,
+    hairColor: String,
+    eyeColor: String,
     imageData: null || {
         url: String,
         originalUrl: String,
@@ -395,10 +400,18 @@ staffData = {
 characterData = {
     name: String,
     rawName: String,
-    gender: String, // enum('Male', 'Female')
+    gender: String, // enum('', 'male', 'female', 'sexless')
     about: String,
     tvmazePersonID: Int,
     jikanPersonID: Int,
+    country: String,
+    birthday: String,
+    deathday: String,
+    age: Int,
+    height: String,
+    weight: String,
+    hairColor: String,
+    eyeColor: String,
     imageData: null || {
         url: String,
         originalUrl: String,

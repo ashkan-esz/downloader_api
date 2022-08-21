@@ -7,6 +7,7 @@ import {getCharacterModel} from "../../models/character.js";
 import isEqual from 'lodash.isequal';
 import isEmpty from 'lodash.isempty';
 import {default as pQueue} from "p-queue";
+import {extractStaffDataFromJikanAbout} from "./extractDataFields.js";
 import {saveError} from "../../error/saveError.js";
 
 const maxStaffOrCharacterSize = 30;
@@ -205,7 +206,7 @@ async function addImageToStaffAndCharacters(dataArray) {
 }
 
 async function fetchDataFromDB(staff_characters, type) {
-    const promiseQueue = new pQueue.default({concurrency: 20});
+    const promiseQueue = new pQueue.default({concurrency: 30});
     for (let i = 0; i < staff_characters.length; i++) {
         promiseQueue.add(() => crawlerMethodsDB.searchStaffAndCharactersDB(
             type,
@@ -230,7 +231,7 @@ async function fetchDataFromDB(staff_characters, type) {
 }
 
 async function insertData(staff, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 20});
+    const promiseQueue = new pQueue.default({concurrency: 30});
 
     for (let i = 0; i < staff.length; i++) {
         let insertFlag = staff[i].insertFlag;
@@ -263,7 +264,7 @@ async function insertData(staff, characters) {
 }
 
 async function updateData(staff, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 20});
+    const promiseQueue = new pQueue.default({concurrency: 30});
     for (let i = 0; i < staff.length; i++) {
         let updateFlag = staff[i].updateFlag;
         delete staff[i].updateFlag;
@@ -336,13 +337,22 @@ function embedStaffAndCharacters(movieID, staff, characters) {
 function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, tvmazeCast) {
     let tvmazeActors = [];
     for (let i = 0; i < tvmazeCast.length; i++) {
-        let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name : '';
+        let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name.toLowerCase() : '';
         let originalImages = tvmazeCast[i].person.image ? [tvmazeCast[i].person.image.medium, tvmazeCast[i].person.image.original] : [];
         let positions = tvmazeCast[i].voice ? ['Voice Actor'] : ['Actor'];
+        let birthday = tvmazeCast[i].person.birthday;
+        let deathday = tvmazeCast[i].person.deathday;
+        let age = 0;
+        if (birthday && deathday === null) {
+            let birthYear = Number(birthday.split('-')[0]);
+            let currentYear = new Date().getFullYear();
+            age = currentYear - birthYear;
+        }
         let newStaff = getPersonModel(
-            tvmazeCast[i].person.name, tvmazeCast[i].person.gender, '',
+            tvmazeCast[i].person.name, tvmazeCast[i].person.gender.toLowerCase(), '',
             tvmazeCast[i].person.id, 0,
-            countryName, tvmazeCast[i].person.birthday, tvmazeCast[i].person.deathday,
+            countryName, birthday, deathday, age,
+            '', '', '', '',
             originalImages,
             movieID, movieName, movieType, moviePoster, positions, tvmazeCast[i].character.name, ''
         );
@@ -363,7 +373,10 @@ function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster
         }
         let newCharacter = getCharacterModel(
             tvmazeCast[i].character.name, '', '',
-            tvmazeCast[i].character.id, 0, originalImages,
+            tvmazeCast[i].character.id, 0,
+            '', '', '', 0,
+            '', '', '', '',
+            originalImages,
             movieID, movieName, movieType, moviePoster, '', tvmazeCast[i].person.name,
         );
         //one character mey have separate voice actor and actor
@@ -528,22 +541,26 @@ function isTrulyValue(value) {
 }
 
 function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, moviePoster, SemiData, fullApiData, type) {
-    let gender = '';
-    if (fullApiData.about) {
-        fullApiData.about = fullApiData.about.replace(
-            'No voice actors have been added to this character. Help improve our database by searching for a voice actor, and adding this character to their roles .',
-            ''
-        );
-        gender = fullApiData.about.match(/Gender:\s*Male|(^|\s)he\s/gi)
-            ? 'Male'
-            : fullApiData.about.match(/Gender:\s*Female|(^|\s)she\s/gi) ? 'Female' : '';
-    }
+    let {
+        height,
+        weight,
+        birthday,
+        age,
+        deathday,
+        gender,
+        hairColor,
+        eyeColor,
+        country
+    } = extractStaffDataFromJikanAbout(fullApiData);
     let originalImage = fullApiData.image_url.includes('/icon/') ? '' : fullApiData.image_url;
+
     if (type === 'staff') {
         return getPersonModel(
             fullApiData.name, gender, fullApiData.about,
             0, fullApiData.mal_id,
-            '', '', '', [originalImage],
+            country, birthday, deathday, age,
+            height, weight, hairColor, eyeColor,
+            [originalImage],
             movieID, movieName, movieType, moviePoster, SemiData.positions,
             (SemiData.characterName || ''), (SemiData.characterRole || '')
         );
@@ -558,7 +575,10 @@ function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, mov
         }
         return getCharacterModel(
             fullApiData.name, gender, fullApiData.about,
-            0, fullApiData.mal_id, [originalImage],
+            0, fullApiData.mal_id,
+            country, birthday, deathday, age,
+            height, weight, hairColor, eyeColor,
+            [originalImage],
             movieID, movieName, movieType, moviePoster, SemiData.role, actorName,
         );
     }

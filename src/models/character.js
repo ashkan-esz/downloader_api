@@ -1,6 +1,12 @@
 import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils.js";
 
-export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanPersonID, originalImages, movieID, movieName, movieType, moviePoster, role, actorName) {
+export function getCharacterModel(
+    rawName, gender, about,
+    tvmazePersonID, jikanPersonID,
+    country, birthday, deathday, age,
+    height, weight, hairColor, eyeColor,
+    originalImages,
+    movieID, movieName, movieType, moviePoster, role, actorName) {
     return {
         name: replaceSpecialCharacters(fixJapaneseCharacter(rawName).toLowerCase()),
         rawName: fixJapaneseCharacter(rawName),
@@ -8,6 +14,14 @@ export function getCharacterModel(rawName, gender, about, tvmazePersonID, jikanP
         about: (about || '').trim().replace(/\n\s*\n/g, '\n').replace(/\s\s+/g, ' '),
         tvmazePersonID: tvmazePersonID,
         jikanPersonID: jikanPersonID,
+        country: country || '',
+        birthday: birthday || '',
+        deathday: deathday || '',
+        age: age || 0,
+        height: height || '',
+        weight: weight || '',
+        hairColor: hairColor || '',
+        eyeColor: eyeColor || '',
         imageData: null, // {url,originalUrl,size}
         originalImages: originalImages.filter(value => value),
         credits: [{

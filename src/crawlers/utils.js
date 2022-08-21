@@ -451,20 +451,20 @@ export function getDatesBetween(date1, date2) {
 
 export function getMonthNumberByMonthName(monthName) {
     const months = {
-        Jan: '01',
-        Feb: '02',
-        Mar: '03',
-        Apr: '04',
-        May: '05',
-        Jun: '06',
-        Jul: '07',
-        Aug: '08',
-        Sep: '09',
-        Oct: '10',
-        Nov: '11',
-        Dec: '12',
+        jan: '01',
+        feb: '02',
+        mar: '03',
+        apr: '04',
+        may: '05',
+        jun: '06',
+        jul: '07',
+        aug: '08',
+        sep: '09',
+        oct: '10',
+        nov: '11',
+        dec: '12',
     };
-    return months[monthName.slice(0, 3)];
+    return months[monthName.slice(0, 3).toLowerCase()];
 }
 
 export function getDayName(dayNumber) {
