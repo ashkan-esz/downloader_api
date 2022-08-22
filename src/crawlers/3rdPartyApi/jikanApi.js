@@ -6,6 +6,7 @@ import * as utils from "../utils.js";
 import {addStaffAndCharacters} from "./personCharacter.js";
 import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
 import {default as pQueue} from "p-queue";
+import isEqual from 'lodash.isequal';
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 
@@ -166,8 +167,8 @@ export async function getCharactersStaff(jikanID) {
                 staff: data.staff,
             }
         }
-        return null;
     }
+    return null;
 }
 
 export async function getPersonInfo(jikanID) {
@@ -175,6 +176,7 @@ export async function getPersonInfo(jikanID) {
         let url = `https://api.jikan.moe/v3/person/${jikanID}`;
         return await handleApiCall(url, 15);
     }
+    return null;
 }
 
 export async function getCharacterInfo(jikanID) {
@@ -182,6 +184,7 @@ export async function getCharacterInfo(jikanID) {
         let url = `https://api.jikan.moe/v3/character/${jikanID}`;
         return await handleApiCall(url, 15);
     }
+    return null;
 }
 
 function getRelatedTitles(data) {
@@ -399,12 +402,12 @@ export async function updateJikanData() {
     //reset rank
     await crawlerMethodsDB.resetTempRank(true);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp_anime', ['anime_movie', 'anime_serial']);
-    await add_comingSoon_topAiring_Titles('comingSoon', 2);
+    await add_comingSoon_topAiring_Titles('comingSoon', 3);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp_anime', 'waiting', ['anime_movie', 'anime_serial']);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopComingSoon', true);
     //reset rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('topAiring', 2);
+    await add_comingSoon_topAiring_Titles('topAiring', 3);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopAiring', true);
 }
 
@@ -464,14 +467,30 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     }
 
     if (jikanApiFields) {
-        updateFields = {...updateFields, ...jikanApiFields.updateFields};
-        updateFields.status = jikanApiFields.status;
-        updateFields.endYear = jikanApiFields.endYear;
-        updateFields.genres = jikanApiFields.genres;
-        titleDataFromDB.rating.myAnimeList = jikanApiFields.myAnimeListScore;
-        updateFields.rating = titleDataFromDB.rating;
-        titleDataFromDB.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
-        updateFields.summary = titleDataFromDB.summary;
+        const keys1 = Object.keys(jikanApiFields.updateFields);
+        for (let i = 0; i < keys1.length; i++) {
+            if (!isEqual(titleDataFromDB[keys1[i]], jikanApiFields.updateFields[keys1[i]])) {
+                updateFields[keys1[i]] = jikanApiFields.updateFields[keys1[i]];
+            }
+        }
+
+        const keys2 = ['genres', 'jikanID', 'status', 'endYear'];
+        for (let i = 0; i < keys2.length; i++) {
+            if (!isEqual(titleDataFromDB[keys2[i]], jikanApiFields[keys2[i]])) {
+                updateFields[keys2[i]] = jikanApiFields[keys2[i]];
+            }
+        }
+
+        if (titleDataFromDB.rating.myAnimeList !== jikanApiFields.myAnimeListScore) {
+            titleDataFromDB.rating.myAnimeList = jikanApiFields.myAnimeListScore;
+            updateFields.rating = titleDataFromDB.rating;
+        }
+
+        jikanApiFields.summary_en = jikanApiFields.summary_en.replace(/([.…])+$/, '');
+        if (titleDataFromDB.summary.english !== jikanApiFields.summary_en && jikanApiFields.summary_en) {
+            titleDataFromDB.summary.english = jikanApiFields.summary_en;
+            updateFields.summary = titleDataFromDB.summary;
+        }
     }
 
     if (titleDataFromDB.posters.length === 0) {

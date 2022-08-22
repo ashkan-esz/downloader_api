@@ -9,6 +9,8 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
         let searchObj = {
             $or: [
                 {title: titleObj.title},
+                {title: titleObj.title.replace('uu', 'u')},
+                {title: titleObj.title.replace('u', 'uu')},
                 {title: {$in: titleObj.alternateTitles}},
                 {title: {$in: titleObj.titleSynonyms}},
                 {alternateTitles: titleObj.title},
@@ -232,7 +234,9 @@ export async function replaceRankWithTempRank(rankField, isAnime = false) {
     try {
         let tempRankFieldName = isAnime ? 'tempRank_anime' : 'tempRank';
         let collection = await getCollection('movies');
-        await collection.updateMany({}, [
+        await collection.updateMany({
+            [tempRankFieldName]: {$exists: true},
+        }, [
             {
                 $set: {
                     [`rank.${rankField}`]: `$${tempRankFieldName}`,
