@@ -454,19 +454,11 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
         let aggregationPipeline = [
             {
                 $match: {
-                    type: {$in: types},
                     year: {
                         $gte: years[0],
                         $lte: years[1],
                     },
-                    "rating.imdb": {
-                        $gte: imdbScores[0],
-                        $lte: imdbScores[1],
-                    },
-                    "rating.myAnimeList": {
-                        $gte: malScores[0],
-                        $lte: malScores[1],
-                    },
+                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
                 }
             },
             {
@@ -479,20 +471,13 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
         ];
 
         if (title) {
-            aggregationPipeline.unshift({
-                $search: {
-                    index: 'default',
-                    text: {
-                        query: title,
-                        path: ['title', 'alternateTitles', 'titleSynonyms'],
-                    }
-                }
-            });
+            aggregationPipeline[0]['$match'].$text = {
+                $search: '\"' + title + '\"',
+            }
         }
 
         if (genres.length > 0) {
-            let matchIndex = title ? 1 : 0;
-            aggregationPipeline[matchIndex]['$match'].genres = {$all: genres};
+            aggregationPipeline[0]['$match'].genres = {$all: genres};
         }
 
         if (Object.keys(projection).length > 0) {
@@ -544,11 +529,9 @@ export async function searchOnCollectionByName(collectionName, userId, name, ski
 
         let aggregationPipeline = [
             {
-                $search: {
-                    index: 'default',
-                    text: {
-                        query: name,
-                        path: ['name', 'rawName'],
+                $match: {
+                    $text: {
+                        $search: '\"' + name + '\"',
                     }
                 }
             },
@@ -612,12 +595,6 @@ export async function changeUserStatOnRelatedCollection(collectionName, id, stat
 //-----------------------------------
 
 function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
-    if (imdbScores.length === 1) {
-        imdbScores.push(10);
-    }
-    if (malScores.length === 1) {
-        malScores.push(10);
-    }
     return {
         type: {$in: types},
         "rating.imdb": {

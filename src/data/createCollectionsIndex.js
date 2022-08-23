@@ -18,7 +18,19 @@ export async function createCollectionsAndIndexes() {
 
 
         let moviesCollection = await getCollection('movies');
-        //also add searchIndex --> path: ['title', 'alternateTitles', 'titleSynonyms']
+        await moviesCollection.createIndex({
+            title: "text",
+            rawTitle: "text",
+            alternateTitles: "text",
+            titleSynonyms: "text"
+        }, {
+            weights: {
+                title: 3,
+                rawTitle: 3,
+                alternateTitles: 1,
+                titleSynonyms: 1,
+            },
+        });
         await moviesCollection.createIndex({title: 1, type: 1, year: 1});
         await moviesCollection.createIndex({alternateTitles: 1});
         await moviesCollection.createIndex({titleSynonyms: 1});
@@ -57,7 +69,7 @@ export async function createCollectionsAndIndexes() {
         const staffAndCharactersCollections = ['staff', 'characters'];
         for (let i = 0; i < staffAndCharactersCollections.length; i++) {
             let collection = await getCollection(staffAndCharactersCollections[i]);
-            //also add searchIndex --> path: ['name', 'rawName']
+            await collection.createIndex({name: "text", rawName: "text"});
             await collection.createIndex({name: 1});
             //usage: name, **tvmazePersonID**, **jikanPersonID**
         }

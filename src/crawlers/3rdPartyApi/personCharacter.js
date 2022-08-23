@@ -349,7 +349,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster
             age = currentYear - birthYear;
         }
         let newStaff = getPersonModel(
-            tvmazeCast[i].person.name, tvmazeCast[i].person.gender.toLowerCase(), '',
+            tvmazeCast[i].person.name, tvmazeCast[i].person.gender?.toLowerCase() || '', '',
             tvmazeCast[i].person.id, 0,
             countryName, birthday, deathday, age,
             '', '', '', '',
