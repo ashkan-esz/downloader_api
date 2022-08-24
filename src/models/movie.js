@@ -45,7 +45,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'url,info'}]
         subtitles: groupSubtitles(subtitles),
-        latestData: latestData,
+        latestData: latestData, //season, episode, quality, hardSub, dubbed, censored, subtitle, watchOnlineLink
         status: type.includes('movie') ? 'ended' : 'unknown',
         releaseDay: "",
         year: year.toString(),

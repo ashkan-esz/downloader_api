@@ -448,18 +448,12 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
 //-----------------------------------
 //-----------------------------------
 
-export async function searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, projection) {
+export async function searchOnMovieCollectionWithFilters(userId, filters, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
             {
-                $match: {
-                    year: {
-                        $gte: years[0],
-                        $lte: years[1],
-                    },
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
+                $match: {}
             },
             {
                 $skip: skip,
@@ -470,14 +464,55 @@ export async function searchOnMovieCollectionByTitle(userId, title, types, years
             ...getLookupOnUserStatsStage(userId, 'movies'),
         ];
 
-        if (title) {
+        if (filters.title) {
             aggregationPipeline[0]['$match'].$text = {
-                $search: '\"' + title + '\"',
+                $search: '\"' + filters.title + '\"',
             }
         }
-
-        if (genres.length > 0) {
-            aggregationPipeline[0]['$match'].genres = {$all: genres};
+        if (filters.types) {
+            aggregationPipeline[0]['$match'].type = {$in: filters.types};
+        }
+        if (filters.years) {
+            aggregationPipeline[0]['$match'].year = {
+                $gte: filters.years[0],
+                $lte: filters.years[1],
+            }
+        }
+        if (filters.imdbScores) {
+            aggregationPipeline[0]['$match']["rating.imdb"] = {
+                $gte: filters.imdbScores[0],
+                $lte: filters.imdbScores[1],
+            }
+        }
+        if (filters.malScores) {
+            aggregationPipeline[0]['$match']["rating.myAnimeList"] = {
+                $gte: filters.malScores[0],
+                $lte: filters.malScores[1],
+            }
+        }
+        if (filters.genres?.length > 0) {
+            aggregationPipeline[0]['$match'].genres = {$all: filters.genres};
+        }
+        if (filters.country) {
+            aggregationPipeline[0]['$match'].country = new RegExp(filters.country);
+        }
+        if (filters.movieLang) {
+            aggregationPipeline[0]['$match'].movieLang = new RegExp(filters.movieLang);
+        }
+        if (filters.dubbed) {
+            aggregationPipeline[0]['$match']['latestData.dubbed'] = filters.dubbed === 'true' ? {$ne: ''} : '';
+        }
+        if (filters.hardSub) {
+            aggregationPipeline[0]['$match']['latestData.hardSub'] = filters.hardSub === 'true' ? {$ne: ''} : '';
+        }
+        if (filters.censored) {
+            aggregationPipeline[0]['$match']['latestData.censored'] = filters.censored === 'true' ? {$ne: ''} : '';
+        }
+        if (filters.subtitle) {
+            aggregationPipeline[0]['$match']['latestData.subtitle'] = filters.subtitle === 'true' ? {$ne: ''} : '';
+        }
+        if (filters.watchOnlineLink) {
+            aggregationPipeline[0]['$match']['latestData.watchOnlineLink'] = filters.watchOnlineLink === 'true' ? {$ne: ''} : '';
         }
 
         if (Object.keys(projection).length > 0) {
@@ -523,17 +558,13 @@ export async function searchOnCollectionById(collectionName, userId, id, project
     }
 }
 
-export async function searchOnCollectionByName(collectionName, userId, name, skip, limit, projection) {
+export async function searchOnStaffOrCharactersWithFilters(collectionName, userId, filters, skip, limit, projection) {
     try {
         let collection = await getCollection(collectionName);
 
         let aggregationPipeline = [
             {
-                $match: {
-                    $text: {
-                        $search: '\"' + name + '\"',
-                    }
-                }
+                $match: {}
             },
             {
                 $skip: skip,
@@ -543,6 +574,30 @@ export async function searchOnCollectionByName(collectionName, userId, name, ski
             },
             ...getLookupOnUserStatsStage(userId, collectionName),
         ];
+
+        if (filters.name) {
+            aggregationPipeline[0]['$match'].$text = {
+                $search: '\"' + filters.name + '\"',
+            }
+        }
+        if (filters.gender) {
+            aggregationPipeline[0]['$match'].gender = filters.gender;
+        }
+        if (filters.country) {
+            aggregationPipeline[0]['$match'].country = filters.country;
+        }
+        if (filters.hairColor) {
+            aggregationPipeline[0]['$match'].hairColor = filters.hairColor;
+        }
+        if (filters.eyeColor) {
+            aggregationPipeline[0]['$match'].eyeColor = filters.eyeColor;
+        }
+        if (filters.age) {
+            aggregationPipeline[0]['$match'].age = {
+                $gte: filters.age[0],
+                $lte: filters.age[1],
+            }
+        }
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({

@@ -53,12 +53,45 @@ router.get('/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:pa
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getMultipleStatus);
 
-//movies/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page?genres
-router.get('/searchByTitle/:title/:types/:dataLevel/:years/:imdbScores/:malScores/:page',
+//movies/searchMovieStaffCharacter/:title/:dataLevel/:page
+router.get('/searchMovieStaffCharacter/:title/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['title', 'types', 'dataLevel', 'years', 'imdbScores', 'malScores', 'page', 'genres_query']),
+    middlewares.validateApiParams.checkApiParams(['title', 'dataLevel', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.searchByTitle);
+    moviesControllers.searchMovieStaffCharacter);
+
+//movies/searchStaffAndCharacter/:dataLevel/:page
+router.get('/searchStaffAndCharacter/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.searchStaffAndCharacter);
+
+//movies/searchStaff/:dataLevel/:page
+router.get('/searchStaff/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.searchStaff);
+
+//movies/searchCharacter/:dataLevel/:page
+router.get('/searchCharacter/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.searchCharacter);
+
+//movies/searchMovie/:dataLevel/:page
+router.get('/searchMovie/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(
+        ['dataLevel', 'page',
+            'title_query', 'types_query', 'years_query',
+            'imdbScores_query', 'malScores_query', 'genres_query', 'country_query', 'movieLang_query',
+            'dubbed_query', 'hardSub_query', 'censored_query', 'subtitle_query', 'watchOnlineLink_query',
+        ]),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.searchMovie);
 
 //movies/searchById/:id/:dataLevel
 router.get('/searchById/:id/:dataLevel',

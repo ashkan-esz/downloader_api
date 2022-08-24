@@ -29,7 +29,11 @@
 - [GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviessortedmoviessortbasetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]](#get-moviesseriesofdaydaynumbertypesimdbscoresmalscorespage)
 - [GET /movies/multiple/status/[types]/[dataLevel]/[imdbScores]/[malScores]/[count]/[page]](#get-moviesmultiplestatustypesdatalevelimdbscoresmalscorescountpage)
-- [GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page]](#get-moviessearchbytitletitletypesdatalevelyearsimdbscoresmalscorespage)
+- [GET /movies/searchMovieStaffCharacter/[title]/[dataLevel]/[page]](#get-moviessearchmoviestaffcharactertitledatalevelpage)
+- [GET /movies/searchStaffAndCharacter/[dataLevel]/[page]](#get-moviessearchstaffandcharacterdatalevelpage)
+- [GET /movies/searchStaff/[dataLevel]/[page]](#get-moviessearchstaffdatalevelpage)
+- [GET /movies/searchCharacter/[dataLevel]/[page]](#get-moviessearchcharacterdatalevelpage)
+- [GET /movies/searchMovie/[dataLevel]/[page]](#get-moviessearchmoviedatalevelpage)
 - [GET /movies/searchByID/[id]/[dataLevel]](#get-moviessearchbyididdatalevel)
 - [GET /movies/staff/searchById/[id]](#get-moviesstaffsearchbyidid)
 - [GET /movies/characters/searchById/[id]](#get-moviescharacterssearchbyidid)
@@ -142,19 +146,151 @@ Examples
 </details>
 <br />
 
-### GET /movies/searchByTitle/[title]/[types]/[dataLevel]/[years]/[imdbScores]/[malScores]/[page]
-> return { __movies__, __staff__, __characters__ }.  ([movies schema](SCHEMA.README.md#Movie-Data))
+### GET /movies/searchMovieStaffCharacter/[title]/[dataLevel]/[page]
+> return { __movies__, __staff__, __characters__ }. ([movies schema](SCHEMA.README.md#Movie-Data)) ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
 > 
-> also receive field `genres` as query parameter (optional).
 
 <details>
 <summary>
 Examples
 </summary>
 
-- https://downloader-node-api.herokuapp.com/movies/searchbytitle/attack/serial-anime_serial/low/2000-2022/0-10/0-10/1?testUser=true
-- https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/medium/2000-2022/0-10/0-10/1?testUser=true
-- https://downloader-node-api.herokuapp.com/movies/searchbytitle/mikasa/serial-anime_serial/high/2000-2022/0-10/0-10/1?genres=action-drama&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovieStaffCharacter/attack/low/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovieStaffCharacter/mikasa/medium/1?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovieStaffCharacter/mikasa/high/1?&testUser=true
+</details>
+<br />
+
+### GET /movies/searchStaffAndCharacter/[dataLevel]/[page]
+> return {__staff__, __characters__}.  ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
+
+<details>
+<summary>
+Query params (filters): 
+</summary>
+
+| param name      | Values                   | Description                       | Required |
+|-----------------|--------------------------|-----------------------------------|----------|
+| **`dataLevel`** | _low_, _medium_, _high_  |                                   | `false`  |
+| **`name`**      | String                   | name of staff/character to search | `false`  |
+| **`gender`**    | String                   | male, female, sexless             | `false`  |
+| **`country`**   | String                   |                                   | `false`  |
+| **`hairColor`** | String                   |                                   | `false`  |
+| **`eyeColor`**  | String                   |                                   | `false`  |
+| **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
+
+</details>
+<br/>
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/searchStaffAndCharacter/low/1?age=15-20&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchStaffAndCharacter/low/1?age=15-20&name=mikasa&testUser=true
+</details>
+<br />
+
+### GET /movies/searchStaff/[dataLevel]/[page]
+> return __staff__.  ([staff schema](SCHEMA.README.md#Staff-Data))
+
+<details>
+<summary>
+Query params (filters): 
+</summary>
+
+| param name      | Values                   | Description                       | Required |
+|-----------------|--------------------------|-----------------------------------|----------|
+| **`dataLevel`** | _low_, _medium_, _high_  |                                   | `false`  |
+| **`name`**      | String                   | name of staff/character to search | `false`  |
+| **`gender`**    | String                   | male, female, sexless             | `false`  |
+| **`country`**   | String                   |                                   | `false`  |
+| **`hairColor`** | String                   |                                   | `false`  |
+| **`eyeColor`**  | String                   |                                   | `false`  |
+| **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
+
+</details>
+<br/>
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/searchStaff/low/1?age=15-20&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchStaff/low/1?name=osamu&testUser=true
+</details>
+<br />
+
+### GET /movies/searchCharacter/[dataLevel]/[page]
+> return __characters__. ([character schema](SCHEMA.README.md#Character-Data))
+
+<details>
+<summary>
+Query params (filters): 
+</summary>
+
+| param name      | Values                   | Description                       | Required |
+|-----------------|--------------------------|-----------------------------------|----------|
+| **`dataLevel`** | _low_, _medium_, _high_  |                                   | `false`  |
+| **`name`**      | String                   | name of staff/character to search | `false`  |
+| **`gender`**    | String                   | male, female, sexless             | `false`  |
+| **`country`**   | String                   |                                   | `false`  |
+| **`hairColor`** | String                   |                                   | `false`  |
+| **`eyeColor`**  | String                   |                                   | `false`  |
+| **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
+
+</details>
+<br/>
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/searchCharacter/low/1?age=15-20&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchCharacter/low/1?age=15-20&name=mikasa&testUser=true
+</details>
+<br />
+
+### GET /movies/searchMovie/[dataLevel]/[page]
+> return __movies__. ([movies schema](SCHEMA.README.md#Movie-Data))
+
+<details>
+<summary>
+Query params (filters): 
+</summary>
+
+| param name            | Values                                                 | Description                                             | Required |
+|-----------------------|--------------------------------------------------------|---------------------------------------------------------|----------|
+| **`title`**           | String                                                 | name of movie to search                                 | `false`  |
+| **`years`**           | Two Number joined by '-'                               | example: 2015-2020                                      | `false`  |
+| **`types`**           | enum(_movie_, _serial_, _anime_movie_, _anime_serial_) | join values by `-` example: `movie-anime_serial`        | `false`  |
+| **`imdbScores`**      | Two Number in range [0-10] joined by '-'               | example: 5-9                                            | `false`  |
+| **`malScores`**       | Two Number in range [0-10] joined by '-'               | example: 5-9                                            | `flase`  |
+| **`genres`**          | Array of String joined by '-'                          | example: action or action-comedy-drama or action-sci_fi | `false`  |
+| **`country`**         | String                                                 | example: japan                                          | `false`  |
+| **`movieLang`**       | String                                                 | example: spanish                                        | `false`  |
+| **`dubbed`**          | true / false                                           |                                                         | `false`  |
+| **`hardSub`**         | true / false                                           |                                                         | `false`  |
+| **`censored`**        | true / false                                           |                                                         | `false`  |
+| **`subtitle`**        | true / false                                           |                                                         | `false`  |
+| **`watchOnlineLink`** | true / false                                           |                                                         | `false`  |
+
+</details>
+<br/>
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&genres=action&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&genres=action&subtitle=true&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&country=germany&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&movieLang=spanish&testUser=true
 </details>
 <br />
 

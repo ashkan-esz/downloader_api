@@ -32,7 +32,9 @@ const validations = Object.freeze({
     imdbScores: param('imdbScores')
         .isString().withMessage('Invalid parameter imdbScores :: ([0-10]-[0-10])')
         .customSanitizer(value => {
-            return value.split('-').map(item => Number(item));
+            return value.split('-')
+                .filter(item => item && !isNaN(item))
+                .map(item => Number(item));
         })
         .custom((value) => {
             if (value.length !== 2 || value[0] > value[1] || value[0] < 0 || value[0] > 10 || value[1] < 0 || value[1] > 10) {
@@ -45,7 +47,9 @@ const validations = Object.freeze({
     malScores: param('malScores')
         .isString().withMessage('Invalid parameter malScores :: ([0-10]-[0-10])')
         .customSanitizer(value => {
-            return value.split('-').map(item => Number(item));
+            return value.split('-')
+                .filter(item => item && !isNaN(item))
+                .map(item => Number(item));
         })
         .custom((value) => {
             if (value.length !== 2 || value[0] > value[1] || value[0] < 0 || value[0] > 10 || value[1] < 0 || value[1] > 10) {
@@ -57,7 +61,9 @@ const validations = Object.freeze({
 
     years: param('years')
         .customSanitizer(value => {
-            return value.split('-').map(item => item.trim());
+            return value.split('-')
+                .filter(item => item && !isNaN(item))
+                .map(item => item.trim());
         })
         .custom((value) => {
             if (value.length !== 2 || value[0] > value[1]) {
@@ -106,15 +112,181 @@ const validations = Object.freeze({
             return value.split('-').map(item => item.replace(/_/g, '-').toLowerCase().trim());
         }),
 
-    //-----------------------------
-    //-----------------------------
+    //-----------------------------------
+    //-----------------------------------
+    //---------- Movies filters ---------
+
+    title_query: query('title')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    types_query: param('types')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-').map(item => item.toLowerCase().trim())
+                : [];
+        })
+        .custom((value) => {
+            if (value.find(item => !types.includes(item))) {
+                throw new Error(`Invalid parameter types :: (${types.join('|')})`);
+            } else {
+                return value;
+            }
+        }),
+
+    years_query: query('years')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => item.trim())
+                : [];
+        })
+        .custom((value) => {
+            if (value.length === 1 || (value.length === 2 && value[0] > value[1])) {
+                throw new Error('Invalid parameter years :: ([dddd]-[dddd])');
+            } else {
+                return value;
+            }
+        }),
+
+    imdbScores_query: param('imdbScores')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item))
+                : [];
+        })
+        .custom((value) => {
+            if (value.length === 1 || (value.length === 2 && value[0] > value[1] || value[0] < 0 || value[0] > 10 || value[1] < 0 || value[1] > 10)) {
+                throw new Error('Invalid parameter imdbScores :: ([0-10]-[0-10])');
+            } else {
+                return value;
+            }
+        }),
+
+    malScores_query: param('malScores')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item))
+                : [];
+        })
+        .custom((value) => {
+            if (value.length === 1 || (value.length === 2 && value[0] > value[1] || value[0] < 0 || value[0] > 10 || value[1] < 0 || value[1] > 10)) {
+                throw new Error('Invalid parameter malScores :: ([0-10]-[0-10])');
+            } else {
+                return value;
+            }
+        }),
 
     genres_query: query('genres')
         .customSanitizer(value => {
             return value
-                ? value.split('-').map(item => item.replace(/_/g, '-').toLowerCase().trim())
+                ? value.toString().split('-').map(item => item.replace(/_/g, '-').toLowerCase().trim())
                 : [];
         }),
+
+    dubbed_query: query('dubbed')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    hardSub_query: query('hardSub')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+    censored_query: query('censored')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+    subtitle_query: query('subtitle')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+    watchOnlineLink_query: query('watchOnlineLink')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    movieLang_query: query('movieLang')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    //-----------------------------------
+    //-----------------------------------
+    //----- Staff/Characters filters-----
+
+    name_query: query('name')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    gender_query: query('gender')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    country_query: query('country')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    hairColor_query: query('hairColor')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    eyeColor_query: query('eyeColor')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
+    age_query: query('age')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item.trim()))
+                : [];
+        })
+        .custom((value) => {
+            if (value.length === 1 || (value.length === 2 && value[0] > value[1])) {
+                throw new Error('Invalid parameter age :: \d+-\d+');
+            } else {
+                return value;
+            }
+        }),
+    //-----------------------------------
+    //-----------------------------------
 
     remove: query('remove')
         .trim()

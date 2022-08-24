@@ -56,11 +56,46 @@ export async function getMultipleStatus(req, res) {
     return res.status(multipleStatus.responseData.code).json(multipleStatus.responseData);
 }
 
-export async function searchByTitle(req, res) {
+export async function searchMovieStaffCharacter(req, res) {
     let userId = req.jwtUserData.userId;
-    let genres = req.query.genres;
-    let {title, types, dataLevel, years, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page);
+    let {title, dataLevel, page} = req.params;
+    let result = await moviesServices.searchMovieStaffCharacter(userId, title, dataLevel, page);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function searchStaffAndCharacter(req, res) {
+    let userId = req.jwtUserData.userId;
+    let filters = filterObjectFalsyValues(req.query);
+    let {dataLevel, page} = req.params;
+    let result = await moviesServices.searchStaffAndCharacter(userId, filters, dataLevel, page);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function searchStaff(req, res) {
+    let userId = req.jwtUserData.userId;
+    let filters = filterObjectFalsyValues(req.query);
+    let {dataLevel, page} = req.params;
+    let result = await moviesServices.searchStaffOrCharacter(userId, 'staff', filters, dataLevel, page);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function searchCharacter(req, res) {
+    let userId = req.jwtUserData.userId;
+    let filters = filterObjectFalsyValues(req.query);
+    let {dataLevel, page} = req.params;
+    let result = await moviesServices.searchStaffOrCharacter(userId, 'characters', filters, dataLevel, page);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function searchMovie(req, res) {
+    let userId = req.jwtUserData.userId;
+    let filters = filterObjectFalsyValues(req.query);
+    let {dataLevel, page} = req.params;
+    let result = await moviesServices.searchMovie(userId, filters, dataLevel, page);
 
     return res.status(result.responseData.code).json(result.responseData);
 }
@@ -124,4 +159,19 @@ export async function getGenresMovies(req, res) {
     let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page);
 
     return res.status(result.responseData.code).json(result.responseData);
+}
+
+function filterObjectFalsyValues(object) {
+    let filters = Object.keys(object)
+        .filter((key) => {
+            if (Array.isArray(object[key])) {
+                return object[key].length > 0;
+            }
+            return object[key];
+        })
+        .reduce((cur, key) => {
+            return Object.assign(cur, {[key]: object[key]})
+        }, {});
+    delete filters.testUser;
+    return filters;
 }

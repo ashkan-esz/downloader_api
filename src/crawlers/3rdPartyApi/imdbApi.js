@@ -197,10 +197,12 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
         }
         if (semiImdbData.releaseState) {
             let monthAndDay = semiImdbData.releaseState.split('-').pop().trim().split(' ');
-            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
-            let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
-            if (titleDataFromDB.premiered !== temp) {
-                updateFields.premiered = temp;
+            if (monthAndDay.length > 1) {
+                let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
+                let temp = titleDataFromDB.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
+                if (titleDataFromDB.premiered !== temp) {
+                    updateFields.premiered = temp;
+                }
             }
         }
 
@@ -262,8 +264,12 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         }
         if (imdbData.releaseState) {
             let monthAndDay = imdbData.releaseState.split('-').pop().trim().split(' ');
-            let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
-            titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
+            if (monthAndDay.length > 1) {
+                let monthNumber = utils.getMonthNumberByMonthName(monthAndDay[1].trim());
+                titleModel.premiered = titleModel.year + '-' + monthNumber + '-' + monthAndDay[0].trim();
+            } else {
+                titleModel.premiered = imdbData.releaseState;
+            }
         }
         titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
         titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';

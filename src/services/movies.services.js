@@ -110,13 +110,14 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
     return generateServiceResult({data: multiple}, 200, '');
 }
 
-export async function searchByTitle(userId, title, types, dataLevel, years, genres, imdbScores, malScores, page) {
+export async function searchMovieStaffCharacter(userId, title, dataLevel, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
+    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
     let searchDataArray = await Promise.allSettled([
-        moviesDbMethods.searchOnMovieCollectionByTitle(userId, title, types, years, genres, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
-        moviesDbMethods.searchOnCollectionByName('staff', userId, title, skip, limit, dataLevelConfig_staff[dataLevel.replace('dlink', 'high')]),
-        moviesDbMethods.searchOnCollectionByName('characters', userId, title, skip, limit, dataLevelConfig_character[dataLevel.replace('dlink', 'high')]),
+        moviesDbMethods.searchOnMovieCollectionWithFilters(userId, {title}, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, {name: title}, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel]),
+        moviesDbMethods.searchOnStaffOrCharactersWithFilters('characters', userId, {name: title}, skip, limit, dataLevelConfig_character[staffCharacterDataLevel]),
     ]);
     let searchData = {
         movies: searchDataArray[0].value,
@@ -136,6 +137,60 @@ export async function searchByTitle(userId, title, types, dataLevel, years, genr
         return generateServiceResult({data: searchData}, 404, errorMessage.mscNotFound);
     }
     return generateServiceResult({data: searchData}, 200, '');
+}
+
+export async function searchStaffAndCharacter(userId, filters, dataLevel, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
+    let searchDataArray = await Promise.allSettled([
+        moviesDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, filters, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel]),
+        moviesDbMethods.searchOnStaffOrCharactersWithFilters('characters', userId, filters, skip, limit, dataLevelConfig_character[staffCharacterDataLevel]),
+    ]);
+    let searchData = {
+        staff: searchDataArray[0].value,
+        characters: searchDataArray[1].value,
+    }
+
+    if (searchData.staff === 'error' || searchData.characters === 'error') {
+        return generateServiceResult({
+            data: {
+                staff: [],
+                characters: [],
+            }
+        }, 500, errorMessage.serverError);
+    } else if (searchData.staff.length === 0 && searchData.characters.length === 0) {
+        return generateServiceResult({data: searchData}, 404, errorMessage.scNotFound);
+    }
+    return generateServiceResult({data: searchData}, 200, '');
+}
+
+export async function searchStaffOrCharacter(userId, staffOrCharacters, filters, dataLevel, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
+    let searchResult = await moviesDbMethods.searchOnStaffOrCharactersWithFilters(staffOrCharacters, userId, filters, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel])
+
+    if (searchResult === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (searchResult.length === 0) {
+        let temp = staffOrCharacters === 'staff' ? errorMessage.staffNotFound : errorMessage.characterNotFound;
+        return generateServiceResult({data: []}, 404, temp);
+    }
+    return generateServiceResult({data: searchResult}, 200, '');
+}
+
+export async function searchMovie(userId, filters, dataLevel, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let searchResult = await moviesDbMethods.searchOnMovieCollectionWithFilters(userId, filters, skip, limit, dataLevelConfig[dataLevel]);
+
+    if (searchResult === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (searchResult.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
+    }
+    return generateServiceResult({data: searchResult}, 200, '');
 }
 
 export async function searchMovieById(userId, id, dataLevel) {
