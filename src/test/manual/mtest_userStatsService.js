@@ -192,7 +192,7 @@ async function removeTestUserAndDocs(userId, docTypes, docIds) {
 async function getData(userId, docType, docId) {
     let data;
     if (docType === 'movies') {
-        data = await searchMovieById(userId, docId, 'high');
+        data = await searchMovieById(userId, docId, 'high', {});
     } else if (docType === 'staff') {
         data = await searchStaffById(userId, docId);
     } else if (docType === 'characters') {

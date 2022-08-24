@@ -528,7 +528,7 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
     }
 }
 
-export async function searchOnCollectionById(collectionName, userId, id, projection) {
+export async function searchOnCollectionById(collectionName, userId, id, filters, projection) {
     try {
         let collection = await getCollection(collectionName);
 
@@ -541,8 +541,35 @@ export async function searchOnCollectionById(collectionName, userId, id, project
             {
                 $limit: 1,
             },
+            {
+                $addFields: {}
+            },
             ...getLookupOnUserStatsStage(userId, collectionName),
         ];
+
+        if (filters.seasons) {
+            aggregationPipeline[2]['$addFields'].seasons = {
+                $filter: {
+                    input: "$seasons",
+                    cond: {
+                        $and: [
+                            {$gte: ["$$this.seasonNumber", filters.seasons[0]]},
+                            {$lte: ["$$this.seasonNumber", filters.seasons[1]]},
+                        ]
+                    }
+                }
+            };
+        }
+        if (filters.qualities) {
+            aggregationPipeline[2]['$addFields'].qualities = {
+                $filter: {
+                    input: "$qualities",
+                    cond: {
+                        $in: ['$$this.quality', filters.qualities],
+                    }
+                }
+            };
+        }
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({

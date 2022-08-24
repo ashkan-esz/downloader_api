@@ -123,7 +123,7 @@ const validations = Object.freeze({
                 : '';
         }),
 
-    types_query: param('types')
+    types_query: query('types')
         .customSanitizer(value => {
             return value
                 ? value.toString().split('-').map(item => item.toLowerCase().trim())
@@ -153,7 +153,7 @@ const validations = Object.freeze({
             }
         }),
 
-    imdbScores_query: param('imdbScores')
+    imdbScores_query: query('imdbScores')
         .customSanitizer(value => {
             return value
                 ? value.toString().split('-')
@@ -169,7 +169,7 @@ const validations = Object.freeze({
             }
         }),
 
-    malScores_query: param('malScores')
+    malScores_query: query('malScores')
         .customSanitizer(value => {
             return value
                 ? value.toString().split('-')
@@ -229,6 +229,34 @@ const validations = Object.freeze({
             return value
                 ? value.toString().toLowerCase().trim()
                 : '';
+        }),
+
+    seasons_query: query('seasons')
+        .customSanitizer(value => {
+            let temp = value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item))
+                : [];
+            if (temp.length === 1) {
+                temp.push(temp[0]);
+            }
+            return temp;
+        })
+        .custom((value) => {
+            if (value.length === 2 && value[0] > value[1]) {
+                throw new Error('Invalid parameter seasons :: (\d+ | \d+-\d+)');
+            } else {
+                return value;
+            }
+        }),
+
+    qualities_query: query('qualities')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().split('-')
+                    .filter(item => item && item.match(/\d+p/))
+                : [];
         }),
 
     //-----------------------------------

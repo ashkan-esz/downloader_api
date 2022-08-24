@@ -180,7 +180,6 @@ Query params (filters):
 | **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
 
 </details>
-<br/>
 
 <details>
 <summary>
@@ -211,7 +210,6 @@ Query params (filters):
 | **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
 
 </details>
-<br/>
 
 <details>
 <summary>
@@ -242,7 +240,6 @@ Query params (filters):
 | **`age`**       | Two Number joined by '-' | example: 15-20                    | `false`  |
 
 </details>
-<br/>
 
 <details>
 <summary>
@@ -279,7 +276,6 @@ Query params (filters):
 | **`watchOnlineLink`** | true / false                                           |                                                         | `false`  |
 
 </details>
-<br/>
 
 <details>
 <summary>
@@ -296,6 +292,18 @@ Examples
 
 ### GET /movies/searchByID/[id]/[dataLevel]
 > return searching movie-data. ([movies schema](SCHEMA.README.md#Movie-Data))
+
+<details>
+<summary>
+Query params (filters): 
+</summary>
+
+| param name      | Values                                    | Description                                                                        | Required |
+|-----------------|-------------------------------------------|------------------------------------------------------------------------------------|----------|
+| **`seasons`**   | Single number or Two Number joined by '-' | return corresponding seasons links only, (works for serials), example: 6 or 2-5    | `false`  |
+| **`qualities`** | Strings joined by '-'                     | return corresponding qualities links only, (works for movies), example: 1080p-720p | `false`  |
+
+</details>
 
 <details>
 <summary>

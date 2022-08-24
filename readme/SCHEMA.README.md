@@ -456,3 +456,10 @@ movieSources = Array({
     url: String,
 })
 ```
+
+<br />
+
+# API
+- Open [admin api docs](API.ADMIN.README.md).
+- Open [user api docs](API.USER.README.md).
+- Open [movie api docs](API.MOVIES.README.md).

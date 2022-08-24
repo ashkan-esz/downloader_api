@@ -193,8 +193,8 @@ export async function searchMovie(userId, filters, dataLevel, page) {
     return generateServiceResult({data: searchResult}, 200, '');
 }
 
-export async function searchMovieById(userId, id, dataLevel) {
-    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, dataLevelConfig[dataLevel]);
+export async function searchMovieById(userId, id, dataLevel, filters) {
+    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, filters, dataLevelConfig[dataLevel]);
     if (movieData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!movieData) {
@@ -204,7 +204,7 @@ export async function searchMovieById(userId, id, dataLevel) {
 }
 
 export async function searchStaffById(userId, id) {
-    let staffData = await moviesDbMethods.searchOnCollectionById("staff", userId, id, {});
+    let staffData = await moviesDbMethods.searchOnCollectionById("staff", userId, id, {}, {});
     if (staffData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!staffData) {
@@ -214,7 +214,7 @@ export async function searchStaffById(userId, id) {
 }
 
 export async function searchCharacterById(userId, id) {
-    let characterData = await moviesDbMethods.searchOnCollectionById("characters", userId, id, {});
+    let characterData = await moviesDbMethods.searchOnCollectionById("characters", userId, id, {}, {});
     if (characterData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!characterData) {

@@ -102,8 +102,9 @@ export async function searchMovie(req, res) {
 
 export async function searchMovieById(req, res) {
     let userId = req.jwtUserData.userId;
+    let filters = filterObjectFalsyValues(req.query);
     let {id, dataLevel} = req.params;
-    let titleData = await moviesServices.searchMovieById(userId, id, dataLevel);
+    let titleData = await moviesServices.searchMovieById(userId, id, dataLevel, filters);
 
     return res.status(titleData.responseData.code).json(titleData.responseData);
 }
