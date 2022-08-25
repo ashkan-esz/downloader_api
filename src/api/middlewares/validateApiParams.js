@@ -73,6 +73,23 @@ const validations = Object.freeze({
             }
         }),
 
+    date: param('date')
+        .custom((value) => {
+            try {
+                let temp = new Date(value);
+                if (temp === 'Invalid Date') {
+                    throw new Error('Invalid parameter date :: (Date String | Time in milliseconds)');
+                } else {
+                    return value;
+                }
+            } catch (error) {
+                throw new Error('Invalid parameter date :: (Date String | Time in milliseconds)');
+            }
+        })
+        .customSanitizer(value => {
+            return new Date(value);
+        }),
+
     //-----------------------------
     //-----------------------------
 
@@ -315,6 +332,23 @@ const validations = Object.freeze({
         }),
     //-----------------------------------
     //-----------------------------------
+
+    japaneseNames_query: query('japaneseNames')
+        .customSanitizer(value => {
+            if (!value) {
+                return [];
+            }
+            if (typeof value === 'string') {
+                return [value.trim()];
+            } else if (Array.isArray(value)) {
+                return value.map(item => item.toString().trim());
+            }
+            return [];
+        })
+        .isArray({
+            min: 1,
+            max: 20
+        }).withMessage('Invalid parameter japaneseNames :: (array of string, {min:1, max:20})'),
 
     remove: query('remove')
         .trim()

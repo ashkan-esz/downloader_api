@@ -11,12 +11,26 @@ router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getNews);
 
+//movies/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.getNewsWithDate);
+
 //movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/updates/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUpdates);
+
+//movies/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.getUpdatesWithDate);
 
 //movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page',
@@ -140,5 +154,12 @@ router.get('/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.validateApiParams.checkApiParams(['genres', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getGenresMovies);
+
+//movies/animeEnglishName?japaneseNames
+router.get('/animeEnglishName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['japaneseNames_query']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.getAnimeEnglishNames);
 
 export default router;

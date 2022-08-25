@@ -6,6 +6,9 @@ import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {setCache} from "../api/middlewares/moviesCache.js";
 import {dataLevelConfig_staff} from "../models/person.js";
 import {dataLevelConfig_character} from "../models/character.js";
+import {searchTitleDB} from "../data/db/crawlerMethodsDB.js";
+import {replaceSpecialCharacters} from "../crawlers/utils.js";
+import {default as pQueue} from "p-queue";
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
@@ -19,10 +22,34 @@ export async function getNews(userId, types, dataLevel, imdbScores, malScores, p
     return generateServiceResult({data: newMovies}, 200, '');
 }
 
+export async function getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let newMovies = await moviesDbMethods.getNewMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (newMovies === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (newMovies.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
+    }
+    return generateServiceResult({data: newMovies}, 200, '');
+}
+
 export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
 
     let updateMovies = await moviesDbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (updateMovies === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (updateMovies.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
+    }
+    return generateServiceResult({data: updateMovies}, 200, '');
+}
+
+export async function getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let updateMovies = await moviesDbMethods.getUpdateMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (updateMovies.length === 0) {
@@ -321,6 +348,40 @@ export async function getMovieSources(routeUrl) {
 
     return generateServiceResult({data: sourcesUrls}, 200, '');
 }
+
+export async function getAnimeEnglishNames(japaneseNames) {
+    let result = [];
+    const promiseQueue = new pQueue.default({concurrency: 10});
+    for (let i = 0; i < japaneseNames.length; i++) {
+        let titleObj = {
+            title: japaneseNames[i].toLowerCase(),
+            alternateTitles: [],
+            titleSynonyms: [],
+        }
+        let types = ['anime_movie', 'anime_serial'];
+
+        promiseQueue.add(() => searchTitleDB(titleObj, types, '', {alternateTitles: 1}).then(async (res) => {
+            if (res.length === 0) {
+                let temp = replaceSpecialCharacters(titleObj.title);
+                if (temp !== titleObj.title) {
+                    titleObj.title = temp;
+                    res = await searchTitleDB(titleObj, types, '', {alternateTitles: 1});
+                }
+            }
+            result.push({
+                japaneseName: japaneseNames[i],
+                englishName: res?.[0]?.alternateTitles?.[0].replace(/[-_.]/g, ' ').replace(/\s\s+/g, '').trim() || '',
+            });
+        }));
+    }
+    await promiseQueue.onEmpty();
+    await promiseQueue.onIdle();
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//-----------------------------
+//-----------------------------
 
 function getSkipLimit(page, limit) {
     return {

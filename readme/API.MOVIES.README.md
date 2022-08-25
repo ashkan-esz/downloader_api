@@ -15,6 +15,7 @@
 | **`id`**         | Mongodb id object                                                                                                                                                                                                          | id of movie/staff/character to get                                 | `true`   |
 | **`genres`**     | Array of String joined by '-'                                                                                                                                                                                              | example: action or action-comedy-drama or action-sci_fi            | `true`   |
 | **`statType`**   | enum( _like_movie_, _dislike_movie_, <br/>_like_staff_, _dislike_staff_, <br/>_like_character_, _dislike_character_, <br/>_follow_movie_, _follow_staff_, <br/>_future_list_, _dropped_, _finished_, <br/>_save_, _score_) | values with no suffix (_staff or _character) only works for movies | `true`   |
+| **`date`**       | Date                                                                                                                                                                                                                       |                                                                    | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -23,7 +24,9 @@
 
 # API Resources
 - [GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewstypesdatalevelimdbscoresmalscorespage)
+- [GET /movies/newsWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewswithdatedatetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdatestypesdatalevelimdbscoresmalscorespage)
+- [GET /movies/updatesWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdateswithdatedatetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestopsbylikestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/trailers/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestrailerstypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviessortedmoviessortbasetypesdatalevelimdbscoresmalscorespage)
@@ -42,6 +45,7 @@
 - [GET /movies/genres/[genres]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesgenresgenrestypesdatalevelimdbscoresmalscorespage)
 - [PUT /movies/addUserStats/[statType]/[id]](#put-moviesadduserstatsstattypeid)
 - [GET /movies/userStatsList/[statType]/[dataLevel]/[page]](#get-moviesuserstatsliststattypedatalevelpage)
+- [GET /movies/animeEnglishName](#get-moviesanimeenglishname)
 
 
 ## Movie-Data Api
@@ -60,6 +64,18 @@ Examples
 </details>
 <br />
 
+### GET /movies/newsWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
+> return recent movies (new released movies after [date]). ([movies schema](SCHEMA.README.md#Movie-Data))
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1?testUser=true
+</details>
+<br />
+
 ### GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies sorted by update date (movies with new episode or higher quality). ([movies schema](SCHEMA.README.md#Movie-Data))
 
@@ -71,6 +87,18 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/updates/serial-anime_serial/low/0-10/0-10/1?testUser=true
 - https://downloader-node-api.herokuapp.com/movies/updates/movie-anime_serial/medium/6-10/0-10/1?testUser=true
 - https://downloader-node-api.herokuapp.com/movies/updates/serial/high/0-10/0-10/1?testUser=true
+</details>
+<br />
+
+### GET /movies/updatesWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
+> return movies sorted by update date (movies with new episode or higher quality  after [date]). ([movies schema](SCHEMA.README.md#Movie-Data))
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1?testUser=true
 </details>
 <br />
 
@@ -399,6 +427,26 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/userStatsList/like_movie/low/1?testUser=true
 - https://downloader-node-api.herokuapp.com/movies/userStatsList/follow_movie/low/1?testUser=true
 - https://downloader-node-api.herokuapp.com/movies/userStatsList/save/low/1?testUser=true
+</details>
+<br />
+
+
+## Other Api
+
+### GET /movies/animeEnglishName
+> return english names of anime based on japanese name.
+> 
+> receives query parameter japaneseNames, japaneseNames=name1&japaneseNames=name2....
+> 
+> return Array of {japaneseName: String, englishName: String}
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi no na wa&japaneseNames=Kimetsu no Yaiba&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi no na wa&testUser=true
 </details>
 <br />
 

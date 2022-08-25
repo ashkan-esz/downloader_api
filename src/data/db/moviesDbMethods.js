@@ -46,6 +46,45 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
     }
 }
 
+export async function getNewMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+
+        let aggregationPipeline = [
+            {
+                $match: {
+                    releaseState: 'done',
+                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+                    insert_date: {$gte: date},
+                }
+            },
+            {
+                $sort: {
+                    insert_date: 1
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            },
+            ...getLookupOnUserStatsStage(userId, 'movies'),
+        ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: projection,
+            });
+        }
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
 export async function getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
@@ -61,6 +100,45 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
                 $sort: {
                     update_date: -1,
                     year: -1,
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            },
+            ...getLookupOnUserStatsStage(userId, 'movies'),
+        ];
+
+        if (Object.keys(projection).length > 0) {
+            aggregationPipeline.push({
+                $project: projection,
+            });
+        }
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUpdateMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, projection) {
+    try {
+        let collection = await getCollection('movies');
+
+        let aggregationPipeline = [
+            {
+                $match: {
+                    releaseState: 'done',
+                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+                    update_date: {$gte: date},
+                }
+            },
+            {
+                $sort: {
+                    update_date: 1,
                 }
             },
             {

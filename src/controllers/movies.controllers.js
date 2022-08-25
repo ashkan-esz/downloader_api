@@ -8,10 +8,26 @@ export async function getNews(req, res) {
     return res.status(news.responseData.code).json(news.responseData);
 }
 
+export async function getNewsWithDate(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {date, types, dataLevel, imdbScores, malScores, page} = req.params;
+    let news = await moviesServices.getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page);
+
+    return res.status(news.responseData.code).json(news.responseData);
+}
+
 export async function getUpdates(req, res) {
     let userId = req.jwtUserData.userId;
     let {types, dataLevel, imdbScores, malScores, page} = req.params;
     let updates = await moviesServices.getUpdates(userId, types, dataLevel, imdbScores, malScores, page);
+
+    return res.status(updates.responseData.code).json(updates.responseData);
+}
+
+export async function getUpdatesWithDate(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {date, types, dataLevel, imdbScores, malScores, page} = req.params;
+    let updates = await moviesServices.getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page);
 
     return res.status(updates.responseData.code).json(updates.responseData);
 }
@@ -161,6 +177,15 @@ export async function getGenresMovies(req, res) {
 
     return res.status(result.responseData.code).json(result.responseData);
 }
+
+export async function getAnimeEnglishNames(req, res) {
+    let result = await moviesServices.getAnimeEnglishNames(req.query.japaneseNames);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+//-----------------------------
+//-----------------------------
 
 function filterObjectFalsyValues(object) {
     let filters = Object.keys(object)
