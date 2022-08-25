@@ -4,6 +4,7 @@ import {saveError} from "../../error/saveError.js";
 import {userStats} from "../../models/movie.js";
 import {userStats_staff} from "../../models/person.js";
 import {userStats_character} from "../../models/character.js";
+import {getGenresStatusFromCache} from "../../api/middlewares/moviesCache.js";
 
 
 export async function getNewMovies(userId, types, imdbScores, malScores, skip, limit, projection) {
@@ -528,7 +529,7 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
     }
 }
 
-export async function searchOnCollectionById(collectionName, userId, id, filters, projection) {
+export async function searchOnCollectionById(collectionName, userId, id, filters, projection, dataLevel = '') {
     try {
         let collection = await getCollection(collectionName);
 
@@ -578,7 +579,15 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
         }
 
         let result = await collection.aggregate(aggregationPipeline).toArray();
-        return result.length === 0 ? null : result[0];
+        result = result.length === 0 ? null : result[0];
+
+        if (result && result.genres && result.genres.length > 0 && dataLevel !== 'telbot') {
+            let genresWithImage = await getGenresStatusFromCache();
+            genresWithImage = genresWithImage?.filter(item => result.genres.includes(item.genre.replace(/[\s_]/g, '-'))) || [];
+            result.genresWithImage = genresWithImage;
+        }
+
+        return result;
     } catch (error) {
         saveError(error);
         return 'error';

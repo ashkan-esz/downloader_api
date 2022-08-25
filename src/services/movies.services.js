@@ -194,7 +194,7 @@ export async function searchMovie(userId, filters, dataLevel, page) {
 }
 
 export async function searchMovieById(userId, id, dataLevel, filters) {
-    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, filters, dataLevelConfig[dataLevel]);
+    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, filters, dataLevelConfig[dataLevel], dataLevel);
     if (movieData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!movieData) {
@@ -273,11 +273,12 @@ export async function getGenresStatus(routeUrl) {
         return generateServiceResult({data: []}, 404, errorMessage.genresNotFound);
     }
 
+    routeUrl = routeUrl.replace(/\?testUser=(true|false)$/i, '');
     setCache(routeUrl, {
         data: genres,
         code: 200,
         errorMessage: '',
-    }, 30 * 60);
+    }, 60 * 60);
 
     return generateServiceResult({data: genres}, 200, '');
 }

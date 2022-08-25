@@ -79,6 +79,7 @@ dataLevel = {
         }),
         qualities: Array(#QUALITY),
         seasons: Array(#SEASON),
+        subtitles: Array(#SUBTITLE),
         sources: Array(String),
     },
     low: {
@@ -101,6 +102,39 @@ dataLevel = {
         },
         userStats: #userStats,
     },
+    telbot: {
+        _id: Object,
+        rawTitle: String,
+        type: String, // enum('movie', 'serial', 'anime_movie', 'anime_serial')
+        year: String,
+        premiered: String,
+        posters: Array({
+            url: String,
+            info: String,
+            size: Int
+        }),
+        genres: Array(String),
+        summary: {
+            english: String,
+            persian: String,
+        },
+        rating: {
+            imdb: Int,
+            rottenTomatoes: Int,
+            metacritic: Int,
+            myAnimeList: Int
+        },
+        rated: String,
+        country: String,
+        latestData: #LatestData,
+        duration: String, // example '60 min'
+        actorsAndCharacters: Array(#actor_and_character),
+        staff: {
+            directors: Array(#actor_and_character),
+            writers: Array(#actor_and_character),
+            others: Array(#actor_and_character),
+        },
+    },
     medium: {
         ...low, //all fields from low datalevel also exist
         releaseState: String, // enum('inTheaters', 'comingSoon', 'waiting', 'done')
@@ -118,21 +152,21 @@ dataLevel = {
             english: String,
             persian: String,
         },
-        genres: Array, // Array of Strings
+        genres: Array(String),
+        genresWithImage: Array({ //only exist in movies/searchById api
+            genre: String,
+            poster: {
+                url: String,
+                info: String,
+                size: Int
+            },
+            count: Int,
+        }),
         trailers: Array({
             url: String,
             info: String
         }),
-        latestData: {
-            season: Int,
-            episode: Int,
-            quality: String,
-            hardSub: String, //String in format S\d+E\d+
-            dubbed: String, //for series 's1e5' shows last episode with hardsub/dubbed/..
-            subtitle: String, //for movies 's1e1' means hardsub/dubbed/.. exist
-            censored: String,
-            watchOnlineLink: String,
-        },
+        latestData: #LatestData,
         update_date: Date,
         nextEpisode: null || {
             title: String,
@@ -207,7 +241,10 @@ dataLevel = {
             relation: String, //enum('Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off')
         }),
         userStats: #userStats,
-    }
+    },
+    info: {
+        // all data exist in high execpt 'seasons' and 'qualities' and 'subtitles'
+    },
 }
 ```
 
@@ -284,6 +321,21 @@ dataLevel = {
         episode: Int,
         direct: Boolean,
     })
+}
+```
+
+## LatestData
+
+```javascript
+#LatestData = {
+    season: Int,
+    episode: Int,
+    quality: String,
+    hardSub: String, //String in format S\d+E\d+
+    dubbed: String, //for series 's1e5' shows last episode with hardsub/dubbed/..
+    subtitle: String, //for movies 's1e1' means hardsub/dubbed/.. exist
+    censored: String,
+    watchOnlineLink: String,
 }
 ```
 
@@ -460,6 +512,7 @@ movieSources = Array({
 <br />
 
 # API
+
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).

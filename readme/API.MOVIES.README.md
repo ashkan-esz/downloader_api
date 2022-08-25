@@ -3,7 +3,7 @@
 | param name       | Values                                                                                                                                                                                                                     | Description                                                        | Required |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|----------|
 | **`types`**      | enum(_movie_, _serial_, _anime_movie_, _anime_serial_)                                                                                                                                                                     | join values by `-` example: `movie-anime_serial`                   | `true`   |
-| **`dataLevel`**  | _dlink_, _low_, _medium_, _high_                                                                                                                                                                                           |                                                                    | `true`   |
+| **`dataLevel`**  | _dlink_, _low_, _telbot_, _medium_, _info_, _high_                                                                                                                                                                         |                                                                    | `true`   |
 | **`sortBase`**   | enum(_animeTopComingSoon_, _animeTopAiring_,<br/> _comingSoon_, _inTheaters_, _boxOffice_,<br/> _top_, _popular_)                                                                                                          |                                                                    | `true`   |
 | **`years`**      | Two Number joined by '-'                                                                                                                                                                                                   | example: 2010-2021                                                 | `true`   |
 | **`imdbScores`** | Two Number in range [0-10] joined by '-'                                                                                                                                                                                   | example: 5-9                                                       | `true`   |
@@ -160,6 +160,8 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/searchMovieStaffCharacter/mikasa/high/1?&testUser=true
 </details>
 <br />
+
+## Search Api
 
 ### GET /movies/searchStaffAndCharacter/[dataLevel]/[page]
 > return {__staff__, __characters__}.  ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
@@ -337,6 +339,8 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/characters/searchById/619a2ee6b1d34100166fd94d?testUser=true
 </details>
 <br />
+
+## Status Api
 
 ### GET /movies/status/genres
 > returns all available genres with their count. ([genres schema](SCHEMA.README.md#Genres))

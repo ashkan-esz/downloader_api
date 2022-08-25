@@ -162,6 +162,7 @@ export const dataLevelConfig = Object.freeze({
         posters: 1,
         qualities: 1,
         seasons: 1,
+        subtitles: 1,
         sources: 1,
     }),
     low: Object.freeze({
@@ -173,6 +174,22 @@ export const dataLevelConfig = Object.freeze({
         rawTitle: 1,
         rating: 1,
         userStats: userStats_projection.low,
+    }),
+    telbot: Object.freeze({
+        rawTitle: 1,
+        type: 1,
+        year: 1,
+        premiered: 1,
+        posters: 1,
+        genres: 1,
+        summary: 1,
+        rating: 1,
+        rated: 1,
+        country: 1,
+        latestData: 1,
+        duration: 1,
+        actorsAndCharacters: 1,
+        staff: 1,
     }),
     medium: Object.freeze({
         releaseState: 1,
@@ -195,6 +212,11 @@ export const dataLevelConfig = Object.freeze({
         releaseDay: 1,
         status: 1,
         boxOfficeData: 1,
+    }),
+    info: Object.freeze({
+        seasons: 0,
+        qualities: 0,
+        subtitles: 0,
     }),
     high: Object.freeze({})
 });
