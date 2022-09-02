@@ -128,6 +128,7 @@ dataLevel = {
         country: String,
         latestData: #LatestData,
         duration: String, // example '60 min'
+        releaseDay: String, // days of week
         actorsAndCharacters: Array(#actor_and_character),
         staff: {
             directors: Array(#actor_and_character),
@@ -193,6 +194,10 @@ dataLevel = {
         seasons: Array(#SEASON),
         subtitles: Array(#SUBTITLE),
         sources: Array(String),
+        seasonEpisode: Array({
+            seasonNumber: Int,
+            episodes: Int,
+        }),
         view: Int,
         like_month: Int,
         view_month: Int,
@@ -516,3 +521,4 @@ movieSources = Array({
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [error messages docs](ERRORMESSAGE.README.md).

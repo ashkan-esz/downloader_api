@@ -300,3 +300,4 @@ Future<List<String>> addProfileImage(File file) async {
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
 - Open [schema](SCHEMA.README.md).
+- Open [error messages docs](ERRORMESSAGE.README.md).

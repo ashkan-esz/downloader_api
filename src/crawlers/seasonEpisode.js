@@ -1,6 +1,8 @@
 import {get_OMDB_EpisodesData} from "./3rdPartyApi/omdbApi.js";
 import {getEpisodeModel_placeholder} from "../models/episode.js";
 import {groupSerialLinks, updateSerialLinks} from "./link.js";
+import {replaceSpecialCharacters} from "./utils.js";
+import {wordsToNumbers} from "words-to-numbers";
 
 export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
     let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks);
@@ -9,9 +11,9 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
 
     //omdb api
     if (omdbApiFields) {
-        let omdbEpisodes = await get_OMDB_EpisodesData(omdbApiFields.omdbTitle, totalSeasons, db_data.premiered, titleExist);
+        let omdbEpisodes = await get_OMDB_EpisodesData(omdbApiFields.omdbTitle, omdbApiFields.yearIgnored, totalSeasons, db_data.premiered, titleExist);
         if (omdbEpisodes) {
-            let result = updateSeasonEpisodeData(db_data.seasons, omdbEpisodes);
+            let result = updateSeasonEpisodeData(db_data.seasons, omdbEpisodes, 'omdb');
             seasonsUpdateFlag = result || seasonsUpdateFlag;
         }
     }
@@ -20,7 +22,7 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
     if (tvmazeApiFields) {
         db_data.nextEpisode = tvmazeApiFields.nextEpisode;
         nextEpisodeUpdateFlag = true;
-        let result = updateSeasonEpisodeData(db_data.seasons, tvmazeApiFields.episodes);
+        let result = updateSeasonEpisodeData(db_data.seasons, tvmazeApiFields.episodes, 'tvmaze');
         seasonsUpdateFlag = result || seasonsUpdateFlag;
     }
 
@@ -60,8 +62,9 @@ export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, s
     return (seasonsUpdateFlag || missedEpisodeResult);
 }
 
-function updateSeasonEpisodeData(db_seasons, currentEpisodes) {
+function updateSeasonEpisodeData(db_seasons, currentEpisodes, apiName) {
     let updateFlag = false;
+
     for (let i = 0; i < currentEpisodes.length; i++) {
         let seasonNumber = currentEpisodes[i].season;
         let episodeNumber = currentEpisodes[i].episode;
@@ -73,7 +76,7 @@ function updateSeasonEpisodeData(db_seasons, currentEpisodes) {
             let checkEpisode = checkSeason.episodes.find(item => item.episodeNumber === episodeNumber);
             if (checkEpisode) {
                 //episode exist
-                if (handleEpisodeDataUpdate(checkEpisode, currentEpisodes[i])) {
+                if (handleEpisodeDataUpdate(checkEpisode, currentEpisodes[i], apiName)) {
                     updateFlag = true;
                 }
             } else {
@@ -104,20 +107,57 @@ function updateSeasonEpisodeData(db_seasons, currentEpisodes) {
     return updateFlag;
 }
 
-function handleEpisodeDataUpdate(prevEpisode, currentEpisode) {
-    let episodeUpdated = false;
+function handleEpisodeDataUpdate(prevEpisode, currentEpisode, apiName) {
+    try {
+        let episodeUpdated = false;
 
-    const checkFields = ['title', 'duration', 'released', 'releaseStamp', 'imdbRating', 'imdbID'];
+        const checkFields = ['title', 'duration', 'released', 'releaseStamp', 'imdbRating', 'imdbID'];
+        const badValues = ['TBA', 'N/A', 'unknown', '0', '0 min'];
 
-    for (let i = 0; i < checkFields.length; i++) {
-        let key = checkFields[i];
-        if (prevEpisode[key] !== currentEpisode[key] && currentEpisode[key]) {
-            prevEpisode[key] = currentEpisode[key];
-            episodeUpdated = true;
+        for (let i = 0; i < checkFields.length; i++) {
+            let key = checkFields[i];
+            if (!currentEpisode[key] || badValues.includes(currentEpisode[key])) {
+                continue;
+            }
+            if (key === 'title') {
+                let currentTitle = currentEpisode[key].toString();
+                let prevTitle = prevEpisode[key].toString();
+                let t1 = getNormalizedEpisodeTitle(prevTitle);
+                let t2 = getNormalizedEpisodeTitle(currentTitle);
+                let t3 = prevEpisode[key].replace(/\*/g, '\\*').replace(/\?/g, '\\?');
+                let t4 = replaceSpecialCharacters(t3);
+
+                if (!prevTitle || (
+                    t1 !== t2 &&
+                    !wordsToNumbers(currentTitle).toString().match(/^(Episode|Part) #?\d+(\.\d+)?$/i) &&
+                    !currentTitle.match(new RegExp(`chapter .+ \'?${t3}\'?`, 'i')) &&
+                    !currentTitle.match(new RegExp(`chapter .+ \'?${t4}\'?`, 'i')) &&
+                    !currentTitle.match(new RegExp(`.*trail: \'?${t3}\'?`, 'i'))
+                )) {
+                    prevEpisode[key] = currentEpisode[key];
+                    episodeUpdated = true;
+                }
+            } else if (key === 'duration') {
+                if ((prevEpisode[key] !== currentEpisode[key]) && (!prevEpisode[key] || badValues.includes(prevEpisode[key]) || apiName !== 'omdb')) {
+                    prevEpisode[key] = currentEpisode[key];
+                    episodeUpdated = true;
+                }
+            } else if (key === 'released') {
+                if ((prevEpisode[key] !== currentEpisode[key]) && (!prevEpisode[key] || badValues.includes(prevEpisode[key]) || apiName !== 'omdb')) {
+                    prevEpisode[key] = currentEpisode[key];
+                    episodeUpdated = true;
+                }
+            } else if (prevEpisode[key] !== currentEpisode[key]) {
+                prevEpisode[key] = currentEpisode[key];
+                episodeUpdated = true;
+            }
         }
-    }
 
-    return episodeUpdated;
+        return episodeUpdated;
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
 }
 
 function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
@@ -281,11 +321,14 @@ export function getTotalDuration(seasons, latestData, type) {
     let totalDuration = 0;
     let episodeCounter = 0;
     for (let i = 0; i < seasons.length; i++) {
-        if (seasons[i].seasonNumber <= latestData.season) {
+        if (seasons[i].seasonNumber <= latestData.season ||
+            seasons[i].episodes.find(item => item.links.length > 0 || item.watchOnlineLinks.length > 0)) {
             let episodes = seasons[i].episodes;
             for (let j = 0; j < episodes.length; j++) {
                 if (seasons[i].seasonNumber < latestData.season ||
-                    episodes[j].episodeNumber <= latestData.episode) {
+                    episodes[j].episodeNumber <= latestData.episode ||
+                    episodes[j].links.length > 0 ||
+                    episodes[j].watchOnlineLinks.length > 0) {
                     episodeCounter++;
                     totalDuration += Number(episodes[j].duration.replace('min', ''));
                 }
@@ -315,4 +358,45 @@ export function getEndYear(seasons, status, year) {
         // running
         return '';
     }
+}
+
+export function getSeasonEpisode(seasons) {
+    let res = [];
+    for (let i = 0; i < seasons.length; i++) {
+        let season = seasons[i].seasonNumber;
+        let episodes = seasons[i].episodes.length;
+        if (episodes > 0) {
+            res.push({
+                seasonNumber: season,
+                episodes: episodes,
+            });
+        }
+    }
+    return res;
+}
+
+function getNormalizedEpisodeTitle(title) {
+    title = title.toLowerCase()
+        .replace(/ \(\d+\)$/, r => ' part ' + r.match(/\d+/)[0])
+        .replace(/&quot;/g, '');
+    return replaceSpecialCharacters(title)
+        .replace(' n ', ' and ')
+        .replace('the ', '')
+        .replace(' one', ' 1')
+        .replace(' two', ' 2')
+        .replace(' three', ' 3')
+        .replace(' four', ' 4')
+        .replace(/pt (?=\d)/, 'part ')
+        .replace(/part i+/, r =>
+            r.replace('iii', '3')
+                .replace('ii', '2')
+                .replace('i', '1')
+        )
+        .replace('part 1', '')
+        .replace(/s..t/gi, 'shit')
+        .replace(/f..k/gi, 'fuck')
+        .replace(/f..ing/gi, 'fucking')
+        .replace(/[eaos]/g, '')
+        .replace(/the\s/g, '')
+        .replace(/\s|́|́/g, '');
 }

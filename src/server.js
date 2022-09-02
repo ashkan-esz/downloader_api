@@ -9,6 +9,7 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import {loadAgenda} from './loaders/index.js';
+import {saveError} from "./error/saveError.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -77,3 +78,18 @@ app.use((err, req, res, next) => {
 app.listen(config.port, () => {
     console.log(`http://localhost:${config.port}`)
 });
+
+process
+    .on('unhandledRejection', async (reason, p) => {
+        // Use your own logger here
+        console.error(reason, 'Unhandled Rejection at Promise', p);
+        reason.pp = p;
+        await saveError(reason);
+    })
+    .on('uncaughtException', async err => {
+        console.error(err, 'Uncaught Exception thrown');
+        await saveError(err);
+        // Optional: Ensure process will stop after this
+        process.exit(1);
+    });
+

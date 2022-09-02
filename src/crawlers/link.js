@@ -229,7 +229,7 @@ export function groupSerialLinks(links, watchOnlineLinks) {
         result[i].episodes = result[i].episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
 
         //sort links
-        for (let j = 0; j < result[i].episodes; j++) {
+        for (let j = 0; j < result[i].episodes.length; j++) {
             result[i].episodes[j].links = sortLinksByQuality(result[i].episodes[j].links);
             result[i].episodes[j].watchOnlineLinks = sortLinksByQuality(result[i].episodes[j].watchOnlineLinks);
         }

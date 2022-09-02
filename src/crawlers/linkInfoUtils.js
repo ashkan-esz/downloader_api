@@ -170,7 +170,7 @@ export function fixLinkInfo(info, linkHref) {
         .replace(/FullHD/i, 'FULL-HD')
         .replace(/(Farsi\.Dubbed)|(Dubbed\.Farsi)/i, 'dubbed');
 
-    if (!info.toLowerCase().includes('x265') && linkHref.toLowerCase().includes('x265')) {
+    if (!info.toLowerCase().includes('x265') && (linkHref.toLowerCase().includes('x265') || linkHref.toLowerCase().includes('.265.'))) {
         info = info
             .replace(/\d\d\d\d?p/g, (res) => res + '.x265')
             .replace('2160p.x265.4K', '2160p.4K.x265');

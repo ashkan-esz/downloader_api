@@ -3,7 +3,7 @@ import {getOMDBApiData, getOMDBApiFields} from "./omdbApi.js";
 import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi.js";
 import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi.js";
 import {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} from "../../data/cloudStorage.js";
-import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear} from "../seasonEpisode.js";
+import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisode} from "../seasonEpisode.js";
 import {sortPosters, sortTrailers} from "../subUpdates.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
 import {saveError} from "../../error/saveError.js";
@@ -368,6 +368,7 @@ async function updateSeasonsField(db_data, sourceName, site_links, siteWatchOnli
     if (seasonsUpdateFlag) {
         fields.seasons = db_data.seasons;
         fields.endYear = getEndYear(db_data.seasons, db_data.status, db_data.year);
+        fields.seasonEpisode = getSeasonEpisode(db_data.seasons);
     }
 
     let newTotalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);

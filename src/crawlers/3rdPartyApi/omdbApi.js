@@ -5,8 +5,7 @@ import {getEpisodeModel} from "../../models/episode.js";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 
-const apiKeyArray = config.omdbApiKeys;
-let apiKeyCounter = -1;
+const apiKeys = createApiKeys(config.omdbApiKeys);
 
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {
@@ -23,16 +22,16 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         let data;
         let yearIgnored = false;
         if (titleYear) {
-            data = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
+            data = await handle_OMDB_ApiCall(url + `&y=${titleYear}`);
             if (data === null) {
-                data = await handle_OMDB_ApiKeys(url);
+                data = await handle_OMDB_ApiCall(url);
                 yearIgnored = true;
                 if (data && data.Year && (Number(data.Year) - Number(titleYear) > 7)) {
                     return null;
                 }
             }
         } else {
-            data = await handle_OMDB_ApiKeys(url);
+            data = await handle_OMDB_ApiCall(url);
         }
         if (data === null) {
             if (canRetry) {
@@ -55,6 +54,9 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
             return null;
         }
 
+        if (data) {
+            data.yearIgnored = yearIgnored;
+        }
         return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) ? data : null;
     } catch (error) {
         if (!error.response || error.response.status !== 500) {
@@ -130,6 +132,7 @@ export function getOMDBApiFields(data, type) {
                 : [],
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
             omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
+            yearIgnored: data.yearIgnored,
             year: data.Year.split(/[-–]/g)[0],
             updateFields: {
                 imdbID: data.imdbID,
@@ -170,7 +173,7 @@ function extractRatings(ratings) {
     return ratingObj;
 }
 
-export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, premiered, lastSeasonsOnly = false) {
+export async function get_OMDB_EpisodesData(omdbTitle, yearIgnored, totalSeasons, premiered, lastSeasonsOnly = false) {
     try {
         let titleYear = premiered.split('-')[0];
         let episodes = [];
@@ -179,26 +182,18 @@ export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, premiered, 
         let promiseArray = [];
 
         for (let j = startSeasonNumber; j <= totalSeasons; j++) {
-            const url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`;
-            let seasonResult = null;
-            let includeYear = false;
-            if (titleYear) {
-                seasonResult = await handle_OMDB_ApiKeys(url + `&y=${titleYear}`);
-                if (seasonResult === null) {
-                    seasonResult = await handle_OMDB_ApiKeys(url);
-                } else {
-                    includeYear = true;
-                }
-            } else {
-                seasonResult = await handle_OMDB_ApiKeys(url);
+            let url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&type=series`;
+            if (!yearIgnored) {
+                url += `&y=${titleYear}`;
             }
+            let seasonResult = await handle_OMDB_ApiCall(url);
 
             if (seasonResult !== null && seasonResult.Title.toLowerCase() === omdbTitle.toLowerCase()) {
                 let thisSeasonEpisodes = seasonResult.Episodes;
                 let seasonsEpisodeNumber = Number(thisSeasonEpisodes[thisSeasonEpisodes.length - 1].Episode);
 
                 for (let k = 1; k <= seasonsEpisodeNumber; k++) {
-                    let searchYear = includeYear ? `&y=${titleYear}` : '';
+                    let searchYear = !yearIgnored ? `&y=${titleYear}` : '';
                     let episodeResultPromise = getSeasonEpisode_episode(omdbTitle, searchYear, episodes, thisSeasonEpisodes, j, k);
                     promiseArray.push(episodeResultPromise);
                 }
@@ -221,7 +216,7 @@ export async function get_OMDB_EpisodesData(omdbTitle, totalSeasons, premiered, 
 
 function getSeasonEpisode_episode(omdbTitle, searchYear, episodes, seasonEpisodes, j, k) {
     const url = `https://www.omdbapi.com/?t=${omdbTitle}&Season=${j}&Episode=${k}&type=series` + searchYear;
-    return handle_OMDB_ApiKeys(url).then(episodeResult => {
+    return handle_OMDB_ApiCall(url).then(episodeResult => {
         let lastEpisodeDuration = (episodes.length === 0) ? '0 min' : episodes[episodes.length - 1].duration;
         if (episodeResult === null) {
             let episodeModel = getEpisodeModel(
@@ -240,7 +235,7 @@ function getSeasonEpisode_episode(omdbTitle, searchYear, episodes, seasonEpisode
 
             let episodeModel = getEpisodeModel(
                 episodeResult.Title, releaseDate, '',
-                episodeResult.Runtime, j, k,
+                episodeResult.Runtime, Number(episodeResult.Season), Number(episodeResult.Episode),
                 episodeResult.imdbRating, episodeResult.imdbID);
             episodes.push(episodeModel);
         }
@@ -286,24 +281,38 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, year
     );
 }
 
-async function handle_OMDB_ApiKeys(url) {
+async function handle_OMDB_ApiCall(url) {
     try {
-        let startTime = new Date();
+        let key = null;
         let response;
         while (true) {
             try {
-                apiKeyCounter++;
-                apiKeyCounter = apiKeyCounter % apiKeyArray.length;
-                response = await axios.get(url + `&apikey=${apiKeyArray[apiKeyCounter]}`);
+                key = getApiKey();
+                if (!key) {
+                    if (config.nodeEnv === 'dev') {
+                        console.log('ERROR: more omdb api keys are needed');
+                    } else {
+                        Sentry.captureMessage('more omdb api keys are needed');
+                    }
+                    return null;
+                }
+                response = await axios.get(url + `&apikey=${key.apiKey}`);
                 break;
             } catch (error) {
                 if (
                     (error.response && error.response.data.Error === 'Request limit reached!') ||
                     (error.response && error.response.status === 401)
                 ) {
-                    if (getDatesBetween(new Date(), startTime).seconds > 12) {
-                        Sentry.captureMessage('more omdb api keys are needed');
-                        return null;
+                    if (error.response && error.response.status === 401 && key) {
+                        if (config.nodeEnv === 'dev') {
+                            console.log(`ERROR: Invalid omdb api key: ${key.apiKey}`);
+                        } else {
+                            Sentry.captureMessage(`Invalid omdb api key: ${key.apiKey}`);
+                        }
+                        key.limit = 0;
+                    }
+                    if (key) {
+                        key.callCount = key.limit + 1;
                     }
                 } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                     error.isAxiosError = true;
@@ -332,4 +341,43 @@ async function handle_OMDB_ApiKeys(url) {
         }
         return null;
     }
+}
+
+function getApiKey() {
+    freeApiKeys();
+    let activeKeys = apiKeys.filter(item => item.limit > item.callCount);
+    let usedKeys = activeKeys.filter(item => item.callCount > 0);
+    let keys = usedKeys.length > 6
+        ? usedKeys.sort((a, b) => a.callCount - b.callCount)
+        : activeKeys.sort((a, b) => a.callCount - b.callCount);
+
+    if (keys.length === 0) {
+        return null;
+    }
+    if (keys[0].callCount === 0) {
+        keys[0].firstCallTime = new Date();
+    }
+    keys[0].callCount++;
+    return keys[0];
+}
+
+function freeApiKeys() {
+    let now = new Date();
+    for (let i = 0; i < apiKeys.length; i++) {
+        if (apiKeys[i].firstCallTime && getDatesBetween(now, apiKeys[i].firstCallTime).hours >= 12) {
+            apiKeys[i].callCount = 0;
+            apiKeys[i].firstCallTime = 0;
+        }
+    }
+}
+
+function createApiKeys(omdbApiKeys) {
+    return omdbApiKeys.map(item => {
+        return {
+            apiKey: item,
+            callCount: 0,
+            limit: 1000,
+            firstCallTime: 0,
+        };
+    });
 }

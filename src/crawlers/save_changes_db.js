@@ -2,7 +2,7 @@ import {searchTitleDB, insertToDB, updateByIdDB} from "../data/db/crawlerMethods
 import {deleteTrailerFromS3} from "../data/cloudStorage.js";
 import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/personCharacter.js";
-import {handleSiteSeasonEpisodeUpdate, getTotalDuration} from "./seasonEpisode.js";
+import {handleSiteSeasonEpisodeUpdate, getTotalDuration, getSeasonEpisode} from "./seasonEpisode.js";
 import {handleSubUpdates} from "./subUpdates.js";
 import {getMovieModel} from "../models/movie.js";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
@@ -190,6 +190,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             if (seasonsUpdateFlag) {
                 updateFields.seasons = db_data.seasons;
                 updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
+                updateFields.seasonEpisode = getSeasonEpisode(db_data.seasons);
             }
         }
 

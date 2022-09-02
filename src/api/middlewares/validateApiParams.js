@@ -268,6 +268,26 @@ const validations = Object.freeze({
             }
         }),
 
+    numberOfSeason_query: query('numberOfSeason')
+        .customSanitizer(value => {
+            let temp = value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item))
+                : [];
+            if (temp.length === 1) {
+                temp.push(temp[0]);
+            }
+            return temp;
+        })
+        .custom((value) => {
+            if (value.length === 2 && value[0] > value[1]) {
+                throw new Error('Invalid parameter numberOfSeason :: (\d+ | \d+-\d+)');
+            } else {
+                return value;
+            }
+        }),
+
     qualities_query: query('qualities')
         .customSanitizer(value => {
             return value

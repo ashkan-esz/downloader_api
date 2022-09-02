@@ -593,6 +593,14 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
         if (filters.watchOnlineLink) {
             aggregationPipeline[0]['$match']['latestData.watchOnlineLink'] = filters.watchOnlineLink === 'true' ? {$ne: ''} : '';
         }
+        if (filters.numberOfSeason) {
+            aggregationPipeline[0]['$match']['$expr'] = {
+                $and: [
+                    {$gte: [{$arrayElemAt: ["$seasons.seasonNumber", -1]}, filters.numberOfSeason[0]]},
+                    {$lte: [{$arrayElemAt: ["$seasons.seasonNumber", -1]}, filters.numberOfSeason[1]]},
+                ],
+            }
+        }
 
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({

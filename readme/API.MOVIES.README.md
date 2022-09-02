@@ -297,6 +297,7 @@ Query params (filters):
 | **`imdbScores`**      | Two Number in range [0-10] joined by '-'               | example: 5-9                                            | `false`  |
 | **`malScores`**       | Two Number in range [0-10] joined by '-'               | example: 5-9                                            | `flase`  |
 | **`genres`**          | Array of String joined by '-'                          | example: action or action-comedy-drama or action-sci_fi | `false`  |
+| **`numberOfSeason`**  | Single number or Two Number joined by '-'              | example: 2 or 5-7                                       | `false`  |
 | **`country`**         | String                                                 | example: japan                                          | `false`  |
 | **`movieLang`**       | String                                                 | example: spanish                                        | `false`  |
 | **`dubbed`**          | true / false                                           |                                                         | `false`  |
@@ -317,6 +318,7 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&genres=action&subtitle=true&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&country=germany&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&movieLang=spanish&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2021-2023&numberOfSeason=1&testUser=true
 </details>
 <br />
 
@@ -455,3 +457,4 @@ Examples
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
 - Open [schema](SCHEMA.README.md).
+- Open [error messages docs](ERRORMESSAGE.README.md).

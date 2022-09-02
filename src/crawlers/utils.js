@@ -11,7 +11,7 @@ export function replaceSpecialCharacters(input) {
         .replace(/&/g, 'and')
         .replace('∞', ' infinity')
         .replace(/[áåäà@æ]/g, 'a')
-        .replace(/[éëèē]/g, 'e')
+        .replace(/[éëèēê]/g, 'e')
         .replace('†', 't')
         .replace(/[ß♭]/g, 'b')
         .replace(/ç/g, 'c')
@@ -295,7 +295,7 @@ export function checkBetterQuality(quality, prevQuality, withSubIsBetter = true)
         isBetter = (qualityIndex > prevQualityIndex);
     } else if (x265 !== prevX265 || bit10 !== prevBit10) {
         //check x265, 10bit
-        isBetter = (x265 && !prevX265) || (bit10 && !prevBit10);
+        isBetter = (x265 && !prevX265 && !prevBit10) || (bit10 && !prevBit10);
     } else {
         //check censored, dubbed, SoftSub, HardSub
         let t1 = !!quality.match(/censored|dubbed|sub/);
