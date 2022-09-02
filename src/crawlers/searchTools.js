@@ -39,8 +39,8 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
-                let {$, links, checkGoogleCache, responseUrl} = await getLinks(url + `${i}`);
-                if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, i)) {
+                let {$, links, checkGoogleCache, responseUrl, pageTitle} = await getLinks(url + `${i}`);
+                if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
@@ -155,6 +155,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
 async function getLinks(url, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
+    let pageTitle = '';
     let cookies = {};
     try {
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
@@ -196,6 +197,7 @@ async function getLinks(url, sourceLinkData = null) {
                 let pageData = await getPageData(url);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
+                    pageTitle = pageData.pageTitle;
                     cookies = pageData.cookies;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
@@ -232,10 +234,10 @@ async function getLinks(url, sourceLinkData = null) {
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, cookies, checkGoogleCache, responseUrl};
+        return {$, links, cookies, checkGoogleCache, responseUrl, pageTitle};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: [], cookies, checkGoogleCache, responseUrl};
+        return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle};
     }
 }
 
@@ -276,9 +278,9 @@ async function getFromGoogleCache(url, retryCounter = 0) {
     }
 }
 
-function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageNumber) {
+function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, pageNumber) {
     try {
-        if ($ === null || $ === undefined) {
+        if ($ === null || $ === undefined || pageTitle.includes('صفحه پیدا نشد')) {
             return true;
         }
         if (sourceName === "digimoviez") {
