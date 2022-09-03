@@ -153,6 +153,27 @@ export async function setFavoriteGenres(req, res) {
     return res.status(updateResult.responseData.code).json(updateResult.responseData);
 }
 
+export async function getAllUserSettings(req, res) {
+    let result = await usersServices.getAllUserSettings(req.jwtUserData);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function getUserSettings(req, res) {
+    let result = await usersServices.getUserSettings(req.jwtUserData, req.params.settingName);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function changeUserSettings(req, res) {
+    let result = await usersServices.changeUserSettings(req.jwtUserData, req.body.settings, req.params.settingName);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+//----------------------------
+//----------------------------
+
 function removeDuplicateElements(input) {
     let result = [];
     for (let i = 0; i < input.length; i++) {

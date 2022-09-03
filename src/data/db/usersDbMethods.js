@@ -318,3 +318,68 @@ export async function removeProfileImageDB(userId, fileName) {
         return 'error';
     }
 }
+
+//----------------------------
+//----------------------------
+
+export async function getAllUserSettingsDB(userId) {
+    try {
+        let collection = await getCollection('users');
+        let result = await collection.find({
+            _id: new mongodb.ObjectId(userId),
+        }, {
+            projection: {
+                _id: 0,
+                movieSettings: 1,
+                notificationSettings: 1,
+            }
+        }).limit(1).toArray();
+        return result.length === 0 ? null : result[0];
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUserSettingsDB(userId, settingSectionName) {
+    try {
+        let fieldName = settingSectionName + 'Settings';
+        let collection = await getCollection('users');
+        let result = await collection.find({
+            _id: new mongodb.ObjectId(userId),
+        }, {
+            projection: {
+                [fieldName]: 1
+            }
+        }).limit(1).toArray();
+        return result.length === 0 ? null : result[0][fieldName];
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function changeUserSettingsDB(userId, settings, settingSectionName) {
+    try {
+        let fieldName = settingSectionName + 'Settings';
+        let collection = await getCollection('users');
+        let result = await collection.findOneAndUpdate(
+            {
+                _id: new mongodb.ObjectId(userId),
+            }, {
+                $set: {
+                    [fieldName]: settings
+                },
+            }, {
+                returnDocument: 'after',
+                projection: {
+                    [fieldName]: 1
+                }
+            });
+
+        return result.value?.[fieldName];
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

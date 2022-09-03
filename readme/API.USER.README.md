@@ -14,6 +14,7 @@
 | **`deviceId`**               | String                        | unique id of session                                                  | `true`   |
 | **`filename`**               | String                        |                                                                       | `true`   |
 | **`genres`**                 | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi               | `true`   |
+| **`settingName`**            | _movie_, _notification_       |                                                                       | `true`   |
 
 
 > they are case-insensitive.
@@ -35,6 +36,9 @@
 - [POST /users/uploadProfileImage](#post-usersuploadprofileimage)
 - [DELETE /users/removeProfileImage/[filename]](#delete-usersremoveprofileimagefilename)
 - [PUT /users/setFavoriteGenres/[genres]](#put-userssetfavoritegenresgenres)
+- [GET /users/allUserSettings](#get-usersallusersettings)
+- [GET /users/userSettings/[settingName]](#get-usersusersettingssettingname)
+- [PUT /users/changeUserSettings/[settingName]](#put-userschangeusersettingssettingname)
 
 
 ## Auth
@@ -279,6 +283,10 @@ Future<List<String>> addProfileImage(File file) async {
 
 <br/>
 
+
+
+## Profile Image Api
+
 ### DELETE /users/removeProfileImage/[filename]
 > returns new profileImages array.
 >
@@ -287,9 +295,33 @@ Future<List<String>> addProfileImage(File file) async {
 <br/>
 
 ### PUT /users/setFavoriteGenres/[genres]
-> **Note: maximum number of genres is 6, (error code 409)**
+> **Note: maximum number of genres is 6, (error code 409)**.
 
 <br/>
+
+
+
+## Settings Api
+
+### GET /users/allUserSettings
+> returns user settings for movies and notifications.
+
+<br/>
+
+### GET /users/userSettings/[settingName]
+> returns user settings based on __settingName__.
+
+<br/>
+
+### PUT /users/changeUserSettings/[settingName]
+> receives object __settings__ in request body. ([profile schema](SCHEMA.README.md#Profile))
+> 
+> __settings__ fields depends on the value of __settingName__.
+> 
+> return updated value of setting.
+
+<br/>
+
 
 # Computed Data
 - every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.

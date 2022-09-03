@@ -70,6 +70,10 @@ queryParamErrors = {
     japaneseNames: "Invalid parameter japaneseNames :: (array of string, {min:1, max:20})",
     deviceId: "Invalid parameter deviceId :: String(UUID)",
     remove: "Invalid parameter remove :: (true|false)",
+    settingName: "Invalid parameter settingName :: String",
+    'settings.**': "Missed parameter settings.**",
+    'settings.**': "Wrong parameter settings.**",
+    'settings.**': "Invalid parameter settings.** :: String",
 
 }
 ```

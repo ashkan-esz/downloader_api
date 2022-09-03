@@ -48,4 +48,23 @@ router.put('/setFavoriteGenres/:genres',
     middlewares.validateApiParams.apiParams_sendError,
     usersControllers.setFavoriteGenres);
 
+//users/allUserSettings
+router.get('/allUserSettings',
+    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    usersControllers.getAllUserSettings);
+
+//users/userSettings/:settingName
+router.get('/userSettings/:settingName',
+    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.validateApiParams.checkApiParams(['settingName']),
+    middlewares.validateApiParams.apiParams_sendError,
+    usersControllers.getUserSettings);
+
+//users/changeUserSettings/:settingName
+router.put('/changeUserSettings/:settingName',
+    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.validateApiParams.checkApiParams(['settingName', 'setting_body']),
+    middlewares.validateApiParams.apiParams_sendError,
+    usersControllers.changeUserSettings);
+
 export default router;

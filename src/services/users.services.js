@@ -13,6 +13,7 @@ import {
     updateUserByID,
     uploadProfileImageDB,
     removeProfileImageDB,
+    getUserSettingsDB, getAllUserSettingsDB, changeUserSettingsDB,
 } from "../data/db/usersDbMethods.js";
 import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
@@ -356,6 +357,54 @@ export async function setFavoriteGenres(jwtUserData, genres) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
         return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
+export async function getAllUserSettings(jwtUserData) {
+    try {
+        let result = await getAllUserSettingsDB(jwtUserData.userId);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!result) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function getUserSettings(jwtUserData, settingName) {
+    try {
+        let result = await getUserSettingsDB(jwtUserData.userId, settingName);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!result) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function changeUserSettings(jwtUserData, settings, settingName) {
+    try {
+        let result = await changeUserSettingsDB(jwtUserData.userId, settings, settingName);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!result) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({data: result}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);

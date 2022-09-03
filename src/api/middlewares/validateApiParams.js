@@ -1,4 +1,4 @@
-import {param, query, validationResult} from 'express-validator';
+import {body, param, query, validationResult} from 'express-validator';
 
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
@@ -6,6 +6,13 @@ const dataLevels = ['dlink', 'low', 'telbot', 'medium', 'info', 'high'];
 const sortBases = ['animetopcomingsoon', 'animetopairing', 'comingsoon', 'intheaters', 'boxoffice', 'top', 'popular'];
 const statTypes = ['like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character',
     'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score'];
+
+const settingNames = ['movie', 'notification'];
+const movieSettingskeys = ['includeAnime', 'includeHentai', 'includeDubbed', 'includeHardSub', 'includeCensored', 'preferredQualities'];
+const notificationSettingskeys = [
+    'followMovie', 'followMovie_betterQuality', 'followMovie_subtitle',
+    'futureList', 'futureList_serialSeasonEnd', 'futureList_subtitle', 'finishedList_spinOffSequel'
+];
 
 
 const validations = Object.freeze({
@@ -384,6 +391,58 @@ const validations = Object.freeze({
     deviceId: param('deviceId')
         .isString().withMessage('Invalid parameter deviceId :: String(UUID)')
         .trim(),
+
+    settingName: param('settingName')
+        .isString().withMessage('Invalid parameter settingName :: String')
+        .trim().toLowerCase()
+        .isIn(settingNames).withMessage(`Invalid parameter settingName :: (${settingNames.join('|')})`),
+
+    setting_body: body('settings')
+        .exists().withMessage('Settings cannot be empty')
+        .custom((value, {req, loc, path}) => {
+            let keys = Object.keys(value);
+            if (req.params.settingName === 'movie') {
+                for (let i = 0; i < movieSettingskeys.length; i++) {
+                    if (value[movieSettingskeys[i]] === undefined) {
+                        throw new Error(`Missed parameter settings.${movieSettingskeys[i]}`);
+                    }
+                }
+                for (let i = 0; i < keys.length; i++) {
+                    if (!movieSettingskeys.includes(keys[i])) {
+                        throw new Error(`Wrong parameter settings.${keys[i]}`);
+                    }
+                    if (keys[i] === 'preferredQualities') {
+                        if (!Array.isArray(value[keys[i]])) {
+                            throw new Error(`Invalid parameter settings.${keys[i]} :: Array(\d+p)`);
+                        }
+                        let temp = value[keys[i]];
+                        let qualities = ['480p', '720p', '1080p', '2160p'];
+                        for (let j = 0; j < temp.length; j++) {
+                            if (!qualities.includes(temp[j])) {
+                                throw new Error(`Invalid parameter settings.${keys[i]} :: Array((480|720|1080|2160)p)`);
+                            }
+                        }
+                    } else if (typeof value[keys[i]] !== 'boolean') {
+                        throw new Error(`Invalid parameter settings.${keys[i]} :: Boolean`);
+                    }
+                }
+            } else if (req.params.settingName === 'notification') {
+                for (let i = 0; i < notificationSettingskeys.length; i++) {
+                    if (value[notificationSettingskeys[i]] === undefined) {
+                        throw new Error(`Missed parameter settings.${notificationSettingskeys[i]}`);
+                    }
+                }
+                for (let i = 0; i < keys.length; i++) {
+                    if (!notificationSettingskeys.includes(keys[i])) {
+                        throw new Error(`Wrong parameter settings.${keys[i]}`);
+                    }
+                    if (typeof value[keys[i]] !== 'boolean') {
+                        throw new Error(`Invalid parameter settings.${keys[i]} :: Boolean`);
+                    }
+                }
+            }
+            return value;
+        }),
 });
 
 

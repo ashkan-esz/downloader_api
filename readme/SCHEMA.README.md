@@ -19,6 +19,23 @@ profile = {
         }),
         lastUpdate: Date,
     },
+    movieSettings: {
+        includeAnime: Boolean, //default: true
+        includeHentai: Boolean, //default: false
+        includeDubbed: Boolean, //default: true
+        includeHardSub: Boolean, //default: true
+        includeCensored: Boolean, //default: true
+        preferredQualities: Array(String), //enum('480p', '720p', '1080p', '2160p')
+    },
+    notificationSettings: {
+        followMovie: Boolean, //default: true
+        followMovie_betterQuality: Boolean, //default: true
+        followMovie_subtitle: Boolean, //default: true
+        futureList: Boolean, //default: true
+        futureList_serialSeasonEnd: Boolean, //default: true
+        futureList_subtitle: Boolean, //default: true
+        finishedList_spinOffSequel: Boolean, //default: true  
+    },
     friends: Array,
     registrationDate: Date,
     role: String, // enum('test-user', 'user', 'dev', 'admin')

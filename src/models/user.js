@@ -24,6 +24,8 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
             favoriteGenres: [],
             lastUpdate: 0,
         },
+        movieSettings: userMovieSettings(),
+        notificationSettings: userNotificationSettings(),
         registrationDate: new Date(),
         role: 'user',
     }
@@ -41,5 +43,28 @@ export function getNewDeviceSession(deviceInfo, deviceId, refreshToken) {
         loginDate: now,
         lastUseDate: now,
         refreshToken: refreshToken || '',
+    });
+}
+
+export function userMovieSettings() {
+    return ({
+        includeAnime: true,
+        includeHentai: false,
+        includeDubbed: true,
+        includeHardSub: true,
+        includeCensored: true,
+        preferredQualities: ['720p', '1080p', '2160p'],
+    });
+}
+
+export function userNotificationSettings() {
+    return ({
+        followMovie: true,
+        followMovie_betterQuality: true,
+        followMovie_subtitle: true,
+        futureList: true,
+        futureList_serialSeasonEnd: true,
+        futureList_subtitle: true,
+        finishedList_spinOffSequel: true
     });
 }
