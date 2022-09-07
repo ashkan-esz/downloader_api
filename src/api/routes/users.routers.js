@@ -11,7 +11,7 @@ router.post('/signup', middlewares.auth.attachAuthFlag, middlewares.auth.blockAu
 router.post('/login', middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized, middlewares.validation.loginValidation, usersControllers.login);
 
 //users/getToken
-router.put('/getToken', middlewares.auth.isAuth_refreshToken, usersControllers.getToken);
+router.put('/getToken', middlewares.auth.isAuth_refreshToken, middlewares.validation.getTokenValidation, usersControllers.getToken);
 
 //users/logout
 router.put('/logout', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.logout);

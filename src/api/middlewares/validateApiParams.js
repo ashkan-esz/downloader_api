@@ -7,8 +7,9 @@ const sortBases = ['animetopcomingsoon', 'animetopairing', 'comingsoon', 'inthea
 const statTypes = ['like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character',
     'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score'];
 
-const settingNames = ['movie', 'notification'];
-const movieSettingskeys = ['includeAnime', 'includeHentai', 'includeDubbed', 'includeHardSub', 'includeCensored', 'preferredQualities'];
+const settingNames = ['movie', 'notification', 'downloadLinks'];
+const movieSettingskeys = ['includeAnime', 'includeHentai'];
+const downloadLinksSettingskeys = ['includeDubbed', 'includeHardSub', 'includeCensored', 'preferredQualities'];
 const notificationSettingskeys = [
     'followMovie', 'followMovie_betterQuality', 'followMovie_subtitle',
     'futureList', 'futureList_serialSeasonEnd', 'futureList_subtitle', 'finishedList_spinOffSequel'
@@ -400,15 +401,19 @@ const validations = Object.freeze({
     setting_body: body('settings')
         .exists().withMessage('Settings cannot be empty')
         .custom((value, {req, loc, path}) => {
+            if (!value || Array.isArray(value) || typeof value !== 'object') {
+                throw new Error('Invalid parameter settings :: Object');
+            }
+
             let keys = Object.keys(value);
-            if (req.params.settingName === 'movie') {
-                for (let i = 0; i < movieSettingskeys.length; i++) {
-                    if (value[movieSettingskeys[i]] === undefined) {
-                        throw new Error(`Missed parameter settings.${movieSettingskeys[i]}`);
+            if (req.params.settingName === 'downloadLinks') {
+                for (let i = 0; i < downloadLinksSettingskeys.length; i++) {
+                    if (value[downloadLinksSettingskeys[i]] === undefined) {
+                        throw new Error(`Missed parameter settings.${downloadLinksSettingskeys[i]}`);
                     }
                 }
                 for (let i = 0; i < keys.length; i++) {
-                    if (!movieSettingskeys.includes(keys[i])) {
+                    if (!downloadLinksSettingskeys.includes(keys[i])) {
                         throw new Error(`Wrong parameter settings.${keys[i]}`);
                     }
                     if (keys[i] === 'preferredQualities') {
@@ -426,14 +431,17 @@ const validations = Object.freeze({
                         throw new Error(`Invalid parameter settings.${keys[i]} :: Boolean`);
                     }
                 }
-            } else if (req.params.settingName === 'notification') {
-                for (let i = 0; i < notificationSettingskeys.length; i++) {
-                    if (value[notificationSettingskeys[i]] === undefined) {
-                        throw new Error(`Missed parameter settings.${notificationSettingskeys[i]}`);
+            } else if (req.params.settingName === 'movie' || req.params.settingName === 'notification') {
+                let checkKeys = req.params.settingName === 'movie'
+                    ? movieSettingskeys
+                    : notificationSettingskeys;
+                for (let i = 0; i < checkKeys.length; i++) {
+                    if (value[checkKeys[i]] === undefined) {
+                        throw new Error(`Missed parameter settings.${checkKeys[i]}`);
                     }
                 }
                 for (let i = 0; i < keys.length; i++) {
-                    if (!notificationSettingskeys.includes(keys[i])) {
+                    if (!checkKeys.includes(keys[i])) {
                         throw new Error(`Wrong parameter settings.${keys[i]}`);
                     }
                     if (typeof value[keys[i]] !== 'boolean') {

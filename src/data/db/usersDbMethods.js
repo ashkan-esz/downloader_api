@@ -331,6 +331,7 @@ export async function getAllUserSettingsDB(userId) {
             projection: {
                 _id: 0,
                 movieSettings: 1,
+                downloadLinksSettings: 1,
                 notificationSettings: 1,
             }
         }).limit(1).toArray();

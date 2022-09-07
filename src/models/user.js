@@ -25,6 +25,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
             lastUpdate: 0,
         },
         movieSettings: userMovieSettings(),
+        downloadLinksSettings: userDownloadLinksSettings(),
         notificationSettings: userNotificationSettings(),
         registrationDate: new Date(),
         role: 'user',
@@ -50,6 +51,11 @@ export function userMovieSettings() {
     return ({
         includeAnime: true,
         includeHentai: false,
+    });
+}
+
+export function userDownloadLinksSettings() {
+    return ({
         includeDubbed: true,
         includeHardSub: true,
         includeCensored: true,

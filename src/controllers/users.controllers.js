@@ -15,7 +15,6 @@ export async function signup(req, res) {
 
     const ip = getClientIp(req) || '';
     let {username, password, email, deviceInfo} = req.body;
-    deviceInfo = deviceInfo || {};
     const host = req.protocol + '://' + req.get('host');
     let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, host);
     if (signupResult.refreshToken) {
@@ -45,7 +44,6 @@ export async function login(req, res) {
 
     const ip = getClientIp(req) || '';
     let {username_email, password, deviceInfo} = req.body;
-    deviceInfo = deviceInfo || {};
     let loginResult = await usersServices.login(username_email, password, deviceInfo, ip);
     if (loginResult.refreshToken) {
         if (req.query.noCookie === 'true') {
@@ -63,7 +61,16 @@ export async function login(req, res) {
 }
 
 export async function getToken(req, res) {
-    let deviceInfo = req.body.deviceInfo || {};
+    const errorsAfterValidation = validationResult(req);
+    if (!errorsAfterValidation.isEmpty()) {
+        return res.status(400).json({
+            data: null,
+            code: 400,
+            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
+        });
+    }
+
+    let deviceInfo = req.body.deviceInfo;
     const ip = getClientIp(req) || '';
     let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken);
     if (getTokenResult.refreshToken) {
@@ -152,6 +159,9 @@ export async function setFavoriteGenres(req, res) {
 
     return res.status(updateResult.responseData.code).json(updateResult.responseData);
 }
+
+//----------------------------
+//----------------------------
 
 export async function getAllUserSettings(req, res) {
     let result = await usersServices.getAllUserSettings(req.jwtUserData);

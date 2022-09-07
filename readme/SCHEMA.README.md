@@ -22,6 +22,8 @@ profile = {
     movieSettings: {
         includeAnime: Boolean, //default: true
         includeHentai: Boolean, //default: false
+    },
+    downloadLinksSettings: {
         includeDubbed: Boolean, //default: true
         includeHardSub: Boolean, //default: true
         includeCensored: Boolean, //default: true
@@ -75,7 +77,7 @@ session = {
 deviceInfo = {
     appName: String,
     appVersion: String,
-    deviceOs: String,
+    os: String,
     deviceModel: String,
 }
 ```

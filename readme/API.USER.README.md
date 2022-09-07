@@ -1,20 +1,20 @@
 # API Parameters
 
-| param name                   | Values                        | Description                                                           | Required |
-|------------------------------|-------------------------------|-----------------------------------------------------------------------|----------|
-| **`username`**               | string                        | match <code>/^[a-z&#124;0-9_-]+$/gi</code> and length in range [6-50] | `true`   |
-| **`email`**                  | string                        |                                                                       | `true`   |
-| **`password`**               | string                        | at least one number and capital letter  and length in range [8-50]    | `true`   |
-| **`confirmPassword`**        | string                        |                                                                       | `true`   |
-| **`deviceInfo`**             | String                        | includes fields _appName_, _appVersion_, _os_, _deviceModel_          | `true`   |
-| **`deviceInfo.appName`**     | String                        | example: downloader_app, downloader_web, downloader_desktop           | `true`   |
-| **`deviceInfo.appVersion`**  | String                        | example: 1.0.0, 4.5.2                                                 | `true`   |
-| **`deviceInfo.os`**          | String                        | example: Android, Ios, Windows                                        | `true`   |
-| **`deviceInfo.deviceModel`** | String                        | example: SM-A525F, Samsung Galaxy A52, iPhone 6S, Desktop             | `true`   |
-| **`deviceId`**               | String                        | unique id of session                                                  | `true`   |
-| **`filename`**               | String                        |                                                                       | `true`   |
-| **`genres`**                 | Array of String joined by '-' | example: action or action-comedy-drama or action-sci_fi               | `true`   |
-| **`settingName`**            | _movie_, _notification_       |                                                                       | `true`   |
+| param name                   | Values                                   | Description                                                           | Required |
+|------------------------------|------------------------------------------|-----------------------------------------------------------------------|----------|
+| **`username`**               | string                                   | match <code>/^[a-z&#124;0-9_-]+$/gi</code> and length in range [6-50] | `true`   |
+| **`email`**                  | string                                   |                                                                       | `true`   |
+| **`password`**               | string                                   | at least one number and capital letter  and length in range [8-50]    | `true`   |
+| **`confirmPassword`**        | string                                   |                                                                       | `true`   |
+| **`deviceInfo`**             | String                                   | includes fields _appName_, _appVersion_, _os_, _deviceModel_          | `true`   |
+| **`deviceInfo.appName`**     | String                                   | example: downloader_app, downloader_web, downloader_desktop           | `true`   |
+| **`deviceInfo.appVersion`**  | String                                   | example: 1.0.0, 4.5.2                                                 | `true`   |
+| **`deviceInfo.os`**          | String                                   | example: Android, Ios, Windows                                        | `true`   |
+| **`deviceInfo.deviceModel`** | String                                   | example: SM-A525F, Samsung Galaxy A52, iPhone 6S, Desktop             | `true`   |
+| **`deviceId`**               | String                                   | unique id of session                                                  | `true`   |
+| **`filename`**               | String                                   |                                                                       | `true`   |
+| **`genres`**                 | Array of String joined by '-'            | example: action or action-comedy-drama or action-sci_fi               | `true`   |
+| **`settingName`**            | _movie_, _downloadLinks_, _notification_ |                                                                       | `true`   |
 
 
 > they are case-insensitive.
@@ -304,7 +304,7 @@ Future<List<String>> addProfileImage(File file) async {
 ## Settings Api
 
 ### GET /users/allUserSettings
-> returns user settings for movies and notifications.
+> returns user settings for movies, downloadLinks and notifications.
 
 <br/>
 

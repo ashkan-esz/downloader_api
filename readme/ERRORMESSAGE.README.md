@@ -25,7 +25,9 @@ errorMesages = {
     badRequestBody: "Incorrect request body",
     usernameAlreadyExist: "This username already exists",
     emailAlreadyExist: "This email already exists",
-    alreadyExist: "Already exist"
+    alreadyExist: "Already exist",
+    fileTooLarge: "File too large",
+    notJpgImage: "Not an jpg image! Please upload an jpg image",
 }
 ```
 
@@ -36,12 +38,15 @@ errorMesages = {
 ```js
 queryParamErrors = {
     USERNAME_IS_EMPTY: "Username Is Empty",
+    USERNAME_MUST_BE_STRING: "Username Must Be String",
     EMAIL_IS_EMPTY: "Email Is Empty",
+    EMAIL_MUST_BE_STRING: "Email Must Be String",
     USERNAME_LENGTH_MUST_BE_MORE_THAN_6: "Username Length Must Be More Than 6",
     USERNAME_LENGTH_MUST_BE_LESS_THAN_50: "Username Length Must Be Less Than 50",
     USERNAME_BAD_FORMAT: "Only a-z, 0-9, and underscores are allowed",
     EMAIL_IS_IN_WRONG_FORMAT: "Email Is in Wrong Format",
     PASSWORD_IS_EMPTY: "Password Is Empty",
+    PASSWORD_MUST_BE_STRING: "Password Must Be String",
     PASSWORD_LENGTH_MUST_BE_MORE_THAN_8: "Password Length Must Be More Than 8",
     PASSWORD_LENGTH_MUST_BE_LESS_THAN_50: "Password Length Must Be LESS Than 50",
     PASSWORDS_DONT_MATCH: "Passwords Don\'t Match",
@@ -49,7 +54,13 @@ queryParamErrors = {
     Password_Must_Contain_A_Number: "Password Must Contain A Number",
     Password_Must_Contain_An_Uppercase: "Password Must Contain An Uppercase",
     Password_Cannot_Have_Space: "Password Cannot Have Space",
-
+    DEVICE_INFO_IS_EMPTY: "DeviceInfo Is Empty",
+    DEVICE_INFO_MUST_BE_OBJECT: "DeviceInfo Must Be Object",
+    'deviceInfo.**': "Missed parameter deviceInfo.**",
+    'deviceInfo.**': "Wrong parameter deviceInfo.**",
+    'deviceInfo.**': "Invalid parameter deviceInfo.** :: String",
+    'deviceInfo.**': "Empty parameter deviceInfo.**",
+    
     id: "Invalid parameter id :: MongoId",
     title: "Invalid parameter title :: String",
     types: "Invalid parameter types :: (movie|serial|anime_movie|anime_seria)",
@@ -71,6 +82,7 @@ queryParamErrors = {
     deviceId: "Invalid parameter deviceId :: String(UUID)",
     remove: "Invalid parameter remove :: (true|false)",
     settingName: "Invalid parameter settingName :: String",
+    settings: "Invalid parameter settings :: Object",
     'settings.**': "Missed parameter settings.**",
     'settings.**': "Wrong parameter settings.**",
     'settings.**': "Invalid parameter settings.** :: String",
