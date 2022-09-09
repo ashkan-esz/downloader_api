@@ -32,13 +32,10 @@ export async function computeUsersFavoriteGenres() {
 
         for (let i = 0; i < users.length; i++) {
             let prom = getGenresFromUserStats(users[i]._id).then(async (genres) => {
-                console.log(users[i]._id);
-                console.log(genres);
                 let temp = await updateComputedFavoriteGenres(users[i]._id, genres);
                 if (temp === 'error') {
                     result = 'error';
                 }
-                console.log('-- ', users[i]._id, ' updated!');
             });
             promiseArray.push(prom);
         }

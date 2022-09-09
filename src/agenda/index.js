@@ -12,7 +12,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = ["email", "computeUserJob"];
+const jobTypes = ["email", "computeUserJob", "userAnalysisJob"];
 
 export async function startAgenda() {
     try {
@@ -48,11 +48,13 @@ export async function startAgenda() {
 
         await agenda.start();
         await removeCompletedJobs();
+        //for more info check https://crontab.guru
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 */12 * * *", "update jikan/imdb data");
         await agenda.every("0 1 1 * *", "reset month likes");
         await agenda.every("0 0 * * 0", "remove unused files from s3"); //At 00:00 on Sunday.
         await agenda.every("0 1 * * 0", "compute users favorite genres"); //At 01:00 on Sunday.
+        await agenda.every("0 23 * * *", "save total/active users count"); //At 23:00.
 
     } catch (error) {
         saveError(error);

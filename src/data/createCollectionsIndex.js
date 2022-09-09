@@ -82,6 +82,13 @@ export async function createCollectionsAndIndexes() {
         //usage: emailVerifyToken, emailVerifyToken_expire
         //usage: activeSessions.refreshToken
         //usage: _id, activeSessions.refreshToken
+
+
+        let userAnalysisCollection = await getCollection('userAnalysis');
+        await userAnalysisCollection.createIndex({yearAndMonth: 1});
+        //usage: userCounts.date
+
+
         console.log('creating mongodb collection and indexes --done!');
         console.log();
     } catch (error) {
