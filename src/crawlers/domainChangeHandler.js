@@ -7,7 +7,7 @@ import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 
 
-export async function domainChangeHandler(sourcesObj, crawledSourceName, crawlMode) {
+export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
     try {
         let pageCounter_time = sourcesObj.pageCounter_time;
         delete sourcesObj._id;
@@ -23,7 +23,7 @@ export async function domainChangeHandler(sourcesObj, crawledSourceName, crawlMo
         if (changedSources.length > 0) {
             Sentry.captureMessage('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
-            await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, crawledSourceName, crawlMode);
+            await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources);
             Sentry.captureMessage('source domain changed');
         }
     } catch (error) {
@@ -97,7 +97,7 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     }
 }
 
-async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, crawledSourceName, crawlMode) {
+async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources) {
     let sourcesArray = getSourcesArray(sourcesObj, 2, pageCounter_time);
     for (let i = 0; i < changedSources.length; i++) {
         try {
@@ -107,11 +107,16 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
-                if (crawlMode !== 2 || (crawledSourceName && crawledSourceName !== sourceName)) {
+                let crawled = false;
+                if (!fullyCrawledSources.includes(sourceName)) {
                     await findSource.starter();
+                    crawled = true;
                 }
                 //update source data
                 let updateSourceField = {};
+                if (crawled) {
+                    sourcesObj[sourceName].lastCrawlDate = new Date();
+                }
                 updateSourceField[sourceName] = sourcesObj[sourceName];
                 await updateSourcesObjDB(updateSourceField);
             }

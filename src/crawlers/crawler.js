@@ -1,5 +1,5 @@
 import {getDatesBetween} from "./utils.js";
-import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
+import {getSourcesObjDB, updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
 import * as Sentry from "@sentry/node";
@@ -33,22 +33,39 @@ export async function crawler(sourceName, crawlMode = 0, {
         const sourcesNames = Object.keys(sourcesObj);
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
         sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
+        let fullyCrawledSources = [];
 
         if (!handleDomainChangeOnly) {
             if (!sourceName) {
                 for (let i = 0; i < sourcesArray.length; i++) {
                     await sourcesArray[i].starter();
+                    if (crawlMode === 2) {
+                        fullyCrawledSources.push(sourcesArray[i].name);
+                        let now = new Date();
+                        sourcesObj[sourcesArray[i].name].lastCrawlDate = now;
+                        await updateSourcesObjDB({
+                            [sourcesArray[i].name + '.lastCrawlDate']: now,
+                        });
+                    }
                 }
             } else {
                 let findSource = sourcesArray.find(x => x.name === sourceName);
                 if (findSource) {
                     await findSource.starter();
+                    if (crawlMode === 2) {
+                        fullyCrawledSources.push(sourceName);
+                        let now = new Date();
+                        sourcesObj[sourceName].lastCrawlDate = now;
+                        await updateSourcesObjDB({
+                            [sourceName + '.lastCrawlDate']: now,
+                        });
+                    }
                 }
             }
         }
 
         if (handleDomainChangeOnly || handleDomainChange) {
-            await domainChangeHandler(sourcesObj, sourceName, crawlMode);
+            await domainChangeHandler(sourcesObj, fullyCrawledSources);
         }
 
         isCrawling = false;

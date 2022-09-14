@@ -35,6 +35,8 @@ you can run npm script `npm run pre_start` to create collections and their index
         serial_url: "https://example.com/serie/page/", //if needed
         page_count: Number,
         serial_page_count: Number,
+        lastCrawlDate: Date,
+        crawlCycle: Number, // 0 means no cycle
     },
 }
 
@@ -47,10 +49,14 @@ for example ::
         serial_url: "https://digimovie.win/serie/page/",
         page_count: 419,
         serial_page_count: 66,
+        lastCrawlDate: 2022-09-14T18:37:22.403Z,
+        crawlCycle: 3,
     },
     film2movie: {
         movie_url: "https://www.film2movie.asia/page/",
         page_count: 1488,
+        lastCrawlDate: 2022-09-10T18:37:22.403Z,
+        crawlCycle: 0,
     },
     ....
     ....
