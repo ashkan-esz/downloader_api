@@ -4,7 +4,8 @@ import {
     getType,
     removeDuplicateLinks,
     checkDubbed,
-    getYear
+    getYear,
+    getSeasonEpisode
 } from "../utils.js";
 import {getTitleAndYear, purgeTitle} from "../movieTitle.js";
 import {
@@ -28,11 +29,19 @@ export default async function digimoviez({movie_url, serial_url, page_count, ser
     await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
+export function digimovie_checkTitle(text, title, url) {
+    return (
+        (text && text.includes('دانلود') && text.includes('ادامه')) ||
+        (url.includes('/serie') && title && title.includes('دانلود') && title !== 'دانلود فیلم' && title !== 'دانلود سریال')
+    );
+}
+
 async function search_title(link, i, $, url) {
     try {
         let text = link.text();
-        if (text && text.includes('دانلود') && text.includes('ادامه')) {
-            let title = link.attr('title').toLowerCase();
+        let title = link.attr('title');
+        if (digimovie_checkTitle(text, title, url)) {
+            title = title.toLowerCase();
             let year;
             let type = getType(title);
             if (url.includes('serie')) {
@@ -223,12 +232,22 @@ function getFileData($, link, type) {
     //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
     //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
     try {
-        let seasonData = getSeasonEpisode($, link, type);
+        let linkHref = $(link).attr('href');
+        let se = getSeasonEpisode(linkHref);
+        let seasonEpisodeFromLink = 'S' + se.season + 'E' + se.episode;
+        let seasonData = getSeasonEpisode_extra($, link, type);
         if (seasonData === 'ignore') {
-            return 'ignore';
+            seasonData = {
+                seasonName: '',
+                seasonEpisode: '',
+            };
+        }
+        if (type.includes('serial') && seasonEpisodeFromLink !== seasonData.seasonEpisode) {
+            if (se.season !== 0 && se.episode !== 0) {
+                seasonData.seasonEpisode = seasonEpisodeFromLink;
+            }
         }
 
-        let linkHref = $(link).attr('href');
         let infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
             ? $($(link).parent().parent().parent().prev().children()[1]).children()
             : $(link).parent().parent().next().children();
@@ -286,7 +305,7 @@ function getFileData($, link, type) {
     }
 }
 
-function getSeasonEpisode($, link, type) {
+function getSeasonEpisode_extra($, link, type) {
     try {
         let seasonEpisode = '';
         let seasonName = '';
@@ -296,7 +315,7 @@ function getSeasonEpisode($, link, type) {
                 return 'ignore';
             }
 
-            linkText = linkText.replace('دانلود قسمت', '').trim();
+            linkText = linkText.replace('دانلود قسمت', '').replace(/\./g, '').trim();
             let episodeNumber;
             if (linkText === 'ویژه') {
                 episodeNumber = 0;
@@ -315,8 +334,12 @@ function getSeasonEpisode($, link, type) {
                 }
                 seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
             } else if (!seasonInfo.match(/\d/)) {
-                seasonEpisode = 'S1E' + episodeNumber;
                 seasonName = seasonInfo.replace('فصل :', '').trim().replace(/\s+/g, '_');
+                if (seasonName.match(/^(ova|nced|ncop|special)$/i)) {
+                    seasonEpisode = 'S0E' + episodeNumber;
+                } else {
+                    seasonEpisode = 'S1E' + episodeNumber;
+                }
             } else {
                 return 'ignore';
             }
@@ -333,9 +356,9 @@ function getQualitySample($, link, type) {
         if (type.includes('serial') || $(link).attr('href').match(/s\d+e\d+/gi)) {
             return '';
         }
-        let nextNode = $(link).next().next()[0];
+        let nextNode = $(link).next()[0];
         let sampleUrl = nextNode ? nextNode.attribs.href : '';
-        if (sampleUrl.includes('.jpg') || sampleUrl.endsWith('lm_action=download')) {
+        if (sampleUrl.match(/\.(jpeg|jpg|png)/) || sampleUrl.endsWith('lm_action=download')) {
             return sampleUrl;
         }
         return '';

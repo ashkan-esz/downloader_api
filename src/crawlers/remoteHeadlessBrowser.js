@@ -27,7 +27,7 @@ export async function getPageData(url, cookieOnly = false, retryCount = 0) {
             selectedBrowser = remoteBrowsers
                 //tabsCount - apiCallCount :: server capability
                 .sort((a, b) => (b.tabsCount - b.apiCallCount) - (a.tabsCount - a.apiCallCount))
-                .find(item => item.apiCallCount < 2 * item.tabsCount)
+                .find(item => item.apiCallCount < 2 * item.tabsCount);
             if (selectedBrowser) {
                 break;
             }
@@ -44,7 +44,7 @@ export async function getPageData(url, cookieOnly = false, retryCount = 0) {
         return (!data || data.error) ? null : data;
     } catch (error) {
         if (error.response && error.response.status === 503) {
-            if (retryCount < 3) {
+            if (retryCount < 2) {
                 if (selectedBrowser) {
                     selectedBrowser.apiCallCount--;
                 }

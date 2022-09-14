@@ -8,6 +8,7 @@ import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDecodedLink, getSeasonEpisode} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
+import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -289,12 +290,12 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
             }
             for (let i = 0; i < links.length; i++) {
                 let linkText = $(links[i]).text();
-                if (
-                    (linkText && linkText.includes('دانلود') && !linkText.includes('تریلر'))
-                ) {
+                let linkTitle = $(links[i]).attr('title');
+                if (digimovie_checkTitle(linkText, linkTitle, responseUrl)) {
                     return false;
                 }
             }
+            return true;
         } else if (sourceName === "animelist") {
             let $div = $('div');
             for (let i = 0; i < $div.length; i++) {

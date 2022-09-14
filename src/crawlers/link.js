@@ -85,7 +85,7 @@ export function check_format(link, type) {
         'psa', 'nitro', 'f2m', 'xredd', 'yify', 'shaanig', 'mkvcage', 'imax'];
 
     if (
-        !link.replace(/\?\d+/g, '').match(/\.(mkv|mp4|avi|mov|flv|wmv)$/g) ||
+        !link.replace(/\?\d+/g, '').match(/\.(mkv|mp4|avi|mov|flv|wmv)(\?md\d=.+)?$/g) ||
         link.includes('teaser') || link.includes('trailer')
     ) {
         return false;

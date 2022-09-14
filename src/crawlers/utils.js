@@ -171,7 +171,7 @@ export function getSeasonEpisode(input) {
 
         input = input.toLowerCase().replace(/https?:\/\//, '');
         if (input.includes('/')) {
-            input = input.split('/').slice(1).join('/')
+            input = input.split('/').slice(1).join('/');
         }
         input = input
             .replace(/(?<!\.)10bit/g, '.10bit')
@@ -181,7 +181,14 @@ export function getSeasonEpisode(input) {
         let episode = 0;
         let case1 = input.match(/s\d+([-.])*e\d+/gi);
         if (case1) {
-            let seasonEpisode = case1.pop().replace(/[-.]/g, '');
+            let temp = case1.pop();
+            if (
+                (case1.length === 1 && input.includes('.' + case1[0] + '.') && !input.includes('.' + temp + '.')) ||
+                (case1.length === 1 && input.includes('_' + case1[0] + '_') && !input.includes('_' + temp + '_'))
+            ) {
+                temp = case1[0];
+            }
+            let seasonEpisode = temp.replace(/[-.]/g, '');
             season = seasonEpisode.split('e')[0].replace('s', '');
             episode = seasonEpisode.split('e')[1];
         }
