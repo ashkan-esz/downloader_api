@@ -450,9 +450,9 @@ export function getDatesBetween(date1, date2) {
     return {
         milliseconds,
         seconds,
-        minutes: minutes.toFixed(2),
-        hours: hours.toFixed(2),
-        days: days.toFixed(2),
+        minutes: Number(minutes.toFixed(2)),
+        hours: Number(hours.toFixed(2)),
+        days: Number(days.toFixed(2)),
     };
 }
 
@@ -477,4 +477,11 @@ export function getMonthNumberByMonthName(monthName) {
 export function getDayName(dayNumber) {
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     return daysOfWeek[dayNumber];
+}
+
+export function getDayOfYear(now) {
+    let now_utc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    let start_utc = Date.UTC(now.getFullYear(), 0, 0);
+    let oneDay = 1000 * 60 * 60 * 24;
+    return Math.ceil((now_utc - start_utc) / oneDay);
 }

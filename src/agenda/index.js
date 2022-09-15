@@ -1,7 +1,7 @@
 import config from "../config/index.js";
 import {resetMonthLikeAndViewDB} from "../data/db/crawlerMethodsDB.js";
 import Agenda from "agenda";
-import {crawler} from "../crawlers/crawler.js";
+import {crawler, crawlerCycle} from "../crawlers/crawler.js";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi.js";
 import {deleteUnusedFiles} from "../data/cloudStorage.js";
@@ -16,6 +16,13 @@ const jobTypes = ["email", "computeUserJob", "userAnalysisJob"];
 
 export async function startAgenda() {
     try {
+        agenda.define("start crawler cycle", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
+            if (config.disableCrawler !== 'true') {
+                await removeCompletedJobs();
+                await crawlerCycle();
+            }
+        });
+
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
             if (config.disableCrawler !== 'true') {
                 await removeCompletedJobs();
@@ -49,6 +56,7 @@ export async function startAgenda() {
         await agenda.start();
         await removeCompletedJobs();
         //for more info check https://crontab.guru
+        await agenda.every("0 2 * * *", "start crawler cycle", {}); //At 02:00.
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 */12 * * *", "update jikan/imdb data");
         await agenda.every("0 1 1 * *", "reset month likes");
