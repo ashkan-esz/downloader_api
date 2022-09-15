@@ -84,7 +84,7 @@ export async function createCollectionsAndIndexes() {
         //usage: _id, activeSessions.refreshToken
 
 
-        let userAnalysisCollection = await getCollection('userAnalysis');
+        let userAnalysisCollection = await getCollection('serverAnalysis');
         await userAnalysisCollection.createIndex({yearAndMonth: 1});
         //usage: userCounts.date
 

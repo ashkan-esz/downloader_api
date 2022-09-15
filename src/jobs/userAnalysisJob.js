@@ -1,4 +1,5 @@
-import {getTotalAndActiveUsersCount, saveTotalAndActiveUsersCount} from "../data/db/userAnalysisDbMethods.js";
+import {getTotalAndActiveUsersCount} from "../data/db/usersDbMethods.js";
+import {saveTotalAndActiveUsersCount} from "../data/db/serverAnalysisDbMethods.js";
 import {saveError} from "../error/saveError.js";
 
 

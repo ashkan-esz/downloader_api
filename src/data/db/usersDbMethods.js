@@ -384,3 +384,30 @@ export async function changeUserSettingsDB(userId, settings, settingSectionName)
         return 'error';
     }
 }
+
+//----------------------------
+//----------------------------
+
+export async function getTotalAndActiveUsersCount() {
+    try {
+        let collection = await getCollection('users');
+        let prevDay = new Date();
+        prevDay.setDate(prevDay.getDate() - 1);
+        let res = await Promise.allSettled([
+            await collection.countDocuments(),
+            await collection.countDocuments({
+                'activeSessions.lastUseDate': {$gte: prevDay}
+            })
+        ]);
+        if (res[0].status !== 'fulfilled' || res[1].status !== 'fulfilled') {
+            return null;
+        }
+        return {
+            total: res[0].value,
+            active: res[1].value
+        };
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

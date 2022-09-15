@@ -20,15 +20,7 @@ export default {
         websiteEndPoint: process.env.CLOUAD_STORAGE_WEBSITE_ENDPOINT,
         bucketNamePrefix: process.env.BUCKET_NAME_PREFIX || '',
     },
-    remoteBrowser: [{
-        endpoint: process.env.REMOTE_BROWSER_ENDPOINT,
-        password: process.env.REMOTE_BROWSER_PASSWORD,
-        tabsCount: Number(process.env.REMOTE_BROWSER_TABS_COUNT) || 3,
-    }, {
-        endpoint: process.env.REMOTE_BROWSER_ENDPOINT2,
-        password: process.env.REMOTE_BROWSER_PASSWORD2,
-        tabsCount: Number(process.env.REMOTE_BROWSER_TABS_COUNT2) || 3,
-    }].filter(item => item.endpoint && item.password),
+    remoteBrowser: getRemoteBrowsers(),
     email: {
         username: process.env.EMAIL_USERNAME,
         password: process.env.EMAIL_PASSWORD,
@@ -39,6 +31,26 @@ export default {
         accessTokenExpire: '1h',
         refreshTokenExpire: '180d',
     }
+}
+
+function getRemoteBrowsers() {
+    let remoteBrowsers = [];
+    let i = 1;
+    while (true) {
+        let endpoint = process.env[`REMOTE_BROWSER_ENDPOINT${i}`];
+        let password = process.env[`REMOTE_BROWSER_PASSWORD${i}`];
+        let tabsCount = process.env[`REMOTE_BROWSER_TABS_COUNT${i}`] || 3;
+        if (!endpoint || !password) {
+            break;
+        }
+        remoteBrowsers.push({
+            endpoint: endpoint,
+            password: password,
+            tabsCount: tabsCount,
+        });
+        i++;
+    }
+    return remoteBrowsers;
 }
 
 function getOmdbApiKeys() {

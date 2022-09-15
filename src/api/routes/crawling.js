@@ -14,7 +14,7 @@ router.put('/:password/', async (req, res) => {
     let handleCastUpdate = req.query.handleCastUpdate !== 'false';
 
     if (password === config.crawlerStarterPassword) {
-        let crawlingResult = await crawler(sourceName, mode, {
+        let crawlingResult = await crawler(sourceName, mode, false, {
             handleDomainChange,
             handleCastUpdate
         });
@@ -28,7 +28,7 @@ router.put('/domainChange/:password', async (req, res) => {
     let password = req.params.password;
 
     if (password === config.crawlerStarterPassword) {
-        let crawlingResult = await crawler('', 2, {
+        let crawlingResult = await crawler('', 2, false, {
             handleDomainChangeOnly: true,
         });
         return res.json(crawlingResult);
