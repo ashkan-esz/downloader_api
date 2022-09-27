@@ -631,10 +631,13 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
             {
                 $addFields: {}
             },
+            {
+                $addFields: {}
+            },
             ...getLookupOnUserStatsStage(userId, collectionName),
         ];
 
-        if (filters.seasons) {
+        if (collectionName === 'movies' && filters.seasons) {
             aggregationPipeline[2]['$addFields'].seasons = {
                 $filter: {
                     input: "$seasons",
@@ -646,8 +649,28 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
                     }
                 }
             };
+            if (filters.episodes && filters.seasons[0] === filters.seasons[1] && (dataLevel === 'dlink' || dataLevel === 'high')) {
+                aggregationPipeline[3]['$addFields']['seasons.episodes'] = {
+                    $filter: {
+                        input: {
+                            $getField: {
+                                input: {
+                                    $arrayElemAt: ["$seasons", 0]
+                                },
+                                field: "episodes",
+                            }
+                        },
+                        cond: {
+                            $and: [
+                                {$gte: ["$$this.episodeNumber", filters.episodes[0]]},
+                                {$lte: ["$$this.episodeNumber", filters.episodes[1]]},
+                            ]
+                        }
+                    }
+                };
+            }
         }
-        if (filters.qualities) {
+        if (collectionName === 'movies' && filters.qualities) {
             aggregationPipeline[2]['$addFields'].qualities = {
                 $filter: {
                     input: "$qualities",
@@ -657,14 +680,52 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
                 }
             };
         }
+        if (filters.embedDownloadLinksConfig) {
+            aggregationPipeline.push(
+                {
+                    $lookup: {
+                        from: 'users',
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ["$_id", new mongodb.ObjectId(userId)],
+                                    }
+                                }
+                            },
+                            {
+                                $project: {
+                                    _id: 0,
+                                    downloadLinksSettings: 1,
+                                },
+                            },
+                            {$limit: 1}
+                        ],
+                        as: 'downloadLinksConfig',
+                    }
+                },
+                {
+                    $addFields: {
+                        downloadLinksConfig: {
+                            $getField: {
+                                input: {
+                                    $arrayElemAt: ['$downloadLinksConfig', 0],
+                                },
+                                field: "downloadLinksSettings",
+                            }
+                        },
+                    }
+                });
+        }
 
         if (Object.keys(projection).length > 0) {
+            projection.downloadLinksConfig = 1;
             aggregationPipeline.push({
                 $project: projection,
             });
         }
 
-        let result = await collection.aggregate(aggregationPipeline).toArray();
+        let result = await collection.aggregate(aggregationPipeline).limit(1).toArray();
         result = result.length === 0 ? null : result[0];
 
         if (result && result.genres && result.genres.length > 0 && dataLevel !== 'telbot') {

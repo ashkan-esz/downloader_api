@@ -276,6 +276,34 @@ const validations = Object.freeze({
             }
         }),
 
+    episodes_query: query('episodes')
+        .customSanitizer(value => {
+            let temp = value
+                ? value.toString().split('-')
+                    .filter(item => item && !isNaN(item))
+                    .map(item => Number(item))
+                : [];
+            if (temp.length === 1) {
+                temp.push(temp[0]);
+            }
+            return temp;
+        })
+        .custom((value) => {
+            if (value.length === 2 && value[0] > value[1]) {
+                throw new Error('Invalid parameter episodes :: (\d+ | \d+-\d+)');
+            } else {
+                return value;
+            }
+        }),
+
+    embedDownloadLinksConfig: query('embedDownloadLinksConfig')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter embedDownloadLinksConfig :: (true|false)')
+        .toBoolean(),
+
     numberOfSeason_query: query('numberOfSeason')
         .customSanitizer(value => {
             let temp = value

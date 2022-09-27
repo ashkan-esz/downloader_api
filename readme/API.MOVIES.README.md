@@ -327,13 +327,15 @@ Examples
 
 <details>
 <summary>
-Query params (filters): 
+Query params (filters/flags): 
 </summary>
 
-| param name      | Values                                    | Description                                                                        | Required |
-|-----------------|-------------------------------------------|------------------------------------------------------------------------------------|----------|
-| **`seasons`**   | Single number or Two Number joined by '-' | return corresponding seasons links only, (works for serials), example: 6 or 2-5    | `false`  |
-| **`qualities`** | Strings joined by '-'                     | return corresponding qualities links only, (works for movies), example: 1080p-720p | `false`  |
+| param name                     | Values                                    | Description                                                                                                                                                     | Required |
+|--------------------------------|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| **`seasons`**                  | Single number or Two Number joined by '-' | return corresponding seasons links only, (works for serials), example: 6 or 2-5                                                                                 | `false`  |
+| **`episodes`**                 | Single number or Two Number joined by '-' | return corresponding episodes links only, (works for serials), example: 6 or 2-5,<br/> only works when dataLevel is one of ([dlink, high]) and season is single | `false`  |
+| **`qualities`**                | Strings joined by '-'                     | return corresponding qualities links only, (works for movies), example: 1080p-720p                                                                              | `false`  |
+| **`embedDownloadLinksConfig`** | Boolean                                   | also receive users downloadLinks config                                                                                                                         | `false`  |
 
 </details>
 
@@ -343,6 +345,7 @@ Examples
 </summary>
 
 - https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?embedDownloadLinksConfig=true&testUser=true
 </details>
 <br />
 
