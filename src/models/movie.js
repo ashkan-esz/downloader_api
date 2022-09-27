@@ -42,11 +42,13 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         trailer_s3: null, // {url,originalUrl,size}
         summary: {
             persian: persianSummary.replace(/([.…])+$/, ''),
+            persian_source: sourceName,
             english: '',
+            english_source: '',
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'url,info'}]
         subtitles: groupSubtitles(subtitles),
-        latestData: latestData, //season, episode, quality, hardSub, dubbed, censored, subtitle, watchOnlineLink
+        latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink
         status: type.includes('movie') ? 'ended' : 'unknown',
         releaseDay: "",
         year: year.toString(),
@@ -157,7 +159,7 @@ export const userStats_projection = Object.freeze({
 
 export const dataLevelConfig = Object.freeze({
     dlink: Object.freeze({
-        title: 1,
+        rawTitle: 1,
         type: 1,
         year: 1,
         posters: 1,
@@ -174,6 +176,7 @@ export const dataLevelConfig = Object.freeze({
         type: 1,
         rawTitle: 1,
         rating: 1,
+        latestData: 1,
         userStats: userStats_projection.low,
     }),
     telbot: Object.freeze({
@@ -192,6 +195,7 @@ export const dataLevelConfig = Object.freeze({
         releaseDay: 1,
         actorsAndCharacters: 1,
         staff: 1,
+        seasonEpisode: 1,
     }),
     medium: Object.freeze({
         releaseState: 1,

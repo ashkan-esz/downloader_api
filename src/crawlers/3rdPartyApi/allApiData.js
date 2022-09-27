@@ -316,6 +316,7 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
         ((!oldData.summary.english || oldData.summary.english.length < apiFields.summary_en.replace(/([.…])+$/, '')) && apiFields.summary_en)
     ) {
         oldData.summary.english = apiFields.summary_en.replace(/([.…])+$/, '');
+        oldData.summary.english_source = apiName;
         updateFields.summary = oldData.summary;
     }
     //---------------------

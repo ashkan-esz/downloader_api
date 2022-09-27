@@ -1,4 +1,4 @@
-import {checkBetterQuality, checkDubbed, checkHardSub, getSeasonEpisode} from "./utils.js";
+import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils.js";
 
 
 export function handleLatestDataUpdate(db_data, latestData, type) {
@@ -7,11 +7,22 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
     let PrimaryLatestDataChange = false;
 
     if (type.includes('serial')) {
-        if ((latestData.season > prevLatestData.season) ||
-            (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) ||
-            (latestData.season === prevLatestData.season &&
-                latestData.episode === prevLatestData.episode &&
-                checkBetterQuality(latestData.quality, prevLatestData.quality))) {
+        let updateFlag = false;
+        if (latestData.season > prevLatestData.season) {
+            db_data.latestData.updateReason = 'season';
+            updateFlag = true;
+        } else if (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) {
+            db_data.latestData.updateReason = 'episode';
+            updateFlag = true;
+        } else if (latestData.season === prevLatestData.season && latestData.episode === prevLatestData.episode &&
+            checkBetterQuality(latestData.quality, prevLatestData.quality)) {
+            if (db_data.update_date && getDatesBetween(new Date(), db_data.update_date).hours > 2) {
+                db_data.latestData.updateReason = 'quality';
+            }
+            updateFlag = true;
+        }
+
+        if (updateFlag) {
             db_data.latestData.season = latestData.season;
             db_data.latestData.episode = latestData.episode;
             db_data.latestData.quality = latestData.quality;
@@ -21,6 +32,7 @@ export function handleLatestDataUpdate(db_data, latestData, type) {
     } else if (checkBetterQuality(latestData.quality, prevLatestData.quality)) {
         // movie, better quality
         db_data.latestData.quality = latestData.quality;
+        db_data.latestData.updateReason = 'quality';
         latestDataChange = true;
         PrimaryLatestDataChange = true;
     }
@@ -118,6 +130,12 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
     }
     latestQuality = latestQuality.replace(/s\d+e\d+\./gi, '');
 
+    let updateReason = '';
+    if (type.includes('movie') && latestQuality) {
+        updateReason = 'quality';
+    } else if (type.includes('serial') && latestEpisode) {
+        updateReason = 'episode';
+    }
 
     // watch online links
     if (type.includes('serial') && siteWatchOnlineLinks.length > 0) {
@@ -139,6 +157,7 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
         season: latestSeason,
         episode: latestEpisode,
         quality: latestQuality,
+        updateReason,
         hardSub,
         dubbed,
         censored,

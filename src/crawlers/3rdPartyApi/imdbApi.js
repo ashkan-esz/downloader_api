@@ -273,6 +273,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         }
         titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
         titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
+        titleModel.summary.english_source = 'imdb';
         titleModel.awards = imdbData.awards || '';
         titleModel.genres = imdbData.genres
             ? imdbData.genres.toLowerCase().split(',').map(item => item.trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a')

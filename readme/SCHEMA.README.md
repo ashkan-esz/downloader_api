@@ -88,7 +88,7 @@ deviceInfo = {
 dataLevel = {
     dlink: {
         _id: Object,
-        title: String,
+        rawTitle: String,
         type: String,
         year: String,
         posters: Array({
@@ -119,6 +119,7 @@ dataLevel = {
             metacritic: Int,
             myAnimeList: Int
         },
+        latestData: #LatestData,
         userStats: #userStats,
     },
     telbot: {
@@ -135,7 +136,9 @@ dataLevel = {
         genres: Array(String),
         summary: {
             english: String,
+            english_source: String,
             persian: String,
+            persian_source: String,
         },
         rating: {
             imdb: Int,
@@ -154,6 +157,10 @@ dataLevel = {
             writers: Array(#actor_and_character),
             others: Array(#actor_and_character),
         },
+        seasonEpisode: Array({
+            seasonNumber: Int,
+            episodes: Int,
+        }),
     },
     medium: {
         ...low, //all fields from low datalevel also exist
@@ -170,7 +177,9 @@ dataLevel = {
         alternateTitles: Array(String),
         summary: {
             english: String,
+            english_source: String,
             persian: String,
+            persian_source: String,
         },
         genres: Array(String),
         genresWithImage: Array({ //only exist in movies/searchById api
@@ -186,7 +195,6 @@ dataLevel = {
             url: String,
             info: String
         }),
-        latestData: #LatestData,
         update_date: Date,
         nextEpisode: null || {
             title: String,
@@ -355,6 +363,7 @@ dataLevel = {
     season: Int,
     episode: Int,
     quality: String,
+    updateReason: String, //season|episode|quality
     hardSub: String, //String in format S\d+E\d+
     dubbed: String, //for series 's1e5' shows last episode with hardsub/dubbed/..
     subtitle: String, //for movies 's1e1' means hardsub/dubbed/.. exist

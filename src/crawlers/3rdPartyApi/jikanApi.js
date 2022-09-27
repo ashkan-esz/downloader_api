@@ -489,6 +489,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         jikanApiFields.summary_en = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         if (titleDataFromDB.summary.english !== jikanApiFields.summary_en && jikanApiFields.summary_en) {
             titleDataFromDB.summary.english = jikanApiFields.summary_en;
+            titleDataFromDB.summary.english_source = 'jikan';
             updateFields.summary = titleDataFromDB.summary;
         }
     }
@@ -571,6 +572,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
         titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
         titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
+        titleModel.summary.english_source = 'jikan';
         titleModel.genres = jikanApiFields.genres;
         let insertedId = await crawlerMethodsDB.insertToDB('movies', titleModel);
 

@@ -115,6 +115,7 @@ async function searchOnCollection(titleObj, year, type) {
         alternateTitles: 1,
         titleSynonyms: 1,
         apiUpdateDate: 1,
+        update_date: 1,
         castUpdateDate: 1,
         status: 1,
         imdbID: 1,
@@ -243,6 +244,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
                 currentSummary = db_data.summary;
             }
             currentSummary.persian = persianSummary.replace(/([.…])+$/, '');
+            currentSummary.persian_source = sourceName;
             updateFields.summary = currentSummary;
         }
 
