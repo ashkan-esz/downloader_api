@@ -719,9 +719,8 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
         }
 
         if (Object.keys(projection).length > 0) {
-            projection.downloadLinksConfig = 1;
             aggregationPipeline.push({
-                $project: projection,
+                $project: {...projection, downloadLinksConfig: 1},
             });
         }
 
