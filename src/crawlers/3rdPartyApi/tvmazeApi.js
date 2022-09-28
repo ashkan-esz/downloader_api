@@ -96,9 +96,9 @@ export function getTvMazeApiFields(data) {
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
             summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').replace(/([.…])+$/, '').trim() : '',
-            genres: data.genres.map(value => value.toLowerCase().trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a') || [],
+            genres: data.genres.map(value => value.toLowerCase().trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a' && item !== 'anime') || [],
             isAnimation: (data.type.toLowerCase() === 'animation'),
-            isAnime: (data.genres.includes('Anime')),
+            isAnime: (data.genres.toLowerCase().includes('anime')),
             updateFields: {
                 imdbID: data.externals.imdb || '',
                 tvmazeID: Number(data.id) || 0,

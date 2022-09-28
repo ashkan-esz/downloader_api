@@ -276,8 +276,13 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         titleModel.summary.english_source = 'imdb';
         titleModel.awards = imdbData.awards || '';
         titleModel.genres = imdbData.genres
-            ? imdbData.genres.toLowerCase().split(',').map(item => item.trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a')
+            ? imdbData.genres.toLowerCase().split(',')
+                .map(item => item.trim().replace(/\s+/g, '-'))
+                .filter(item => item !== 'n/a' && item !== 'anime')
             : [];
+        if (!type.includes('anime') && imdbData.genres?.toLowerCase().includes('anime')) {
+            titleModel.type = 'anime_' + type;
+        }
         titleModel.country = imdbData.countries ? imdbData.countries.toLowerCase() : '';
         titleModel.movieLang = imdbData.languages ? imdbData.languages.toLowerCase() : '';
         titleModel.rated = imdbData.contentRating;

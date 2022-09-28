@@ -120,7 +120,7 @@ export function getJikanApiFields(data) {
             jikanID: data.mal_id,
             jikanRelatedTitles: getRelatedTitles(data),
             summary_en: data.synopsis ? data.synopsis.replace('[Written by MAL Rewrite]', '').replace(/([.…])+$/, '').trim() : '',
-            genres: data.genres.map(item => item.name.toLowerCase().trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a') || [],
+            genres: data.genres.map(item => item.name.toLowerCase().trim().replace(/\s+/g, '-')).filter(item => item !== 'n/a' && item !== 'anime') || [],
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
             myAnimeListScore: Number(data.score) || 0,
@@ -146,9 +146,7 @@ export function getJikanApiFields(data) {
             let dayNumber = new Date(data.aired.from).getDay();
             apiFields.releaseDay = utils.getDayName(dayNumber);
         }
-        if (!apiFields.genres.includes('anime')) {
-            apiFields.genres.push('anime');
-        }
+
         apiFields.updateFields = utils.purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {

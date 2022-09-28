@@ -53,6 +53,11 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+
+    if (!titleModel.type.includes('anime') && (omdbApiFields?.isAnime || tvmazeApiFields?.isAnime)) {
+        titleModel.type = 'anime_' + titleModel.type;
+    }
+
     if (titleModel.type.includes('serial')) {
         let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
@@ -140,6 +145,11 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
             updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
             updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
         }
+    }
+
+    if (!db_data.type.includes('anime') && (omdbApiFields?.isAnime || tvmazeApiFields?.isAnime)) {
+        db_data.type = 'anime_' + db_data.type;
+        updateFields.type = db_data.type;
     }
 
     if (db_data.type.includes('serial')) {
@@ -320,7 +330,7 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
         updateFields.summary = oldData.summary;
     }
     //---------------------
-    let isAnime = (apiName === 'jikan' || (apiName === 'tvmaze' && apiFields.isAnime));
+    let isAnime = (apiName === 'jikan' || ((apiName === 'tvmaze' || apiName === 'omdb') && apiFields.isAnime));
     let isAnimation = (apiName === 'tvmaze' && apiFields.isAnimation);
     let newGenres = getNewGenres(oldData, apiFields.genres, isAnime, isAnimation);
     if (newGenres) {
@@ -339,9 +349,6 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
 
 function getNewGenres(data, apiGenres, isAnime, isAnimation) {
     let newGenres = [...data.genres, ...apiGenres];
-    if (isAnime || data.type.includes('anime')) {
-        newGenres.push('anime');
-    }
     if (isAnimation && !isAnime) {
         newGenres.push('animation');
     }
