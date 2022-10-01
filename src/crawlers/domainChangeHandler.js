@@ -38,7 +38,7 @@ async function checkSourcesUrl(sourcesUrls) {
             let responseUrl;
             let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
             try {
-                let pageData = await getPageData(homePageLink);
+                let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {

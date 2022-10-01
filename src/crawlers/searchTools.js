@@ -40,7 +40,7 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
-                let {$, links, checkGoogleCache, responseUrl, pageTitle} = await getLinks(url + `${i}`);
+                let {$, links, checkGoogleCache, responseUrl, pageTitle} = await getLinks(url + `${i}`, sourceName);
                 if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
@@ -70,7 +70,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null,
                                            extraChecker = null, getSeasonEpisodeFromInfo = false) {
     try {
-        let {$, links, cookies} = await getLinks(page_link, sourceLinkData);
+        let {$, links, cookies} = await getLinks(page_link, sourceName, sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
         }
@@ -153,7 +153,7 @@ export async function search_in_title_page(sourceName, title, page_link, type, g
     }
 }
 
-async function getLinks(url, sourceLinkData = null) {
+async function getLinks(url, sourceName = '', sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -176,7 +176,7 @@ async function getLinks(url, sourceLinkData = null) {
                         let temp = url.replace(/\/$/, '').split('/').pop();
                         if (temp) {
                             url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceLinkData);
+                            return await getLinks(url, sourceName, sourceLinkData);
                         }
                     }
                     error.isAxiosError = true;
@@ -195,7 +195,7 @@ async function getLinks(url, sourceLinkData = null) {
             }
         } else {
             try {
-                let pageData = await getPageData(url);
+                let pageData = await getPageData(url, sourceName, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -214,7 +214,7 @@ async function getLinks(url, sourceLinkData = null) {
                         let temp = url.replace(/\/$/, '').split('/').pop();
                         if (temp) {
                             url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceLinkData);
+                            return await getLinks(url, sourceName, sourceLinkData);
                         }
                     }
                     error.isAxiosError = true;

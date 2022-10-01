@@ -32,6 +32,7 @@ async function removeMovieSource(sourceName) {
                 trailers: result[i].trailers ? result[i].trailers.filter(item => !item.info.includes(sourceName)) : result[i].trailers,
             };
             //------------------------------------------
+            //todo : update field 'latestData'
             if (result[i].type.includes('movie')) {
                 for (let j = 0; j < result[i].qualities.length; j++) {
                     result[i].qualities[j].links = result[i].qualities[j].links.filter(item => item.sourceName !== sourceName);

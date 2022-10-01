@@ -719,9 +719,15 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
         }
 
         if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: {...projection, downloadLinksConfig: 1},
-            });
+            if (Object.values(projection).every(item => item === 1)) {
+                aggregationPipeline.push({
+                    $project: {...projection, downloadLinksConfig: 1},
+                });
+            } else {
+                aggregationPipeline.push({
+                    $project: projection,
+                });
+            }
         }
 
         let result = await collection.aggregate(aggregationPipeline).limit(1).toArray();

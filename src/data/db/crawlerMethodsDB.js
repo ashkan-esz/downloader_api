@@ -42,6 +42,12 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 searchObj['$or'].push({
                     alternateTitles: new RegExp('^' + temp2 + '$')
                 });
+
+                if (!titleObj.title.startsWith('the ')) {
+                    searchObj['$or'].push({
+                        title: 'the ' + titleObj.title,
+                    });
+                }
             } catch (error2) {
                 saveError(error2);
             }
