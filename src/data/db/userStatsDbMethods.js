@@ -1,6 +1,7 @@
 import mongodb from "mongodb";
 import getCollection, {getSession} from "../mongoDB.js";
 import * as moviesDbMethods from "./moviesDbMethods.js";
+import * as lookupDbMethods from "./lookupDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 import {userStats} from "../../models/movie.js";
 import {userStats_character} from "../../models/character.js";
@@ -414,7 +415,7 @@ export async function getUserStatsListDB(userId, statType, skip, limit, projecti
             {
                 $limit: limit,
             },
-            moviesDbMethods.getLookupOnMoviesStage(relatedCollection, statType, projection),
+            lookupDbMethods.getLookupOnCustomCollectionStage(relatedCollection, statType, projection),
             {
                 $addFields: {
                     data: {$arrayElemAt: ['$data', 0]},
@@ -435,7 +436,7 @@ export async function getUserStatsListDB(userId, statType, skip, limit, projecti
     }
 }
 
-function userStatsList_addFieldsPipeline(stats, statType, id) {
+export function userStatsList_addFieldsPipeline(stats, statType, id) {
     let addStatFieldsArray = {
         $addFields: {}
     };

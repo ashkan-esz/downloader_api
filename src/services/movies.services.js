@@ -9,6 +9,10 @@ import {dataLevelConfig_character} from "../models/character.js";
 import {searchTitleDB} from "../data/db/crawlerMethodsDB.js";
 import {replaceSpecialCharacters} from "../crawlers/utils.js";
 import {default as pQueue} from "p-queue";
+import {
+    getFollowedStaffTodayBirthday,
+    getTodayStaffOrCharactersBirthday
+} from "../data/db/staffAndCharactersDbMethods.js";
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page) {
     let {skip, limit} = getSkipLimit(page, 12);
@@ -376,6 +380,29 @@ export async function getAnimeEnglishNames(japaneseNames) {
     }
     await promiseQueue.onEmpty();
     await promiseQueue.onIdle();
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//-----------------------------
+//-----------------------------
+
+export async function getTodayBirthday(jwtUserData, staffOrCharacters, followedOnly, dataLevel, page) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
+    let dataLevelConfig = staffOrCharacters === 'staff'
+        ? dataLevelConfig_staff[staffCharacterDataLevel]
+        : dataLevelConfig_character[staffCharacterDataLevel];
+
+    let result = (staffOrCharacters === 'staff' && followedOnly)
+        ? await getFollowedStaffTodayBirthday(jwtUserData.userId, skip, limit, dataLevelConfig)
+        : await getTodayStaffOrCharactersBirthday(staffOrCharacters, jwtUserData.userId, skip, limit, dataLevelConfig);
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({}, 404, errorMessage.scNotFound);
+    }
 
     return generateServiceResult({data: result}, 200, '');
 }

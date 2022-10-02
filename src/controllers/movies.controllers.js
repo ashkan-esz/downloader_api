@@ -184,6 +184,13 @@ export async function getAnimeEnglishNames(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function getTodayBirthday(req, res) {
+    let {staffOrCharacters, dataLevel, page} = req.params;
+    let result = await moviesServices.getTodayBirthday(req.jwtUserData, staffOrCharacters, req.query.followedOnly, dataLevel, page);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 //-----------------------------
 //-----------------------------
 

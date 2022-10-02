@@ -14,6 +14,7 @@ const notificationSettingskeys = [
     'followMovie', 'followMovie_betterQuality', 'followMovie_subtitle',
     'futureList', 'futureList_serialSeasonEnd', 'futureList_subtitle', 'finishedList_spinOffSequel'
 ];
+const staffOrCharacters = ['staff', 'characters'];
 
 
 const validations = Object.freeze({
@@ -386,6 +387,11 @@ const validations = Object.freeze({
                 return value;
             }
         }),
+
+    staffOrCharacters: param('staffOrCharacters')
+        .trim().toLowerCase()
+        .isIn(staffOrCharacters).withMessage(`Invalid parameter staffOrCharacters :: (${staffOrCharacters.join('|')})`),
+
     //-----------------------------------
     //-----------------------------------
 
@@ -412,6 +418,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter remove :: (true|false)')
+        .toBoolean(),
+
+    followedOnly: query('followedOnly')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter followedOnly :: (true|false)')
         .toBoolean(),
 
     //-----------------------------

@@ -163,4 +163,11 @@ router.get('/animeEnglishName',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getAnimeEnglishNames);
 
+//movies/birthday/:staffOrCharacters/:dataLevel/:page
+router.get('/birthday/:staffOrCharacters/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.validateApiParams.checkApiParams(['staffOrCharacters', 'followedOnly', 'dataLevel', 'page']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.getTodayBirthday);
+
 export default router;

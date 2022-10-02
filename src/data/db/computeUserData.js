@@ -1,6 +1,6 @@
 import getCollection from "../mongoDB.js";
 import mongodb from "mongodb";
-import {getLookupOnMoviesStage} from "./moviesDbMethods.js";
+import * as lookupDbMethods from "./lookupDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 
 export async function getNotComputedUsersId(limit = 10) {
@@ -97,7 +97,7 @@ export async function getGenresFromUserStats(userId) {
             {
                 $limit: 500,
             },
-            getLookupOnMoviesStage('movies', 'res', {genres: 1}),
+            lookupDbMethods.getLookupOnCustomCollectionStage('movies', 'res', {genres: 1}),
             {
                 $replaceRoot: {
                     newRoot: {
