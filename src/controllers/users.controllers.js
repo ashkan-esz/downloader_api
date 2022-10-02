@@ -181,6 +181,12 @@ export async function changeUserSettings(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function computeUserStats(req, res) {
+    let result = await usersServices.computeUserStats(req.jwtUserData);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 //----------------------------
 //----------------------------
 

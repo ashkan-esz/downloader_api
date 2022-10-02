@@ -25,6 +25,7 @@ import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {removeProfileImageFromS3} from "../data/cloudStorage.js";
+import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
 
 //todo : remove account
 //todo : forget password
@@ -405,6 +406,33 @@ export async function changeUserSettings(jwtUserData, settings, settingName) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
         return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function computeUserStats(jwtUserData) {
+    try {
+        let genres = await getGenresFromUserStats(jwtUserData.userId);
+        if (genres === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        }
+
+        let now = new Date();
+        let updateGenresResult = await updateComputedFavoriteGenres(jwtUserData.userId, genres);
+        if (updateGenresResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (updateGenresResult === 'notfound') {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+
+        return generateServiceResult({
+            data: {
+                favoriteGenres: genres,
+                lastUpdate: now,
+            }
+        }, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);

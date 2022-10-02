@@ -232,6 +232,8 @@ Example: https://downloader-node-api.herokuapp.com/users/activeSessions?testUser
 > send an email with an activation link. the link will expire after 6 hour.
 > 
 > maybe email goes to spam folder.
+>
+> **NOTE: limited to 2 call per minute**
 
 Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUser=true
 
@@ -239,6 +241,8 @@ Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUse
 
 ### GET /users/verifyEmail/[token]
 > verify given email token. create activation link on server side.
+> 
+> **NOTE: limited to 2 call per minute**
 
 Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
 
@@ -323,8 +327,14 @@ Future<List<String>> addProfileImage(File file) async {
 <br/>
 
 
-# Computed Data
-- every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.
+## Compute User Stats
+**NOTE: every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.**
+
+### PUT /users/computeUserStats
+> returns data based on computeUserStats
+> 
+> **NOTE: limited to 3 call per minute**
+
 
 <br />
 

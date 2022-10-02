@@ -29,10 +29,10 @@ router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurr
 router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserActiveSessions);
 
 //users/sendVerifyEmail
-router.get('/sendVerifyEmail', middlewares.rateLimit, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);
+router.get('/sendVerifyEmail', middlewares.rateLimit.rateLimit_2, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);
 
 //users/verifyEmail/:token
-router.get('/verifyEmail/:token', middlewares.rateLimit, usersControllers.verifyEmail);
+router.get('/verifyEmail/:token', middlewares.rateLimit.rateLimit_2, usersControllers.verifyEmail);
 
 //users/uploadProfileImage
 router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
@@ -66,5 +66,11 @@ router.put('/changeUserSettings/:settingName',
     middlewares.validateApiParams.checkApiParams(['settingName', 'setting_body']),
     middlewares.validateApiParams.apiParams_sendError,
     usersControllers.changeUserSettings);
+
+//users/computeUserStats
+router.put('/computeUserStats',
+    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.rateLimit.rateLimit_3,
+    usersControllers.computeUserStats);
 
 export default router;
