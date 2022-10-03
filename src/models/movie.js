@@ -1,7 +1,7 @@
 import {getLatestData} from "../crawlers/latestData.js";
 import {groupSubtitles} from "../crawlers/subtitle.js";
 
-export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles) {
+export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceVpnStatus) {
     let latestData = getLatestData(siteDownloadLinks, watchOnlineLinks, subtitles, type);
 
     return {
@@ -37,16 +37,17 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             url: poster,
             info: sourceName,
             size: 0,
+            vpnStatus: sourceVpnStatus.poster,
         }].filter(item => item.url),
-        poster_s3: null, // {url,originalUrl,size}
-        trailer_s3: null, // {url,originalUrl,size}
+        poster_s3: null, // {url,originalUrl,size,vpnStatus}
+        trailer_s3: null, // {url,originalUrl,size,vpnStatus}
         summary: {
             persian: persianSummary.replace(/([.…])+$/, ''),
             persian_source: sourceName,
             english: '',
             english_source: '',
         },
-        trailers: trailers.length > 0 ? trailers : null, // [{'url,info'}]
+        trailers: trailers.length > 0 ? trailers : null, // [{'url,info,vpnStatus'}]
         subtitles: groupSubtitles(subtitles),
         latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink
         status: type.includes('movie') ? 'ended' : 'unknown',

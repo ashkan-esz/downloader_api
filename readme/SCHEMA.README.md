@@ -94,7 +94,8 @@ dataLevel = {
         posters: Array({
             url: String,
             info: String,
-            size: Int
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
         qualities: Array(#QUALITY),
         seasons: Array(#SEASON),
@@ -110,7 +111,8 @@ dataLevel = {
         posters: Array({
             url: String,
             info: String,
-            size: Int
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
         type: String, // enum('movie', 'serial', 'anime_movie', 'anime_serial')
         rating: {
@@ -131,7 +133,8 @@ dataLevel = {
         posters: Array({
             url: String,
             info: String,
-            size: Int
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
         genres: Array(String),
         summary: {
@@ -187,13 +190,15 @@ dataLevel = {
             poster: {
                 url: String,
                 info: String,
-                size: Int
+                size: Int,
+                vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
             },
             count: Int,
         }),
         trailers: Array({
             url: String,
-            info: String
+            info: String,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
         update_date: Date,
         nextEpisode: null || {
@@ -237,11 +242,13 @@ dataLevel = {
             originalUrl: String,
             originalSize: Int,
             size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         },
         trailer_s3: null || {
             url: String,
             originalUrl: String,
             size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK'),
         },
         endYear: String,
         officialSite: String,
@@ -459,7 +466,8 @@ staffData = {
     imageData: null || {
         url: String,
         originalUrl: String,
-        size: Int
+        size: Int,
+        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
     },
     originalImages: Array(String),
     credits: Array({
@@ -500,7 +508,8 @@ characterData = {
     imageData: null || {
         url: String,
         originalUrl: String,
-        size: Int
+        size: Int,
+        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
     },
     originalImages: Array(String),
     credits: Array({
@@ -527,7 +536,8 @@ genres = Array({
     poster: {
         url: String,
         info: String,
-        size: Int
+        size: Int,
+        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
     },
     count: Int,
 })

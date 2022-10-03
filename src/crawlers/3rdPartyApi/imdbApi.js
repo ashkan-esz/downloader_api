@@ -7,6 +7,7 @@ import {getMovieModel} from "../../models/movie.js";
 import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
+import {addS3TrailerToTitleModel, uploadTitlePosterAndAddToTitleModel} from "../posterAndTrailer.js";
 
 let imdbApiKey = [];
 
@@ -119,17 +120,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
 
         if (titleDataFromDB.posters.length === 0) {
             let imdbPoster = semiImdbData.image ? semiImdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
-            if (imdbPoster && !imdbPoster.includes('nopicture.')) {
-                let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
-                if (s3poster) {
-                    updateFields.poster_s3 = s3poster;
-                    updateFields.posters = [{
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                    }];
-                }
-            }
+            await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imdbPoster, updateFields);
         }
 
         await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
@@ -208,28 +199,12 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
 
         if (titleDataFromDB.posters.length === 0) {
             let imdbPoster = semiImdbData.image ? semiImdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
-            if (imdbPoster && !imdbPoster.includes('nopicture.')) {
-                let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, imdbPoster);
-                if (s3poster) {
-                    updateFields.poster_s3 = s3poster;
-                    updateFields.posters = [{
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                    }];
-                }
-            }
+            await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imdbPoster, updateFields);
         }
 
         if (!titleDataFromDB.trailers) {
             let s3Trailer = await uploadTrailer(semiImdbData.title, semiImdbData.year, type, semiImdbData.id);
-            if (s3Trailer) {
-                updateFields.trailer_s3 = s3Trailer;
-                updateFields.trailers = [{
-                    url: s3Trailer.url,
-                    info: 's3Trailer-720p'
-                }];
-            }
+            addS3TrailerToTitleModel(updateFields, s3Trailer);
         }
 
         await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
@@ -248,7 +223,11 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         let titleModel = getMovieModel(
             titleObj, '', type, [],
             '', imdbYear, '', '',
-            [], [], []
+            [], [], [],
+            {
+                poster: '',
+                trailer: '',
+            }
         );
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
@@ -332,27 +311,11 @@ async function addBoxOfficeData() {
 
 async function uploadPosterAndTrailer(titleModel, imdbData, releaseState) {
     let imdbPoster = imdbData.image ? imdbData.image.replace(/\.*_v1.*al_/gi, '') : '';
-    if (imdbPoster && !imdbPoster.includes('nopicture.')) {
-        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, imdbData.year, imdbPoster);
-        if (s3poster) {
-            titleModel.poster_s3 = s3poster;
-            titleModel.posters = [{
-                url: s3poster.url,
-                info: 's3Poster',
-                size: s3poster.size,
-            }];
-        }
-    }
+    await uploadTitlePosterAndAddToTitleModel(titleModel, imdbPoster);
 
     if (releaseState !== 'waiting') {
         let s3Trailer = await uploadTrailer(titleModel.title, titleModel.year, titleModel.type, imdbData.id);
-        if (s3Trailer) {
-            titleModel.trailer_s3 = s3Trailer;
-            titleModel.trailers = [{
-                url: s3Trailer.url,
-                info: 's3Trailer-720p'
-            }];
-        }
+        addS3TrailerToTitleModel(titleModel, s3Trailer);
     }
 }
 

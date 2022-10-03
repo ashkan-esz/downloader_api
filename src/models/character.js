@@ -22,7 +22,7 @@ export function getCharacterModel(
         weight: weight || '',
         hairColor: hairColor || '',
         eyeColor: eyeColor || '',
-        imageData: null, // {url,originalUrl,size}
+        imageData: null, // {url,originalUrl,size,vpnStatus}
         originalImages: originalImages.filter(value => value),
         credits: [{
             movieID,

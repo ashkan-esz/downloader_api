@@ -23,16 +23,24 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "avamovie";
 const needHeadlessBrowser = true;
+const sourceVpnStatus = Object.freeze({
+    poster: 'allOk',
+    trailer: 'noVpn',
+    downloadLink: 'noVpn',
+});
 
 export default async function avamovie({movie_url, serial_url, page_count, serial_page_count}) {
     await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title);
     await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
 }
 
-async function search_title(link, i) {
+async function search_title(link, i, $, url) {
     try {
         let title = link.attr('title');
-        if (title && title.includes('دانلود') && link.parent()[0].name === 'h2' && link.parent().hasClass('title')) {
+        if (
+            (title && title.includes('دانلود') && link.parent()[0].name === 'h2' && link.parent().hasClass('title')) ||
+            (url.includes('/serie') && link.parent()[0].name === 'article' && $(link.parent()[0]).hasClass('item'))
+        ) {
             let year;
             let pageLink = link.attr('href');
             let type = getType(title);
@@ -66,6 +74,7 @@ async function search_title(link, i) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
@@ -175,6 +184,7 @@ function getTrailers($) {
                 result.push({
                     url: href,
                     info: 'avamovie-720p',
+                    vpnStatus: sourceVpnStatus.trailer,
                 });
             }
         }

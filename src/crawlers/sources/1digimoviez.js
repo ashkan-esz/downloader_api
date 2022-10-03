@@ -23,6 +23,11 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "digimoviez";
 const needHeadlessBrowser = true;
+const sourceVpnStatus = Object.freeze({
+    poster: 'allOk',
+    trailer: 'noVpn',
+    downloadLink: 'noVpn',
+});
 
 export default async function digimoviez({movie_url, serial_url, page_count, serial_page_count}) {
     await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title);
@@ -81,6 +86,7 @@ async function search_title(link, i, $, url) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
@@ -176,7 +182,8 @@ function getTrailers($) {
                 if (href && href.toLowerCase().includes('trailer')) {
                     result.push({
                         url: href,
-                        info: 'digimoviez-720p'
+                        info: 'digimoviez-720p',
+                        vpnStatus: sourceVpnStatus.trailer,
                     });
                 }
             }

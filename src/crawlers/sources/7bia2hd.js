@@ -29,6 +29,11 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "bia2hd";
 const needHeadlessBrowser = false;
+const sourceVpnStatus = Object.freeze({
+    poster: 'allOk',
+    trailer: 'allOk',
+    downloadLink: 'noVpn',
+});
 
 export default async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
     await wrapper_module(sourceName, needHeadlessBrowser, serial_url, serial_page_count, search_title);
@@ -61,6 +66,7 @@ async function search_title(link, i) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
@@ -166,7 +172,8 @@ function getTrailers($) {
                 let src = sourceChild.attribs.src;
                 result.push({
                     url: src,
-                    info: 'bia2hd-720p'
+                    info: 'bia2hd-720p',
+                    vpnStatus: sourceVpnStatus.trailer,
                 });
             }
         }

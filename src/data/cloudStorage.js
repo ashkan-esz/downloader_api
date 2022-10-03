@@ -54,6 +54,8 @@ export function getS3Client() {
     return s3;
 }
 
+export const s3VpnStatus = 'allOk';
+
 export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
@@ -66,6 +68,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
                     url: s3CastImage,
                     originalUrl: "",
                     size: await getFileSize(s3CastImage),
+                    vpnStatus: s3VpnStatus,
                 };
             }
         }
@@ -91,6 +94,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             url: fileUrl,
             originalUrl: originalUrl,
             size: Number(dataBuffer.length),
+            vpnStatus: s3VpnStatus,
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -139,6 +143,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
                     url: s3Subtitle,
                     originalUrl: "",
                     size: await getFileSize(s3Subtitle),
+                    vpnStatus: s3VpnStatus,
                 };
             }
         }
@@ -163,6 +168,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
             url: `https://${bucketNamesObject.downloadSubtitle}.${bucketsEndpointSuffix}/${fileName}`,
             originalUrl: originalUrl,
             size: Number(response.data.length),
+            vpnStatus: s3VpnStatus,
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -198,6 +204,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
                     originalUrl: "",
                     originalSize: 0,
                     size: await getFileSize(s3Poster),
+                    vpnStatus: s3VpnStatus,
                 };
             }
         }
@@ -225,6 +232,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             originalUrl: originalUrl,
             originalSize: Number(response.data.length),
             size: Number(dataBuffer.length),
+            vpnStatus: s3VpnStatus,
         };
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
@@ -264,6 +272,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     url: s3Trailer,
                     originalUrl: "",
                     size: await getFileSize(s3Trailer),
+                    vpnStatus: s3VpnStatus,
                 };
             }
         }
@@ -299,6 +308,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     url: fileUrl,
                     originalUrl: originalUrl,
                     size: await getFileSize(fileUrl),
+                    vpnStatus: s3VpnStatus,
                 });
             } catch (error2) {
                 if (videoReadStream) {

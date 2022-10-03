@@ -19,6 +19,11 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "film2movie";
 const needHeadlessBrowser = true;
+const sourceVpnStatus = Object.freeze({
+    poster: 'allOk',
+    trailer: 'allOk',
+    downloadLink: 'allOk',
+});
 let prevTitles = [];
 
 export default async function film2movie({movie_url, page_count}) {
@@ -92,6 +97,7 @@ async function search_title(link, i) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
@@ -179,7 +185,8 @@ function getTrailers($) {
                         : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
                     result.push({
                         url: href,
-                        info: 'film2movie-' + quality
+                        info: 'film2movie-' + quality,
+                        vpnStatus: sourceVpnStatus.trailer,
                     });
                 }
             }

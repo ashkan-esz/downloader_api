@@ -82,5 +82,5 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
 }
 
 
-export const sortPostersOrder = ['digimoviez', 'film2movie', 'golchindl', 'salamdl', 's3Poster', 'avamovie', 'bia2anime', 'bia2hd'];
-export const sortTrailersOrder = ['digimoviez', 'avamovie', 's3Trailer', 'film2movie', 'salamdl', 'bia2hd', 'bia2anime', 'golchindl'];
+export const sortPostersOrder = ['digimoviez', 'avamovie', 'film2movie', 'golchindl', 's3Poster', 'bia2anime', 'bia2hd', 'salamdl'];
+export const sortTrailersOrder = ['film2movie', 'bia2hd', 'bia2anime', 'golchindl', 's3Trailer', 'digimoviez', 'avamovie', 'salamdl'];

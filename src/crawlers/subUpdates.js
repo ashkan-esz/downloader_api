@@ -4,9 +4,9 @@ import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 
-export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName) {
+export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
     try {
-        let posterChange = await handlePosterUpdate(db_data, poster, sourceName);
+        let posterChange = await handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus);
         let trailerChange = handleTrailerUpdate(db_data, trailers);
         let {latestDataChange, PrimaryLatestDataChange} = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
@@ -27,7 +27,7 @@ export async function handleSubUpdates(db_data, poster, trailers, titleModel, ty
     }
 }
 
-async function handlePosterUpdate(db_data, poster, sourceName) {
+async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) {
     if (poster === '') {
         return false;
     }
@@ -43,6 +43,10 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
                 }
                 posterUpdated = true;
             }
+            if (db_data.posters[i].vpnStatus !== sourceVpnStatus.poster) { //replace vpnStatus
+                db_data.posters[i].vpnStatus = sourceVpnStatus.poster;
+                posterUpdated = true;
+            }
             posterExist = true;
             break;
         }
@@ -53,6 +57,7 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
             url: poster,
             info: sourceName,
             size: await getFileSize(poster),
+            vpnStatus: sourceVpnStatus.poster,
         });
     }
     let prevLength = db_data.posters.length;
@@ -65,16 +70,24 @@ async function handlePosterUpdate(db_data, poster, sourceName) {
                 url: db_data.poster_s3.url,
                 info: 's3Poster',
                 size: db_data.poster_s3.size,
+                vpnStatus: db_data.poster_s3.vpnStatus,
             });
-        } else if (prevS3Poster.url !== db_data.poster_s3.url || prevS3Poster.size !== db_data.poster_s3.size) {
+        } else if (
+            prevS3Poster.url !== db_data.poster_s3.url ||
+            prevS3Poster.size !== db_data.poster_s3.size ||
+            prevS3Poster.vpnStatus !== db_data.poster_s3.vpnStatus
+        ) {
             s3PosterUpdate = true;
             prevS3Poster.url = db_data.poster_s3.url;
             prevS3Poster.size = db_data.poster_s3.size;
+            prevS3Poster.vpnStatus = db_data.poster_s3.vpnStatus;
         }
     }
     db_data.posters = removeDuplicateLinks(db_data.posters);
+    let prevSort = db_data.posters.join(',');
     db_data.posters = sortPosters(db_data.posters);
-    return (posterUpdated || !posterExist || s3PosterUpdate || prevLength !== db_data.posters.length);
+    let newSort = db_data.posters.join(',');
+    return (posterUpdated || !posterExist || s3PosterUpdate || prevLength !== db_data.posters.length || prevSort !== newSort);
 }
 
 function handleTrailerUpdate(db_data, site_trailers) {
@@ -91,6 +104,10 @@ function handleTrailerUpdate(db_data, site_trailers) {
                     db_data.trailers[j].url = site_trailers[i].url;
                     trailersChanged = true;
                 }
+                if (site_trailers[i].vpnStatus !== db_data.trailers[j].vpnStatus) { //replace vpnStatus
+                    db_data.trailers[j].vpnStatus = site_trailers[i].vpnStatus;
+                    trailersChanged = true;
+                }
                 trailer_exist = true;
                 break;
             }
@@ -102,7 +119,12 @@ function handleTrailerUpdate(db_data, site_trailers) {
     }
     if (db_data.trailers !== null) {
         db_data.trailers = removeDuplicateLinks(db_data.trailers);
+        let prevSort = db_data.trailers.join(',');
         db_data.trailers = sortTrailers(db_data.trailers);
+        let newSort = db_data.trailers.join(',');
+        if (prevSort !== newSort) {
+            trailersChanged = true;
+        }
     }
     return trailersChanged;
 }

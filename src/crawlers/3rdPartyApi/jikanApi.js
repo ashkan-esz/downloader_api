@@ -1,10 +1,10 @@
 import axios from "axios";
 import NodeCache from "node-cache";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
-import * as cloudStorage from "../../data/cloudStorage.js";
 import * as utils from "../utils.js";
 import {addStaffAndCharacters} from "./personCharacter.js";
 import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
+import {uploadTitlePosterAndAddToTitleModel, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {default as pQueue} from "p-queue";
 import isEqual from 'lodash.isequal';
 import * as Sentry from "@sentry/node";
@@ -493,32 +493,11 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
     }
 
     if (titleDataFromDB.posters.length === 0) {
-        let jikanPoster = semiJikanData.image_url;
-        if (jikanPoster && !jikanPoster.includes('/icon/')) {
-            let s3poster = await cloudStorage.uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanPoster);
-            if (s3poster) {
-                updateFields.poster_s3 = s3poster;
-                updateFields.posters = [{
-                    url: s3poster.url,
-                    info: 's3Poster',
-                    size: s3poster.size,
-                }];
-            }
-        }
+        await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, semiJikanData.image_url, updateFields);
     }
 
     if (jikanData && !titleDataFromDB.trailers) {
-        let jikanTrailer = jikanData.trailer_url;
-        if (jikanTrailer) {
-            let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, jikanTrailer);
-            if (s3Trailer) {
-                updateFields.trailer_s3 = s3Trailer;
-                updateFields.trailers = [{
-                    url: s3Trailer.url,
-                    info: 's3Trailer-720p'
-                }];
-            }
-        }
+        await uploadTitleYoutubeTrailerAndAddToTitleModel(titleDataFromDB, jikanData.trailer_url, updateFields);
     }
 
     if (titleDataFromDB.castUpdateDate === 0) {
@@ -545,7 +524,11 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
         let titleModel = getMovieModel(
             jikanApiData.titleObj, '', type, [],
             '', '', '', '',
-            [], [], []
+            [], [], [],
+            {
+                poster: '',
+                trailer: '',
+            }
         );
 
         let jikanApiFields = getJikanApiFields(jikanApiData);
@@ -554,7 +537,8 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
             titleModel.status = jikanApiFields.status;
         }
 
-        await uploadPosterAndTrailer(titleModel, jikanApiData);
+        await uploadTitlePosterAndAddToTitleModel(titleModel, jikanApiData.image_url);
+        await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiData.trailer_url);
 
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
@@ -582,33 +566,6 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode) {
             if (castAndCharacters) {
                 await crawlerMethodsDB.updateByIdDB('movies', insertedId, castAndCharacters);
             }
-        }
-    }
-}
-
-async function uploadPosterAndTrailer(titleModel, jikanData) {
-    let jikanPoster = jikanData.image_url;
-    if (jikanPoster && !jikanPoster.includes('/icon/')) {
-        let s3poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, jikanPoster);
-        if (s3poster) {
-            titleModel.poster_s3 = s3poster;
-            titleModel.posters = [{
-                url: s3poster.url,
-                info: 's3Poster',
-                size: s3poster.size,
-            }];
-        }
-    }
-
-    let jikanTrailer = jikanData.trailer_url;
-    if (jikanTrailer) {
-        let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, jikanTrailer);
-        if (s3Trailer) {
-            titleModel.trailer_s3 = s3Trailer;
-            titleModel.trailers = [{
-                url: s3Trailer.url,
-                info: 's3Trailer-720p'
-            }];
         }
     }
 }

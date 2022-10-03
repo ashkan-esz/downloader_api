@@ -22,7 +22,7 @@ export function addToBlackList(jwtKey, cause, duration = null) {
     }
 }
 
-export async function isAuth_refreshToken(req, res, next) {
+export function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
@@ -102,7 +102,7 @@ export async function attachAuthFlag(req, res, next) {
     return next();
 }
 
-export async function blockAuthorized(req, res, next) {
+export function blockAuthorized(req, res, next) {
     if (req.isAuth) {
         return res.status(403).json({
             code: 403,
@@ -112,7 +112,7 @@ export async function blockAuthorized(req, res, next) {
     return next();
 }
 
-export async function blockUnAuthorized(req, res, next) {
+export function blockUnAuthorized(req, res, next) {
     if (!req.isAuth && req.authCode) {
         return res.status(req.authCode).json({
             data: null,

@@ -2,9 +2,10 @@ import axios from "axios";
 import {getOMDBApiData, getOMDBApiFields} from "./omdbApi.js";
 import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi.js";
 import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi.js";
-import {uploadTitlePosterToS3, uploadTitleTrailerFromYoutubeToS3} from "../../data/cloudStorage.js";
+import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
 import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisode} from "../seasonEpisode.js";
-import {sortPosters, sortTrailers} from "../subUpdates.js";
+import {sortPosters} from "../subUpdates.js";
+import {uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -23,6 +24,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                 url: s3poster.url,
                 info: 's3Poster',
                 size: s3poster.size,
+                vpnStatus: s3poster.vpnStatus,
             });
             titleModel.posters = sortPosters(titleModel.posters);
         }
@@ -69,7 +71,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (jikanApiFields.youtubeTrailer) {
-                    let trailerUploadFields = await handleTrailerUpload(titleModel, jikanApiFields.youtubeTrailer);
+                    let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiFields.youtubeTrailer, {});
                     titleModel = {...titleModel, ...trailerUploadFields};
                 }
 
@@ -166,7 +168,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (!db_data.trailer_s3 && jikanApiFields.youtubeTrailer) {
-                    let trailerUploadFields = await handleTrailerUpload(db_data, jikanApiFields.youtubeTrailer);
+                    let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, jikanApiFields.youtubeTrailer, {});
                     db_data = {...db_data, ...trailerUploadFields};
                     updateFields = {...updateFields, ...trailerUploadFields};
                 }
@@ -257,21 +259,6 @@ function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
     if (db_data.title !== titleObj.title) {
         temp.alternateTitles.push(db_data.title);
         temp.alternateTitles = removeDuplicateElements(temp.alternateTitles);
-    }
-    return temp;
-}
-
-async function handleTrailerUpload(titleData, youtubeTrailer) {
-    let temp = {};
-    let s3Trailer = await uploadTitleTrailerFromYoutubeToS3(titleData.title, titleData.type, titleData.year, youtubeTrailer);
-    if (s3Trailer) {
-        temp.trailer_s3 = s3Trailer;
-        let trailers = titleData.trailers ? titleData.trailers : [];
-        trailers.push({
-            url: s3Trailer.url,
-            info: 's3Trailer-720p'
-        });
-        temp.trailers = sortTrailers(trailers);
     }
     return temp;
 }

@@ -20,6 +20,11 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "salamdl";
 const needHeadlessBrowser = false;
+const sourceVpnStatus = Object.freeze({
+    poster: 'vpnOnly',
+    trailer: 'noVpn',
+    downloadLink: 'noVpn',
+});
 
 export default async function salamdl({movie_url, page_count}) {
     await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
@@ -75,6 +80,7 @@ async function search_title(link, i) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
@@ -176,7 +182,8 @@ function getTrailers($) {
                     let quality = href.includes('360p') ? '360p' : '720p';
                     result.push({
                         url: href,
-                        info: 'salamdl-' + quality
+                        info: 'salamdl-' + quality,
+                        vpnStatus: sourceVpnStatus.trailer,
                     });
                 }
             }

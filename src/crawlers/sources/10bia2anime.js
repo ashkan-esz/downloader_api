@@ -18,6 +18,11 @@ import {saveError} from "../../error/saveError.js";
 
 const sourceName = "bia2anime";
 const needHeadlessBrowser = false;
+const sourceVpnStatus = Object.freeze({
+    poster: 'allOk',
+    trailer: 'allOk',
+    downloadLink: 'allOk',
+});
 
 export default async function bia2anime({movie_url, page_count}) {
     await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
@@ -64,6 +69,7 @@ async function search_title(link, i) {
 
                     let sourceData = {
                         sourceName,
+                        sourceVpnStatus,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
