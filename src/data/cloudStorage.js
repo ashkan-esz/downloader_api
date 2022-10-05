@@ -10,6 +10,7 @@ import {
     CreateBucketCommand,
     S3Client
 } from "@aws-sdk/client-s3";
+import {Upload} from "@aws-sdk/lib-storage";
 import ytdl from "ytdl-core";
 import sharp from "sharp";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
@@ -296,18 +297,34 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     reject(err);
                 });
 
-                const params = {
-                    Bucket: bucketNamesObject.downloadTrailer,
-                    Body: videoReadStream,
-                    Key: fileName,
-                    ACL: 'public-read',
-                };
-                let command = new PutObjectCommand(params);
-                await s3.send(command, {abortSignal: abortController.signal});
+                const parallelUploads3 = new Upload({
+                    client: s3,
+                    params: {
+                        Bucket: bucketNamesObject.downloadTrailer,
+                        Body: videoReadStream,
+                        Key: fileName,
+                        ACL: 'public-read',
+                    },
+                    queueSize: 4, // optional concurrency configuration
+                    partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
+                    leavePartsOnError: false, // optional manually handle dropped parts
+                });
+
+                let fileSize = 0;
+                parallelUploads3.on("httpUploadProgress", (progress) => {
+                    fileSize = progress.total;
+                });
+
+                let uploadResult = await parallelUploads3.done();
+
+                if (!fileSize) {
+                    fileSize = await getFileSize(fileUrl);
+                }
+
                 resolve({
                     url: fileUrl,
                     originalUrl: originalUrl,
-                    size: await getFileSize(fileUrl),
+                    size: fileSize,
                     vpnStatus: s3VpnStatus,
                 });
             } catch (error2) {
