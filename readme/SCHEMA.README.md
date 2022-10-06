@@ -272,6 +272,7 @@ dataLevel = {
         awards: String,
         animeType: String,
         animeSource: String,
+        animeSeason: String,
         relatedTitles: Array({
             _id: '' || Object,
             jikanID: Int,

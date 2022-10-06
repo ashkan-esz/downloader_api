@@ -193,7 +193,7 @@ function getGenderFromJikanData(jikanData) {
     }
 
     if (!gender) {
-        let name = jikanData.name.toLowerCase();
+        let name = jikanData.name?.toLowerCase() || '';
         gender = name.match(/^(grand)?father\s/)
             ? 'male'
             : name.match(/^(grand)?mother\s/) ? 'female' : '';
@@ -504,7 +504,7 @@ function getHairColorFromJikan(jikanData) {
         hairMatch = '';
     }
 
-    let lastName = jikanData.name.split(' ').pop();
+    let lastName = jikanData.name?.split(' ').pop() || '';
     let hairColor = hairMatch
         .replace('Hair:', '')
         .toLowerCase()
@@ -529,7 +529,7 @@ function getEyeColorFromJikan(jikanData) {
         EyeMatch = '';
     }
 
-    let lastName = jikanData.name.split(' ').pop();
+    let lastName = jikanData.name?.split(' ').pop() || '';
     let EyeColor = EyeMatch
         .replace(/(Eye:)|;/g, '')
         .toLowerCase()

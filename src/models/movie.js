@@ -91,6 +91,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         //jikan api data
         animeType: '',
         animeSource: '',
+        animeSeason: '',
         relatedTitles: [],
     };
 }
