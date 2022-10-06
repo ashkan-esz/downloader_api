@@ -171,6 +171,8 @@ dataLevel = {
         rank: {
             animeTopComingSoon: Int,
             animeTopAiring: Int,
+            animeSeasonNow: Int,
+            animeSeasonUpcoming: Int,
             comingSoon: Int,
             inTheaters: Int,
             boxOffice: Int,

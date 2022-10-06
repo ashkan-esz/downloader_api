@@ -9,6 +9,8 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         rank: {
             animeTopComingSoon: -1,
             animeTopAiring: -1,
+            animeSeasonNow: -1,
+            animeSeasonUpcoming: -1,
             comingSoon: -1,
             inTheaters: -1,
             boxOffice: -1,

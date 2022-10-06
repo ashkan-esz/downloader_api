@@ -401,18 +401,27 @@ function getTitlesFromData(fullData) {
 }
 
 export async function updateJikanData() {
-    //reset rank
+    // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp_anime', ['anime_movie', 'anime_serial']);
     await add_comingSoon_topAiring_Titles('comingSoon', 8);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp_anime', 'waiting', ['anime_movie', 'anime_serial']);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopComingSoon', true);
-    //reset rank
+
+    // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
     await add_comingSoon_topAiring_Titles('topAiring', 8);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopAiring', true);
 
-    //todo : add/use more api
+    // reset temp rank
+    await crawlerMethodsDB.resetTempRank(true);
+    await add_comingSoon_topAiring_Titles('animeSeasonNow', 1);
+    await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonNow', true);
+
+    // reset temp rank
+    await crawlerMethodsDB.resetTempRank(true);
+    await add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 1);
+    await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonUpcoming', true);
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
@@ -421,9 +430,16 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
 
     let rank = 0;
     for (let k = 1; k <= numberOfPage; k++) {
-        let url = (mode === 'comingSoon')
-            ? `https://api.jikan.moe/v4/top/anime?filter=upcoming&page=${k}`
-            : `https://api.jikan.moe/v4/top/anime?filter=airing&page=${k}`;
+        let url = '';
+        if (mode === 'comingSoon') {
+            url = `https://api.jikan.moe/v4/top/anime?filter=upcoming&page=${k}`;
+        } else if (mode === 'topAiring') {
+            url = `https://api.jikan.moe/v4/top/anime?filter=airing&page=${k}`;
+        } else if (mode === 'animeSeasonNow') {
+            url = `https://api.jikan.moe/v4/seasons/now?page=${k}`;
+        } else {
+            url = `https://api.jikan.moe/v4/seasons/upcoming?page=${k}`;
+        }
 
         let apiData = await handleApiCall(url);
         if (!apiData) {
@@ -458,11 +474,12 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
 async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData, mode, rank) {
     let updateFields = {};
 
-    if (mode === 'comingSoon') {
-        if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== 'comingSoon') {
+    if (mode === 'comingSoon' || mode === 'animeSeasonUpcoming') {
+        if (titleDataFromDB.releaseState !== "done" && titleDataFromDB.releaseState !== 'comingSoon' && titleDataFromDB.releaseState !== 'waiting') {
             updateFields.releaseState = 'comingSoon';
         }
     } else {
+        // topAiring|animeSeasonNow
         if (titleDataFromDB.releaseState === 'comingSoon') {
             updateFields.releaseState = 'waiting';
         }
@@ -563,7 +580,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
 
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
-        if (mode === 'comingSoon') {
+        if (mode === 'comingSoon' || mode === 'animeSeasonUpcoming') {
             titleModel.releaseState = 'comingSoon';
         } else {
             titleModel.releaseState = 'waiting';

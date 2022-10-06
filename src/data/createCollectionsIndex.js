@@ -43,6 +43,8 @@ export async function createCollectionsAndIndexes() {
             type: 1, //index prefix
             'rank.animeTopComingSoon': 1,
             'rank.animeTopAiring': 1,
+            'rank.animeSeasonNow': 1,
+            'rank.animeSeasonUpcoming': 1,
             'rank.comingSoon': 1,
             'rank.inTheaters': 1,
             'rank.boxOffice': 1,

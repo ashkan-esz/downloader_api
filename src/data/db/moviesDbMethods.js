@@ -251,6 +251,10 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
             searchBase = "rank.animeTopComingSoon";
         } else if (sortBase === 'animetopairing') {
             searchBase = "rank.animeTopAiring";
+        } else if (sortBase === 'animeseasonnow') {
+            searchBase = "rank.animeSeasonNow";
+        } else if (sortBase === 'animeseasonupcoming') {
+            searchBase = "rank.animeSeasonUpcoming";
         } else if (sortBase === 'comingsoon') {
             searchBase = "rank.comingSoon";
         } else if (sortBase === 'intheaters') {

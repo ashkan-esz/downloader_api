@@ -3,7 +3,11 @@ import {body, param, query, validationResult} from 'express-validator';
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const dataLevels = ['dlink', 'low', 'telbot', 'medium', 'info', 'high'];
-const sortBases = ['animetopcomingsoon', 'animetopairing', 'comingsoon', 'intheaters', 'boxoffice', 'top', 'popular'];
+const sortBases = [
+    'animetopcomingsoon', 'animetopairing',
+    'animeseasonnow', 'animeseasonupcoming',
+    'comingsoon', 'intheaters', 'boxoffice',
+    'top', 'popular'];
 const statTypes = ['like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character',
     'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score'];
 
