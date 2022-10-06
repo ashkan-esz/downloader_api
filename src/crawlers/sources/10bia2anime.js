@@ -10,7 +10,7 @@ import {
     validateYear,
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
-import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
+import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
 import save from "../save_changes_db.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
@@ -60,6 +60,14 @@ async function search_title(link, i) {
                     if (!year) {
                         year = fixYear($2);
                     }
+                    if (type.includes('serial') && downloadLinks.length === 0) {
+                        type = type.replace('serial', 'movie');
+                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                    }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
                     title = replaceShortTitleWithFull(title);
                     downloadLinks = fixWrongSeasonNumberIncrement(downloadLinks);
@@ -75,7 +83,7 @@ async function search_title(link, i) {
                         watchOnlineLinks: [],
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
-                        trailers: [],
+                        trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
@@ -150,6 +158,30 @@ function getPoster($) {
     } catch (error) {
         saveError(error);
         return '';
+    }
+}
+
+function getTrailers($) {
+    try {
+        let result = [];
+        let $video = $('video');
+        for (let i = 0; i < $video.length; i++) {
+            let sourceChild = $($video[i]).children()[0];
+            if (sourceChild) {
+                let src = sourceChild.attribs.src;
+                result.push({
+                    url: src,
+                    info: 'bia2anime-720p',
+                    vpnStatus: sourceVpnStatus.trailer,
+                });
+            }
+        }
+
+        result = removeDuplicateLinks(result);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 
@@ -357,27 +389,32 @@ function getFileData_movie($, link) {
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
     let qualityText = $(infoNodeChildren[1]).text();
+    let size = infoNodeChildren[2] ? purgeSizeText($(infoNodeChildren[2]).text()) : '';
     let qualitySplit = qualityText.trim().split(' - ');
-    qualitySplit[0] = purgeQualityText(qualitySplit[0]);
-    qualitySplit[1] = purgeQualityText(qualitySplit[1]);
+    qualitySplit[0] = purgeQualityText(qualitySplit[0]).replace(/\s+/g, '.');
+    if (qualitySplit[1]) {
+        qualitySplit[1] = purgeQualityText(qualitySplit[1]);
+    }
 
-    let movieName = qualitySplit[1].split(/the movie/gi).pop().trim();
+    let movieName = qualitySplit[1]?.split(/the movie/gi).pop().trim() || '';
     if (movieName.match(/^\d+\s+/)) {
         movieName = 'Movie ' + movieName;
     }
-    if (!movieName.match(/\d\d\d\d$/)) {
+    if (movieName && !movieName.match(/\d\d\d\d$/)) {
         let yearMatch = linkHref.match(/\.\d\d\d\d\./g);
         let year = yearMatch ? yearMatch.pop().replace(/\./g, '') : '';
         if (year) {
             movieName += ' ' + year;
         }
     }
-    movieName = ' (' + movieName + ')';
+    if (movieName) {
+        movieName = ' (' + movieName + ')';
+    }
 
     let info = [qualitySplit[0], movieName, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, $(link).attr('href'));
     info = fixLinkInfoOrder(info);
-    return info;
+    return [info, size].filter(value => value).join(' - ');
 }
 
 function getSeasonNumber($, infoNodeChildren, linkHref) {

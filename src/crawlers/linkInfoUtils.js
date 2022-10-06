@@ -95,6 +95,7 @@ export function purgeQualityText(qualityText) {
         .replace('سانسور شده', 'Censored')
         .replace('بدون', '')
         .replace('دوزبانه', '')
+        .replace('دو زبانه', '')
         .replace('زبان اصلی', '')
         .replace('لينک مستقيم', '')
         .replace('لینک مستقیم', '') //its not duplicate
@@ -163,6 +164,7 @@ export function fixLinkInfo(info, linkHref) {
         .replace('.10bir.', '.10bit.')
         .replace('.10bt.', '.10bit.')
         .replace('.x265p.', '.x265.')
+        .replace('1080x264', '1080p')
         .replace(/bl?ue?rayR?L?/i, 'BluRay')
         .replace(/WEB-?DLR/i, 'WEB-DL')
         .replace(/hd-?rip/gi, 'HD-RIP')
@@ -478,6 +480,7 @@ export function purgeSizeText(sizeText) {
         .replace('گیگابیت', 'GB')
         .replace('گیابایت', 'GB')
         .replace('گیگابات', 'GB')
+        .replace('گیگابابایت', 'GB')
         .replace('گیگ', 'GB')
         .replace('گمابایت', 'MB')
         .replace('مگابایت', 'MB')

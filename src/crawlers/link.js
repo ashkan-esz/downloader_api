@@ -15,6 +15,7 @@ export function check_download_link(original_link, matchCases, type) {
             let decodedLink = getDecodedLink(link);
             if (
                 link.includes(matchCases.case1) ||
+                link.replace(/m/g, 'n').includes(matchCases.case1.replace(/m/g, 'n')) ||
                 link.includes(matchCases.case2) ||
                 link.includes(matchCases.case3) ||
                 link.includes(matchCases.case4) ||
@@ -60,7 +61,7 @@ export function check_download_link(original_link, matchCases, type) {
 
 export function getMatchCases(title, type) {
     if (type.includes('movie')) {
-        let title_array = title.split(' ');
+        let title_array = title.toLowerCase().split(' ');
         let temp = title_array.map((text) => text.replace(/&/g, 'and').replace(/[’:]/g, ''));
         let case1 = temp.map((text) => text.split('.').filter((t) => t !== ''));
         case1 = [].concat.apply([], case1);
@@ -69,10 +70,10 @@ export function getMatchCases(title, type) {
         let case3 = title_array.filter(value => isNaN(value));
         let case4 = case3.map((text) => text.charAt(0));
         return {
-            case1: case1.join('.').toLowerCase(),
-            case2: case2.join('.').toLowerCase(),
-            case3: case3.join('.').toLowerCase(),
-            case4: case4.join('.').toLowerCase()
+            case1: case1.join('.'),
+            case2: case2.join('.'),
+            case3: case3.join('.'),
+            case4: case4.join('.'),
         }
     } else return null;
 }
@@ -107,7 +108,7 @@ export function check_format(link, type) {
     if (
         link.includes('dvdrip') || link.includes('hdcam') || link.includes('hdtv') ||
         link.includes('mobile') || link.includes('dubbed.farsi') || link.match(/\d\d\d+\.nineanime/g)
-        || link.includes('1080.bia2anime.mkv')
+        || link.match(/((\d\d\d\d?\.bia2anime)|(bia2anime\.\d\d\d\d?))\.mkv/)
     ) {
         return true;
     }
