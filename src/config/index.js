@@ -7,6 +7,7 @@ export default {
     port: process.env.PORT || 3000,
     printErrors: process.env.PRINT_ERRORS,
     disableCrawler: process.env.DISABLE_CRAWLER,
+    disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
     crawlerConcurrency: process.env.CRAWLER_CONCURRENCY,
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,

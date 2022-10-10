@@ -1,9 +1,9 @@
 import mongodb from "mongodb";
-import getCollection from "../mongoDB.js";
+import getCollection from "../../mongoDB.js";
 import {default as pQueue} from "p-queue";
-import {removeDuplicateElements} from "../../crawlers/utils.js";
+import {removeDuplicateElements} from "../../../crawlers/utils.js";
 
-async function removeMovieSource(sourceName) {
+export async function removeMovieSource(sourceName) {
     let collection = await getCollection('movies');
 
     while (true) {
@@ -65,7 +65,7 @@ async function removeMovieSource(sourceName) {
     }
 }
 
-async function getDuplicateTitles() {
+export async function getDuplicateTitles() {
     let collection = await getCollection('movies');
     return await collection.aggregate([
         {
@@ -113,7 +113,7 @@ async function getDuplicateTitles() {
     ]).toArray();
 }
 
-async function handleDuplicateTitles(res) {
+export async function handleDuplicateTitles(res) {
     let moviesCollection = await getCollection('movies');
     let counter = 0;
     for (let i = 0; i < res.length; i++) {
@@ -162,7 +162,7 @@ async function handleDuplicateTitles(res) {
     return counter;
 }
 
-async function handleRemovedMoviesStaffOrCharacters(staffOrCharacters) {
+export async function handleRemovedMoviesStaffOrCharacters(staffOrCharacters) {
     //staffOrCharacters values: staff | characters
     let moviesCollection = await getCollection('movies');
     let staffOrCharactersCollection = await getCollection(staffOrCharacters);

@@ -265,7 +265,7 @@ export async function removeAllAuthSession(userId, prevRefreshToken) {
 //----------------------------
 //----------------------------
 
-export async function uploadProfileImageDB(userId, imageUrl) {
+export async function uploadProfileImageDB(userId, imageData) {
     try {
         let collection = await getCollection('users');
         let result = await collection.findOneAndUpdate(
@@ -275,7 +275,7 @@ export async function uploadProfileImageDB(userId, imageUrl) {
             }, {
                 $push: {
                     profileImages: {
-                        $each: [imageUrl],
+                        $each: [imageData],
                         $position: 0,
                     },
                 },
@@ -300,10 +300,12 @@ export async function removeProfileImageDB(userId, fileName) {
         let result = await collection.findOneAndUpdate(
             {
                 _id: new mongodb.ObjectId(userId),
-                profileImages: fileNameRegex
+                'profileImages.url': fileNameRegex
             }, {
                 $pull: {
-                    profileImages: fileNameRegex,
+                    profileImages: {
+                        url: fileNameRegex
+                    },
                 },
                 $inc: {
                     profileImageCounter: -1

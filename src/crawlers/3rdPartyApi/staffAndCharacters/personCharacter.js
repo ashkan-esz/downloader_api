@@ -16,7 +16,7 @@ import {
 
 const maxStaffOrCharacterSize = 30;
 
-export async function addStaffAndCharacters(movieID, movieName, movieType, moviePoster, allApiData, castUpdateDate) {
+export async function addStaffAndCharacters(movieID, movieName, movieType, moviePoster, movieThumbnail, allApiData, castUpdateDate) {
     if (utils.getDatesBetween(new Date(), new Date(castUpdateDate)).days < 30) {
         return null;
     }
@@ -30,7 +30,7 @@ export async function addStaffAndCharacters(movieID, movieName, movieType, movie
             let {
                 tvmazeActors,
                 tvmazeCharacters
-            } = getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, tvmazeApiFields.cast);
+            } = getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, movieThumbnail, tvmazeApiFields.cast);
             staff = tvmazeActors;
             characters = tvmazeCharacters;
         }
@@ -38,9 +38,9 @@ export async function addStaffAndCharacters(movieID, movieName, movieType, movie
         if (jikanApiFields) {
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
-                let jikanStaff = await getJikanStaff(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.staff, staff);
-                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.characters, staff);
-                let jikanCharacters = await getJikanCharaters(movieID, movieName, movieType, moviePoster, jikanCharatersStaff.characters, characters);
+                let jikanStaff = await getJikanStaff(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.staff, staff);
+                let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.characters, staff);
+                let jikanCharacters = await getJikanCharaters(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.characters, characters);
                 staff = [...staff, ...jikanStaff, ...jikanVoiceActors];
                 characters = [...characters, ...jikanCharacters];
             }
@@ -113,6 +113,7 @@ function getStaffAndCharactersData(staff, characters, movieID) {
                             name: character.rawName,
                             gender: character.gender,
                             image: character.imageData ? character.imageData.url : '',
+                            thumbnail: character.imageData ? character.imageData.thumbnail : '',
                             role: character.credits.find(x => x.movieID.toString() === movieID.toString()).role,
                         }
                     }
@@ -124,6 +125,7 @@ function getStaffAndCharactersData(staff, characters, movieID) {
                     gender: staff[i].gender,
                     country: staff[i].country,
                     image: staff[i].imageData ? staff[i].imageData.url : '',
+                    thumbnail: staff[i].imageData ? staff[i].imageData.thumbnail : '',
                     positions: thisMovieCredit.positions,
                     characterData: characterData,
                 });
@@ -139,12 +141,14 @@ function getStaffAndCharactersData(staff, characters, movieID) {
                 gender: '',
                 country: '',
                 image: '',
+                thumbnail: '',
                 positions: ['Voice Actor'],
                 characterData: {
                     id: characters[i]._id,
                     name: characters[i].rawName,
                     gender: characters[i].gender,
                     image: characters[i].imageData ? characters[i].imageData.url : '',
+                    thumbnail: characters[i].imageData ? characters[i].imageData.thumbnail : '',
                     role: characters[i].credits.find(x => x.movieID.toString() === movieID.toString()).role,
                 },
             });
@@ -162,6 +166,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
             gender: '',
             country: '',
             image: '',
+            thumbnail: '',
             positions: ['Director'],
             characterData: null,
         });
@@ -173,6 +178,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
             gender: '',
             country: '',
             image: '',
+            thumbnail: '',
             positions: ['Writer'],
             characterData: null,
         });
@@ -185,6 +191,7 @@ function addOmdbApiData(staffAndCharactersData, omdbApiFields, tvmazeApiFields) 
                 gender: '',
                 country: '',
                 image: '',
+                thumbnail: '',
                 positions: ['Actor'],
                 characterData: null,
             });
@@ -205,9 +212,16 @@ function embedStaffAndCharacters(movieID, staff, characters) {
                         thisCredit.characterID = thisCharacter._id;
                         staff[i].updateFlag = true;
                     }
-                    let temp = thisCharacter.imageData ? thisCharacter.imageData.url : '';
-                    if (!isEqual(thisCredit.characterImage, temp) && isTrulyValue(temp)) {
-                        thisCredit.characterImage = temp;
+                    //---------------------------------------------
+                    let characterImage = thisCharacter.imageData ? thisCharacter.imageData.url : '';
+                    if (!isEqual(thisCredit.characterImage, characterImage) && isTrulyValue(characterImage)) {
+                        thisCredit.characterImage = characterImage;
+                        staff[i].updateFlag = true;
+                    }
+                    //---------------------------------------------
+                    let characterThumbnail = thisCharacter.imageData ? thisCharacter.imageData.thumbnail : '';
+                    if (!isEqual(thisCredit.characterThumbnail, characterThumbnail) && isTrulyValue(characterThumbnail)) {
+                        thisCredit.characterThumbnail = characterThumbnail;
                         staff[i].updateFlag = true;
                     }
                 }
@@ -226,9 +240,16 @@ function embedStaffAndCharacters(movieID, staff, characters) {
                         thisCredit.actorID = thisStaff._id;
                         characters[i].updateFlag = true;
                     }
-                    let temp = thisStaff.imageData ? thisStaff.imageData.url : '';
-                    if (!isEqual(thisCredit.actorImage, temp) && isTrulyValue(temp)) {
-                        thisCredit.actorImage = temp;
+                    //---------------------------------------------
+                    let actorImage = thisStaff.imageData ? thisStaff.imageData.url : '';
+                    if (!isEqual(thisCredit.actorImage, actorImage) && isTrulyValue(actorImage)) {
+                        thisCredit.actorImage = actorImage;
+                        characters[i].updateFlag = true;
+                    }
+                    //---------------------------------------------
+                    let actorThumbnail = thisStaff.imageData ? thisStaff.imageData.thumbnail : '';
+                    if (!isEqual(thisCredit.actorThumbnail, actorThumbnail) && isTrulyValue(actorThumbnail)) {
+                        thisCredit.actorThumbnail = actorThumbnail;
                         characters[i].updateFlag = true;
                     }
                 }
@@ -241,7 +262,7 @@ function embedStaffAndCharacters(movieID, staff, characters) {
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, tvmazeCast) {
+function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster, movieThumbnail, tvmazeCast) {
     let tvmazeActors = [];
     for (let i = 0; i < tvmazeCast.length; i++) {
         let countryName = tvmazeCast[i].person.country ? tvmazeCast[i].person.country.name.toLowerCase() : '';
@@ -261,7 +282,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster
             countryName, birthday, deathday, age,
             '', '', '', '',
             originalImages,
-            movieID, movieName, movieType, moviePoster, positions, tvmazeCast[i].character.name, ''
+            movieID, movieName, movieType, moviePoster, movieThumbnail, positions, tvmazeCast[i].character.name, ''
         );
         //one actor play as multiple character
         let findExistingStaff = tvmazeActors.find(item => item.name === newStaff.name);
@@ -284,7 +305,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster
             '', '', '', 0,
             '', '', '', '',
             originalImages,
-            movieID, movieName, movieType, moviePoster, '', tvmazeCast[i].person.name,
+            movieID, movieName, movieType, moviePoster, movieThumbnail, '', tvmazeCast[i].person.name,
         );
         //one character mey have separate voice actor and actor
         let findExistingCharacter = tvmazeCharacters.find(item => item.name === newCharacter.name);
@@ -300,7 +321,7 @@ function getTvMazeActorsAndCharacters(movieID, movieName, movieType, moviePoster
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-async function getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, jikanCharactersArray, staff) {
+async function getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharactersArray, staff) {
     let voiceActors = [];
     for (let i = 0; i < jikanCharactersArray.length; i++) {
         let thisCharacterVoiceActors = jikanCharactersArray[i].voice_actors;
@@ -313,17 +334,17 @@ async function getJikanStaff_voiceActors(movieID, movieName, movieType, moviePos
             }
         }
     }
-    return await getJikanStaff(movieID, movieName, movieType, moviePoster, voiceActors, staff);
+    return await getJikanStaff(movieID, movieName, movieType, moviePoster, movieThumbnail, voiceActors, staff);
 }
 
-async function getJikanStaff(movieID, movieName, movieType, moviePoster, jikanStaffArray, staff) {
+async function getJikanStaff(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanStaffArray, staff) {
     const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanStaffArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].person.mal_id).then(staffApiData => {
             if (staffApiData) {
                 let newStaff = makeNewStaffOrCharacterFromJikanData(
-                    movieID, movieName, movieType, moviePoster,
+                    movieID, movieName, movieType, moviePoster, movieThumbnail,
                     jikanStaffArray[i], staffApiData, 'staff'
                 );
                 //one actor play as multiple character
@@ -349,14 +370,14 @@ async function getJikanStaff(movieID, movieName, movieType, moviePoster, jikanSt
     return result;
 }
 
-async function getJikanCharaters(movieID, movieName, movieType, moviePoster, jikanCharatersArray, characters) {
+async function getJikanCharaters(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersArray, characters) {
     const promiseQueue = new pQueue.default({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanCharatersArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(characterApiData => {
             if (characterApiData) {
                 let newCharacter = makeNewStaffOrCharacterFromJikanData(
-                    movieID, movieName, movieType, moviePoster,
+                    movieID, movieName, movieType, moviePoster, movieThumbnail,
                     jikanCharatersArray[i], characterApiData, 'character'
                 );
                 let existingCharacterIndex = characters.findIndex(item => item.name === newCharacter.name);
@@ -377,7 +398,7 @@ async function getJikanCharaters(movieID, movieName, movieType, moviePoster, jik
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, moviePoster, SemiData, fullApiData, type) {
+function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, moviePoster, movieThumbnail, SemiData, fullApiData, type) {
     let {
         height,
         weight,
@@ -413,7 +434,7 @@ function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, mov
             country, birthday, deathday, age,
             height, weight, hairColor, eyeColor,
             originalImages,
-            movieID, movieName, movieType, moviePoster, SemiData.positions,
+            movieID, movieName, movieType, moviePoster, movieThumbnail, SemiData.positions,
             (SemiData.characterName || ''), (SemiData.characterRole || '')
         );
     } else {
@@ -431,7 +452,7 @@ function makeNewStaffOrCharacterFromJikanData(movieID, movieName, movieType, mov
             country, birthday, deathday, age,
             height, weight, hairColor, eyeColor,
             originalImages,
-            movieID, movieName, movieType, moviePoster, SemiData.role, actorName,
+            movieID, movieName, movieType, moviePoster, movieThumbnail, SemiData.role, actorName,
         );
     }
 }
@@ -459,11 +480,23 @@ export function updateStaffAndCharactersFields(prevFields, currentFields) {
                 isUpdated = isUpdated || creditUpdateResult.isUpdated;
             } else if (!isEqual(prevFields[keys[i]], currentFields[keys[i]]) && isTrulyValue(currentFields[keys[i]])) {
                 if (keys[i] === 'originalImages') {
-                    newFields.originalImages = utils.removeDuplicateElements([...prevFields.originalImages, ...currentFields.originalImages]);
+                    let mergedImages = utils.removeDuplicateElements([...prevFields.originalImages, ...currentFields.originalImages]);
+                    if (prevFields.originalImages.length !== mergedImages.length) {
+                        isUpdated = true;
+                        newFields.originalImages = mergedImages;
+                    } else {
+                        for (let j = 0; j < mergedImages; j++) {
+                            if (!prevFields.originalImages.includes(mergedImages[j])) {
+                                isUpdated = true;
+                                newFields.originalImages = mergedImages;
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     newFields[keys[i]] = currentFields[keys[i]];
+                    isUpdated = true;
                 }
-                isUpdated = true;
             }
         }
         return {fields: newFields, isUpdated};

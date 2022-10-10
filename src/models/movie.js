@@ -40,8 +40,9 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             info: sourceName,
             size: 0,
             vpnStatus: sourceVpnStatus.poster,
+            thumbnail: "",
         }].filter(item => item.url),
-        poster_s3: null, // {url,originalUrl,size,vpnStatus}
+        poster_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
         trailer_s3: null, // {url,originalUrl,size,vpnStatus}
         summary: {
             persian: persianSummary.replace(/([.…])+$/, ''),

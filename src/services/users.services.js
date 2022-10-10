@@ -1,20 +1,5 @@
 import config from "../config/index.js";
-import {
-    findUser,
-    addUser,
-    setTokenForNewUser,
-    updateUserAuthToken,
-    verifyUserEmail,
-    updateEmailToken,
-    setTokenForNewDevice,
-    removeAuthToken,
-    removeAuthSession,
-    removeAllAuthSession,
-    updateUserByID,
-    uploadProfileImageDB,
-    removeProfileImageDB,
-    getUserSettingsDB, getAllUserSettingsDB, changeUserSettingsDB,
-} from "../data/db/usersDbMethods.js";
+import * as usersDbMethods from "../data/db/usersDbMethods.js";
 import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda/index.js";
@@ -26,6 +11,7 @@ import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
+import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 
 //todo : remove account
 //todo : forget password
@@ -33,7 +19,7 @@ import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/c
 
 export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
-        let findUserResult = await findUser(username, email, {username: 1, email: 1});
+        let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, email: 1});
         if (findUserResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (findUserResult) {
@@ -52,13 +38,13 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
         let deviceId = uuidv4();
         let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId);
-        let userId = await addUser(userData);
+        let userId = await usersDbMethods.addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         }
         const user = getJwtPayload(userData, userId);
         const tokens = generateAuthTokens(user);
-        await setTokenForNewUser(userId, tokens.refreshToken);
+        await usersDbMethods.setTokenForNewUser(userId, tokens.refreshToken);
         await agenda.schedule('in 5 seconds', 'registration email', {
             rawUsername: userData.rawUsername,
             email,
@@ -82,7 +68,7 @@ export async function login(username_email, password, deviceInfo, ip) {
     //todo : check device already exist
     //todo : limit number of device
     try {
-        let userData = await findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
+        let userData = await usersDbMethods.findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
         if (userData === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
@@ -93,7 +79,7 @@ export async function login(username_email, password, deviceInfo, ip) {
             const tokens = generateAuthTokens(user);
             deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
             let deviceId = uuidv4();
-            let result = await setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
+            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
             if (!result) {
                 return generateServiceResult({}, 500, errorMessage.serverError);
             } else if (result === 'cannot find user') {
@@ -128,7 +114,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
         };
         const tokens = generateAuthTokens(user);
         deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
-        let result = await updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
+        let result = await usersDbMethods.updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
@@ -149,7 +135,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
 
 export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
     try {
-        let result = await removeAuthToken(jwtUserData.userId, prevRefreshToken);
+        let result = await usersDbMethods.removeAuthToken(jwtUserData.userId, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
@@ -174,7 +160,7 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
 
 export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
     try {
-        let result = await removeAuthSession(jwtUserData.userId, deviceId, prevRefreshToken);
+        let result = await usersDbMethods.removeAuthSession(jwtUserData.userId, deviceId, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
@@ -192,7 +178,7 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
 
 export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
     try {
-        let result = await removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
+        let result = await usersDbMethods.removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
@@ -249,7 +235,7 @@ export async function sendVerifyEmail(userData, host) {
         let newEmailToken = await bcrypt.hash(uuidv4(), 12);
         newEmailToken = newEmailToken.replace(/\//g, '');
         let newEmailToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let updateResult = await updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
+        let updateResult = await usersDbMethods.updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
         if (updateResult === 'ok') {
             await agenda.now('verify email', {
                 rawUsername: userData.rawUsername,
@@ -271,7 +257,7 @@ export async function sendVerifyEmail(userData, host) {
 
 export async function verifyEmail(token) {
     try {
-        let verify = await verifyUserEmail(token);
+        let verify = await usersDbMethods.verifyUserEmail(token);
         if (verify === 'ok') {
             return generateServiceResult({message: 'email verified'}, 200, '');
         } else if (verify === 'notfound') {
@@ -287,19 +273,31 @@ export async function verifyEmail(token) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export async function uploadProfileImage(jwtUserData, fileData) {
+export async function uploadProfileImage(jwtUserData, uploadFileData) {
     try {
-        if (!fileData) {
+        if (!uploadFileData) {
             return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
         }
 
-        const fileName = fileData.location.split('/').pop();
-        let userData = await uploadProfileImageDB(jwtUserData.userId, fileData.location);
+        let fileData = {
+            url: uploadFileData.location,
+            size: uploadFileData.size,
+            thumbnail: '',
+        }
+        let thumbnailData = await getImageThumbnail(fileData.url, true);
+        if (thumbnailData) {
+            fileData.thumbnail = thumbnailData.dataURIBase64;
+            fileData.size = thumbnailData.fileSize || uploadFileData.size;
+        }
+
+        let userData = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, fileData);
         if (userData === 'error') {
+            const fileName = uploadFileData.location.split('/').pop();
             await removeProfileImageFromS3(fileName);
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
         } else if (!userData) {
             //inCase if two image upload in same time
+            const fileName = uploadFileData.location.split('/').pop();
             await removeProfileImageFromS3(fileName);
             return generateServiceResult({data: null}, 404, errorMessage.exceedProfileImage);
         }
@@ -311,8 +309,8 @@ export async function uploadProfileImage(jwtUserData, fileData) {
         }, 200, '');
     } catch (error) {
         saveError(error);
-        if (fileData && fileData.location) {
-            const fileName = fileData.location.split('/').pop();
+        if (uploadFileData && uploadFileData.location) {
+            const fileName = uploadFileData.location.split('/').pop();
             await removeProfileImageFromS3(fileName);
         }
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
@@ -322,7 +320,7 @@ export async function uploadProfileImage(jwtUserData, fileData) {
 export async function removeProfileImage(jwtUserData, fileName) {
     try {
         fileName = fileName.split('/').pop();
-        let userData = await removeProfileImageDB(jwtUserData.userId, fileName);
+        let userData = await usersDbMethods.removeProfileImageDB(jwtUserData.userId, fileName);
         if (userData === 'error') {
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
         } else if (!userData) {
@@ -351,7 +349,7 @@ export async function setFavoriteGenres(jwtUserData, genres) {
             return generateServiceResult({}, 409, errorMessage.exceedGenres);
         }
 
-        let updateResult = await updateUserByID(jwtUserData.userId, {favoriteGenres: genres});
+        let updateResult = await usersDbMethods.updateUserByID(jwtUserData.userId, {favoriteGenres: genres});
         if (updateResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (updateResult === 'notfound') {
@@ -369,7 +367,7 @@ export async function setFavoriteGenres(jwtUserData, genres) {
 
 export async function getAllUserSettings(jwtUserData) {
     try {
-        let result = await getAllUserSettingsDB(jwtUserData.userId);
+        let result = await usersDbMethods.getAllUserSettingsDB(jwtUserData.userId);
         if (result === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!result) {
@@ -384,7 +382,7 @@ export async function getAllUserSettings(jwtUserData) {
 
 export async function getUserSettings(jwtUserData, settingName) {
     try {
-        let result = await getUserSettingsDB(jwtUserData.userId, settingName);
+        let result = await usersDbMethods.getUserSettingsDB(jwtUserData.userId, settingName);
         if (result === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!result) {
@@ -399,7 +397,7 @@ export async function getUserSettings(jwtUserData, settingName) {
 
 export async function changeUserSettings(jwtUserData, settings, settingName) {
     try {
-        let result = await changeUserSettingsDB(jwtUserData.userId, settings, settingName);
+        let result = await usersDbMethods.changeUserSettingsDB(jwtUserData.userId, settings, settingName);
         if (result === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!result) {

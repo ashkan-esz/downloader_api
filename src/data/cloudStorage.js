@@ -12,7 +12,7 @@ import {
 } from "@aws-sdk/client-s3";
 import {Upload} from "@aws-sdk/lib-storage";
 import ytdl from "ytdl-core";
-import sharp from "sharp";
+import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {saveError} from "../error/saveError.js";
 
@@ -65,11 +65,14 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         if (retryCounter === 0) {
             let s3CastImage = await checkCastImageExist(name, tvmazePersonID, jikanPersonID);
             if (s3CastImage) {
+                let thumbnailData = await getImageThumbnail(s3CastImage, true);
                 return {
                     url: s3CastImage,
                     originalUrl: "",
-                    size: await getFileSize(s3CastImage),
+                    originalSize: 0,
+                    size: (thumbnailData && thumbnailData.fileSize) ? thumbnailData.fileSize : await getFileSize(s3CastImage),
                     vpnStatus: s3VpnStatus,
+                    thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
                 };
             }
         }
@@ -91,11 +94,15 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         };
         let command = new PutObjectCommand(params);
         await s3.send(command);
+
+        let thumbnailData = await getImageThumbnail(response.data);
         return {
             url: fileUrl,
             originalUrl: originalUrl,
+            originalSize: Number(response.data.length),
             size: Number(dataBuffer.length),
             vpnStatus: s3VpnStatus,
+            thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -103,7 +110,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter, retryWithSleepCounter);
@@ -177,7 +184,7 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadSubtitleToS3ByURl(originalUrl, fileName, cookie, retryCounter, retryWithSleepCounter);
@@ -200,12 +207,14 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         if (retryCounter === 0 && !forceUpload) {
             let s3Poster = await checkTitlePosterExist(title, type, year);
             if (s3Poster) {
+                let thumbnailData = await getImageThumbnail(s3Poster, true);
                 return {
                     url: s3Poster,
                     originalUrl: "",
                     originalSize: 0,
-                    size: await getFileSize(s3Poster),
+                    size: (thumbnailData && thumbnailData.fileSize) ? thumbnailData.fileSize : await getFileSize(s3Poster),
                     vpnStatus: s3VpnStatus,
+                    thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
                 };
             }
         }
@@ -228,12 +237,15 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         };
         let command = new PutObjectCommand(params);
         await s3.send(command);
+
+        let thumbnailData = await getImageThumbnail(response.data);
         return {
             url: fileUrl,
             originalUrl: originalUrl,
             originalSize: Number(response.data.length),
             size: Number(dataBuffer.length),
             vpnStatus: s3VpnStatus,
+            thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
         };
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
@@ -248,7 +260,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
@@ -341,7 +353,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && (error.response.status === 429 || error.response.status >= 500) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
@@ -376,7 +388,7 @@ export async function checkCastImageExist(name, tvmazePersonID, jikanPersonID, r
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkCastImageExist(name, tvmazePersonID, jikanPersonID, retryCounter, retryWithSleepCounter);
@@ -408,7 +420,7 @@ export async function checkSubtitleExist(fileName, retryCounter = 0, retryWithSl
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkSubtitleExist(fileName, retryCounter, retryWithSleepCounter);
@@ -441,7 +453,7 @@ export async function checkTitlePosterExist(title, type, year, retryCounter = 0,
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkTitlePosterExist(title, type, year, retryCounter, retryWithSleepCounter);
@@ -477,7 +489,7 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await checkTitleTrailerExist(title, type, year, retryCounter, retryWithSleepCounter);
         }
-        if (error.response && (error.response.status === 429 || error.response.status >= 500) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await checkTitleTrailerExist(title, type, year, retryCounter, retryWithSleepCounter);
@@ -518,7 +530,7 @@ export async function deleteFileFromS3(bucketName, fileName, retryCounter = 0, r
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteFileFromS3(bucketName, fileName, retryCounter, retryWithSleepCounter);
@@ -545,7 +557,7 @@ export async function deleteMultipleFilesFromS3(bucketName, filesNames, retryCou
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteMultipleFilesFromS3(bucketName, filesNames, retryCounter, retryWithSleepCounter);
@@ -570,7 +582,7 @@ export async function deleteTrailerFromS3(fileName, retryCounter = 0, retryWithS
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await deleteTrailerFromS3(fileName, retryCounter, retryWithSleepCounter);
@@ -713,7 +725,7 @@ async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter 
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await createBucket(bucketName, retryCounter, retryWithSleepCounter);
@@ -724,6 +736,19 @@ async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter 
         saveError(error);
         return false;
     }
+}
+
+//------------------------------------------
+//------------------------------------------
+
+function checkNeedRetryWithSleep(error, retryWithSleepCounter) {
+    return (
+        retryWithSleepCounter < 2 && (
+            error.message === 'S3ServiceException: UnknownError' ||
+            error.message === '403: UnknownError' ||
+            (error.response && (error.response.status === 429 || error.response.status >= 500))
+        )
+    );
 }
 
 //------------------------------------------
@@ -754,7 +779,7 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
         }
-        if ((error.message === 'S3ServiceException: UnknownError' || (error.response && error.response.status >= 500)) && retryWithSleepCounter < 2) {
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
@@ -764,28 +789,4 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
         }
         return 0;
     }
-}
-
-async function compressImage(responseData) {
-    let dataBuffer = responseData;
-    // reduce image size if size > 2MB
-    if (responseData.length > 2 * 1024 * 1024) {
-        let sharpQuality = (responseData.length > 10 * 1024 * 1024) ? 45 : 65;
-        let temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
-        let counter = 0;
-        while ((temp.length / (1024 * 1024)) > 2 && counter < 4 && sharpQuality > 15) {
-            counter++;
-            if (temp.length > 3 * 1024 * 1024) {
-                sharpQuality -= 25;
-            } else {
-                sharpQuality -= 15;
-            }
-            if (sharpQuality <= 0) {
-                sharpQuality = 5;
-            }
-            temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
-        }
-        dataBuffer = temp;
-    }
-    return dataBuffer;
 }

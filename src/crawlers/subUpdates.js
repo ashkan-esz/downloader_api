@@ -2,6 +2,7 @@ import axios from "axios";
 import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
 import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils.js";
+import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {saveError} from "../error/saveError.js";
 
 export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
@@ -35,12 +36,10 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
     let posterExist = false;
     let posterUpdated = false;
     for (let i = 0; i < db_data.posters.length; i++) {
+        //found poster
         if (db_data.posters[i].info.includes(sourceName)) {//this poster source exist
             if (db_data.posters[i].url !== poster) { //replace link
                 db_data.posters[i].url = poster;
-                if (db_data.posters[i].size === 0) {
-                    db_data.posters[i].size = await getFileSize(poster);
-                }
                 posterUpdated = true;
             }
             if (db_data.posters[i].vpnStatus !== sourceVpnStatus.poster) { //replace vpnStatus
@@ -48,39 +47,84 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
                 posterUpdated = true;
             }
             posterExist = true;
-            break;
+        }
+        //add thumbnail
+        if (!db_data.posters[i].thumbnail) {
+            let thumbnailData = await getImageThumbnail(db_data.posters[i].url, true);
+            if (thumbnailData) {
+                posterUpdated = true;
+                db_data.posters[i].thumbnail = thumbnailData.dataURIBase64;
+                if (db_data.posters[i].size === 0 && thumbnailData.fileSize) {
+                    db_data.posters[i].size = thumbnailData.fileSize;
+                }
+            }
+        }
+        //add size
+        if (db_data.posters[i].size === 0) {
+            db_data.posters[i].size = await getFileSize(db_data.posters[i].url);
+            posterUpdated = true;
         }
     }
 
     if (!posterExist) {  //new poster
+        let thumbnailData = await getImageThumbnail(poster, true);
+        let thumbnail = thumbnailData ? thumbnailData.dataURIBase64 : '';
+        let fileSize = (thumbnailData && thumbnailData.fileSize)
+            ? thumbnailData.fileSize
+            : await getFileSize(poster);
+
         db_data.posters.push({
             url: poster,
             info: sourceName,
-            size: await getFileSize(poster),
+            size: fileSize,
             vpnStatus: sourceVpnStatus.poster,
+            thumbnail: thumbnail,
         });
     }
+
+    //-------------------------------------
+    //-------------------------------------
+
     let prevLength = db_data.posters.length;
     let s3PosterUpdate = false;
     if (db_data.poster_s3) {
+        //s3Poster doesn't exist in posters array
         let prevS3Poster = db_data.posters.find(item => item.info === 's3Poster');
         if (!prevS3Poster) {
             s3PosterUpdate = true;
+            let thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
+            let thumbnail = thumbnailData ? thumbnailData.dataURIBase64 : '';
             db_data.posters.push({
                 url: db_data.poster_s3.url,
                 info: 's3Poster',
                 size: db_data.poster_s3.size,
                 vpnStatus: db_data.poster_s3.vpnStatus,
+                thumbnail: thumbnail,
             });
-        } else if (
-            prevS3Poster.url !== db_data.poster_s3.url ||
-            prevS3Poster.size !== db_data.poster_s3.size ||
-            prevS3Poster.vpnStatus !== db_data.poster_s3.vpnStatus
-        ) {
-            s3PosterUpdate = true;
-            prevS3Poster.url = db_data.poster_s3.url;
-            prevS3Poster.size = db_data.poster_s3.size;
-            prevS3Poster.vpnStatus = db_data.poster_s3.vpnStatus;
+        } else {
+            //check s3Poster updated/changed or need update
+            if (!db_data.poster_s3.thumbnail) {
+                let thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
+                if (thumbnailData) {
+                    s3PosterUpdate = true;
+                    db_data.poster_s3.thumbnail = thumbnailData.dataURIBase64;
+                    if (!db_data.poster_s3.size) {
+                        db_data.poster_s3.size = thumbnailData.fileSize;
+                    }
+                }
+            }
+            if (
+                prevS3Poster.url !== db_data.poster_s3.url ||
+                prevS3Poster.size !== db_data.poster_s3.size ||
+                prevS3Poster.vpnStatus !== db_data.poster_s3.vpnStatus ||
+                prevS3Poster.thumbnail !== db_data.poster_s3.thumbnail
+            ) {
+                s3PosterUpdate = true;
+                prevS3Poster.url = db_data.poster_s3.url;
+                prevS3Poster.size = db_data.poster_s3.size;
+                prevS3Poster.vpnStatus = db_data.poster_s3.vpnStatus;
+                prevS3Poster.thumbnail = db_data.poster_s3.thumbnail;
+            }
         }
     }
     db_data.posters = removeDuplicateLinks(db_data.posters);

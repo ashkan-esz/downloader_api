@@ -113,6 +113,7 @@ To run this project, you will need to add the following environment variables to
 | **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                   | `true`                  |
 | **`PRINT_ERRORS`**                     |                                                                                                                     | `false (default:false)` |
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                 | `false (default:false)` |
+| **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                            | `false (default:false)` |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                     | `false`                 |
 | **`EMAIL_USERNAME`**                   |                                                                                                                     | `true`                  |
 | **`EMAIL_PASSWORD`**                   |                                                                                                                     | `true`                  |

@@ -7,6 +7,7 @@ import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisod
 import {sortPosters} from "../subUpdates.js";
 import {uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
+import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
 import {saveError} from "../../error/saveError.js";
 
 
@@ -17,16 +18,29 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0].url);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
-            if (s3poster.originalUrl) {
-                titleModel.posters[0].size = s3poster.originalSize || s3poster.size;
+            if (titleModel.posters.length === 1) {
+                if (s3poster.originalUrl) {
+                    titleModel.posters[0].size = s3poster.originalSize || s3poster.size;
+                }
+                if (s3poster.thumbnail) {
+                    titleModel.posters[0].thumbnail = s3poster.thumbnail;
+                }
             }
             titleModel.posters.push({
                 url: s3poster.url,
                 info: 's3Poster',
                 size: s3poster.size,
                 vpnStatus: s3poster.vpnStatus,
+                thumbnail: s3poster.thumbnail,
             });
             titleModel.posters = sortPosters(titleModel.posters);
+        }
+        if (!titleModel.posters[0].thumbnail) {
+            let thumbnailData = await getImageThumbnail(titleModel.posters[0].url, true);
+            if (thumbnailData) {
+                titleModel.posters[0].size = thumbnailData.fileSize;
+                titleModel.posters[0].thumbnail = thumbnailData.dataURIBase64;
+            }
         }
     }
 

@@ -251,6 +251,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (subUpdates.posterChange) {
             updateFields.posters = db_data.posters;
+            updateFields.poster_s3 = db_data.poster_s3;
         }
         if (subUpdates.trailerChange || updateFields.trailer_s3) {
             updateFields.trailers = db_data.trailers;
@@ -293,10 +294,10 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 }
 
 async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
-    let poster = titleData.poster_s3
-        ? titleData.poster_s3.url
-        : titleData.posters.length > 0 ? titleData.posters[0].url : '';
-    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, poster, allApiData, titleData.castUpdateDate);
+    let posterData = titleData.poster_s3 || titleData.posters[0];
+    let posterUrl = posterData ? posterData.url : '';
+    let posterThumbnail = posterData ? posterData.thumbnail : '';
+    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, posterUrl, posterThumbnail, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
             ...temp,

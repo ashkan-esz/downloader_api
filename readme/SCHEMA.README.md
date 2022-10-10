@@ -8,7 +8,11 @@ profile = {
     email: String,
     emailVerified: Boolean,
     bio: String,
-    profileImages: Array(String),
+    profileImages: Array({
+        url: String,
+        size: Int,
+        thumbnail: String,
+    }),
     defaultProfile: String,
     favoriteGenres: Array(String),
     computed: {
@@ -91,12 +95,7 @@ dataLevel = {
         rawTitle: String,
         type: String,
         year: String,
-        posters: Array({
-            url: String,
-            info: String,
-            size: Int,
-            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-        }),
+        posters: Array(#POSTER),
         qualities: Array(#QUALITY),
         seasons: Array(#SEASON),
         subtitles: Array(#SUBTITLE),
@@ -108,12 +107,7 @@ dataLevel = {
         rawTitle: String,
         year: String,
         premiered: String,
-        posters: Array({
-            url: String,
-            info: String,
-            size: Int,
-            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-        }),
+        posters: Array(#POSTER),
         type: String, // enum('movie', 'serial', 'anime_movie', 'anime_serial')
         rating: {
             imdb: Int,
@@ -130,12 +124,7 @@ dataLevel = {
         type: String, // enum('movie', 'serial', 'anime_movie', 'anime_serial')
         year: String,
         premiered: String,
-        posters: Array({
-            url: String,
-            info: String,
-            size: Int,
-            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-        }),
+        posters: Array(#POSTER),
         genres: Array(String),
         summary: {
             english: String,
@@ -189,12 +178,7 @@ dataLevel = {
         genres: Array(String),
         genresWithImage: Array({ //only exist in movies/searchById api
             genre: String,
-            poster: {
-                url: String,
-                info: String,
-                size: Int,
-                vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-            },
+            poster: #POSTER,
             count: Int,
         }),
         trailers: Array({
@@ -245,6 +229,7 @@ dataLevel = {
             originalSize: Int,
             size: Int,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+            thumbnail: String,
         },
         trailer_s3: null || {
             url: String,
@@ -366,6 +351,18 @@ dataLevel = {
 }
 ```
 
+## Poster
+
+```javascript
+#POSTER = {
+    url: String,
+    info: String,
+    size: Int,
+    vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+    thumbnail: String,
+}
+```
+
 ## LatestData
 
 ```javascript
@@ -386,17 +383,20 @@ dataLevel = {
 
 ```javascript
 #actor_and_Character = {
+    //staff data
     id: Object,
     name: String,
     gender: String, //enum('Male', 'Female')
     country: String,
     image: String,
+    thumbnail: String,
     positions: Array(String),
     characterData: null || {
         id: Object,
         name: String,
         gender: String, //enum('Male', 'Female')
         image: String,
+        thumbnail: String,
         role: String,
     }
 }
@@ -469,8 +469,10 @@ staffData = {
     imageData: null || {
         url: String,
         originalUrl: String,
+        originalSize: String,
         size: Int,
         vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+        thumbnail: String,
     },
     originalImages: Array(String),
     credits: Array({
@@ -478,11 +480,13 @@ staffData = {
         movieName: String,
         movieType: String,
         moviePoster: String,
+        movieThumbnail: String,
         positions: Array(String),
         characterID: String,
         characterName: String,
         characterRole: String,
         characterImage: String,
+        characterThumbnail: String,
     }),
     insert_date: Date,
     update_date: Date,
@@ -511,8 +515,10 @@ characterData = {
     imageData: null || {
         url: String,
         originalUrl: String,
+        originalSize: String,
         size: Int,
         vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+        thumbnail: String,
     },
     originalImages: Array(String),
     credits: Array({
@@ -520,10 +526,12 @@ characterData = {
         movieName: String,
         movieType: String,
         moviePoster: String,
+        movieThumbnail: String,
         role: String,
         actorID: String,
         actorName: String,
         actorImage: String,
+        actorThumbnail: String,
     }),
     insert_date: Date,
     update_date: Date,
@@ -536,12 +544,7 @@ characterData = {
 ```javascript
 genres = Array({
     genre: String,
-    poster: {
-        url: String,
-        info: String,
-        size: Int,
-        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-    },
+    poster: #POSTER,
     count: Int,
 })
 ```

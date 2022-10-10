@@ -6,7 +6,8 @@ export function getCharacterModel(
     country, birthday, deathday, age,
     height, weight, hairColor, eyeColor,
     originalImages,
-    movieID, movieName, movieType, moviePoster, role, actorName) {
+    movieID, movieName, movieType,
+    moviePoster, movieThumbnail, role, actorName) {
     return {
         name: replaceSpecialCharacters(fixJapaneseCharacter(rawName).toLowerCase()),
         rawName: fixJapaneseCharacter(rawName),
@@ -22,17 +23,19 @@ export function getCharacterModel(
         weight: weight || '',
         hairColor: hairColor || '',
         eyeColor: eyeColor || '',
-        imageData: null, // {url,originalUrl,size,vpnStatus}
+        imageData: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
         originalImages: originalImages.filter(value => value),
         credits: [{
             movieID,
             movieName: movieName,
             movieType: movieType,
             moviePoster: moviePoster,
+            movieThumbnail: movieThumbnail,
             role,
             actorID: '',
             actorName: fixJapaneseCharacter(actorName),
             actorImage: '',
+            actorThumbnail: '',
         }],
         insert_date: new Date(),
         update_date: 0,

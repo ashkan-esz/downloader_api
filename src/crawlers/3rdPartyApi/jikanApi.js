@@ -670,8 +670,10 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
 
 async function getCastAndCharacterFields(insertedId, titleData, allApiData) {
     await connectNewAnimeToRelatedTitles(titleData, insertedId);
-    let poster = titleData.posters.length > 0 ? titleData.posters[0].url : '';
-    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, poster, allApiData, titleData.castUpdateDate);
+    let posterData = titleData.posters[0];
+    let posterUrl = posterData ? posterData.url : '';
+    let posterThumbnail = posterData ? posterData.thumbnail : '';
+    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, posterUrl, posterThumbnail, allApiData, titleData.castUpdateDate);
     if (temp) {
         return {
             ...temp,
