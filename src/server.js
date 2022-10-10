@@ -67,7 +67,7 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
-    let fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an jpg image')));
+    let fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an supported format image!')));
     if (!fileError) {
         saveError(err);
     }

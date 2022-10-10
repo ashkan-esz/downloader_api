@@ -27,7 +27,7 @@ errorMesages = {
     emailAlreadyExist: "This email already exists",
     alreadyExist: "Already exist",
     fileTooLarge: "File too large",
-    notJpgImage: "Not an jpg image! Please upload an jpg image",
+    notSupportedImage: "Not an supported format image! Please upload an jpg/jpeg/png image",
 }
 ```
 

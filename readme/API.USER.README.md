@@ -248,13 +248,16 @@ Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?t
 
 <br/>
 
+
+## Profile Image Api
+
 ### POST /users/uploadProfileImage
 > receive profileImage from request body.
 >> **Note: send data as formData and don't forget to set contentType**
 > 
 > returns new profileImages array.
 > 
-> file size limited to `1mb` and accept `jpg` formats only, (error code 400).
+> file size limited to `1mb` and accept [`jpg`, `jpeg`, `png`] formats only, (error code 400).
 > 
 > **Note: 20 profile image per user, (error code 409)**.
 
@@ -282,21 +285,34 @@ Future<List<String>> addProfileImage(File file) async {
     return [];
   }
 }
+
+
+--- (Nodejs)
+
+let data = new FormData();
+let file = await fs.promises.readFile('./p2.jpg');
+data.append('profileImage', file, 'p2.jpg');
+let r = await axios.post('BASE_URL/users/uploadProfileImage', data, {
+    headers: {
+        'accept': 'application/json',
+        'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
+    }
+});
+
 ```
 </details>
 
 <br/>
 
 
-
-## Profile Image Api
-
 ### DELETE /users/removeProfileImage/[filename]
 > returns new profileImages array.
 >
->> image url: https://profile-image.s3.xxxxx.com/user-userId-timestamp.jpg --> filename: user-userId-timestamp.jpg
+>> image url: https://profile-image.s3.xxxxx.com/user-userId-timestamp.type --> filename: user-userId-timestamp.type
 
 <br/>
+
+
 
 ### PUT /users/setFavoriteGenres/[genres]
 > **Note: maximum number of genres is 6, (error code 409)**.

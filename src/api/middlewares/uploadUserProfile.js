@@ -12,15 +12,16 @@ const multerStorage = multerS3({
         cb(null, {fieldName: file.fieldname});
     },
     key: function (req, file, cb) {
-        cb(null, `user-${req.jwtUserData.userId}-${Date.now()}.jpg`)
+        let type = file.mimetype === 'image/png' ? 'png' : 'jpg';
+        cb(null, `user-${req.jwtUserData.userId}-${Date.now()}.${type}`);
     }
 });
 
 const multerFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+    if (file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
         cb(null, true);
     } else {
-        cb(new Error('Not an jpg image! Please upload an jpg image'), false);
+        cb(new Error('Not an supported format image! Please upload an jpg/jpeg/png image'), false);
     }
 };
 

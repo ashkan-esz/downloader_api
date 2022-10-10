@@ -315,9 +315,9 @@ Query params (filters):
 Examples
 </summary>
 
-- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&testUser=true
-- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&genres=action&testUser=true
-- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack on titan&genres=action&subtitle=true&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action&subtitle=true&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&country=germany&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2010-2020&movieLang=spanish&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/searchMovie/low/1?years=2021-2023&numberOfSeason=1&testUser=true
@@ -472,8 +472,8 @@ Examples
 Examples
 </summary>
 
-- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi no na wa&japaneseNames=Kimetsu no Yaiba&testUser=true
-- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi no na wa&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa&japaneseNames=Kimetsu20%no20%Yaiba&testUser=true
+- https://downloader-node-api.herokuapp.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa&testUser=true
 </details>
 <br />
 
