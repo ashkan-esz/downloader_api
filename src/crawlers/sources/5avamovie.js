@@ -50,7 +50,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, type, getFileData, getQualitySample);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     if (!year) {
@@ -63,7 +63,7 @@ async function search_title(link, i, $, url) {
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, getQualitySample);
+                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, type, getFileData, getQualitySample);
                         if (!pageSearchResult) {
                             return;
                         }

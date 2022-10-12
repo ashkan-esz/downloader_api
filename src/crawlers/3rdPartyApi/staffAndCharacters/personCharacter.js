@@ -39,9 +39,10 @@ export async function addStaffAndCharacters(movieID, movieName, movieType, movie
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
                 let jikanStaff = await getJikanStaff(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.staff, staff);
+                staff = [...staff, ...jikanStaff];
                 let jikanVoiceActors = await getJikanStaff_voiceActors(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.characters, staff);
+                staff = [...staff, ...jikanVoiceActors];
                 let jikanCharacters = await getJikanCharaters(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersStaff.characters, characters);
-                staff = [...staff, ...jikanStaff, ...jikanVoiceActors];
                 characters = [...characters, ...jikanCharacters];
             }
         }

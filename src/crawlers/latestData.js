@@ -78,7 +78,9 @@ function checkLatestDataFieldChange(prevField, currentField) {
 
 export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type) {
     let latestSeason = type.includes('movie') ? 0 : 1;
-    let latestEpisode = type.includes('movie') ? 0 : 1;
+    let latestEpisode = type.includes('movie')
+        ? 0
+        : (site_links.length === 0 && siteWatchOnlineLinks.length === 0) ? 0 : 1;
     let latestQuality = site_links.length > 0 ? site_links[0].info : '';
     let hardSub = '';
     let dubbed = '';

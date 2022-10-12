@@ -43,7 +43,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData, null,
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, type, getFileData, null,
                     extraSearchMatch, extraSearch_getFileData, null, extraChecker);
 
                 if (pageSearchResult) {

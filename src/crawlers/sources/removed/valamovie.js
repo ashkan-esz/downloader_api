@@ -27,7 +27,7 @@ async function search_title_serial(link, i) {
             ({title, year} = getTitleAndYear(title, year, 'serial'));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, 'serial', getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, 'serial', getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     let sourceData = {
@@ -62,7 +62,7 @@ async function search_title_movie(link, i) {
             ({title, year} = getTitleAndYear(title, year, 'movie'));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, 'movie', getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, 'movie', getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     downloadLinks = removeDuplicateLinks(downloadLinks);

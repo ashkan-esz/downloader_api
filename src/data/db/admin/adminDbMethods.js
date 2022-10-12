@@ -2,6 +2,7 @@ import mongodb from "mongodb";
 import getCollection from "../../mongoDB.js";
 import {default as pQueue} from "p-queue";
 import {removeDuplicateElements} from "../../../crawlers/utils.js";
+import {saveError} from "../../../error/saveError.js";
 
 export async function removeMovieSource(sourceName) {
     let collection = await getCollection('movies');
@@ -66,51 +67,99 @@ export async function removeMovieSource(sourceName) {
 }
 
 export async function getDuplicateTitles() {
-    let collection = await getCollection('movies');
-    return await collection.aggregate([
-        {
-            $sort: {
-                year: -1,
-                insert_date: -1,
+    try {
+        let collection = await getCollection('movies');
+        return await collection.aggregate([
+            {
+                $sort: {
+                    year: -1,
+                    insert_date: -1,
+                }
+            },
+            {
+                $group: {
+                    _id: "$title",
+                    count: {"$sum": 1},
+                    types: {$push: "$type"},
+                    years: {$push: "$year"},
+                    premiered: {$push: "$premiered"},
+                    endYear: {$push: "$endYear"},
+                    posters: {$first: "$posters"},
+                    add_dates: {$push: "$add_date"},
+                    sources: {$push: "$sources"},
+                    ids: {$push: "$_id"},
+                }
+            },
+            {
+                $match: {
+                    _id: {"$ne": null},
+                    count: {"$gt": 1}
+                }
+            },
+            {
+                $sort: {count: -1}
+            },
+            {
+                $project: {
+                    title: "$_id",
+                    _id: 0,
+                    count: 1,
+                    types: 1,
+                    years: 1,
+                    premiered: 1,
+                    endYear: 1,
+                    posters: 1,
+                    add_dates: 1,
+                    sources: 1,
+                    ids: 1,
+                }
             }
-        },
-        {
-            $group: {
-                _id: "$title",
-                count: {"$sum": 1},
-                types: {$push: "$type"},
-                years: {$push: "$year"},
-                premiered: {$push: "$premiered"},
-                endYear: {$push: "$endYear"},
-                posters: {$first: "$posters"},
-                add_dates: {$push: "$add_date"},
-                sources: {$push: "$sources"},
+        ]).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getDuplicateStaffOrCharacter(collectionName) {
+    try {
+        let collection = await getCollection(collectionName);
+        return await collection.aggregate([
+            {
+                $group: {
+                    _id: {name: "$name", tvmazePersonID: "$tvmazePersonID", jikanPersonID: "$jikanPersonID"},
+                    count: {"$sum": 1},
+                    rawNames: {$push: "$rawName"},
+                    insert_dates: {$push: "$insert_date"},
+                    update_dates: {$push: "$update_date"},
+                    ids: {$push: "$_id"},
+                }
+            },
+            {
+                $match: {
+                    _id: {"$ne": null},
+                    count: {"$gt": 1}
+                }
+            },
+            {
+                $sort: {count: -1}
+            },
+            {
+                $project: {
+                    name: "$_id",
+                    _id: 0,
+                    count: 1,
+                    rawNames: 1,
+                    insert_dates: 1,
+                    update_dates: 1,
+                    ids: 1,
+                }
             }
-        },
-        {
-            $match: {
-                _id: {"$ne": null},
-                count: {"$gt": 1}
-            }
-        },
-        {
-            $sort: {count: -1}
-        },
-        {
-            $project: {
-                title: "$_id",
-                _id: 0,
-                count: 1,
-                types: 1,
-                years: 1,
-                premiered: 1,
-                endYear: 1,
-                posters: 1,
-                add_dates: 1,
-                sources: 1,
-            }
-        }
-    ]).toArray();
+        ]).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
 }
 
 export async function handleDuplicateTitles(res) {

@@ -128,7 +128,9 @@ async function useAxiosGet(url, sourceName) {
         } else if (error.response && error.response.status) {
             addSourceToBlackList(sourceName);
         }
-        saveError(error);
+        if (error.message !== 'timeout of 3000ms exceeded') {
+            saveError(error);
+        }
         return result;
     }
 }

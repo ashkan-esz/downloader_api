@@ -4,22 +4,18 @@ import sharp from "sharp";
 import {saveError} from "../error/saveError.js";
 
 export async function compressImage(responseData) {
-    //todo : better/faster solution
     let dataBuffer = responseData;
     // reduce image size if size > 2MB
     if (responseData.length > 2 * 1024 * 1024) {
-        let sharpQuality = (responseData.length > 10 * 1024 * 1024) ? 45 : 65;
+        let tempQuality = 50 - (Math.ceil(responseData.length / (1024 * 1024)) - 2) * 5;
+        let sharpQuality = Math.max(Math.min(35, tempQuality), 10);
         let temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
         let counter = 0;
-        while ((temp.length / (1024 * 1024)) > 2 && counter < 4 && sharpQuality > 15) {
+        while ((temp.length / (1024 * 1024)) > 2 && counter < 4 && sharpQuality > 10) {
             counter++;
-            if (temp.length > 3 * 1024 * 1024) {
-                sharpQuality -= 25;
-            } else {
-                sharpQuality -= 15;
-            }
+            sharpQuality -= 20;
             if (sharpQuality <= 0) {
-                sharpQuality = 5;
+                sharpQuality = 10;
             }
             temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
         }

@@ -415,12 +415,12 @@ export async function updateJikanData() {
 
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('animeSeasonNow', 1);
+    await add_comingSoon_topAiring_Titles('animeSeasonNow', 4);
     await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonNow', true);
 
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 1);
+    await add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 4);
     await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonUpcoming', true);
 }
 

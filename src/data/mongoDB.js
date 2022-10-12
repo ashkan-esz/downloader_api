@@ -18,11 +18,15 @@ async function startDatabase() {
     }
 }
 
-async function getCollection(collection_name) {
+async function getCollection(collection_name, retryCounter = 0) {
     try {
         if (!database) await startDatabase();
         return database.collection(collection_name);
     } catch (error) {
+        if (retryCounter === 0) {
+            retryCounter++;
+            return await getCollection(collection_name, retryCounter);
+        }
         saveError(error);
         database = null;
         return null;

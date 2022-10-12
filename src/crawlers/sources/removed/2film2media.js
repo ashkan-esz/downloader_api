@@ -36,7 +36,7 @@ async function search_title(link, i) {
             collection = (pageLink.includes('collection')) ? 'collection' : '';
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     let sourceData = {
