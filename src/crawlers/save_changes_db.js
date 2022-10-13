@@ -8,6 +8,8 @@ import {getMovieModel} from "../models/movie.js";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
+import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
+import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 
 
@@ -116,6 +118,7 @@ async function searchOnCollection(titleObj, year, type) {
         alternateTitles: 1,
         titleSynonyms: 1,
         apiUpdateDate: 1,
+        insert_date: 1,
         update_date: 1,
         castUpdateDate: 1,
         status: 1,
@@ -217,28 +220,6 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.sources = db_data.sources;
         }
 
-        if (updateFields.qualities || updateFields.seasons) {
-            let linksField = db_data.type.includes('movie') ? db_data.qualities : db_data.seasons;
-            const linksCount = linksField.map(item => item.links).flat(1).length;
-            if (linksCount === 0 && db_data.releaseState === 'done') {
-                if (db_data.trailer_s3) {
-                    let fileName = db_data.trailer_s3.url.split('/').pop();
-                    let trailerRemoved = await deleteTrailerFromS3(fileName);
-                    if (trailerRemoved) {
-                        if (db_data.trailers) {
-                            db_data.trailers = db_data.trailers.filter(item => item.url !== db_data.trailer_s3.url);
-                        }
-                        if (db_data.trailers && db_data.trailers.length === 0) {
-                            db_data.trailers = null;
-                        }
-                        updateFields.trailers = db_data.trailers;
-                        db_data.trailer_s3 = null;
-                        updateFields.trailer_s3 = null;
-                    }
-                }
-            }
-        }
-
         if (db_data.summary.persian.length < persianSummary.replace(/([.…])+$/, '').length) {
             let currentSummary = updateFields.summary;
             if (currentSummary === undefined) {
@@ -272,17 +253,25 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
         }
 
-        // if (db_data.trailer_s3 && db_data.trailers && db_data.trailers.length > 1) {
-        //     //remove trailer from s3
-        //     let fileName = db_data.trailer_s3.split('/').pop();
-        //     let removeS3Trailer = await deleteTrailerFromS3(fileName);
-        //     if (removeS3Trailer) {
-        //         db_data.trailer_s3 = null;
-        //         updateFields.trailer_s3 = null;
-        //         db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer'));
-        //         updateFields.trailers = db_data.trailers;
-        //     }
-        // }
+        if (db_data.trailer_s3 && db_data.trailers) {
+            if (!checkNeedTrailerUpload(null, db_data.trailers)) {
+                //remove trailer from s3
+                await removeS3Trailer(db_data, updateFields);
+            } else if (db_data.releaseState === 'done' && db_data.insert_date && getDatesBetween(new Date(), db_data.insert_date).days > 90) {
+                let dLinksLength = db_data.type.includes('movie') ?
+                    db_data.qualities.map(item => item.links).flat(1).length
+                    : db_data.seasons.map(s => s.episodes.map(e => e.links).flat(1)).flat(1);
+                if (dLinksLength === 0) {
+                    let onlineLinksLength = db_data.type.includes('movie') ?
+                        db_data.qualities.map(item => item.watchOnlineLinks).flat(1).length
+                        : db_data.seasons.map(s => s.episodes.map(e => e.watchOnlineLinks).flat(1)).flat(1);
+                    if (onlineLinksLength === 0) {
+                        await removeS3Trailer(db_data, updateFields);
+                    }
+                }
+            }
+        }
+
 
         if (Object.keys(updateFields).length > 0) {
             await updateByIdDB('movies', db_data._id, updateFields);
@@ -314,5 +303,19 @@ async function convertUnReleasedTitleToNewTitle(db_data, updateFields, type) {
     updateFields.insert_date = new Date();
     if (db_data.type.includes('anime') || type.includes('anime')) {
         await connectNewAnimeToRelatedTitles(db_data, db_data._id);
+    }
+}
+
+async function removeS3Trailer(db_data, updateFields) {
+    let fileName = db_data.trailer_s3.url.split('/').pop();
+    let removeS3Trailer = await deleteTrailerFromS3(fileName);
+    if (removeS3Trailer) {
+        db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer') && item.url !== db_data.trailer_s3.url);
+        if (db_data.trailers && db_data.trailers.length === 0) {
+            db_data.trailers = null;
+        }
+        updateFields.trailers = db_data.trailers;
+        db_data.trailer_s3 = null;
+        updateFields.trailer_s3 = null;
     }
 }

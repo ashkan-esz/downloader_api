@@ -7,7 +7,11 @@ import {getMovieModel} from "../../models/movie.js";
 import {default as pQueue} from "p-queue";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
-import {addS3TrailerToTitleModel, uploadTitlePosterAndAddToTitleModel} from "../posterAndTrailer.js";
+import {
+    addS3TrailerToTitleModel,
+    checkNeedTrailerUpload,
+    uploadTitlePosterAndAddToTitleModel
+} from "../posterAndTrailer.js";
 
 let imdbApiKey = [];
 
@@ -202,7 +206,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
             await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imdbPoster, updateFields);
         }
 
-        if (!titleDataFromDB.trailers) {
+        if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
             let s3Trailer = await uploadTrailer(semiImdbData.title, semiImdbData.year, type, semiImdbData.id);
             addS3TrailerToTitleModel(updateFields, s3Trailer);
         }
@@ -337,6 +341,7 @@ async function getTitleDataFromDB(title, year, type) {
         rating: 1,
         releaseState: 1,
         trailers: 1,
+        trailer_s3: 1,
         posters: 1,
     }
 

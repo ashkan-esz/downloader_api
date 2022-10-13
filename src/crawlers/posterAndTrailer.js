@@ -60,3 +60,25 @@ export function addS3TrailerToTitleModel(titleModel, s3Trailer, prevTrailers = n
     }
     return titleModel;
 }
+
+export function checkNeedTrailerUpload(s3Trailer, trailers) {
+    if (s3Trailer) {
+        return false;
+    }
+    if (!trailers) {
+        return true;
+    }
+    let counter = 0;
+    let sources = [];
+    for (let i = 0; i < trailers.length; i++) {
+        let sourceName = trailers[i].info.split('-')[0];
+        if (trailers[i].vpnStatus === 'allOk' && sourceName !== 's3Trailer' && !sources.includes(sourceName)) {
+            counter++;
+            sources.push(sourceName);
+            if (counter === 3) {
+                return false;
+            }
+        }
+    }
+    return true;
+}

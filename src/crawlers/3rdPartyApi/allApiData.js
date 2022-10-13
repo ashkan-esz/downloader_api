@@ -5,7 +5,7 @@ import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikan
 import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
 import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisode} from "../seasonEpisode.js";
 import {sortPosters} from "../subUpdates.js";
-import {uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
+import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
 import {saveError} from "../../error/saveError.js";
@@ -84,7 +84,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
-                if (jikanApiFields.youtubeTrailer) {
+                if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiFields.youtubeTrailer, {});
                     titleModel = {...titleModel, ...trailerUploadFields};
                 }
@@ -181,7 +181,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
             updateFields = {...updateFields, ...temp};
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
-                if (!db_data.trailer_s3 && jikanApiFields.youtubeTrailer) {
+                if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, jikanApiFields.youtubeTrailer, {});
                     db_data = {...db_data, ...trailerUploadFields};
                     updateFields = {...updateFields, ...trailerUploadFields};

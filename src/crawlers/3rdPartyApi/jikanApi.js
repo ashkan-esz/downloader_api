@@ -4,7 +4,11 @@ import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as utils from "../utils.js";
 import {addStaffAndCharacters} from "./staffAndCharacters/personCharacter.js";
 import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
-import {uploadTitlePosterAndAddToTitleModel, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
+import {
+    checkNeedTrailerUpload,
+    uploadTitlePosterAndAddToTitleModel,
+    uploadTitleYoutubeTrailerAndAddToTitleModel
+} from "../posterAndTrailer.js";
 import {default as pQueue} from "p-queue";
 import isEqual from 'lodash.isequal';
 import * as Sentry from "@sentry/node";
@@ -454,6 +458,7 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
                 jikanID: 1,
                 castUpdateDate: 1,
                 endYear: 1,
+                trailer_s3: 1,
             });
             if (titleDataFromDB) {
                 updatePromiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode, rank));
@@ -533,7 +538,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields);
     }
 
-    if (!titleDataFromDB.trailers) {
+    if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
         await uploadTitleYoutubeTrailerAndAddToTitleModel(titleDataFromDB, semiJikanData.trailer.url, updateFields);
     }
 
