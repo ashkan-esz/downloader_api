@@ -14,6 +14,7 @@ import {Upload} from "@aws-sdk/lib-storage";
 import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
+import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
 import {saveError} from "../error/saveError.js";
 
 
@@ -309,29 +310,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     reject(err);
                 });
 
-                const parallelUploads3 = new Upload({
-                    client: s3,
-                    params: {
-                        Bucket: bucketNamesObject.downloadTrailer,
-                        Body: videoReadStream,
-                        Key: fileName,
-                        ACL: 'public-read',
-                    },
-                    queueSize: 4, // optional concurrency configuration
-                    partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
-                    leavePartsOnError: false, // optional manually handle dropped parts
-                });
-
-                let fileSize = 0;
-                parallelUploads3.on("httpUploadProgress", (progress) => {
-                    fileSize = progress.total;
-                });
-
-                let uploadResult = await parallelUploads3.done();
-
-                if (!fileSize) {
-                    fileSize = await getFileSize(fileUrl);
-                }
+                let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, videoReadStream, fileName, fileUrl);
 
                 resolve({
                     url: fileUrl,
@@ -348,7 +327,10 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         });
 
     } catch (error) {
-        if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.statusCode === 410) && retryCounter < 4) {
+        if (
+            ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 4) ||
+            (error.statusCode === 410 && retryCounter < 1)
+        ) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
@@ -358,11 +340,99 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
+        if (error.statusCode === 410 || error.statusCode === 403) {
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, false);
+        }
         if (error.name !== "AbortError") {
             saveError(error);
         }
         return null;
     }
+}
+
+export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist = true,
+                                                                          retryCounter = 0, retryWithSleepCounter = 0) {
+    try {
+        if (!originalUrl) {
+            return null;
+        }
+        if (retryCounter === 0 && checkTrailerExist) {
+            let s3Trailer = await checkTitleTrailerExist(title, type, year);
+            if (s3Trailer) {
+                return {
+                    url: s3Trailer,
+                    originalUrl: "",
+                    size: await getFileSize(s3Trailer),
+                    vpnStatus: s3VpnStatus,
+                };
+            }
+        }
+
+        let fileName = getFileName(title, type, year, '', 'mp4');
+        let fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
+
+        let remoteBrowserData = await getYoutubeDownloadLink(originalUrl);
+        if (!remoteBrowserData) {
+            return null;
+        }
+
+        let response = await axios.get(remoteBrowserData.downloadUrl, {
+            responseType: "arraybuffer",
+            responseEncoding: "binary"
+        });
+
+        let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, response.data, fileName, fileUrl);
+
+        return ({
+            url: fileUrl,
+            originalUrl: originalUrl,
+            size: fileSize,
+            vpnStatus: s3VpnStatus,
+        });
+    } catch (error) {
+        if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
+        }
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
+        }
+        saveError(error);
+        return null;
+    }
+}
+
+//------------------------------------------
+//------------------------------------------
+
+async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFileSize = true) {
+    const parallelUploads3 = new Upload({
+        client: s3,
+        params: {
+            Bucket: bucketName,
+            Body: file,
+            Key: fileName,
+            ACL: 'public-read',
+        },
+        queueSize: 4, // optional concurrency configuration
+        partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
+        leavePartsOnError: false, // optional manually handle dropped parts
+    });
+
+    let fileSize = 0;
+    parallelUploads3.on("httpUploadProgress", (progress) => {
+        fileSize = progress.total;
+    });
+
+    let uploadResult = await parallelUploads3.done();
+
+    if (!fileSize && extraCheckFileSize) {
+        fileSize = await getFileSize(fileUrl);
+    }
+    return fileSize;
 }
 
 //------------------------------------------

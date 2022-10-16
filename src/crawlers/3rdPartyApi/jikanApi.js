@@ -144,8 +144,8 @@ export function getJikanApiFields(data) {
                 jikanID: data.mal_id,
                 rawTitle: data.titleObj.rawTitle,
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
-                animeType: data.animeType,
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
+                animeType: data.animeType,
                 duration: (data.duration === "Unknown" || data.duration === "1 min per ep" || data.duration.match(/\d+ sec/g))
                     ? ''
                     : utils.convertHourToMinute(data.duration.replace('per ep', '').trim()).replace('23 min', '24 min'),
@@ -429,7 +429,7 @@ export async function updateJikanData() {
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
-    const updatePromiseQueue = new pQueue.default({concurrency: 20});
+    const updatePromiseQueue = new pQueue.default({concurrency: 25});
     const insertPromiseQueue = new pQueue.default({concurrency: 5});
 
     let rank = 0;
@@ -461,9 +461,11 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
                 trailer_s3: 1,
             });
             if (titleDataFromDB) {
-                updatePromiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode, rank));
+                let saveRank = rank;
+                updatePromiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode, saveRank));
             } else {
-                insertPromiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode, rank));
+                let saveRank = rank;
+                insertPromiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode, saveRank));
             }
         }
 

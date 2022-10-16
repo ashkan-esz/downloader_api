@@ -87,6 +87,66 @@ export async function getPageData(url, sourceName, useAxiosFirst = false, cookie
     }
 }
 
+export async function getYoutubeDownloadLink(youtubeUrl, retryCount = 0) {
+    let decodedUrl = getDecodedLink(youtubeUrl);
+    if (decodedUrl === youtubeUrl) {
+        youtubeUrl = encodeURIComponent(youtubeUrl);
+    }
+
+    let selectedBrowser;
+    try {
+        if (remoteBrowsers.length === 0) {
+            // no remote browser provided
+            return null;
+        }
+
+        while (true) {
+            selectedBrowser = remoteBrowsers
+                //tabsCount - apiCallCount :: server capability
+                .sort((a, b) => (b.tabsCount - b.apiCallCount) - (a.tabsCount - a.apiCallCount))
+                .find(item => item.apiCallCount < 2 * item.tabsCount);
+            if (selectedBrowser) {
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        selectedBrowser.apiCallCount++;
+        let response = await axios.get(
+            `${selectedBrowser.endpoint}/youtube/getDownloadLink/?password=${selectedBrowser.password}&youtubeUrl=${youtubeUrl}`
+        );
+        selectedBrowser.apiCallCount--;
+
+        let data = response.data;
+        if (!data || data.error) {
+            return null;
+        }
+        //{downloadUrl, youtubeUrl}
+        return data.res;
+    } catch (error) {
+        if (error.response && error.response.status === 503) {
+            if (retryCount < 2) {
+                if (selectedBrowser) {
+                    selectedBrowser.apiCallCount--;
+                }
+                retryCount++;
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                return await getYoutubeDownloadLink(youtubeUrl, retryCount);
+            }
+        }
+        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+            error.isAxiosError = true;
+            error.url = youtubeUrl;
+            error.filePath = 'remoteHeadlessBrowser';
+        }
+        await saveError(error);
+        return null;
+    }
+}
+
+//--------------------------------------------------
+//--------------------------------------------------
+
 async function useAxiosGet(url, sourceName) {
     let result = {
         pageContent: null,
