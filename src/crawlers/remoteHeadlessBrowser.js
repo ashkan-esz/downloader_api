@@ -1,6 +1,7 @@
 import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
+import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils.js"
 import {saveError} from "../error/saveError.js";
 
@@ -10,9 +11,11 @@ let remoteBrowsers = config.remoteBrowser.map(item => {
     return item;
 });
 
+let sourcesObject = await getSourcesObjDB();
+let sourcesObject_date = Date.now();
 let blackListSources = [];
 
-export async function getPageData(url, sourceName, useAxiosFirst = false, cookieOnly = false, retryCount = 0) {
+export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useAxiosFirst = false, cookieOnly = false, retryCount = 0) {
     let decodedUrl = getDecodedLink(url);
     if (decodedUrl === url) {
         url = encodeURIComponent(url);
@@ -20,7 +23,7 @@ export async function getPageData(url, sourceName, useAxiosFirst = false, cookie
 
     let axiosResult = null;
     if (useAxiosFirst && !cookieOnly && !decodedUrl.match(/page([=\/])\d+/i) && !decodedUrl.match(/((\.[a-zA-Z]+)|((?<!-)series?\/?))$/i)) {
-        axiosResult = await useAxiosGet(decodedUrl, sourceName);
+        axiosResult = await useAxiosGet(decodedUrl, sourceName, sourceAuthStatus);
         if (axiosResult && axiosResult.pageContent && !axiosResult.isSus) {
             return axiosResult;
         }
@@ -45,8 +48,11 @@ export async function getPageData(url, sourceName, useAxiosFirst = false, cookie
         }
 
         selectedBrowser.apiCallCount++;
+        let sourceCookies = sourcesObject
+            ? sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
+            : "";
         let response = await axios.get(
-            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}`
+            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}&sourceCookies=${sourceCookies}`
         );
         selectedBrowser.apiCallCount--;
 
@@ -74,7 +80,7 @@ export async function getPageData(url, sourceName, useAxiosFirst = false, cookie
                 }
                 retryCount++;
                 await new Promise(resolve => setTimeout(resolve, 4000));
-                return await getPageData(url, sourceName, useAxiosFirst, cookieOnly, retryCount);
+                return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, retryCount);
             }
         }
         if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
@@ -147,7 +153,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, retryCount = 0) {
 //--------------------------------------------------
 //--------------------------------------------------
 
-async function useAxiosGet(url, sourceName) {
+async function useAxiosGet(url, sourceName, sourceAuthStatus) {
     let result = {
         pageContent: null,
         responseUrl: '',
@@ -159,13 +165,21 @@ async function useAxiosGet(url, sourceName) {
         linksCount: 0,
     };
     try {
+        await refreshSourcesObject();
         freeBlackListSources();
         let sourceData = blackListSources.find(item => item.sourceName === sourceName);
         if (sourceData && sourceData.isBlacklisted) {
             result.isAxiosCalled = false;
             return result;
         }
-        let response = await axios.get(url, {timeout: 3000});
+        let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
+        let timeout = sourceAuthStatus === 'login-cookie' ? 5000 : 3000;
+        let response = await axios.get(url, {
+            timeout: timeout,
+            headers: {
+                Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
+            }
+        });
         let $ = cheerio.load(response.data);
         let links = $('a');
         result.pageContent = response.data;
@@ -179,7 +193,7 @@ async function useAxiosGet(url, sourceName) {
                 let temp = url.replace(/\/$/, '').split('/').pop();
                 if (temp) {
                     url = url.replace(temp, encodeURIComponent(temp));
-                    return await useAxiosGet(url, sourceName);
+                    return await useAxiosGet(url, sourceName, sourceAuthStatus);
                 }
             }
             error.isAxiosError = true;
@@ -192,6 +206,18 @@ async function useAxiosGet(url, sourceName) {
             saveError(error);
         }
         return result;
+    }
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+async function refreshSourcesObject() {
+    let now = Date.now();
+    if (now - sourcesObject_date > 10 * 60 * 1000) {
+        //every 10min
+        sourcesObject = await getSourcesObjDB();
+        sourcesObject_date = now;
     }
 }
 
@@ -212,6 +238,7 @@ function addSourceToBlackList(sourceName) {
 
 function freeBlackListSources() {
     for (let i = 0; i < blackListSources.length; i++) {
+        //free source after 3 hour
         blackListSources[i].isBlacklisted = (Date.now() - blackListSources[i].lastError) < 3 * 60 * 60 * 1000;
     }
 }

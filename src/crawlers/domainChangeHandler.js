@@ -107,18 +107,23 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
-                let crawled = false;
-                if (!fullyCrawledSources.includes(sourceName)) {
-                    await findSource.starter();
-                    crawled = true;
+                let sourceCookies = sourcesObj[sourceName].cookies;
+                if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
+                    Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired`);
+                } else {
+                    let crawled = false;
+                    if (!fullyCrawledSources.includes(sourceName)) {
+                        await findSource.starter();
+                        crawled = true;
+                    }
+                    //update source data
+                    let updateSourceField = {};
+                    if (crawled) {
+                        sourcesObj[sourceName].lastCrawlDate = new Date();
+                    }
+                    updateSourceField[sourceName] = sourcesObj[sourceName];
+                    await updateSourcesObjDB(updateSourceField);
                 }
-                //update source data
-                let updateSourceField = {};
-                if (crawled) {
-                    sourcesObj[sourceName].lastCrawlDate = new Date();
-                }
-                updateSourceField[sourceName] = sourcesObj[sourceName];
-                await updateSourcesObjDB(updateSourceField);
             }
 
             Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);

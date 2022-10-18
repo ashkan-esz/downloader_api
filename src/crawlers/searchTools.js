@@ -31,7 +31,7 @@ axiosRetry(axios, {
 });
 
 
-export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_count, searchCB) {
+export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, url, page_count, searchCB) {
     try {
         const concurrencyNumber = getConcurrencyNumber(sourceName, needHeadlessBrowser);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
@@ -43,7 +43,7 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser);
+                } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser, sourceAuthStatus);
                 if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
@@ -69,11 +69,16 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, url, page_
     }
 }
 
-export async function search_in_title_page(sourceName, needHeadlessBrowser, title, page_link, type, getFileData, getQualitySample = null,
+export async function search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus,
+                                           title, page_link, type, getFileData, getQualitySample = null,
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null,
                                            extraChecker = null, getSeasonEpisodeFromInfo = false) {
     try {
-        let {$, links, cookies} = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceLinkData);
+        let {
+            $,
+            links,
+            cookies
+        } = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
         }
@@ -122,7 +127,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, titl
                     continue;
                 }
                 extraSearchLinks.push(link);
-                let resultPromise = search_in_title_page(sourceName, needHeadlessBrowser, title, link, type, extraSearch_getFileData, getQualitySample,
+                let resultPromise = search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, link, type, extraSearch_getFileData, getQualitySample,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
                         link: links[j],
@@ -156,7 +161,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, titl
     }
 }
 
-async function getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData = null) {
+async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -179,7 +184,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData = n
                         let temp = url.replace(/\/$/, '').split('/').pop();
                         if (temp) {
                             url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData);
+                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
                         }
                     }
                     error.isAxiosError = true;
@@ -198,7 +203,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData = n
             }
         } else {
             try {
-                let pageData = await getPageData(url, sourceName, true);
+                let pageData = await getPageData(url, sourceName, sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -217,7 +222,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData = n
                         let temp = url.replace(/\/$/, '').split('/').pop();
                         if (temp) {
                             url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceLinkData);
+                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
                         }
                     }
                     error.isAxiosError = true;

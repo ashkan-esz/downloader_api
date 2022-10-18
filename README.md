@@ -37,6 +37,11 @@ you can run npm script `npm run pre_start` to create collections and their index
         serial_page_count: Number,
         lastCrawlDate: Date,
         crawlCycle: Number, // 0 means no cycle
+        cookies: Array({
+           name:String,
+           value:String,
+           expire: Int(Date)
+        }),
     },
 }
 

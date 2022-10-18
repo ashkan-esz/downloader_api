@@ -12,9 +12,10 @@ let save_title = '';
 
 const sourceName = "film2media";
 const needHeadlessBrowser = false;
+const sourceAuthStatus = 'ok';
 
 export default async function film2media({movie_url, page_count}) {
-    await wrapper_module(sourceName, needHeadlessBrowser, movie_url, page_count, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
 }
 
 async function search_title(link, i) {
@@ -36,7 +37,7 @@ async function search_title(link, i) {
             collection = (pageLink.includes('collection')) ? 'collection' : '';
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
                     let sourceData = {

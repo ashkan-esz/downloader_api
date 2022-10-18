@@ -103,6 +103,11 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
         if (!handleDomainChangeOnly) {
             if (!sourceName) {
                 for (let i = 0; i < sourcesArray.length; i++) {
+                    let sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
+                    if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
+                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) cookies expired`);
+                        continue;
+                    }
                     await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
                     await sourcesArray[i].starter();
                     await updateCrawlerStatus_sourceEnd();
@@ -118,16 +123,21 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
             } else {
                 let findSource = sourcesArray.find(x => x.name === sourceName);
                 if (findSource) {
-                    await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
-                    await findSource.starter();
-                    await updateCrawlerStatus_sourceEnd();
-                    if (crawlMode === 2) {
-                        fullyCrawledSources.push(sourceName);
-                        let now = new Date();
-                        sourcesObj[sourceName].lastCrawlDate = now;
-                        await updateSourcesObjDB({
-                            [sourceName + '.lastCrawlDate']: now,
-                        });
+                    let sourceCookies = sourcesObj[sourceName].cookies;
+                    if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
+                        Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired`);
+                    } else {
+                        await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
+                        await findSource.starter();
+                        await updateCrawlerStatus_sourceEnd();
+                        if (crawlMode === 2) {
+                            fullyCrawledSources.push(sourceName);
+                            let now = new Date();
+                            sourcesObj[sourceName].lastCrawlDate = now;
+                            await updateSourcesObjDB({
+                                [sourceName + '.lastCrawlDate']: now,
+                            });
+                        }
                     }
                 }
             }
