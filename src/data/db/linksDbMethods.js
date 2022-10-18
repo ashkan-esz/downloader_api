@@ -3,7 +3,7 @@ import {saveError} from "../../error/saveError.js";
 
 export async function addNewLink(downloadLink, linkType = 'direct', fileName = '', size = 0) {
     try {
-        let collection = await getCollection('torrentLinks');
+        let collection = await getCollection('links');
         let linkData = createLinkData(downloadLink, linkType, fileName, size);
         let res = await collection.updateOne({
             downloadLink: downloadLink,

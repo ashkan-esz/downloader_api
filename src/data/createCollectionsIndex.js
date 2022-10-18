@@ -90,9 +90,9 @@ export async function createCollectionsAndIndexes() {
         await userAnalysisCollection.createIndex({yearAndMonth: 1});
         //usage: userCounts.date
 
-        let torrentLinksCollection = await getCollection('torrentLinks');
-        await torrentLinksCollection.createIndex({size: 1, addDate: 1});
-        await torrentLinksCollection.createIndex({downloadLink: 1});
+        let linksCollection = await getCollection('links');
+        await linksCollection.createIndex({size: 1, addDate: 1});
+        await linksCollection.createIndex({downloadLink: 1});
         //usage: sort: {size: 1, addDate: 1}
         //usage: downloadLink
 
