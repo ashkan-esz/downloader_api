@@ -17,6 +17,8 @@ import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 //todo : forget password
 //todo : edit profile data
 
+//todo : use express-useragent for deviceInfo
+
 export async function signup(username, email, password, deviceInfo, ip, host) {
     try {
         let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, email: 1});
@@ -68,7 +70,11 @@ export async function login(username_email, password, deviceInfo, ip) {
     //todo : check device already exist
     //todo : limit number of device
     try {
-        let userData = await usersDbMethods.findUser(username_email, username_email, {password: 1, rawUsername: 1, role: 1});
+        let userData = await usersDbMethods.findUser(username_email, username_email, {
+            password: 1,
+            rawUsername: 1,
+            role: 1
+        });
         if (userData === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
@@ -283,6 +289,7 @@ export async function uploadProfileImage(jwtUserData, uploadFileData) {
             url: uploadFileData.location,
             size: uploadFileData.size,
             thumbnail: '',
+            addDate: new Date(),
         }
         let thumbnailData = await getImageThumbnail(fileData.url, true);
         if (thumbnailData) {

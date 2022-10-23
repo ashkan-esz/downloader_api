@@ -127,9 +127,8 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         apiUpdateDate: now,
     };
 
-    if (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3)) {
-        let selectedPoster = sitePoster || (db_data.posters.length > 0 ? db_data.posters[0].url : '');
-        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, selectedPoster, 0, true);
+    if (sitePoster && (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))) {
+        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, sitePoster, 0, true);
         if (s3poster) {
             db_data.poster_s3 = s3poster;
             updateFields.poster_s3 = s3poster;
@@ -213,10 +212,10 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
 
 async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter = 0) {
     try {
-        //replace low quality poster of myAnimeList
         if (!newPosterUrl) {
             return false;
         }
+        //replace low quality poster of myAnimeList
         if (prevS3Poster.originalUrl.includes('cdn.myanimelist.net')) {
             return true;
         }
@@ -224,7 +223,10 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
             .replace(/https:|http:|\/\/|www\./g, '')
             .split('.')[0]
             .replace(/\d+/g, '');
-        let newSourceName = newPosterUrl.replace(/https:|http:|\/\/|www\./g, '').split('.')[0].replace(/\d+/g, '');
+        let newSourceName = newPosterUrl
+            .replace(/https:|http:|\/\/|www\./g, '')
+            .split('.')[0]
+            .replace(/\d+/g, '');
         if (prevS3SourceName === newSourceName || prevS3Poster.size > 300 * 1024) {
             return false;
         }

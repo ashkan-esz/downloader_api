@@ -86,7 +86,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         let dataBuffer = await compressImage(response.data);
 
         const params = {
-            ContentType: response.headers["content-type"],
+            ContentType: 'image/jpeg',
             ContentLength: dataBuffer.length.toString(),
             Bucket: 'cast',
             Body: dataBuffer,
@@ -229,7 +229,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
         let dataBuffer = await compressImage(response.data);
 
         const params = {
-            ContentType: response.headers["content-type"],
+            ContentType: 'image/jpeg',
             ContentLength: dataBuffer.length.toString(),
             Bucket: 'poster',
             Body: dataBuffer,
@@ -816,6 +816,7 @@ function checkNeedRetryWithSleep(error, retryWithSleepCounter) {
         retryWithSleepCounter < 2 && (
             error.message === 'S3ServiceException: UnknownError' ||
             error.message === '403: UnknownError' ||
+            error.message === '504: UnknownError' ||
             (error.response && (error.response.status === 429 || error.response.status >= 500))
         )
     );

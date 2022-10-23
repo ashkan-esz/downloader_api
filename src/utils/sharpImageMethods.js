@@ -17,9 +17,18 @@ export async function compressImage(responseData) {
             if (sharpQuality <= 0) {
                 sharpQuality = 10;
             }
-            temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
+            if (counter > 1) {
+                temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
+            } else {
+                temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
+            }
         }
         dataBuffer = temp;
+    } else {
+        let metadata = await sharp(responseData).metadata();
+        if (metadata.format !== 'jpg' && metadata.format !== 'jpeg') {
+            dataBuffer = await sharp(responseData).jpeg({quality: 75, mozjpeg: true}).toBuffer();
+        }
     }
     return dataBuffer;
 }

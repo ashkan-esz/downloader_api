@@ -12,6 +12,7 @@ profile = {
         url: String,
         size: Int,
         thumbnail: String,
+        addDate: Date,
     }),
     defaultProfile: String,
     favoriteGenres: Array(String),
