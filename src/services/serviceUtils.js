@@ -26,6 +26,7 @@ export const errorMessage = Object.freeze({
     characterNotFound: 'Character not found',
     mscNotFound: 'Movie/Staff/Character not found',
     scNotFound: 'Staff/Character not found',
+    botNotFound: 'Bot not found',
     //----------------------
     userNotFound: 'Cannot find user',
     profileImageNotFound: 'Cannot find profile image',

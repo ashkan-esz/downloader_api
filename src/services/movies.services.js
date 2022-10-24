@@ -1,13 +1,13 @@
 import * as moviesDbMethods from '../data/db/moviesDbMethods.js';
 import * as crawlerMethodsDB from '../data/db/crawlerMethodsDB.js';
 import * as userStatsDbMethods from '../data/db/userStatsDbMethods.js';
+import * as botsDbMethods from '../data/db/botsDbMethods.js';
 import {dataLevelConfig} from "../models/movie.js";
-import {generateServiceResult, errorMessage} from "./serviceUtils.js";
+import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import {setCache} from "../api/middlewares/moviesCache.js";
 import {dataLevelConfig_staff} from "../models/person.js";
 import {dataLevelConfig_character} from "../models/character.js";
-import {searchTitleDB} from "../data/db/crawlerMethodsDB.js";
-import {replaceSpecialCharacters} from "../crawlers/utils.js";
+import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils.js";
 import {default as pQueue} from "p-queue";
 import {
     getFollowedStaffTodayBirthday,
@@ -364,12 +364,12 @@ export async function getAnimeEnglishNames(japaneseNames) {
         }
         let types = ['anime_movie', 'anime_serial'];
 
-        promiseQueue.add(() => searchTitleDB(titleObj, types, '', {alternateTitles: 1}).then(async (res) => {
+        promiseQueue.add(() => crawlerMethodsDB.searchTitleDB(titleObj, types, '', {alternateTitles: 1}).then(async (res) => {
             if (res.length === 0) {
                 let temp = replaceSpecialCharacters(titleObj.title);
                 if (temp !== titleObj.title) {
                     titleObj.title = temp;
-                    res = await searchTitleDB(titleObj, types, '', {alternateTitles: 1});
+                    res = await crawlerMethodsDB.searchTitleDB(titleObj, types, '', {alternateTitles: 1});
                 }
             }
             result.push({
@@ -384,8 +384,8 @@ export async function getAnimeEnglishNames(japaneseNames) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-//-----------------------------
-//-----------------------------
+//-----------------------------------------------------
+//-----------------------------------------------------
 
 export async function getTodayBirthday(jwtUserData, staffOrCharacters, followedOnly, dataLevel, page) {
     let {skip, limit} = getSkipLimit(page, 12);
@@ -407,8 +407,92 @@ export async function getTodayBirthday(jwtUserData, staffOrCharacters, followedO
     return generateServiceResult({data: result}, 200, '');
 }
 
-//-----------------------------
-//-----------------------------
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdbScores, malScores, dontUpdateServerDate) {
+    let botData = await botsDbMethods.getBotData(botId);
+    if (botData === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (!botData) {
+        return generateServiceResult({data: []}, 404, errorMessage.botNotFound);
+    }
+
+    let projection = dataLevelConfig[dataLevel.replace('low', 'telbot')];// low dataLevel is not allowed
+    let updateFields = {};
+    let moviesData = [];
+    let moviesData2 = [];
+    if (apiName === 'news') {
+        moviesData = await moviesDbMethods.getNewMoviesWithDate(null, botData.lastApiCall_news, types, imdbScores, malScores, 0, 24, projection, true);
+    } else if (apiName === 'updates') {
+        moviesData = await moviesDbMethods.getUpdateMoviesWithDate(null, botData.lastApiCall_updates, types, imdbScores, malScores, 0, 24, projection, true);
+    } else if (apiName === 'newsandupdates') {
+        let result = await Promise.allSettled([
+            moviesDbMethods.getNewMoviesWithDate(null, botData.lastApiCall_news, types, imdbScores, malScores, 0, 12, projection, true),
+            moviesDbMethods.getUpdateMoviesWithDate(null, botData.lastApiCall_updates, types, imdbScores, malScores, 0, 12, projection, true),
+        ]);
+        moviesData = result[0].value;
+        moviesData2 = result[1].value;
+    }
+
+    if (moviesData === 'error' || moviesData2 === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (moviesData.length === 0 && moviesData2.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
+    }
+
+    if (apiName === 'news') {
+        updateFields.lastApiCall_news = moviesData[moviesData.length - 1].insert_date;
+    } else if (apiName === 'updates') {
+        updateFields.lastApiCall_updates = moviesData[moviesData.length - 1].update_date;
+    } else if (apiName === 'newsandupdates') {
+        let lastApiCall = moviesData[moviesData.length - 1]?.insert_date || 0;
+        if (lastApiCall) {
+            updateFields.lastApiCall_news = lastApiCall;
+        }
+        let lastApiCall2 = moviesData2[moviesData2.length - 1]?.update_date || 0;
+        if (lastApiCall2) {
+            updateFields.lastApiCall_updates = lastApiCall2;
+        }
+        // merge results
+        for (let i = 0; i < moviesData2.length; i++) {
+            let exist = false;
+            for (let j = 0; j < moviesData.length; j++) {
+                if (moviesData[j]._id.toString() === moviesData2[i]._id.toString()) {
+                    exist = true;
+                    break;
+                }
+            }
+            if (!exist) {
+                moviesData.push(moviesData2[i]);
+            }
+        }
+        moviesData = moviesData.sort((a, b) => {
+            if (!a.update_date && !b.update_date) {
+                return getDatesBetween(a.insert_date, b.insert_date).milliseconds < 0 ? -1 : 1;
+            }
+            if (a.update_date && !b.update_date) {
+                return 1;
+            }
+            if (!a.update_date && b.update_date) {
+                return -1;
+            }
+            return getDatesBetween(a.update_date, b.update_date).milliseconds < 0 ? -1 : 1;
+        });
+    }
+
+    if (!dontUpdateServerDate && Object.keys(updateFields).length > 0) {
+        let updateResult = await botsDbMethods.updateBotApiCallDate(botId, updateFields);
+        if (updateResult === 'error') {
+            return generateServiceResult({data: []}, 500, errorMessage.serverError);
+        }
+    }
+
+    return generateServiceResult({data: moviesData}, 200, '');
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
 
 function getSkipLimit(page, limit) {
     return {

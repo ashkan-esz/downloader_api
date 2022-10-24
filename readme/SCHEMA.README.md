@@ -154,6 +154,8 @@ dataLevel = {
             seasonNumber: Int,
             episodes: Int,
         }),
+        insert_date: Date,
+        update_date: Date,
     },
     medium: {
         ...low, //all fields from low datalevel also exist
@@ -187,6 +189,7 @@ dataLevel = {
             info: String,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
+        insert_date: Date,
         update_date: Date,
         nextEpisode: null || {
             title: String,
@@ -221,7 +224,6 @@ dataLevel = {
         like_month: Int,
         view_month: Int,
         add_date: Date,
-        insert_date: Date,
         apiUpdateDate: Date,
         castUpdateDate: Date,
         poster_s3: null || {

@@ -96,6 +96,10 @@ export async function createCollectionsAndIndexes() {
         //usage: sort: {size: 1, addDate: 1}
         //usage: downloadLink
 
+        let botsCollection = await getCollection('bots');
+        await botsCollection.createIndex({botId: 1});
+        //usage: botId
+
         console.log('creating mongodb collection and indexes --done!');
         console.log();
     } catch (error) {

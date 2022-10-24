@@ -170,4 +170,11 @@ router.get('/birthday/:staffOrCharacters/:dataLevel/:page',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getTodayBirthday);
 
+//movies/bots/:botId/:moviesRequestName/:types/:dataLevel/:imdbScores/:malScores
+router.get('/bots/:botId/:moviesRequestName/:types/:dataLevel/:imdbScores/:malScores',
+    middlewares.rateLimit.rateLimit_5,
+    middlewares.validateApiParams.checkApiParams(['moviesRequestName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'dontUpdateServerDate']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.getMoviesDataForBot);
+
 export default router;

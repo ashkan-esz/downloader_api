@@ -17,6 +17,8 @@
 | **`statType`**          | enum( _like_movie_, _dislike_movie_, <br/>_like_staff_, _dislike_staff_, <br/>_like_character_, _dislike_character_, <br/>_follow_movie_, _follow_staff_, <br/>_future_list_, _dropped_, _finished_, <br/>_save_, _score_) | values with no suffix (_staff or _character) only works for movies | `true`   |
 | **`date`**              | Date                                                                                                                                                                                                                       |                                                                    | `true`   |
 | **`staffOrCharacters`** | enum(_staff_, _characters_)                                                                                                                                                                                                |                                                                    | `true`   |
+| **`botId`**             | String                                                                                                                                                                                                                     | unique id of the bot                                               | `true`   |
+| **`moviesRequestName`** | enum(_news_, _updates_, _newsAndUpdates_)                                                                                                                                                                                  |                                                                    | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -454,6 +456,29 @@ Examples
 - https://downloader-node-api.herokuapp.com/movies/birthday/staff/low/1?followedOnly=true&testUser=true
 - https://downloader-node-api.herokuapp.com/movies/birthday/characters/low/1?testUser=true
 - https://downloader-node-api.herokuapp.com/movies/birthday/characters/high/1?testUser=true
+</details>
+<br />
+
+
+## Bots Api
+
+### GET /movies/bots/[botId]/[moviesRequestName]/[types]/[dataLevel]/[imdbScores]/[malScores]
+> return movies based on the date that saved in server, send 404 error when no new movie or updates exist. ([movies schema](SCHEMA.README.md#Movie-Data))
+> 
+> send maximum 24 item .
+> 
+> also receive query parameters `dontUpdateServerDate=[true|false]`.
+>
+> **NOTE: limited to 5 call per minute**
+
+<details>
+<summary>
+Examples
+</summary>
+
+- https://downloader-node-api.herokuapp.com/movies/bots/0ea2d945-b561-4b2a-9cf0-b6da027fcd2b/news/serial-anime_serial/low/0-10/0-10?dontUpdateServerDate=true
+- https://downloader-node-api.herokuapp.com/movies/bots/0ea2d945-b561-4b2a-9cf0-b6da027fcd2b/updates/serial-anime_serial/medium/6-10/0-10?dontUpdateServerDate=true
+- https://downloader-node-api.herokuapp.com/movies/bots/0ea2d945-b561-4b2a-9cf0-b6da027fcd2b/newsAndUpdates/movie-serial-anime_movie-anime_serial/high/0-10/0-10?dontUpdateServerDate=true
 </details>
 <br />
 

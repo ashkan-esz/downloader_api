@@ -201,6 +201,8 @@ export const dataLevelConfig = Object.freeze({
         actorsAndCharacters: 1,
         staff: 1,
         seasonEpisode: 1,
+        insert_date: 1,
+        update_date: 1,
     }),
     medium: Object.freeze({
         releaseState: 1,
@@ -218,6 +220,7 @@ export const dataLevelConfig = Object.freeze({
         genres: 1,
         trailers: 1,
         latestData: 1,
+        insert_date: 1,
         update_date: 1,
         nextEpisode: 1,
         releaseDay: 1,

@@ -191,8 +191,18 @@ export async function getTodayBirthday(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
-//-----------------------------
-//-----------------------------
+//--------------------------------------------
+//--------------------------------------------
+
+export async function getMoviesDataForBot(req, res) {
+    let {botId, moviesRequestName, types, dataLevel, imdbScores, malScores} = req.params;
+    let moviesData = await moviesServices.getMoviesDataForBot(botId, moviesRequestName, types, dataLevel, imdbScores, malScores, req.query.dontUpdateServerDate);
+
+    return res.status(moviesData.responseData.code).json(moviesData.responseData);
+}
+
+//--------------------------------------------
+//--------------------------------------------
 
 function filterObjectFalsyValues(object) {
     let filters = Object.keys(object)

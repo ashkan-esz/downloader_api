@@ -82,6 +82,7 @@ queryParamErrors = {
     deviceId: "Invalid parameter deviceId :: String(UUID)",
     remove: "Invalid parameter remove :: (true|false)",
     followedOnly: "Invalid parameter followedOnly :: (true|false)",
+    dontUpdateServerDate: "Invalid parameter dontUpdateServerDate :: (true|false)",
     settingName: "Invalid parameter settingName :: String",
     settings: "Invalid parameter settings :: Object",
     'settings.**': "Missed parameter settings.**",

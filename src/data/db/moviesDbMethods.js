@@ -44,7 +44,7 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
     }
 }
 
-export async function getNewMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, projection) {
+export async function getNewMoviesWithDate(userId, insertDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats = false) {
     try {
         let collection = await getCollection('movies');
 
@@ -53,7 +53,8 @@ export async function getNewMoviesWithDate(userId, date, types, imdbScores, malS
                 $match: {
                     releaseState: 'done',
                     ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                    insert_date: {$gte: date},
+                    insert_date: {$gt: insertDate},
+                    update_date: 0,
                 }
             },
             {
@@ -67,7 +68,7 @@ export async function getNewMoviesWithDate(userId, date, types, imdbScores, malS
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -122,7 +123,7 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
     }
 }
 
-export async function getUpdateMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, projection) {
+export async function getUpdateMoviesWithDate(userId, updateDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats = false) {
     try {
         let collection = await getCollection('movies');
 
@@ -131,7 +132,7 @@ export async function getUpdateMoviesWithDate(userId, date, types, imdbScores, m
                 $match: {
                     releaseState: 'done',
                     ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                    update_date: {$gte: date},
+                    update_date: {$gt: updateDate},
                 }
             },
             {
@@ -145,7 +146,7 @@ export async function getUpdateMoviesWithDate(userId, date, types, imdbScores, m
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {

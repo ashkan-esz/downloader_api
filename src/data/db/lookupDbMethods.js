@@ -22,9 +22,17 @@ export function getLookupOnCustomCollectionStage(collectionName, localField, pro
     return lookupConfig;
 }
 
-export function getLookupOnUserStatsStage(userId, collectionName) {
+export function getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats = false) {
     //----------------------
     let {defaultFieldValues, projection} = getDefaultFieldValuesAndProjection(collectionName);
+    //----------------------
+    if (dontLookupUserStats) {
+        return [{
+            $addFields: {
+                userStats: defaultFieldValues,
+            }
+        }];
+    }
     //----------------------
     let stats = Object.keys({...defaultFieldValues});
     let checkStatArray = [];

@@ -19,7 +19,7 @@ const notificationSettingskeys = [
     'futureList', 'futureList_serialSeasonEnd', 'futureList_subtitle', 'finishedList_spinOffSequel'
 ];
 const staffOrCharacters = ['staff', 'characters'];
-
+const moviesRequestNames = ['news', 'updates', 'newsandupdates'];
 
 const validations = Object.freeze({
     id: param('id')
@@ -132,6 +132,10 @@ const validations = Object.freeze({
     title: param('title')
         .isString().withMessage('Invalid parameter title :: String')
         .trim(),
+
+    moviesRequestName: param('moviesRequestName')
+        .trim().toLowerCase()
+        .isIn(moviesRequestNames).withMessage(`Invalid parameter moviesRequestName :: (${moviesRequestNames.join('|')})`),
 
     //-----------------------------
     //-----------------------------
@@ -430,6 +434,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter followedOnly :: (true|false)')
+        .toBoolean(),
+
+    dontUpdateServerDate: query('dontUpdateServerDate')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter dontUpdateServerDate :: (true|false)')
         .toBoolean(),
 
     //-----------------------------
