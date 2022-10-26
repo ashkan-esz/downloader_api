@@ -4,8 +4,9 @@ import axiosRetry from "axios-retry";
 import * as cheerio from 'cheerio';
 import {default as pQueue} from "p-queue";
 import {check_download_link, getMatchCases, check_format} from "./link.js";
-import {getPageData} from "./remoteHeadlessBrowser.js";
-import {getDecodedLink, getSeasonEpisode} from "./utils.js";
+import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
+import {getFromGoogleCache} from "./googleCache.js";
+import {getSeasonEpisode} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
@@ -15,6 +16,10 @@ axiosRetry(axios, {
     shouldResetTimeout: true,
     retryDelay: (retryCount) => {
         return retryCount * 1000; // time interval between retries
+    },
+    onRetry: (retryCount, error, config) => {
+        //todo : temporary fix, not fixed yet on axios 1.1.3
+        delete config.headers;
     },
     retryCondition: (error) => (
         error.code === 'ECONNRESET' ||
@@ -30,6 +35,7 @@ axiosRetry(axios, {
     ),
 });
 
+let axiosBlackListSources = [];
 
 export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, url, page_count, searchCB) {
     try {
@@ -43,7 +49,7 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser, sourceAuthStatus);
+                } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser, sourceAuthStatus, 'sourcePage');
                 if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
@@ -78,7 +84,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
             $,
             links,
             cookies
-        } = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
+        } = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceAuthStatus, 'movieDataPage', sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
         }
@@ -161,7 +167,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
     }
 }
 
-async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData = null) {
+async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData = null) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -172,71 +178,71 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
             url = url + '/';
         }
         let $, links = [];
-        if (!needHeadlessBrowser || (sourceLinkData && sourceLinkData.sourceLink.includes('anime-list'))) {
-            try {
-                let response = await axios.get(url);
-                responseUrl = response.request.res.responseUrl;
-                $ = cheerio.load(response.data);
-                links = $('a');
-            } catch (error) {
-                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                    if (decodeURIComponent(url) === url) {
-                        let temp = url.replace(/\/$/, '').split('/').pop();
-                        if (temp) {
-                            url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
-                        }
-                    }
-                    error.isAxiosError = true;
-                    error.url = url;
-                    error.filePath = 'searchTools';
-                    await saveError(error);
-                } else {
-                    let pageNotFound = error.response && error.response.status === 404;
-                    if (!pageNotFound) {
-                        let cacheResult = await getFromGoogleCache(url);
-                        $ = cacheResult.$;
-                        links = cacheResult.links;
-                        checkGoogleCache = true;
-                    }
-                }
-            }
-        } else {
-            try {
-                let pageData = await getPageData(url, sourceName, sourceAuthStatus, true);
+
+        try {
+            let pageData = null;
+            if (needHeadlessBrowser && (!sourceLinkData || sourceName !== 'animelist')) {
+                pageData = await getPageData(url, sourceName, sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
                     cookies = pageData.cookies;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
-                } else {
-                    let response = await axios.get(url);
-                    responseUrl = response.request.res.responseUrl;
-                    $ = cheerio.load(response.data);
-                    links = $('a');
                 }
-            } catch (error) {
-                if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-                    if (decodeURIComponent(url) === url) {
-                        let temp = url.replace(/\/$/, '').split('/').pop();
-                        if (temp) {
-                            url = url.replace(temp, encodeURIComponent(temp));
-                            return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, sourceLinkData);
-                        }
-                    }
-                    error.isAxiosError = true;
-                    error.url = url;
-                    error.filePath = 'searchTools';
-                    await saveError(error);
+            }
+            if (!pageData || (!pageData.pageContent && !pageData.isAxiosCalled)) {
+                freeAxiosBlackListSources();
+                let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceName);
+                if (sourceData && sourceData.isBlocked && (!sourceLinkData || sourceName !== 'animelist') && pageType === 'movieDataPage') {
+                    $ = null;
+                    links = [];
                 } else {
-                    let cacheResult = await getFromGoogleCache(url);
-                    $ = cacheResult.$;
-                    links = cacheResult.links;
-                    checkGoogleCache = true;
+                    let sourcesObject = await getAxiosSourcesObject();
+                    let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
+                    let response = await axios.get(url, {
+                        headers: {
+                            Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
+                        }
+                    });
+                    responseUrl = response.request.res.responseUrl;
+                    if (response.data.includes('<title>Security Check ...</title>') && pageType === 'movieDataPage') {
+                        $ = null;
+                        links = [];
+                    } else {
+                        $ = cheerio.load(response.data);
+                        links = $('a');
+                    }
+                    if (links.length < 5) {
+                        addSourceToAxiosBlackList(sourceName);
+                    }
+                }
+            }
+        } catch (error) {
+            if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                if (decodeURIComponent(url) === url) {
+                    let temp = url.replace(/\/$/, '').split('/').pop();
+                    if (temp) {
+                        url = url.replace(temp, encodeURIComponent(temp));
+                        return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData);
+                    }
+                }
+                error.isAxiosError = true;
+                error.url = url;
+                error.filePath = 'searchTools';
+                await saveError(error);
+            } else {
+                addSourceToAxiosBlackList(sourceName);
+                let cacheResult = await getFromGoogleCache(url);
+                $ = cacheResult.$;
+                links = cacheResult.links;
+                checkGoogleCache = true;
+                if (!error.response || error.response.status !== 404) {
+                    await saveError(error);
                 }
             }
         }
+
         if (links.length < 5 && !checkGoogleCache) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
@@ -247,43 +253,6 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
     } catch (error) {
         await saveError(error);
         return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle};
-    }
-}
-
-async function getFromGoogleCache(url, retryCounter = 0) {
-    try {
-        let decodedLink = getDecodedLink(url);
-        if (config.nodeEnv === 'dev') {
-            console.log('google cache: ', decodedLink);
-        } else {
-            Sentry.captureMessage(`google cache: ${decodedLink}`);
-        }
-        let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
-        let webCacheUrl = cacheUrl + decodedLink;
-        let response = await axios.get(webCacheUrl);
-        let $ = cheerio.load(response.data);
-        let links = $('a');
-        await new Promise((resolve => setTimeout(resolve, 100)));
-        return {$, links};
-    } catch (error) {
-        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-            if (retryCounter === 0) {
-                let temp = url.replace(/\/$/, '').split('/').pop();
-                if (temp) {
-                    let tempEncode = encodeURIComponent(encodeURIComponent(temp));
-                    url = url.replace(temp, tempEncode);
-                    retryCounter++;
-                    return await getFromGoogleCache(url, retryCounter);
-                }
-            }
-            error.isAxiosError = true;
-            error.url = getDecodedLink(url);
-            error.filePath = 'searchTools';
-            await saveError(error);
-        } else if (error.response && error.response.status !== 404 && error.response.status !== 429) {
-            saveError(error);
-        }
-        return {$: null, links: []};
     }
 }
 
@@ -335,4 +304,42 @@ function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
             : 12;
     }
     return concurrencyNumber;
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+function addSourceToAxiosBlackList(sourceName) {
+    let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceName);
+    if (sourceData) {
+        if (Date.now() - sourceData.lastErrorTime > 5 * 60 * 1000) {
+            //kind of resetting counter
+            sourceData.errorCounter = 1;
+        }
+        if (Date.now() - sourceData.lastErrorTime < 60 * 1000) {
+            sourceData.errorCounter++;
+        }
+        sourceData.lastErrorTime = Date.now();
+        if (sourceData.errorCounter >= 10) {
+            sourceData.isBlocked = true;
+        }
+    } else {
+        axiosBlackListSources.push({
+            sourceName: sourceName,
+            errorCounter: 1,
+            lastErrorTime: Date.now(),
+            isBlocked: false,
+        });
+    }
+}
+
+function freeAxiosBlackListSources() {
+    for (let i = 0; i < axiosBlackListSources.length; i++) {
+        //free source after 5 minute
+        if (Date.now() - axiosBlackListSources[i].lastErrorTime >= 5 * 60 * 1000) {
+            axiosBlackListSources[i].errorCounter = 0;
+            axiosBlackListSources[i].lastErrorTime = 0;
+            axiosBlackListSources[i].isBlocked = false;
+        }
+    }
 }

@@ -206,7 +206,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         await refreshAxiosSourcesObject();
         freeAxiosBlackListSources();
         let sourceData = blackListSources.find(item => item.sourceName === sourceName);
-        if (sourceData && sourceData.isBlacklisted) {
+        if (sourceData && sourceData.isBlocked) {
             result.isAxiosCalled = false;
             return result;
         }
@@ -325,16 +325,21 @@ async function refreshAxiosSourcesObject() {
     }
 }
 
+export async function getAxiosSourcesObject() {
+    await refreshAxiosSourcesObject();
+    return sourcesObject;
+}
+
 function addSourceToAxiosBlackList(sourceName) {
     let sourceData = blackListSources.find(item => item.sourceName === sourceName);
     if (sourceData) {
-        sourceData.lastError = Date.now();
-        sourceData.isBlacklisted = true;
+        sourceData.lastErrorTime = Date.now();
+        sourceData.isBlocked = true;
     } else {
         blackListSources.push({
             sourceName: sourceName,
-            lastError: Date.now(),
-            isBlacklisted: true,
+            lastErrorTime: Date.now(),
+            isBlocked: true,
             linksCount: 0,
         });
     }
@@ -343,6 +348,6 @@ function addSourceToAxiosBlackList(sourceName) {
 function freeAxiosBlackListSources() {
     for (let i = 0; i < blackListSources.length; i++) {
         //free source after 3 hour
-        blackListSources[i].isBlacklisted = (Date.now() - blackListSources[i].lastError) < 3 * 60 * 60 * 1000;
+        blackListSources[i].isBlocked = (Date.now() - blackListSources[i].lastErrorTime) < 3 * 60 * 60 * 1000;
     }
 }
