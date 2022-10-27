@@ -72,6 +72,9 @@ async function search_title(link, i) {
                 let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
+                    if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
+                        type = 'anime_' + type;
+                    }
                     if (!year) {
                         year = fixYear($2);
                     }

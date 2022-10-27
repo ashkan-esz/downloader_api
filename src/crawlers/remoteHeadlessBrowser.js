@@ -69,10 +69,10 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         selectedBrowser.apiCallCount++;
         let sourceCookies = sourcesObject
-            ? sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
+            ? "&sourceCookies=" + sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
             : "";
         let response = await axios.get(
-            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}&sourceCookies=${sourceCookies}`
+            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}` + sourceCookies
         );
         selectedBrowser.apiCallCount--;
 
