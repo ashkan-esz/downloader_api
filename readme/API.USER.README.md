@@ -217,14 +217,14 @@ Future<String> logInUser(String userName, String password) async {
 ### GET /users/myProfile
 > return users profile data. ([profile schema](SCHEMA.README.md#Profile))
 
-Example: https://downloader-node-api.herokuapp.com/users/myProfile?testUser=true
+Example: https://download-node-api.onrender.com/users/myProfile?testUser=true
 
 <br/>
 
 ### GET /users/activeSessions
 > return users current session and other active sections. ([session schema](SCHEMA.README.md#Session))
 
-Example: https://downloader-node-api.herokuapp.com/users/activeSessions?testUser=true
+Example: https://download-node-api.onrender.com/users/activeSessions?testUser=true
 
 <br/>
 
@@ -235,7 +235,7 @@ Example: https://downloader-node-api.herokuapp.com/users/activeSessions?testUser
 >
 > **NOTE: limited to 2 call per minute**
 
-Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUser=true
+Example: https://download-node-api.onrender.com/users/sendVerifyEmail?testUser=true
 
 <br/>
 
@@ -244,7 +244,7 @@ Example: https://downloader-node-api.herokuapp.com/users/sendVerifyEmail?testUse
 > 
 > **NOTE: limited to 2 call per minute**
 
-Example: https://downloader-node-api.herokuapp.com/users/verifyEmail/tokkkkken?testUser=true
+Example: https://download-node-api.onrender.com/users/verifyEmail/tokkkkken?testUser=true
 
 <br/>
 

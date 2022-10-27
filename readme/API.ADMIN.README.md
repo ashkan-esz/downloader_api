@@ -18,7 +18,7 @@
 
 > do not use this
 
-Example: https://downloader-node-api.herokuapp.com/crawler/{PASSWORD}/?sourceName=digimoviez&mode=0&handleDomainChange=false
+Example: https://download-node-api.onrender.com/crawler/{PASSWORD}/?sourceName=digimoviez&mode=0&handleDomainChange=false
 
 additional parameters:
 
@@ -35,7 +35,7 @@ additional parameters:
 
 > do not use this
 
-Example: https://downloader-node-api.herokuapp.com/crawler/domainChange/{PASSWORD}
+Example: https://download-node-api.onrender.com/crawler/domainChange/{PASSWORD}
 
 <br />
 
