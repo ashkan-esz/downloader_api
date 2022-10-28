@@ -817,6 +817,7 @@ function checkNeedRetryWithSleep(error, retryWithSleepCounter) {
             error.message === 'S3ServiceException: UnknownError' ||
             error.message === '403: UnknownError' ||
             error.message === '504: UnknownError' ||
+            error.message === 'RequestTimeTooSkewed: UnknownError' ||
             (error.response && (error.response.status === 429 || error.response.status >= 500))
         )
     );

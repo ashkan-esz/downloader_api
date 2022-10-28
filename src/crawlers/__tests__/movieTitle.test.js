@@ -97,6 +97,10 @@ test('test function getTitleAndYear -duplicate movie numbers', () => {
         title: 'homeschool musical class of 2020',
         year: '2020',
     });
+    expect(getTitleAndYear('دانلود انیمه Mob Psycho 100 موب سایکو 100', '', 'anime_serial')).toStrictEqual({
+        title: 'mob psycho',
+        year: '',
+    });
 });
 
 

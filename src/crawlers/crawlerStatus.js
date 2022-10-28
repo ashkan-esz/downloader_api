@@ -30,6 +30,8 @@ export function checkIsCrawling() {
     return crawlerStatus.isCrawling;
 }
 
+//todo : add source page number and handling titles to crawlerStatus
+
 export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
     crawlerStatus.crawlingSource = {
         name: sourceName,

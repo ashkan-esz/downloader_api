@@ -314,6 +314,7 @@ function handleDuplicateNumbers(title_array) {
         //case: [ 'district', 'b13', '13', '2004' ] ---> [ 'district', 'b13', '2004' ]
         //case: [ 'halloween', 'h20', '20', 'years', 'later', '20', '1998' ] ---> [ 'halloween', 'h20', '20', 'years', 'later', '1998' ]
         //case: [ 'salo', 'or', 'the', '120', 'days', 'of', 'sodom', '120', '1975' ] ---> [ 'salo', 'or', 'the', '120', 'days', 'of', 'sodom', '1975' ]
+        //case: [ 'mob', 'psycho', '100', '100' ] ---> [ 'mob', 'psycho', '100' ]
 
         let second = title_array[1];
         let third = title_array[2];
@@ -347,6 +348,10 @@ function handleDuplicateNumbers(title_array) {
                     title_array.push(last1); // 1975
                 }
             }
+        } else if (last1 === last2 && !checkValidYear(last1) && !title_array.slice(0, title_array.length - 2).find(item => !isNaN(item))) {
+            //case: [ 'mob', 'psycho', '100', '100' ] ---> [ 'mob', 'psycho', '100' ]
+            title_array.pop();
+            title_array.pop();
         }
     }
     return title_array;

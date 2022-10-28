@@ -56,12 +56,14 @@ for example ::
         serial_page_count: 66,
         lastCrawlDate: 2022-09-14T18:37:22.403Z,
         crawlCycle: 3,
+        cookies: [],
     },
     film2movie: {
         movie_url: "https://www.film2movie.asia/page/",
         page_count: 1488,
         lastCrawlDate: 2022-09-10T18:37:22.403Z,
         crawlCycle: 0,
+        cookies: [],
     },
     ....
     ....
