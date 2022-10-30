@@ -306,11 +306,11 @@ async function handle_OMDB_ApiCall(url) {
                     (error.response && error.response.data.Error === 'Request limit reached!') ||
                     (error.response && error.response.status === 401)
                 ) {
-                    if (error.response && error.response.status === 401 && key) {
+                    if (error.response.data.Error && error.response.data.Error !== 'Request limit reached!' && key) {
                         if (config.nodeEnv === 'dev') {
-                            console.log(`ERROR: Invalid omdb api key: ${key.apiKey}`);
+                            console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                         } else {
-                            Sentry.captureMessage(`Invalid omdb api key: ${key.apiKey}`);
+                            Sentry.captureMessage(`Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                         }
                         key.limit = 0;
                     }

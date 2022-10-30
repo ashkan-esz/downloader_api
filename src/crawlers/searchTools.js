@@ -7,7 +7,7 @@ import {check_download_link, getMatchCases, check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
 import {getSeasonEpisode} from "./utils.js";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 
@@ -237,9 +237,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 $ = cacheResult.$;
                 links = cacheResult.links;
                 checkGoogleCache = true;
-                if (!error.response || error.response.status !== 404) {
-                    await saveError(error);
-                }
+                saveErrorIfNeeded(error);
             }
         }
 

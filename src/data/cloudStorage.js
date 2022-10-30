@@ -15,7 +15,7 @@ import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 
 const s3 = new S3Client({
@@ -132,10 +132,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
             await saveError(error);
             return null;
         }
-        if ((!error.response || error.response.status !== 404) || !originalUrl.includes('cdn.myanimelist.')) {
-            //do not save myanimelist 404 images errors
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return null;
     }
 }
@@ -266,10 +263,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await uploadTitlePosterToS3(title, type, year, originalUrl, retryCounter, forceUpload, retryWithSleepCounter);
         }
-        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
-            //do not save 404|ENOTFOUND images errors
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return null;
     }
 }
@@ -856,9 +850,7 @@ async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
             await new Promise((resolve => setTimeout(resolve, 1000)));
             return await getFileSize(url, retryCounter, retryWithSleepCounter);
         }
-        if (!error.response || error.response.status !== 404) {
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return 0;
     }
 }

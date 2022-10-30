@@ -3,7 +3,7 @@ import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
 import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
     try {
@@ -49,7 +49,7 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
             posterExist = true;
         }
         //add thumbnail
-        if (!db_data.posters[i].thumbnail) {
+        if (!db_data.posters[i].thumbnail && db_data.posters[i].info !== 's3Poster') {
             let thumbnailData = await getImageThumbnail(db_data.posters[i].url, true);
             if (thumbnailData) {
                 posterUpdated = true;
@@ -60,7 +60,7 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
             }
         }
         //add size
-        if (db_data.posters[i].size === 0) {
+        if (db_data.posters[i].size === 0 && db_data.posters[i].info !== 's3Poster') {
             db_data.posters[i].size = await getFileSize(db_data.posters[i].url);
             posterUpdated = true;
         }
@@ -88,21 +88,10 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
     let prevLength = db_data.posters.length;
     let s3PosterUpdate = false;
     if (db_data.poster_s3) {
-        //s3Poster doesn't exist in posters array
         let prevS3Poster = db_data.posters.find(item => item.info === 's3Poster');
         if (!prevS3Poster) {
-            s3PosterUpdate = true;
-            let thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
-            let thumbnail = thumbnailData ? thumbnailData.dataURIBase64 : '';
-            db_data.posters.push({
-                url: db_data.poster_s3.url,
-                info: 's3Poster',
-                size: db_data.poster_s3.size,
-                vpnStatus: db_data.poster_s3.vpnStatus,
-                thumbnail: thumbnail,
-            });
-        } else {
-            //check s3Poster updated/changed or need update
+            //s3Poster doesn't exist in posters array
+            posterUpdated = true;
             if (!db_data.poster_s3.thumbnail) {
                 let thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
                 if (thumbnailData) {
@@ -110,6 +99,35 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
                     db_data.poster_s3.thumbnail = thumbnailData.dataURIBase64;
                     if (!db_data.poster_s3.size) {
                         db_data.poster_s3.size = thumbnailData.fileSize;
+                    }
+                }
+            }
+            db_data.posters.push({
+                url: db_data.poster_s3.url,
+                info: 's3Poster',
+                size: db_data.poster_s3.size,
+                vpnStatus: db_data.poster_s3.vpnStatus,
+                thumbnail: db_data.poster_s3.thumbnail,
+            });
+        } else {
+            //check s3Poster updated/changed or need update
+            if (!db_data.poster_s3.thumbnail) {
+                let findPoster = db_data.posters.find(item => item.url === db_data.poster_s3.originalUrl);
+                if (findPoster && findPoster.thumbnail) {
+                    s3PosterUpdate = true;
+                    db_data.poster_s3.thumbnail = findPoster.thumbnail;
+                    if (!db_data.poster_s3.size && findPoster.size && findPoster.size < 1024 * 1024) {
+                        db_data.poster_s3.size = findPoster.size;
+                        db_data.poster_s3.originalSize = findPoster.size;
+                    }
+                } else {
+                    let thumbnailData = await getImageThumbnail(db_data.poster_s3.url, true);
+                    if (thumbnailData) {
+                        s3PosterUpdate = true;
+                        db_data.poster_s3.thumbnail = thumbnailData.dataURIBase64;
+                        if (!db_data.poster_s3.size) {
+                            db_data.poster_s3.size = thumbnailData.fileSize;
+                        }
                     }
                 }
             }
@@ -128,9 +146,9 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
         }
     }
     db_data.posters = removeDuplicateLinks(db_data.posters);
-    let prevSort = db_data.posters.join(',');
+    let prevSort = db_data.posters.map(item => item.url).join(',');
     db_data.posters = sortPosters(db_data.posters);
-    let newSort = db_data.posters.join(',');
+    let newSort = db_data.posters.map(item => item.url).join(',');
     return (posterUpdated || !posterExist || s3PosterUpdate || prevLength !== db_data.posters.length || prevSort !== newSort);
 }
 
@@ -163,9 +181,9 @@ function handleTrailerUpdate(db_data, site_trailers) {
     }
     if (db_data.trailers !== null) {
         db_data.trailers = removeDuplicateLinks(db_data.trailers);
-        let prevSort = db_data.trailers.join(',');
+        let prevSort = db_data.trailers.map(item => item.url).join(',');
         db_data.trailers = sortTrailers(db_data.trailers);
-        let newSort = db_data.trailers.join(',');
+        let newSort = db_data.trailers.map(item => item.url).join(',');
         if (prevSort !== newSort) {
             trailersChanged = true;
         }
@@ -182,6 +200,16 @@ export function sortPosters(posters) {
                 sortedPosters.push(posters[j]);
             }
         }
+    }
+    if (
+        sortedPosters.length > 1 &&
+        sortedPosters[0].vpnStatus === 'allOk' && sortedPosters[1].vpnStatus === 'allOk' &&
+        !sortedPosters[0].info.includes('s3Poster') && !sortedPosters[1].info.includes('s3Poster') &&
+        (sortedPosters[0].size - sortedPosters[1].size) > 200 * 1024 //200kb
+    ) {
+        let temp = sortedPosters[0];
+        sortedPosters[0] = sortedPosters[1];
+        sortedPosters[1] = temp;
     }
     return sortedPosters;
 }
@@ -216,11 +244,7 @@ async function getFileSize(url, retryCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await getFileSize(url, retryCounter);
         }
-
-        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
-            //do not save 404|ENOTFOUND images errors
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return 0;
     }
 }

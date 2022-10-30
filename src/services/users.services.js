@@ -13,6 +13,12 @@ import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 
+//if (data.changedPasswordAfter(decoded.iat)) {
+// 			return res.status(401).json({
+// 				message: 'User recently changed password! Please log in again',
+// 			});
+// 		}
+
 //todo : remove account
 //todo : forget password
 //todo : edit profile data

@@ -1,27 +1,23 @@
 import config from "../config/index.js";
 import axios from "axios";
 import sharp from "sharp";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 export async function compressImage(responseData) {
     let dataBuffer = responseData;
-    // reduce image size if size > 2MB
-    if (responseData.length > 2 * 1024 * 1024) {
+    // reduce image size if size > 1MB
+    if (responseData.length > 1024 * 1024) {
         let tempQuality = 50 - (Math.ceil(responseData.length / (1024 * 1024)) - 2) * 5;
         let sharpQuality = Math.max(Math.min(35, tempQuality), 10);
-        let temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
+        let temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
         let counter = 0;
-        while ((temp.length / (1024 * 1024)) > 2 && counter < 4 && sharpQuality > 10) {
+        while ((temp.length / (1024 * 1024)) > 1 && counter < 4 && sharpQuality > 10) {
             counter++;
             sharpQuality -= 20;
             if (sharpQuality <= 0) {
                 sharpQuality = 10;
             }
-            if (counter > 1) {
-                temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
-            } else {
-                temp = await sharp(responseData).jpeg({quality: sharpQuality}).toBuffer();
-            }
+            temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
         }
         dataBuffer = temp;
     } else {
@@ -96,11 +92,7 @@ async function downloadImage(url, retryCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await downloadImage(url, retryCounter);
         }
-
-        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
-            //do not save 404|ENOTFOUND images errors
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return null;
     }
 }

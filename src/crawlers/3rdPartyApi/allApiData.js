@@ -8,7 +8,7 @@ import {sortPosters} from "../subUpdates.js";
 import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
-import {saveError} from "../../error/saveError.js";
+import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
 export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName) {
@@ -243,7 +243,7 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
         }
         if (newPosterSize > 0) {
             let diff = ((newPosterSize - prevS3Poster.size) / prevS3Poster.size) * 100;
-            if (diff > 25 && newPosterSize < 1.5 * 1024 * 1024) { //1.5 MB
+            if (diff > 25 && newPosterSize < 700 * 1024) { //700kb
                 return true;
             }
         }
@@ -256,11 +256,7 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
             newPosterUrl = newPosterUrl.replace(fileName, encodeURIComponent(fileName));
             return await checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3Poster, retryCounter);
         }
-
-        if ((!error.response || error.response.status !== 404) && error.code !== 'ENOTFOUND') {
-            //do not save 404|ENOTFOUND images errors
-            saveError(error);
-        }
+        saveErrorIfNeeded(error);
         return false;
     }
 }

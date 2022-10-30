@@ -69,8 +69,9 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         selectedBrowser.apiCallCount++;
         let sourceCookies = sourcesObject
-            ? "&sourceCookies=" + sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
+            ? sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
             : "";
+        sourceCookies = sourceCookies ? ("&sourceCookies=" + sourceCookies) : "";
         let response = await axios.get(
             `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}` + sourceCookies
         );
@@ -211,7 +212,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
             return result;
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
-        let timeout = sourceAuthStatus === 'login-cookie' ? 5000 : 3000;
+        let timeout = sourceAuthStatus === 'login-cookie' ? 6000 : 3000;
         let response = await axios.get(url, {
             timeout: timeout,
             headers: {
