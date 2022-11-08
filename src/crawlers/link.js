@@ -12,15 +12,17 @@ export function check_download_link(original_link, matchCases, type) {
         }
 
         if (type.includes('movie')) {
-            let decodedLink = getDecodedLink(link);
+            let decodedLink = getDecodedLink(link).replace(/\s+/g, '.');
             if (
                 link.includes(matchCases.case1) ||
-                link.replace(/m/g, 'n').includes(matchCases.case1.replace(/m/g, 'n')) ||
+                decodedLink.replace(/m/g, 'n').includes(matchCases.case1.replace(/m/g, 'n')) ||
+                decodedLink.replace(/y/g, 'i').includes(matchCases.case1.replace(/y/g, 'i')) ||
+                decodedLink.replace(/j/g, 'g').includes(matchCases.case1.replace(/j/g, 'g')) ||
                 link.includes(matchCases.case2) ||
                 link.includes(matchCases.case3) ||
                 link.includes(matchCases.case4) ||
                 decodedLink.includes(matchCases.case1) ||
-                decodedLink.includes(matchCases.case1.replace(/\./g, ' ')) ||
+                decodedLink.includes(matchCases.case1.replace('.part', '')) ||
                 link.split('/').pop().replace(/\.the\.movie|[.%s]/g, '').includes(matchCases.case1.replace(/[.%s]/g, '')) ||
                 link.replace(/\.the\.movie|the\.|at\.|\.special/g, '').includes(matchCases.case1.replace(/\.the\.movie|the\.|at\.|\.special/g, '')) ||
                 link.includes(matchCases.case1.replace(/\./g, '')) ||
@@ -32,9 +34,7 @@ export function check_download_link(original_link, matchCases, type) {
                 link.includes(matchCases.case1.replace('el', 'the')) ||
                 link.includes(matchCases.case1.replace('.and', '')) ||
                 link.replace('.and', '').includes(matchCases.case1) ||
-                link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).toString().replace(/\s/g, '.')) ||
-                link.includes(matchCases.case1.replace('demon.slayer', 'kimetsu.no.yaiba')) ||
-                link.includes(matchCases.case1.replace('demon.slayer', 'kimetsu.no.yaiba').replace('.the.movie', ''))
+                link.includes(wordsToNumbers(matchCases.case1.replace(/\./g, ' ')).toString().replace(/\s/g, '.'))
             ) {
                 return original_link;
             }

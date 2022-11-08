@@ -45,8 +45,8 @@ async function search_title(link, i, $, url) {
             let year;
             let pageLink = link.attr('href');
             let type = getType(title);
-            if (type === 'anime_movie' && url.includes('/series/') ){
-                type = 'anime_serial';
+            if (type.includes('movie') && url.includes('/series/')) {
+                type = type.replace('movie', 'serial');
             }
             if (config.nodeEnv === 'dev') {
                 console.log(`avamovie/${type}/${i}/${title}  ========>  `);

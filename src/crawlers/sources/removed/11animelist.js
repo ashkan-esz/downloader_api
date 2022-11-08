@@ -44,8 +44,9 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, null,
-                    extraSearchMatch, extraSearch_getFileData, null, extraChecker);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                    getFileData, null, extraChecker, false,
+                    extraSearchMatch, extraSearch_getFileData);
 
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;

@@ -47,7 +47,8 @@ async function search_title(link, i) {
 
             if (title !== '') {
                 type = fixWrongType(title, type);
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, null,
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                    getFileData, null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;

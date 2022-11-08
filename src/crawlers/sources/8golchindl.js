@@ -5,17 +5,21 @@ import {
     getType,
     checkDubbed,
     checkHardSub,
-    removeDuplicateLinks
+    removeDuplicateLinks,
+    getDecodedLink,
+    replacePersianNumbers,
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
-    purgeEncoderText,
-    purgeSizeText,
-    purgeQualityText,
+    encodersRegex,
     fixLinkInfo,
     fixLinkInfoOrder,
     linkInfoRegex,
-    releaseRegex
+    purgeEncoderText,
+    purgeQualityText,
+    purgeSizeText,
+    releaseRegex,
+    specialWords
 } from "../linkInfoUtils.js";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db.js";
@@ -47,11 +51,12 @@ async function search_title(link, i, $) {
             if (
                 title.includes('انتخابات') ||
                 title.includes('مجله لیگ قهرمانان') ||
-                title.includes('جومونگ')
+                title.includes('جومونگ') ||
+                title.includes('دانلود بازی')
             ) {
                 return;
             }
-            title = title.replace('پلی استیشن 5', '');
+            title = title.replace('پلی استیشن 5', '').replace(/\(.+\)$/, '');
             let isCeremony = title.includes('دانلود مراسم');
             let isCollection = title.includes('کالکشن فیلم') || title.includes('کالکشن انیمیشن');
             ({title, year} = getTitleAndYear(title, year, type));
@@ -61,13 +66,18 @@ async function search_title(link, i, $) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                    getFileData, null, null, false,
+                    extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
+                    type = fixAnimeType($2, type);
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                            getFileData, null, null, false,
+                            extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -75,7 +85,9 @@ async function search_title(link, i, $) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                            getFileData, null, null, false,
+                            extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -131,6 +143,22 @@ function fixYear($, link) {
     } catch (error) {
         saveError(error);
         return '';
+    }
+}
+
+function fixAnimeType($, type) {
+    try {
+        if (type.includes('anime')) {
+            return type;
+        }
+        let details = $('.details')?.text().toLowerCase() || '';
+        if (details.includes('انیمیشن') && (details.includes('کشور سازنده :japan') || details.includes('زبان :japan'))) {
+            return 'anime_' + type;
+        }
+        return type;
+    } catch (error) {
+        saveError(error);
+        return type;
     }
 }
 
@@ -246,7 +274,7 @@ function getFileData_serial($, link) {
     let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
     hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
 
-    let info = [quality, bit10, encoder, hardSub, dubbed].filter(value => value).join('.')
+    let info = [quality, bit10, encoder, hardSub, dubbed].filter(value => value).join('.').replace(/\.+/g, '.');
     info = fixLinkInfo(info, linkHref);
     info = fixLinkInfoOrder(info);
     info = info
@@ -378,15 +406,197 @@ function getMovieInfoText($, link) {
     return infoText;
 }
 
+//------------------------------------------------
+//------------------------------------------------
+
+function extraSearchMatch($, link, title) {
+    try {
+        let linkHref = replacePersianNumbers(getDecodedLink($(link).attr('href'))).toLowerCase();
+
+        if (linkHref.includes('/sub/download/') ||
+            linkHref.includes('/movie_cats/') ||
+            linkHref.includes('/sound/') ||
+            linkHref.includes('/audio/') ||
+            linkHref.match(/mka|mkv|mp4|avi|mov|flv|wmv/) ||
+            linkHref.match(/((\/sub)|(\.(mkv|zip))|([?#](v-c|comment)[=_-]\d+))$/)) {
+            return false;
+        }
+        if (
+            linkHref.match(/\/((\d\d\d+p(\s?bd)?)|(specials?))$/i) ||
+            replacePersianNumbers($(link).text()).match(/\d+\s*&\s*\d+/i)
+        ) {
+            return true;
+        }
+
+        title = title.replace(/\*/g, '\\*');
+        return (
+            !!linkHref.match(/\/s\d+\/(.*\/?((\d{3,4}p(\.x265)?)|(DVDRip))\/)?$/i) ||
+            !!linkHref.match(new RegExp(`${title}\\/\\d+p(\\.x265)?\\/`)) ||
+            !!linkHref.match(new RegExp(`${title.replace(/\s+/g, '.')}\\/\\d+p(\\.x265)?\\/`)) ||
+            !!linkHref.match(new RegExp(`\\/serial\\/${title.replace(/\s+/g, '.')}\\/$`)) ||
+            !!linkHref.match(/\/(duble|dubbed)\//i) ||
+            !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d+-(\d+)?\/(\d\d\d\d?p(\.x265)?\/)?/i) ||
+            !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d\d\d\d?p(\.x265)?\/?/i)
+        );
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
+}
+
+function extraSearch_getFileData($, link, type, sourceLinkData, title) {
+    try {
+        let linkHref = getDecodedLink($(link).attr('href'));
+        let pageHref = $(sourceLinkData.link).attr('href');
+        let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+        let bit10 = linkHref.includes('10bit') ? '10bit' : '';
+
+        let quality = getQualityFromLinkHref(linkHref, title);
+        quality = removeEpisodeNameFromQuality(quality);
+
+        quality = purgeQualityText(quality)
+            .replace(/(\.nf)?(\.ss)?\.(((Dub)?Golchi?n\.?dl?n?(fa)?(\.\d)?\d?)|RMTGolchindl|GolchinMusics|Golchuindl)(_\d)?/gi, '')
+            .replace(/(\.nf)?(\.ss)?\.(NightMovie|AvaMovie|Sas?ber(Fun)?|ValaMovi?e|DayMovie|Bia2M|MrMovie|(filmb(\.in)?)|Amazon|net|BWBP+|2CH)(_\d)?/gi, '')
+            .replace('REAL.', '')
+            .replace('DD%202.0.H.264monkee', 'monkee')
+            .replace('[AioFilm.com]', '');
+
+        let hardSub = quality.match(/softsub|hardsub/gi) ||
+            linkHref.match(/softsub|hardsub/gi) ||
+            pageHref.match(/softsub|hardsub/gi);
+        hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+
+        let info = [quality, bit10, hardSub, dubbed].filter(value => value).join('.')
+        info = fixLinkInfo(info, linkHref);
+        info = fixLinkInfoOrder(info);
+        info = info
+            .replace('HardSub.dubbed', 'dubbed')
+            .replace(/\.Www\.DownloadSpeed\.iR/i, '')
+            .replace('.Golchindl', '')
+            .replace(/\.ATVP\.GalaxyTV/i, '.GalaxyTV')
+            .replace(/\.DIMENSION\.pahe/i, '');
+        if (!info.match(/^\d\d\d\d?p/)) {
+            let t = info;
+            info = info.replace(/.+(?=(\d\d\d\dp))/, '');
+            if (t === info) {
+                info = info.replace(/.+(?=(\d\d\dp))/, '');
+            }
+        }
+        if (!hardSub && pageHref.match(/duble/i) && !info.includes('dubbed')) {
+            info = info + '.dubbed';
+        }
+        let sizeMatch = info.match(/\.\d+MB(?=(\.|$))/i);
+        if (sizeMatch) {
+            info = info.replace(new RegExp('\\' + sizeMatch[0], 'gi'), '');
+            info = info + ' - ' + sizeMatch[0].replace('.', '');
+        }
+        if (info.includes('https')) {
+            return 'ignore';
+        }
+        return info;
+    } catch (error) {
+        saveError(error);
+        return 'ignore';
+    }
+}
+
+function getQualityFromLinkHref(linkHref, title) {
+    let splitLinkHref = linkHref
+        .replace(/\s+/g, '.')
+        .replace(/(\.-\.)/, '.')
+        .replace(/\.+/g, '.')
+        .replace(/,/g, '')
+        .split('.');
+    splitLinkHref.pop();
+
+    let seasonEpisodeIndex = splitLinkHref.findIndex((value => value.match(/(?<!\/)s\d+[._-]?(e\d+)?/gi) || value.match(/Ep?\d+/i)));
+    if (seasonEpisodeIndex === -1) {
+        let numbers = splitLinkHref.filter(item => !isNaN(item));
+        if (numbers.length === 1) {
+            seasonEpisodeIndex = splitLinkHref.indexOf(numbers[0]);
+        }
+    }
+
+    if (seasonEpisodeIndex === splitLinkHref.length - 1) {
+        seasonEpisodeIndex--;
+    }
+
+    return splitLinkHref.slice(seasonEpisodeIndex + 1).join('.')
+        .replace(/\d\d\d\d?\.p/, res => res.replace('.p', 'p.'))
+        .replace(/^E?\d+\./i, '')
+        .replace('.HardSub', '')
+        .replace('.SoftSub', '')
+        .replace('.netDUBLE', '.DUBLE')
+        .replace(/\.(DUBE|DIBLE)/i, '.DUBLE')
+        .replace('20x264', '')
+        .replace(/\.Senario(?=(\.|$))/i, '')
+        .replace(/\d\d\d\d?p(?!(\.|\s|$))/i, res => res.replace('p', 'p.'))
+        .replace(/(^|\.)s\d+e\d+/i, '')
+        .replace(new RegExp('^' + title.replace(/\s+/g, '.'), 'i'), '')
+        .replace(new RegExp('[.\\/]' + title.replace(/\s+/g, '.'), 'i'), '')
+        .replace(/\d\d\d\d?p_?\d/, res => res.replace(/_?\d$/, ''))
+        .replace(/\.x?264-/i, '.x264.')
+        .replace(/(^|\.)10bit/i, '')
+        .replace(/\.HQ(?=(\.|$))/i, '')
+        .replace(/\.Ohys[.\-]Raws/i, '')
+        .replace('.NEW', '')
+        .replace(/AC3\.6CH/i, '6CH')
+        .replace(/\.5\.1ch/i, '')
+        .replace(/ITALIAN|i_c|pcok|(O\.Ye\.of\.Little\.Faith\.Father\.NF\.)/i, '')
+        .replace(/\.(STAN|Keyword|TagName|((ctu|real|proper|in|GMEB)(?=(\.|$))))/gi, '')
+        .replace('AHDTV', 'HDTV')
+        .replace(/\.[876]ch/i, res => res.toUpperCase())
+        .replace(/\.Zaban\.Asli/i, '')
+        .replace('.(Kor)', '')
+        .replace(/(^|\.)((Fifteen\.Minutes\.of\.Shame)|(The\.Gift)|(Beyond\.the\.Aquila\.Rift))/i, '')
+        .replace(/\.?\(Film2serial\.ir\)/i, '')
+        .replace(/[_\-]/g, '.').replace(/\.+/g, '.').replace(/^\./, '');
+}
+
+function removeEpisodeNameFromQuality(quality) {
+    quality = quality.replace(/(^|\.)(silence|Joyeux|problème|loki)/gi, '');
+    let tempQuality = quality.replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special)|(Part\.\d+))/gi, '');
+    const specialWordsRegex = new RegExp(`(\\d\\d\\d\\d?p)|(${releaseRegex.source})|(${encodersRegex.source})|(${specialWords.source})`);
+
+    if (tempQuality && !tempQuality.match(specialWordsRegex)) {
+        let splitTempQuality = tempQuality.split('.');
+        for (let i = 0; i < splitTempQuality.length; i++) {
+            quality = quality.replace(splitTempQuality[i], '');
+        }
+        quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
+    } else {
+        let tempQuality2 = quality.split(/\.\d\d\d\d?p/)[0].replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special)|(Part\.\d+))/gi, '');
+        if (tempQuality2 && tempQuality2.split('.').length > 0 && !tempQuality2.match(specialWordsRegex)) {
+            let splitTempQuality = tempQuality2.split('.');
+            for (let i = 0; i < splitTempQuality.length; i++) {
+                quality = quality.replace(splitTempQuality[i], '');
+            }
+            quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
+        }
+    }
+    return quality;
+}
+
+//------------------------------------------------
+//------------------------------------------------
+
 function printLinksWithBadInfo(downloadLinks) {
     const golchindlMovieLinkInfoRegex = new RegExp([
         /^\d\d\d\d?p/,
+        /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
+        /(\.Episode\(\d\d?\.5\))?/,
         /(\.x265(\.10bit)?)?/,
+        /(\.(Special|OVA|NCED|NCOP)(_\d)?)?/,
         /(\.Summary)?/,
         /(\.Oscar(\.\d\d\d\d)?)?/,
+        /(\.REPACK)?/,
         new RegExp(`(\\.(${releaseRegex.source}))?`),
+        /(\.[876]CH)?/,
+        new RegExp(`(\\.(${encodersRegex.source}))?`),
+        /(\.[876]CH)?/,
         /(\.(HardSub|SoftSub|dubbed))?/,
         /(\.\s\(.+\))?/,
+        /(\.\d+[A-Da-d])?/,
         /( - ((\d\d\d?MB)|(\d(\.\d\d?)?GB)))?$/,
     ].map(item => item.source).join(''));
 
@@ -395,7 +605,7 @@ function printLinksWithBadInfo(downloadLinks) {
         !item.info.match(golchindlMovieLinkInfoRegex)
     );
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 47 || item.episode > 400);
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 47 || item.episode > 1300);
 
     console.log([...badLinks, ...badSeasonEpisode].map(item => {
         return ({

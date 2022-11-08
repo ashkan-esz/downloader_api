@@ -694,7 +694,7 @@ function printLinksWithBadInfo(downloadLinks) {
         !item.info.match(bia2animeLinkInfoRegex)
     );
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 1100);
+    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 1300);
 
     console.log([...badLinks, ...badSeasonEpisode].map(item => {
         return ({

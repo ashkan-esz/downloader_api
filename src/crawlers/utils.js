@@ -4,7 +4,7 @@ import {saveError} from "../error/saveError.js";
 export function replaceSpecialCharacters(input) {
     return input
         .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]/g, ' ')
-        .replace(/[”“"'’‘٫.:?¿!#%,()~♥△Ωωψ‎]/g, '')
+        .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
@@ -229,6 +229,32 @@ export function getSeasonEpisode(input) {
             }
             if (ovaMatch) {
                 episode = ovaMatch.pop().replace(/^(Special|OVA|NCED|NCOP)(E?)(\.?)/gi, '').split('.')[0];
+            }
+        }
+
+        if (season === 1 && episode === 0) {
+            let epMatch = input.match(/[.\s]ep\d+[.\s]/);
+            if (epMatch && epMatch.length === 1) {
+                season = '1';
+                episode = epMatch[0].match(/\d+/)[0];
+            }
+        }
+
+        if (season === 1 && episode === 0) {
+            let decodeLink = getDecodedLink(input);
+            if (input !== decodeLink) {
+                let seMatch = decodeLink.match(/s\d+\s*([-.])\s*e?\d+/gi);
+                if (seMatch) {
+                    let se = seMatch.pop().split(/[-.]/);
+                    season = se[0].toLowerCase().replace('s', '').trim();
+                    episode = se[1].toLowerCase().replace('e', '').trim();
+                } else {
+                    let episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[]/gi);
+                    if (episodeMatch && episodeMatch.length === 1) {
+                        season = '1';
+                        episode = episodeMatch[0].match(/\d+/)[0];
+                    }
+                }
             }
         }
         season = Number(season);

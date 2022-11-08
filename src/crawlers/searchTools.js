@@ -77,8 +77,8 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
 
 export async function search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus,
                                            title, page_link, type, getFileData, getQualitySample = null,
-                                           extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null,
-                                           extraChecker = null, getSeasonEpisodeFromInfo = false) {
+                                           extraChecker = null, getSeasonEpisodeFromInfo = false,
+                                           extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null) {
     try {
         let {
             $,
@@ -94,10 +94,13 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
         let downloadLinks = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
+            if (!link) {
+                continue;
+            }
 
-            if (link && (
-                (sourceLinkData || (extraChecker && extraChecker($, links[j], title, type))) ||
-                (check_format(link, type) && check_download_link(link, matchCases, type)))
+            if (
+                (extraChecker && extraChecker($, links[j], title, type)) ||
+                (check_format(link, type) && check_download_link(link, matchCases, type))
             ) {
                 let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
@@ -128,16 +131,23 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
                         season, episode,
                     });
                 }
-            } else if (link && !sourceLinkData && extraSearchMatch && extraSearchMatch($, links[j], title, type)) {
+            } else if (
+                (!sourceLinkData && extraSearchMatch && extraSearchMatch($, links[j], title, type)) ||
+                (sourceLinkData && sourceLinkData.searchLayer < 2 && link.match(/^\d\d\d\d?p\/$/i))
+            ) {
                 if (extraSearchLinks.includes(link)) {
                     continue;
                 }
                 extraSearchLinks.push(link);
-                let resultPromise = search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, link, type, extraSearch_getFileData, getQualitySample,
+
+                let newPageLink = sourceLinkData ? (page_link + link) : link;
+                let resultPromise = search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus,
+                    title, newPageLink, type, extraSearch_getFileData, getQualitySample, extraChecker, false,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
                         link: links[j],
-                        sourceLink: page_link
+                        sourceLink: page_link,
+                        searchLayer: sourceLinkData ? sourceLinkData.searchLayer + 1 : 1,
                     }).then(result => {
                     if (result) {
                         let resultLinks = result.downloadLinks;
@@ -153,7 +163,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
                     }
                 });
                 promiseArray.push(resultPromise);
-                if (promiseArray.length > 5) {
+                if (promiseArray.length > 10) {
                     await Promise.allSettled(promiseArray);
                     promiseArray = [];
                 }
@@ -181,7 +191,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
 
         try {
             let pageData = null;
-            if (needHeadlessBrowser && (!sourceLinkData || sourceName !== 'animelist')) {
+            if (needHeadlessBrowser && !sourceLinkData) {
                 pageData = await getPageData(url, sourceName, sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
@@ -194,7 +204,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
             if (!pageData || (!pageData.pageContent && !pageData.isAxiosCalled)) {
                 freeAxiosBlackListSources();
                 let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceName);
-                if (sourceData && sourceData.isBlocked && (!sourceLinkData || sourceName !== 'animelist') && pageType === 'movieDataPage') {
+                if (sourceData && sourceData.isBlocked && !sourceLinkData && pageType === 'movieDataPage') {
                     $ = null;
                     links = [];
                 } else {
@@ -213,7 +223,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                         $ = cheerio.load(response.data);
                         links = $('a');
                     }
-                    if (links.length < 5) {
+                    if (links.length < 5 && !sourceLinkData) {
                         addSourceToAxiosBlackList(sourceName);
                     }
                 }
@@ -232,7 +242,9 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 error.filePath = 'searchTools';
                 await saveError(error);
             } else {
-                addSourceToAxiosBlackList(sourceName);
+                if (!sourceLinkData) {
+                    addSourceToAxiosBlackList(sourceName);
+                }
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;

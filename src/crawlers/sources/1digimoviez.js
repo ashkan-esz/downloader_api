@@ -63,8 +63,8 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, getQualitySample
-                    , null, null, null, linkCheck, true);
+                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                    getFileData, getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
@@ -73,8 +73,8 @@ async function search_title(link, i, $, url) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, getQualitySample
-                            , null, null, null, linkCheck, true);
+                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                            getFileData, getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {
                             return;

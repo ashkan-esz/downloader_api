@@ -82,7 +82,9 @@ export function purgeTitle(title, type, keepLastNumber = true) {
     let titleIncludesSeason = title.includes('فصل');
     title = replacePersianNumbers(title);
     const savedTitle = title;
-    title = title.replace(/\d%/, (res) => res.replace('%', 'percent'));
+    title = title
+        .replace(/\d%/, (res) => res.replace('%', 'percent'))
+        .replace(/\d+\.0/, res => res.replace('.0', ''));
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
     title = title
