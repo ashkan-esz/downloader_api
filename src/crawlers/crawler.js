@@ -104,8 +104,13 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
             if (!sourceName) {
                 for (let i = 0; i < sourcesArray.length; i++) {
                     let sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
+                    let disabled = sourcesObj[sourcesArray[i].name].disabled;
                     if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
-                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) cookies expired`);
+                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) cookies expired (crawler skipped).`);
+                        continue;
+                    }
+                    if (disabled) {
+                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) is disabled (crawler skipped).`);
                         continue;
                     }
                     await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
@@ -124,8 +129,11 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
                 let findSource = sourcesArray.find(x => x.name === sourceName);
                 if (findSource) {
                     let sourceCookies = sourcesObj[sourceName].cookies;
+                    let disabled = sourcesObj[sourceName].disabled;
                     if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
-                        Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired`);
+                        Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired (crawler skipped).`);
+                    } else if (disabled) {
+                        Sentry.captureMessage(`Warning: source (${sourceName}) is disabled (crawler skipped).`);
                     } else {
                         await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
                         await findSource.starter();

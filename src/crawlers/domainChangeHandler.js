@@ -108,8 +108,11 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
                 let sourceCookies = sourcesObj[sourceName].cookies;
+                let disabled = sourcesObj[sourceName].disabled;
                 if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
-                    Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired`);
+                    Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired (crawler skipped --domainChangeHandler).`);
+                } else if (disabled) {
+                    Sentry.captureMessage(`Warning: source (${sourceName}) is disabled (crawler skipped --domainChangeHandler).`);
                 } else {
                     let crawled = false;
                     if (!fullyCrawledSources.includes(sourceName)) {

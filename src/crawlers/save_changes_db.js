@@ -240,7 +240,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (subUpdates.latestDataChange) {
             updateFields.latestData = db_data.latestData;
-            if (subUpdates.PrimaryLatestDataChange) {
+            if (subUpdates.PrimaryLatestDataChange && getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
                 updateFields.update_date = new Date();
             }
         }

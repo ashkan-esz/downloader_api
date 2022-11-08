@@ -416,6 +416,8 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (!botData) {
         return generateServiceResult({data: []}, 404, errorMessage.botNotFound);
+    } else if (botData.disabled) {
+        return generateServiceResult({data: []}, 403, errorMessage.botIsDisabled);
     }
 
     let projection = dataLevelConfig[dataLevel.replace('low', 'telbot')];// low dataLevel is not allowed
@@ -441,10 +443,13 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
 
+    let hasNextPage = false;
     if (apiName === 'news') {
         updateFields.lastApiCall_news = moviesData[moviesData.length - 1].insert_date;
+        hasNextPage = moviesData.length === 24;
     } else if (apiName === 'updates') {
         updateFields.lastApiCall_updates = moviesData[moviesData.length - 1].update_date;
+        hasNextPage = moviesData.length === 24;
     } else if (apiName === 'newsandupdates') {
         let lastApiCall = moviesData[moviesData.length - 1]?.insert_date || 0;
         if (lastApiCall) {
@@ -454,6 +459,7 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
         if (lastApiCall2) {
             updateFields.lastApiCall_updates = lastApiCall2;
         }
+        hasNextPage = moviesData.length === 12 || moviesData2.length === 12;
         // merge results
         for (let i = 0; i < moviesData2.length; i++) {
             let exist = false;
@@ -488,7 +494,7 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
         }
     }
 
-    return generateServiceResult({data: moviesData}, 200, '');
+    return generateServiceResult({data: moviesData, hasNextPage}, 200, '');
 }
 
 //-----------------------------------------------------

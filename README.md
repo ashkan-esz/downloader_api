@@ -42,6 +42,8 @@ you can run npm script `npm run pre_start` to create collections and their index
            value:String,
            expire: Int(Date)
         }),
+        disabled: Boolean,
+        disabledDate: Date,
     },
 }
 
@@ -50,13 +52,15 @@ for example ::
     title: "sources",
     pageCounter_time: '2021-09-17T23:06:48.443+00:00',
     digimoviez: {
-        movie_url: "https://digimovie.win/page/",
-        serial_url: "https://digimovie.win/serie/page/",
+        movie_url: "https://digimovie.vip/page/",
+        serial_url: "https://digimovie.vip/serie/page/",
         page_count: 419,
         serial_page_count: 66,
         lastCrawlDate: 2022-09-14T18:37:22.403Z,
         crawlCycle: 3,
         cookies: [],
+        disabled: false,
+        disabledDate: 0,
     },
     film2movie: {
         movie_url: "https://www.film2movie.asia/page/",
@@ -64,6 +68,8 @@ for example ::
         lastCrawlDate: 2022-09-10T18:37:22.403Z,
         crawlCycle: 0,
         cookies: [],
+        disabled: false,
+        disabledDate: 0,
     },
     ....
     ....
