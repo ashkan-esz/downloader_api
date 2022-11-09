@@ -5,10 +5,14 @@ import middlewares from '../middlewares/index.js';
 const router = Router();
 
 //users/signup
-router.post('/signup', middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized, middlewares.validation.signupValidation, usersControllers.signup);
+router.post('/signup',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized,
+    middlewares.validation.signupValidation, middlewares.auth.addFingerPrint(), usersControllers.signup);
 
 //users/login
-router.post('/login', middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized, middlewares.validation.loginValidation, usersControllers.login);
+router.post('/login',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized,
+    middlewares.validation.loginValidation, middlewares.auth.addFingerPrint(), usersControllers.login);
 
 //users/getToken
 router.put('/getToken', middlewares.auth.isAuth_refreshToken, middlewares.validation.getTokenValidation, usersControllers.getToken);

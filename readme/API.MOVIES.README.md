@@ -49,6 +49,7 @@
 - [PUT /movies/addUserStats/[statType]/[id]](#put-moviesadduserstatsstattypeid)
 - [GET /movies/userStatsList/[statType]/[dataLevel]/[page]](#get-moviesuserstatsliststattypedatalevelpage)
 - [GET /movies/animeEnglishName](#get-moviesanimeenglishname)
+- [GET /movies/bots/[botId]/[moviesRequestName]/[types]/[dataLevel]/[imdbScores]/[malScores]](#get-moviesbotsbotidmoviesrequestnametypesdatalevelimdbscoresmalscores)
 - [GET /movies/birthday/[staffOrCharacters]/[dataLevel]/[page]](#get-moviesbirthdaystafforcharactersdatalevelpage)
 
 

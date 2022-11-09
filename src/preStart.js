@@ -32,7 +32,7 @@ async function createTestUser() {
             };
             let deviceId = uuidv4();
             let hashedPassword = await bcrypt.hash('$$test_user_password$$', 12);
-            let testUser = userModel('$$test_user$$', '', hashedPassword, '', 0, deviceInfo, deviceId);
+            let testUser = userModel('$$test_user$$', '', hashedPassword, '', 0, deviceInfo, deviceId, '');
             testUser.role = 'test-user';
             let userId = await addUser(testUser);
             if (!userId) {

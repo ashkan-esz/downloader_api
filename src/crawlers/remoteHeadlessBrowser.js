@@ -242,6 +242,9 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
             addSourceToAxiosBlackList(sourceName);
         }
         if (error.message !== 'timeout of 3000ms exceeded') {
+            error.isAxiosError = true;
+            error.url = url;
+            error.filePath = 'remoteHeadlessBrowser > useAxiosGet';
             saveError(error);
         }
         return result;

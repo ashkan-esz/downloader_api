@@ -12,6 +12,7 @@ import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
+import countries from "i18n-iso-countries";
 
 //if (data.changedPasswordAfter(decoded.iat)) {
 // 			return res.status(401).json({
@@ -25,7 +26,7 @@ import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 
 //todo : use express-useragent for deviceInfo
 
-export async function signup(username, email, password, deviceInfo, ip, host) {
+export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
         let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, email: 1});
         if (findUserResult === 'error') {
@@ -39,13 +40,13 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
             }
         }
 
-        deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
+        deviceInfo.ipLocation = getRequestLocation(fingerprint, ip);
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
         let deviceId = uuidv4();
-        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId);
+        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId, fingerprint.hash);
         let userId = await usersDbMethods.addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, errorMessage.serverError);
@@ -71,9 +72,8 @@ export async function signup(username, email, password, deviceInfo, ip, host) {
     }
 }
 
-export async function login(username_email, password, deviceInfo, ip) {
+export async function login(username_email, password, deviceInfo, ip, fingerprint, isAdminLogin) {
     //todo : terminate sessions inactive for 6 month
-    //todo : check device already exist
     //todo : limit number of device
     try {
         let userData = await usersDbMethods.findUser(username_email, username_email, {
@@ -85,22 +85,26 @@ export async function login(username_email, password, deviceInfo, ip) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
+        } else if (isAdminLogin && userData.role !== 'admin' && userData.role !== 'dev') {
+            return generateServiceResult({}, 403, errorMessage.adminAndDevOnly);
         }
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
-            const tokens = generateAuthTokens(user);
-            deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
+            const tokens = isAdminLogin ? generateAuthTokens(user, '6h') : generateAuthTokens(user);
+            deviceInfo.ipLocation = getRequestLocation(fingerprint, ip);
             let deviceId = uuidv4();
-            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
+            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, fingerprint.hash, tokens.refreshToken);
             if (!result) {
                 return generateServiceResult({}, 500, errorMessage.serverError);
             } else if (result === 'cannot find user') {
                 return generateServiceResult({}, 404, errorMessage.userNotFound);
             }
-            agenda.schedule('in 4 seconds', 'login email', {
-                deviceInfo,
-                email: result.email,
-            });
+            if (result.isNewDevice) {
+                agenda.schedule('in 4 seconds', 'login email', {
+                    deviceInfo,
+                    email: result.email,
+                });
+            }
             return generateServiceResult({
                 accessToken: tokens.accessToken,
                 accessToken_expire: tokens.accessToken_expire,
@@ -447,6 +451,24 @@ export async function computeUserStats(jwtUserData) {
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
+function getRequestLocation(fingerprint, ip) {
+    try {
+        let country = fingerprint.components.geoip.country;
+        let city = fingerprint.components.geoip.city;
+        if (!country || !city) {
+            return ip ? getIpLocation(ip) : "";
+        }
+        country = countries.getName(country, 'en', {select: "official"}) || country;
+        return city + ', ' + country;
+    } catch (error) {
+        saveError(error);
+        return "";
     }
 }
 

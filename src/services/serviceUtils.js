@@ -1,4 +1,3 @@
-
 export function generateServiceResult(dataFields, code, errorMessage, extraData = {}) {
     return {
         ...extraData,
@@ -45,4 +44,6 @@ export const errorMessage = Object.freeze({
     alreadyExist: 'Already exist',
     //----------------------
     botIsDisabled: 'This bot is disabled',
+    //----------------------
+    adminAndDevOnly: 'Forbidden, ([admin, dev]) roles only',
 });

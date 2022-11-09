@@ -1,6 +1,7 @@
 import config from "../../config/index.js";
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
+import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -121,4 +122,27 @@ export function blockUnAuthorized(req, res, next) {
         });
     }
     return next();
+}
+
+export function addFingerPrint() {
+    return fingerPrint({
+        parameters: [
+            // Defaults
+            fingerPrint.useragent,
+            fingerPrint.acceptHeaders,
+            fingerPrint.geoip,
+        ]
+    })
+}
+
+export function checkUserRolePermission(roles) {
+    return (req, res, next) => {
+        if (!roles.includes(req.jwtUserData.role)) {
+            return res.status(403).json({
+                code: 403,
+                errorMessage: `Forbidden, ([${roles.join(',')}]) roles only`,
+            });
+        }
+        return next();
+    }
 }

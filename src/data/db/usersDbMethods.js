@@ -130,10 +130,44 @@ export async function setTokenForNewUser(userId, refreshToken) {
     }
 }
 
-export async function setTokenForNewDevice(userId, deviceInfo, deviceId, refreshToken) {
+export async function setTokenForNewDevice(userId, deviceInfo, deviceId, fingerprint, refreshToken) {
     try {
         let collection = await getCollection('users');
-        let newDeviceData = getNewDeviceSession(deviceInfo, deviceId, refreshToken);
+        let newDeviceData = getNewDeviceSession(deviceInfo, deviceId, fingerprint, refreshToken);
+        //-------------------------------------------
+        //check device already exist
+        let deviceExistResult = await collection.findOneAndUpdate({
+            _id: userId,
+            'activeSessions.fingerprint': fingerprint,
+        }, {
+            $set: {
+                "activeSessions.$.appName": newDeviceData.appName,
+                "activeSessions.$.appVersion": newDeviceData.appVersion,
+                "activeSessions.$.deviceOs": newDeviceData.deviceOs,
+                "activeSessions.$.ipLocation": newDeviceData.ipLocation,
+                "activeSessions.$.deviceModel": newDeviceData.deviceModel,
+                "activeSessions.$.lastUseDate": newDeviceData.lastUseDate,
+                "activeSessions.$.refreshToken": newDeviceData.refreshToken,
+            }
+        }, {
+            returnDocument: 'after',
+            projection: {
+                activeSessions: 1,
+                email: 1,
+            }
+        });
+        if (deviceExistResult.value) {
+            for (let i = 0; i < deviceExistResult.value.activeSessions.length; i++) {
+                if (deviceExistResult.value.activeSessions[i].refreshToken === refreshToken) {
+                    return {
+                        email: deviceExistResult.value.email,
+                        isNewDevice: false,
+                    };
+                }
+            }
+        }
+        //-------------------------------------------
+
         let result = await collection.findOneAndUpdate(
             {
                 _id: userId
@@ -144,7 +178,12 @@ export async function setTokenForNewDevice(userId, deviceInfo, deviceId, refresh
             }, {
                 projection: {email: 1}
             });
-        return result.value ? result.value : 'cannot find user';
+        return result.value
+            ? {
+                email: result.value.email,
+                isNewDevice: true,
+            }
+            : 'cannot find user';
     } catch (error) {
         saveError(error);
         return null;
@@ -154,7 +193,7 @@ export async function setTokenForNewDevice(userId, deviceInfo, deviceId, refresh
 export async function updateUserAuthToken(userId, deviceInfo, refreshToken, prevRefreshToken) {
     try {
         let collection = await getCollection('users');
-        let sessionData = getNewDeviceSession(deviceInfo, '', refreshToken);
+        let sessionData = getNewDeviceSession(deviceInfo, '', '', refreshToken);
         let updateFields = {
             "activeSessions.$[item].appName": sessionData.appName,
             "activeSessions.$[item].appVersion": sessionData.appVersion,

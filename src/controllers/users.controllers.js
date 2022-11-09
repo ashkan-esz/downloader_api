@@ -16,7 +16,7 @@ export async function signup(req, res) {
     const ip = getClientIp(req) || '';
     let {username, password, email, deviceInfo} = req.body;
     const host = req.protocol + '://' + req.get('host');
-    let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, host);
+    let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, req.fingerprint, host);
     if (signupResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             signupResult.responseData.refreshToken = signupResult.refreshToken;
@@ -33,6 +33,7 @@ export async function signup(req, res) {
 }
 
 export async function login(req, res) {
+    const isAdminLogin = req.originalUrl.includes('/admin/login');
     const errorsAfterValidation = validationResult(req);
     if (!errorsAfterValidation.isEmpty()) {
         return res.status(400).json({
@@ -44,7 +45,7 @@ export async function login(req, res) {
 
     const ip = getClientIp(req) || '';
     let {username_email, password, deviceInfo} = req.body;
-    let loginResult = await usersServices.login(username_email, password, deviceInfo, ip);
+    let loginResult = await usersServices.login(username_email, password, deviceInfo, ip, req.fingerprint, isAdminLogin);
     if (loginResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             loginResult.responseData.refreshToken = loginResult.refreshToken;
