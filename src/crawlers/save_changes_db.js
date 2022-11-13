@@ -11,6 +11,7 @@ import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
 import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
+import {addPageLinkToCrawlerStatus, removePageLinkToCrawlerStatus} from "./crawlerStatus.js";
 
 
 export default async function save(title, type, year, sourceData) {
@@ -26,6 +27,7 @@ export default async function save(title, type, year, sourceData) {
             subtitles,
             cookies
         } = sourceData;
+        addPageLinkToCrawlerStatus(pageLink);
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
         let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceVpnStatus);
@@ -47,14 +49,17 @@ export default async function save(title, type, year, sourceData) {
                     }
                 }
             }
+            removePageLinkToCrawlerStatus(pageLink);
             return;
         }
 
         let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceName);
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus);
         await handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData);
+        removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);
+        removePageLinkToCrawlerStatus(sourceData.pageLink);
     }
 }
 

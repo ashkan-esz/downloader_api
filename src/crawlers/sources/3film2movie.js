@@ -29,7 +29,8 @@ let prevTitles = [];
 
 export default async function film2movie({movie_url, page_count}) {
     prevTitles = [];
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    return [p1];
 }
 
 async function search_title(link, i) {

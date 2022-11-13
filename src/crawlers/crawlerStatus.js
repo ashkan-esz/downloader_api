@@ -16,11 +16,34 @@ const crawlerStatus = {
         errorMessage: '',
         crawledSources: [],
         crawlId: '',
+        isCrawlCycle: false,
+        crawlMode: 0,
     },
 };
 
-export function getCrawlerStatus() {
-    return ({...crawlerStatus});
+const crawlerStatus_titles = {
+    pageNumber: 0,
+    pageLinks: [],
+}
+
+
+export function getCrawlerStatusObj() {
+    return ({...crawlerStatus, ...crawlerStatus_titles});
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+export function updatePageNumberCrawlerStatus(pageNumber) {
+    crawlerStatus_titles.pageNumber = pageNumber;
+}
+
+export function addPageLinkToCrawlerStatus(pageLink) {
+    crawlerStatus_titles.pageLinks.push(pageLink);
+}
+
+export function removePageLinkToCrawlerStatus(pageLink) {
+    crawlerStatus_titles.pageLinks = crawlerStatus_titles.pageLinks.filter(item => item !== pageLink);
 }
 
 //-----------------------------------------
@@ -29,8 +52,6 @@ export function getCrawlerStatus() {
 export function checkIsCrawling() {
     return crawlerStatus.isCrawling;
 }
-
-//todo : add source page number and handling titles to crawlerStatus
 
 export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
     crawlerStatus.crawlingSource = {
@@ -45,11 +66,12 @@ export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
     });
 }
 
-export async function updateCrawlerStatus_sourceEnd() {
+export async function updateCrawlerStatus_sourceEnd(lastPages) {
     crawlerStatus.crawledSources.push({
         ...crawlerStatus.crawlingSource,
         endTime: new Date(),
         time: getDatesBetween(new Date(), crawlerStatus.crawlingSource.startTime).minutes,
+        lastPages: lastPages,
     });
     crawlerStatus.crawlingSource = null;
     await saveCrawlerLog({
@@ -64,7 +86,7 @@ export async function updateCrawlerStatus_sourceEnd() {
 //-----------------------------------------
 
 
-export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle) {
+export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, crawlMode) {
     crawlerStatus.crawlId = uuidv4();
     crawlerStatus.isCrawling = true;
     crawlerStatus.isCrawlCycle = isCrawlCycle;
@@ -79,11 +101,14 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle) 
         crawledSources: [],
         crawlId: crawlerStatus.crawlId,
         isCrawlCycle: isCrawlCycle,
+        crawlMode: crawlMode,
     };
+    crawlerStatus_titles.pageNumber = 0;
+    crawlerStatus_titles.pageLinks = [];
     await saveCrawlerLog(crawlerStatus.lastCrawl);
 }
 
-export async function updateCrawlerStatus_crawlerEnd(startTime, endTime, crawlDuration) {
+export async function updateCrawlerStatus_crawlerEnd(startTime, endTime, crawlDuration, crawlMode) {
     crawlerStatus.isCrawling = false;
     crawlerStatus.lastCrawl = {
         startTime: startTime,
@@ -94,13 +119,14 @@ export async function updateCrawlerStatus_crawlerEnd(startTime, endTime, crawlDu
         crawledSources: [...crawlerStatus.crawledSources],
         crawlId: crawlerStatus.crawlId,
         isCrawlCycle: crawlerStatus.isCrawlCycle,
+        crawlMode: crawlMode,
     }
     await saveCrawlerLog(crawlerStatus.lastCrawl);
     crawlerStatus.crawledSources = [];
     crawlerStatus.crawlId = '';
 }
 
-export async function updateCrawlerStatus_crawlerCrashed(startTime, errorMessage) {
+export async function updateCrawlerStatus_crawlerCrashed(startTime, errorMessage, crawlMode) {
     crawlerStatus.isCrawling = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.lastCrawl = {
@@ -112,6 +138,7 @@ export async function updateCrawlerStatus_crawlerCrashed(startTime, errorMessage
         crawledSources: [...crawlerStatus.crawledSources],
         crawlId: crawlerStatus.crawlId,
         isCrawlCycle: crawlerStatus.isCrawlCycle,
+        crawlMode: crawlMode,
     }
     await saveCrawlerLog(crawlerStatus.lastCrawl);
     crawlerStatus.crawledSources = [];

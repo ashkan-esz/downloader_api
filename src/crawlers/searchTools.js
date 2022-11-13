@@ -10,6 +10,7 @@ import {getSeasonEpisode} from "./utils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
+import {updatePageNumberCrawlerStatus} from "./crawlerStatus.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -38,6 +39,7 @@ axiosRetry(axios, {
 let axiosBlackListSources = [];
 
 export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, url, page_count, searchCB) {
+    let lastPageNumber = 0;
     try {
         const concurrencyNumber = getConcurrencyNumber(sourceName, needHeadlessBrowser);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
@@ -50,6 +52,8 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
                     responseUrl,
                     pageTitle
                 } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser, sourceAuthStatus, 'sourcePage');
+                updatePageNumberCrawlerStatus(i);
+                lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
@@ -70,8 +74,10 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
         }
         await promiseQueue.onEmpty();
         await promiseQueue.onIdle();
+        return lastPageNumber;
     } catch (error) {
         saveError(error);
+        return lastPageNumber;
     }
 }
 

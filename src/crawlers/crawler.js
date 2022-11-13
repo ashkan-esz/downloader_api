@@ -36,7 +36,7 @@ export async function crawlerCycle() {
 
         //handle sources with crawlCycle
         let now = new Date();
-        let sourcesWithCycle = sourcesArray.filter(item => item.crawlCycle > 0)
+        let sourcesWithCycle = sourcesArray.filter(item => item.crawlCycle > 0 && !item.cookies.find(c => c.expire && (Date.now() > (c.expire - 60 * 60 * 1000))))
             .sort((a, b) => {
                 let lastCrawlDate_a = a.lastCrawlDate || now;
                 let lastCrawlDate_b = b.lastCrawlDate || now;
@@ -54,7 +54,7 @@ export async function crawlerCycle() {
         }
 
         //handle sources with first time crawling
-        let firstTimeCrawlingSources = sourcesArray.filter(item => !item.lastCrawlDate);
+        let firstTimeCrawlingSources = sourcesArray.filter(item => !item.lastCrawlDate && !item.cookies.find(c => c.expire && (Date.now() > (c.expire - 60 * 60 * 1000))));
         if (firstTimeCrawlingSources.length > 0) {
             await crawler(firstTimeCrawlingSources[0].name, 2, true);
             return await crawlerCycle();
@@ -63,7 +63,10 @@ export async function crawlerCycle() {
         //pick a source and crawl
         let index = getDayOfYear(now) % sourcesArray.length;
         if (getDatesBetween(now, sourcesArray[index].lastCrawlDate).days >= 5) {
-            await crawler(sourcesArray[index].name, 2, true);
+            let sourceCookies = sourcesObj[sourcesArray[index].name].cookies;
+            if (!sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                await crawler(sourcesArray[index].name, 2, true);
+            }
         }
 
         flushCachedData();
@@ -82,17 +85,23 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
     try {
         _handleCastUpdate = handleCastUpdate;
         if (checkIsCrawling()) {
-            return 'another crawling is running';
+            return {
+                isError: true,
+                message: 'another crawling is running',
+            };
         }
         flushCachedData();
-        await updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle);
+        await updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, crawlMode);
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
             let errorMessage = 'crawling cancelled : sourcesObj is null';
-            await updateCrawlerStatus_crawlerCrashed(startTime, errorMessage);
+            await updateCrawlerStatus_crawlerCrashed(startTime, errorMessage, crawlMode);
             Sentry.captureMessage(errorMessage);
-            return errorMessage;
+            return {
+                isError: true,
+                message: errorMessage,
+            };
         }
 
         const sourcesNames = Object.keys(sourcesObj);
@@ -105,7 +114,7 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
                 for (let i = 0; i < sourcesArray.length; i++) {
                     let sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
                     let disabled = sourcesObj[sourcesArray[i].name].disabled;
-                    if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
+                    if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                         Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) cookies expired (crawler skipped).`);
                         continue;
                     }
@@ -114,8 +123,8 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
                         continue;
                     }
                     await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
-                    await sourcesArray[i].starter();
-                    await updateCrawlerStatus_sourceEnd();
+                    let lastPages = await sourcesArray[i].starter();
+                    await updateCrawlerStatus_sourceEnd(lastPages);
                     if (crawlMode === 2) {
                         fullyCrawledSources.push(sourcesArray[i].name);
                         let now = new Date();
@@ -130,14 +139,14 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
                 if (findSource) {
                     let sourceCookies = sourcesObj[sourceName].cookies;
                     let disabled = sourcesObj[sourceName].disabled;
-                    if (sourceCookies.find(item => Date.now() > (item.expire - 60 * 60 * 1000))) {
+                    if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                         Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired (crawler skipped).`);
                     } else if (disabled) {
                         Sentry.captureMessage(`Warning: source (${sourceName}) is disabled (crawler skipped).`);
                     } else {
                         await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
-                        await findSource.starter();
-                        await updateCrawlerStatus_sourceEnd();
+                        let lastPages = await findSource.starter();
+                        await updateCrawlerStatus_sourceEnd(lastPages);
                         if (crawlMode === 2) {
                             fullyCrawledSources.push(sourceName);
                             let now = new Date();
@@ -157,14 +166,20 @@ export async function crawler(sourceName, crawlMode = 0, isCrawlCycle = false, {
 
         let endTime = new Date();
         let crawlDuration = getDatesBetween(endTime, startTime).minutes;
-        await updateCrawlerStatus_crawlerEnd(startTime, endTime, crawlDuration);
+        await updateCrawlerStatus_crawlerEnd(startTime, endTime, crawlDuration, crawlMode);
         let message = `crawling done in : ${crawlDuration}min`;
         Sentry.captureMessage(message);
         flushCachedData();
-        return message;
+        return {
+            isError: false,
+            message: message,
+        };
     } catch (error) {
-        await updateCrawlerStatus_crawlerCrashed(startTime, error.message || '');
+        await updateCrawlerStatus_crawlerCrashed(startTime, error.message || '', crawlMode);
         await saveError(error);
-        return 'error';
+        return {
+            isError: true,
+            message: error.message || "Internal server error",
+        };
     }
 }

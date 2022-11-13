@@ -26,7 +26,8 @@ const sourceVpnStatus = Object.freeze({
 });
 
 export default async function bia2anime({movie_url, page_count}) {
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    return [p1];
 }
 
 async function search_title(link, i) {

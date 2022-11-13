@@ -37,8 +37,9 @@ const sourceVpnStatus = Object.freeze({
 });
 
 export default async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
+    let p2 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    return [p1, p2];
 }
 
 async function search_title(link, i) {
