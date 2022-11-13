@@ -90,7 +90,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
         }
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
-            const tokens = isAdminLogin ? generateAuthTokens(user, '6h') : generateAuthTokens(user);
+            const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
             deviceInfo.ipLocation = getRequestLocation(fingerprint, ip);
             let deviceId = uuidv4();
             let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, fingerprint.hash, tokens.refreshToken);
@@ -484,9 +484,9 @@ export function getJwtPayload(userData, userId = '') {
     };
 }
 
-export function generateAuthTokens(user, customExpire = '') {
-    const accessToken = jwt.sign(user, config.jwt.accessTokenSecret, {expiresIn: customExpire || config.jwt.accessTokenExpire});
-    const refreshToken = jwt.sign(user, config.jwt.refreshTokenSecret, {expiresIn: customExpire || config.jwt.refreshTokenExpire});
+export function generateAuthTokens(user, accessExpire = '', refreshExpire = '') {
+    const accessToken = jwt.sign(user, config.jwt.accessTokenSecret, {expiresIn: accessExpire || config.jwt.accessTokenExpire});
+    const refreshToken = jwt.sign(user, config.jwt.refreshTokenSecret, {expiresIn: refreshExpire || config.jwt.refreshTokenExpire});
     return {
         accessToken,
         accessToken_expire: jwt.decode(accessToken).exp * 1000,

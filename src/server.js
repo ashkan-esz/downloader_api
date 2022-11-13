@@ -30,7 +30,21 @@ app.use(helmet());
 app.use(bodyParser.urlencoded({extended: false, limit: '10mb'}));
 app.use(bodyParser.json({limit: '10mb'}));
 app.use(cookieParser());
-app.use(cors());
+//-------------------
+const corsOptions = {
+    origin: (origin, callback) => {
+        let allowedOrigins = [...config.corsAllowedOrigins_local, ...config.corsAllowedOrigins];
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }, // origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+    credentials: true,
+};
+app.use(cors(corsOptions));
+//-------------------
 app.use(compression());
 app.use(rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
@@ -44,7 +58,7 @@ await loadAgenda();
 //--------------------------------------
 //--------------------------------------
 
-app.use('/crawler', routes.crawlersRouters);
+app.use('/admin', routes.adminRouters);
 app.use('/movies', routes.moviesRouters);
 app.use('/users', routes.usersRouters);
 
@@ -68,7 +82,7 @@ app.use(function (req, res) {
 
 app.use((err, req, res, next) => {
     let fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an supported format image!')));
-    if (!fileError) {
+    if (!fileError && err.message !== "Not allowed by CORS") {
         saveError(err);
     }
     res.status(500).json({

@@ -111,7 +111,6 @@ To run this project, you will need to add the following environment variables to
 | Prop                                   | Description                                                                                                         | Required                |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------|-------------------------|
 | **`PORT`**                             | server port                                                                                                         | `false (default:3000)`  |
-| **`UPDATE_PASSWORD`**                  | password to start web crawler if needed.                                                                            | `true`                  |
 | **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                    | `true`                  |
 | **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/) | `true`                  |
 | **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                      | `false (default: 3)`    |
@@ -132,6 +131,7 @@ To run this project, you will need to add the following environment variables to
 | **`EMAIL_PASSWORD`**                   |                                                                                                                     | `true`                  |
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                     | `true`                  |
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                     | `true`                  |
+| **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                            | `false`                 |
 
 
 

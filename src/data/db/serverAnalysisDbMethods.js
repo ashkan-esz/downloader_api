@@ -57,6 +57,11 @@ export async function getUserCountsInTimes(startTime, endTime, skip, limit) {
                 }
             },
             {
+                $sort: {
+                    'userCounts.date': 1
+                }
+            },
+            {
                 $skip: skip,
             },
             {
@@ -139,6 +144,11 @@ export async function getCrawlerLogsInTimes(startTime, endTime, skip, limit) {
             {
                 $match: {
                     'crawlerLogs.startTime': {$gte: startTime, $lte: endTime},
+                }
+            },
+            {
+                $sort: {
+                    'userCounts.startTime': 1
                 }
             },
             {

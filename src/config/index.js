@@ -11,7 +11,6 @@ export default {
     crawlerConcurrency: process.env.CRAWLER_CONCURRENCY,
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,
-    crawlerStarterPassword: process.env.UPDATE_PASSWORD,
     imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
     omdbApiKeys: getOmdbApiKeys(),
     cloudStorage: {
@@ -31,7 +30,14 @@ export default {
         refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
         accessTokenExpire: '1h',
         refreshTokenExpire: '180d',
-    }
+    },
+    corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),
+    corsAllowedOrigins_local: [
+        'http://127.0.0.1:3000',
+        'http://localhost:3000',
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+    ],
 }
 
 function getRemoteBrowsers() {

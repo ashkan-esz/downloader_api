@@ -39,7 +39,7 @@ async function createTestUser() {
                 console.log('error on creating test user');
             }
             const user = getJwtPayload(testUser, userId);
-            const tokens = generateAuthTokens(user, '10000d');
+            const tokens = generateAuthTokens(user, '10000d', '10000d');
             await setTokenForNewUser(userId, tokens.refreshToken);
             console.log('test user data: ', {
                 accessToken: tokens.accessToken,
