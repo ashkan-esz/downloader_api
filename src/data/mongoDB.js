@@ -3,7 +3,7 @@ import mongodb from "mongodb";
 import {saveError} from "../error/saveError.js";
 
 let connection = null;
-let database = null;
+export let database = null;
 
 async function startDatabase() {
     try {

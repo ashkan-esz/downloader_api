@@ -124,6 +124,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
                     if (crawled) {
                         sourcesObj[sourceName].lastCrawlDate = new Date();
                     }
+                    sourcesObj[sourceName].lastDomainChangeDate = new Date();
                     updateSourceField[sourceName] = sourcesObj[sourceName];
                     await updateSourcesObjDB(updateSourceField);
                 }

@@ -1,4 +1,4 @@
-import getCollection from './mongoDB.js';
+import getCollection, {database} from './mongoDB.js';
 import {saveError} from "../error/saveError.js";
 
 
@@ -99,6 +99,16 @@ export async function createCollectionsAndIndexes() {
         let botsCollection = await getCollection('bots');
         await botsCollection.createIndex({botId: 1});
         //usage: botId
+
+        try {
+            await database.createCollection('sources');
+            let sourcesCollection = await getCollection('sources');
+            await sourcesCollection.insertOne({
+                title: "sources",
+                pageCounter_time: new Date(),
+            });
+        } catch (err2) {
+        }
 
         console.log('creating mongodb collection and indexes --done!');
         console.log();

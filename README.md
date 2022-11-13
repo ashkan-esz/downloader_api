@@ -22,60 +22,11 @@ First set all environment variables to .env file in your local environment or to
 ### 3. Setup Db collections
 
 Collection information listed in [`src/data/createCollectionsIndex`](src/data/createCollectionsIndex.js).
+
 you can run npm script `npm run pre_start` to create collections and their indexes automatically.
 
-```
-> Also, a mongodb collection with name `sources` with single doc in format of:
-
-{
-    title: "sources",
-    pageCounter_time: Date,
-    [sourceName]: {
-        movie_url: "https://example.com/page/",
-        serial_url: "https://example.com/serie/page/", //if needed
-        page_count: Number,
-        serial_page_count: Number,
-        lastCrawlDate: Date,
-        crawlCycle: Number, // 0 means no cycle
-        cookies: Array({
-           name:String,
-           value:String,
-           expire: Int(Date)
-        }),
-        disabled: Boolean,
-        disabledDate: Date,
-    },
-}
-
-for example ::
-{
-    title: "sources",
-    pageCounter_time: '2021-09-17T23:06:48.443+00:00',
-    digimoviez: {
-        movie_url: "https://digimovie.vip/page/",
-        serial_url: "https://digimovie.vip/serie/page/",
-        page_count: 419,
-        serial_page_count: 66,
-        lastCrawlDate: 2022-09-14T18:37:22.403Z,
-        crawlCycle: 3,
-        cookies: [],
-        disabled: false,
-        disabledDate: 0,
-    },
-    film2movie: {
-        movie_url: "https://www.film2movie.asia/page/",
-        page_count: 1488,
-        lastCrawlDate: 2022-09-10T18:37:22.403Z,
-        crawlCycle: 0,
-        cookies: [],
-        disabled: false,
-        disabledDate: 0,
-    },
-    ....
-    ....
-}
-
-```
+**NOTE: schema for movie sources used by crawler can be found in [sources schema](readme/SOURCES.README.md).
+(this can be done from admin panel too)**
 
 > a file with the same name of [sourceName] exist in [sources](src/crawlers/sources)
 > and can be accessed from [sourcesArray](src/crawlers/sourcesArray.js).
@@ -152,6 +103,7 @@ To run this project, you will need to add the following environment variables to
 - Open [user api docs](readme/API.USER.README.md).
 - Open [movie api docs](readme/API.MOVIES.README.md).
 - Open [schema](readme/SCHEMA.README.md).
+- Open [sources schema](readme/SOURCES.README.md).
 
 ## Clients
 - [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter)
