@@ -24,7 +24,7 @@ export async function signup(req, res) {
             res.cookie('refreshToken', signupResult.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'lax',
+                sameSite: 'none',
             });
         }
     }
@@ -53,7 +53,7 @@ export async function login(req, res) {
             res.cookie('refreshToken', loginResult.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'lax',
+                sameSite: 'none',
             });
         }
     }
@@ -82,7 +82,7 @@ export async function getToken(req, res) {
             res.cookie('refreshToken', getTokenResult.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'lax',
+                sameSite: 'none',
             });
         }
     }
@@ -96,7 +96,7 @@ export async function logout(req, res) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
             secure: true,
-            sameSite: 'lax',
+            sameSite: 'none',
             expires: new Date(0),
             maxAge: 0,
         });
