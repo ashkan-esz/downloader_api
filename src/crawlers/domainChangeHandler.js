@@ -83,6 +83,45 @@ async function checkSourcesUrl(sourcesUrls) {
     }
 }
 
+export async function checkUrlWork(sourceName, sourceUrl) {
+    try {
+        let responseUrl;
+        let homePageLink = sourceUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
+        try {
+            let pageData = await getPageData(homePageLink, sourceName);
+            if (pageData && pageData.pageContent) {
+                responseUrl = pageData.responseUrl;
+            } else {
+                let response = await axios.get(homePageLink);
+                responseUrl = response.request.res.responseUrl;
+            }
+        } catch (error) {
+            if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+                let temp = homePageLink.replace(/\/$/, '').split('/').pop();
+                let url = homePageLink.replace(temp, encodeURIComponent(temp));
+                try {
+                    let response = await axios.get(url);
+                    responseUrl = response.request.res.responseUrl;
+                } catch (error2) {
+                    error2.isAxiosError = true;
+                    error2.url = homePageLink;
+                    error2.url2 = url;
+                    error2.filePath = 'domainChangeHandler';
+                    await saveError(error2);
+                }
+            } else {
+                await saveError(error);
+            }
+            return "error";
+        }
+        responseUrl = responseUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
+        return homePageLink === responseUrl ? "ok" : responseUrl;
+    } catch (error) {
+        await saveError(error);
+        return "error";
+    }
+}
+
 function updateSourceFields(sourcesObject, sourcesUrls) {
     let sourcesNames = Object.keys(sourcesObject);
     for (let i = 0; i < sourcesNames.length; i++) {

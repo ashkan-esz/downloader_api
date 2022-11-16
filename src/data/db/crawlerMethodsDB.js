@@ -217,25 +217,6 @@ export async function updateSourcesObjDB(updateFields) {
     }
 }
 
-export async function updateSourceActivation(sourceName, disable) {
-    try {
-        let collection = await getCollection('sources');
-        let result = await collection.updateOne({title: 'sources'}, {
-            $set: {
-                [sourceName + '.disabled']: disable,
-                disabledDate: disable ? new Date() : 0,
-            }
-        });
-        if (result.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
 //-----------------------------------
 //-----------------------------------
 

@@ -62,6 +62,7 @@ export async function login(req, res) {
 }
 
 export async function getToken(req, res) {
+    const isAdminLogin = req.originalUrl.includes('/admin/getToken');
     const errorsAfterValidation = validationResult(req);
     if (!errorsAfterValidation.isEmpty()) {
         return res.status(400).json({
@@ -73,7 +74,7 @@ export async function getToken(req, res) {
 
     let deviceInfo = req.body.deviceInfo;
     const ip = getClientIp(req) || '';
-    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken);
+    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken, isAdminLogin);
     if (getTokenResult.refreshToken) {
         if (req.query.noCookie === 'true') {
             getTokenResult.responseData.refreshToken = getTokenResult.refreshToken;

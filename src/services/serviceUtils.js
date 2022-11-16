@@ -16,6 +16,8 @@ export const errorMessage = Object.freeze({
     exceedGenres: 'Exceeded number of genres limit (6)',
     //----------------------
     movieSourcesNotFound: 'Movie sources not found',
+    crawlerSourceNotFound: 'Crawler source not found',
+    crawlerSourceAlreadyExist: 'Crawler source already exist',
     moviesNotFound: 'Movies not found',
     movieNotFound: 'Movie not found',
     genresNotFound: 'Genres not found',

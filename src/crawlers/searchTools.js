@@ -41,6 +41,9 @@ let axiosBlackListSources = [];
 export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, url, page_count, searchCB) {
     let lastPageNumber = 0;
     try {
+        if (!url || page_count === 0) {
+            return lastPageNumber;
+        }
         const concurrencyNumber = getConcurrencyNumber(sourceName, needHeadlessBrowser);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {

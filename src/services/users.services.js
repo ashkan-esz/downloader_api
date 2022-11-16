@@ -120,7 +120,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
     }
 }
 
-export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
+export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken, isAdminLogin) {
     try {
         const user = {
             userId: jwtUserData.userId,
@@ -128,7 +128,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken) {
             role: jwtUserData.role,
             generatedAt: Date.now(),
         };
-        const tokens = generateAuthTokens(user);
+        const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
         deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
         let result = await usersDbMethods.updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {

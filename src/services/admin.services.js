@@ -1,8 +1,10 @@
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import {crawler} from "../crawlers/crawler.js";
 import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
+import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.js";
 import {getCrawlerLogsInTimes, getUserCountsInTimes} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
+import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -35,7 +37,7 @@ export async function getCrawlingHistory(startTime, endTime, skip, limit) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function getCrawlerSources() {
+export async function getCrawlerSources(checkWarnings) {
     let result = await crawlerMethodsDB.getSourcesObjDB();
     if (!result || result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
@@ -54,13 +56,66 @@ export async function getCrawlerSources() {
         delete result[keys[i]];
     }
     result.warnings = [];
-    for (let i = 0; i < result.sources.length; i++) {
-        let cookies = result.sources[i].cookies;
-        if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-            result.warnings.push(`Source (${result.sources[i].sourceName}) has expired cookie(s)`);
+    if (checkWarnings) {
+        for (let i = 0; i < result.sources.length; i++) {
+            let cookies = result.sources[i].cookies;
+            if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                result.warnings.push(`Source (${result.sources[i].sourceName}) has expired cookie(s)`);
+            }
         }
+
+        let promiseArray = [];
+        for (let i = 0; i < result.sources.length; i++) {
+            let prom = checkUrlWork(result.sources[i].sourceName, result.sources[i].movie_url).then(checkUrlResult => {
+                if (checkUrlResult === "error") {
+                    result.warnings.push(`Source (${result.sources[i].sourceName}) url not working`);
+                } else if (checkUrlResult !== "ok") {
+                    result.warnings.push(`Source (${result.sources[i].sourceName}) domain changed to (${checkUrlResult})`);
+                }
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
     }
 
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function editSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
+    let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
+        movie_url,
+        page_count,
+        serial_url,
+        serial_page_count,
+        crawlCycle,
+        disabled,
+        cookies
+    });
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === "notfound") {
+        return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function addSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
+    let result = await adminCrawlerDbMethods.addSourceDB(sourceName, {
+        movie_url,
+        page_count,
+        serial_url,
+        serial_page_count,
+        crawlCycle,
+        disabled,
+        cookies
+    });
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === "notfound") {
+        return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
+    } else if (result === "already exist") {
+        return generateServiceResult({data: null}, 409, errorMessage.crawlerSourceAlreadyExist);
+    }
     return generateServiceResult({data: result}, 200, '');
 }
 

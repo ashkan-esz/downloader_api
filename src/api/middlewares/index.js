@@ -6,6 +6,7 @@ import * as rateLimit from './rateLimit.js';
 import uploadUserProfile from './uploadUserProfile.js';
 import * as userPermission from './userPermission.js';
 import * as validateApiParams from './validateApiParams.js';
+import * as validateApiParamsAdmin from './validateApiParamsAdmin.js';
 
 
 export default {
@@ -17,4 +18,5 @@ export default {
     uploadUserProfile,
     userPermission,
     validateApiParams,
+    validateApiParamsAdmin,
 }
