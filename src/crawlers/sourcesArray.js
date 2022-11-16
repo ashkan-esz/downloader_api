@@ -6,6 +6,32 @@ import bia2hd from "./sources/7bia2hd.js";
 import golchindl from "./sources/8golchindl.js";
 import bia2anime from "./sources/10bia2anime.js";
 
+export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'salamdl', 'avamovie', 'bia2hd', 'golchindl', 'bia2anime']);
+
+export const sourcesObj = () => {
+    let now = new Date();
+    let obj = {
+        title: "sources",
+        pageCounter_time: now,
+    };
+    for (let i = 0; i < sourcesNames.length; i++) {
+        obj[sourcesNames[i]] = {
+            movie_url: "",
+            page_count: 0,
+            serial_url: "",
+            serial_page_count: 0,
+            crawlCycle: 0,
+            disabled: true,
+            cookies: [],
+            addDate: now,
+            disabledDate: now,
+            lastCrawlDate: 0,
+            lastDomainChangeDate: 0,
+        }
+    }
+    return obj;
+}
+
 export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
     let pageCounterTime = new Date((pageCounter_time || sourcesObj.pageCounter_time));
     let now = new Date();

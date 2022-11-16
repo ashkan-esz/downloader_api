@@ -1,4 +1,5 @@
 import getCollection, {database} from './mongoDB.js';
+import {sourcesObj} from "../crawlers/sourcesArray.js";
 import {saveError} from "../error/saveError.js";
 
 
@@ -103,10 +104,7 @@ export async function createCollectionsAndIndexes() {
         try {
             await database.createCollection('sources');
             let sourcesCollection = await getCollection('sources');
-            await sourcesCollection.insertOne({
-                title: "sources",
-                pageCounter_time: new Date(),
-            });
+            await sourcesCollection.insertOne(sourcesObj());
         } catch (err2) {
         }
 
