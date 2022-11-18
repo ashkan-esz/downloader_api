@@ -14,7 +14,7 @@ export async function startCrawler(sourceName, mode, handleDomainChange, handleD
         handleDomainChangeOnly,
     });
     if (result.isError) {
-        return generateServiceResult({data: result}, 500, errorMessage.serverError);
+        return generateServiceResult({data: result}, 500, result.message);
     }
     return generateServiceResult({data: result}, 200, '');
 }

@@ -148,7 +148,7 @@ export async function getCrawlerLogsInTimes(startTime, endTime, skip, limit) {
             },
             {
                 $sort: {
-                    'userCounts.startTime': 1
+                    'crawlerLogs.startTime': 1
                 }
             },
             {

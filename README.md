@@ -52,8 +52,8 @@ start npm script `npm run start` and boom server is working.
 ### Note
 
 In few hours (almost every 3 hour) crawler start and populates database, also you can start the crawler with api (POST /crawler/[password])
- 
-we plan to add this step into admin panel.
+
+(you can also start crawler from admin panel)
 
 ## Environment Variables
 
@@ -125,6 +125,7 @@ Give a ⭐️ if you like this project!
 
 - [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
 - [downloader_app](https://github.com/ashkan-esz/downloader_app/)
+- [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
 
 ## Extra
 
