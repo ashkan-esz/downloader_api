@@ -6,7 +6,7 @@ import {userStats_staff} from "../../models/person.js";
 import {saveError} from "../../error/saveError.js";
 
 
-export async function getTodayStaffOrCharactersBirthday(collectionName, userId, skip, limit, projection) {
+export async function getTodayStaffOrCharactersBirthday(collectionName, userId, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection(collectionName);
 
@@ -27,7 +27,7 @@ export async function getTodayStaffOrCharactersBirthday(collectionName, userId, 
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {

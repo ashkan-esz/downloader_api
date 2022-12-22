@@ -5,7 +5,7 @@ import {saveError} from "../../error/saveError.js";
 import {getGenresStatusFromCache} from "../../api/middlewares/moviesCache.js";
 
 
-export async function getNewMovies(userId, types, imdbScores, malScores, skip, limit, projection) {
+export async function getNewMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -28,7 +28,7 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -44,7 +44,7 @@ export async function getNewMovies(userId, types, imdbScores, malScores, skip, l
     }
 }
 
-export async function getNewMoviesWithDate(userId, insertDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats = false) {
+export async function getNewMoviesWithDate(userId, insertDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -84,7 +84,7 @@ export async function getNewMoviesWithDate(userId, insertDate, types, imdbScores
     }
 }
 
-export async function getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, projection) {
+export async function getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -107,7 +107,7 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -123,7 +123,7 @@ export async function getUpdateMovies(userId, types, imdbScores, malScores, skip
     }
 }
 
-export async function getUpdateMoviesWithDate(userId, updateDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats = false) {
+export async function getUpdateMoviesWithDate(userId, updateDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -162,7 +162,7 @@ export async function getUpdateMoviesWithDate(userId, updateDate, types, imdbSco
     }
 }
 
-export async function getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, projection) {
+export async function getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -185,7 +185,7 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -201,7 +201,7 @@ export async function getTopsByLikesMovies(userId, types, imdbScores, malScores,
     }
 }
 
-export async function getNewTrailers(userId, types, imdbScores, malScores, skip, limit, projection) {
+export async function getNewTrailers(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
 
@@ -225,7 +225,7 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -244,7 +244,7 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
 //-----------------------------------
 //-----------------------------------
 
-export async function getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, projection) {
+export async function getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let searchBase;
         sortBase = sortBase.toLowerCase();
@@ -290,7 +290,7 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -306,7 +306,7 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
     }
 }
 
-export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, projection) {
+export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         dayNumber = dayNumber % 7;
         types = types.filter(item => item.includes('serial'));
@@ -364,7 +364,7 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -489,7 +489,7 @@ export async function getGenreTop5MoviePoster(genre) {
     }
 }
 
-export async function getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, projection) {
+export async function getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
@@ -511,7 +511,7 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (Object.keys(projection).length > 0) {
@@ -530,7 +530,7 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
 //-----------------------------------
 //-----------------------------------
 
-export async function searchOnMovieCollectionWithFilters(userId, filters, skip, limit, projection) {
+export async function searchOnMovieCollectionWithFilters(userId, filters, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
@@ -543,7 +543,7 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies'),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (filters.title) {
@@ -618,7 +618,7 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
     }
 }
 
-export async function searchOnCollectionById(collectionName, userId, id, filters, projection, dataLevel = '') {
+export async function searchOnCollectionById(collectionName, userId, id, filters, projection, dataLevel = '', dontLookupUserStats) {
     try {
         let collection = await getCollection(collectionName);
 
@@ -637,7 +637,7 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
             {
                 $addFields: {}
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats),
         ];
 
         if (collectionName === 'movies' && filters.seasons) {
@@ -749,7 +749,7 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
     }
 }
 
-export async function searchOnStaffOrCharactersWithFilters(collectionName, userId, filters, skip, limit, projection) {
+export async function searchOnStaffOrCharactersWithFilters(collectionName, userId, filters, skip, limit, projection, dontLookupUserStats) {
     try {
         let collection = await getCollection(collectionName);
 
@@ -763,7 +763,7 @@ export async function searchOnStaffOrCharactersWithFilters(collectionName, userI
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName),
+            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats),
         ];
 
         if (filters.name) {

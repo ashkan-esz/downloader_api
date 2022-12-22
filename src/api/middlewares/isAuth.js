@@ -57,6 +57,7 @@ export async function attachAuthFlag(req, res, next) {
             }
         }
     }
+    req.isTestUser = false;
 
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
