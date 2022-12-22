@@ -1,27 +1,11 @@
 import config from "../../config/index.js";
 import jwt from "jsonwebtoken";
-import NodeCache from "node-cache";
 import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
-import {saveError} from "../../error/saveError.js";
+import {checkTokenBlackListed} from "./authTokenBlackList.js";
 
-const refreshTokenBlackList = new NodeCache({stdTTL: 60 * 60});
-
-export function addToBlackList(jwtKey, cause, duration = null) {
-    try {
-        if (duration) {
-            if (duration > 60) {
-                refreshTokenBlackList.set(jwtKey, cause, duration);
-            }
-        } else {
-            let cacheDuration = config.jwt.accessTokenExpire.replace('h', '');
-            cacheDuration = Number(cacheDuration) * 60 * 60;
-            refreshTokenBlackList.set(jwtKey, cause, cacheDuration);
-        }
-    } catch (error) {
-        saveError(error);
-    }
-}
+let testUserDataCache = null;
+let testUserDataCachDate = 0;
 
 export function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
@@ -54,10 +38,14 @@ export function isAuth_refreshToken(req, res, next) {
 }
 
 export async function attachAuthFlag(req, res, next) {
+    //handle test user
     if (req.method === 'GET' && req.query.testUser === 'true') {
-        let findUserResult = await findUser('$$test_user$$', '', {activeSessions: 1});
-        if (findUserResult && findUserResult !== 'error' && findUserResult.activeSessions[0]) {
-            let refreshToken = findUserResult.activeSessions[0].refreshToken;
+        if (Date.now() - testUserDataCachDate > 30 * 60 * 1000 || testUserDataCache === 'error') {
+            testUserDataCache = await findUser('$$test_user$$', '', {activeSessions: 1});
+            testUserDataCachDate = Date.now();
+        }
+        if (testUserDataCache && testUserDataCache !== 'error' && testUserDataCache.activeSessions[0]) {
+            let refreshToken = testUserDataCache.activeSessions[0].refreshToken;
             let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
             if (refreshTokenVerifyResult) {
                 req.accessToken = '';
@@ -76,7 +64,7 @@ export async function attachAuthFlag(req, res, next) {
         req.authCode = 401;
         return next();
     }
-    if (refreshTokenBlackList.has(refreshToken)) {
+    if (checkTokenBlackListed(refreshToken)) {
         req.authCode = 401;
         return next();
     }

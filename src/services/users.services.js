@@ -5,7 +5,7 @@ import * as bcrypt from "bcrypt";
 import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
-import {addToBlackList} from "../api/middlewares/isAuth.js";
+import {addToBlackList} from "../api/middlewares/authTokenBlackList.js";
 import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
