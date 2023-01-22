@@ -242,12 +242,20 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
             addSourceToAxiosBlackList(sourceName);
         }
         if (error.message !== 'timeout of 3000ms exceeded') {
-            //sometimes error object is read-only
-            error = {
-                ...error,
-                isAxiosError: true,
-                url: url,
-                filePath: 'remoteHeadlessBrowser > useAxiosGet 2',
+            if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
+                error.isAxiosError = true;
+                error.url = url;
+                error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
+            } else {
+                //sometimes error object is read-only
+                let temp = error;
+                error = new Error(temp.message);
+                Object.assign(error, temp);
+                error.stack0 = temp.stack;
+                error.message0 = temp.message;
+                error.isAxiosError = true;
+                error.url = url;
+                error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
             }
             saveError(error);
         }

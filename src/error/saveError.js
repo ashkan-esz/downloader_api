@@ -17,6 +17,9 @@ export async function saveErrorIfNeeded(error) {
 export async function saveError(error) {
     if (config.nodeEnv === 'production') {
         if (error.isAxiosError) {
+            if (!error.url && error.config?.url) {
+                error.url = error.config.url;
+            }
             Sentry.withScope(function (scope) {
                 scope.setExtra('axiosErrorData', error);
                 scope.setTag("axiosError", "axiosError");
