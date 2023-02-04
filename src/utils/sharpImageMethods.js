@@ -39,11 +39,11 @@ export async function getImageThumbnail(inputImage, downloadFile = false) {
         let fileSize = 0;
         if (downloadFile) {
             let downloadResult = await downloadImage(inputImage);
-            if (!downloadResult) {
+            if (!downloadResult || !downloadResult.data) {
                 return null;
             }
             inputImage = downloadResult.data;
-            fileSize = Number(downloadResult.headers['content-length']) || 0
+            fileSize = Number(downloadResult.headers['content-length']) || 0;
         }
 
         const image = sharp(inputImage).rotate();

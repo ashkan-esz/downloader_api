@@ -6,16 +6,25 @@ import {fileURLToPath} from "url";
 import inquirer from 'inquirer';
 import {stringify, parse} from 'zipson';
 
+const __filename = fileURLToPath(import.meta.url);
+const pathToTitles = Path.dirname(__filename);
+
+let isFileOpen = false;
+
+async function waitForFileClose() {
+    while (isFileOpen) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+}
 
 export async function saveSampleTitle(sourceName, originalTitle, title, originalType, type, year, replace = false) {
     try {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = Path.dirname(__filename);
-        const pathToTitles = Path.join(__dirname, 'titles');
-        const files = fs.readdirSync(pathToTitles);
+        await waitForFileClose();
+        isFileOpen = true;
+        const files = await fs.promises.readdir(pathToTitles);
         if (files.includes(`${sourceName}.json`)) {
             const pathToFile = Path.join(pathToTitles, `${sourceName}.json`);
-            let titlesFile = fs.readFileSync(pathToFile, 'utf8');
+            let titlesFile = await fs.promises.readFile(pathToFile, 'utf8');
             let titles = parse(titlesFile);
             let found = false;
             for (let i = 0; i < titles.length; i++) {
@@ -26,7 +35,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                         titles[i].title = title;
                         titles[i].originalType = originalType;
                         titles[i].type = type;
-                        fs.writeFileSync(pathToFile, stringify(titles), 'utf8');
+                        await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
                     }
                     found = true;
                     break;
@@ -39,7 +48,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                     year
                 }
                 titles.push(newSampleTitle);
-                fs.writeFileSync(pathToFile, stringify(titles), 'utf8');
+                await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
             }
         } else {
             //create file
@@ -49,10 +58,12 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                 year
             }
             const pathToFile = Path.join(pathToTitles, `${sourceName}.json`);
-            fs.writeFileSync(pathToFile, stringify([newSampleTitle]), 'utf8');
+            await fs.promises.writeFile(pathToFile, stringify([newSampleTitle]), 'utf8');
         }
+        isFileOpen = false;
     } catch (error) {
         saveError(error);
+        isFileOpen = false;
     }
 }
 
@@ -101,11 +112,10 @@ export async function checkPrevTitleWithNewMethod(sourceName = null, updateData 
 
 async function updateMovieData(movieData, newTitle, newYear) {
     try {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = Path.dirname(__filename);
-        const pathToTitles = Path.join(__dirname, 'titles');
+        await waitForFileClose();
+        isFileOpen = true;
         const pathToFile = Path.join(pathToTitles, `${movieData.sourceName}.json`);
-        let titlesFile = fs.readFileSync(pathToFile, 'utf8');
+        let titlesFile = await fs.promises.readFile(pathToFile, 'utf8');
         let titles = parse(titlesFile);
 
         for (let i = 0; i < titles.length; i++) {
@@ -118,21 +128,22 @@ async function updateMovieData(movieData, newTitle, newYear) {
             ) {
                 titles[i].title = newTitle;
                 titles[i].year = newYear;
-                fs.writeFileSync(pathToFile, stringify(titles), 'utf8');
+                await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
                 break;
             }
         }
+        isFileOpen = false;
     } catch (error) {
         saveError(error);
+        isFileOpen = false;
     }
 }
 
 export async function getSampleTitles(sourceNames = null) {
     try {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = Path.dirname(__filename);
-        const pathToTitles = Path.join(__dirname, 'titles');
-        let files = fs.readdirSync(pathToTitles);
+        await waitForFileClose();
+        isFileOpen = true;
+        let files = await fs.promises.readdir(pathToTitles);
         if (sourceNames) {
             files = files.filter(item => sourceNames.includes(item))
         }
@@ -151,9 +162,11 @@ export async function getSampleTitles(sourceNames = null) {
             promiseArray.push(temp);
         }
         await Promise.allSettled(promiseArray);
+        isFileOpen = false;
         return titles;
     } catch (error) {
         saveError(error);
+        isFileOpen = false;
         return 'error';
     }
 }
