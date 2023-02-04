@@ -92,7 +92,8 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
         let {
             $,
             links,
-            cookies
+            cookies,
+            pageContent,
         } = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceAuthStatus, 'movieDataPage', sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
@@ -179,7 +180,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
             }
         }
         await Promise.allSettled(promiseArray);
-        return {downloadLinks: downloadLinks, $2: $, cookies};
+        return {downloadLinks: downloadLinks, $2: $, cookies, pageContent};
     } catch (error) {
         saveError(error);
         return null;
@@ -191,6 +192,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
     let responseUrl = '';
     let pageTitle = '';
     let cookies = {};
+    let pageContent = {};
     try {
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
         if (url.includes('/page/')) {
@@ -206,6 +208,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
                     cookies = pageData.cookies;
+                    pageContent = pageData.pageContent;
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
                 }
@@ -229,6 +232,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                         $ = null;
                         links = [];
                     } else {
+                        pageContent = response.data;
                         $ = cheerio.load(response.data);
                         links = $('a');
                     }
@@ -268,10 +272,10 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, cookies, checkGoogleCache, responseUrl, pageTitle};
+        return {$, links, cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
     } catch (error) {
         await saveError(error);
-        return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle};
+        return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
     }
 }
 

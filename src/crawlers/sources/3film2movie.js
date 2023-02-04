@@ -72,7 +72,7 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
                         type = 'anime_' + type;
                     }
@@ -87,7 +87,7 @@ async function search_title(link, i) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     if (typeFix && (downloadLinks.length === 0 || !downloadLinks[0].link.match(/\.s\d+e\d+\./i))) {
                         type = typeFix; //convert type serial to movie
