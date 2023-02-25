@@ -57,7 +57,7 @@ async function search_title(link, i) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
-                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
@@ -67,7 +67,7 @@ async function search_title(link, i) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
@@ -75,7 +75,7 @@ async function search_title(link, i) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     year = fixWrongYear(title, type, year);
                     downloadLinks = removeDuplicateLinks(downloadLinks, true);
