@@ -71,7 +71,7 @@ async function search_title(link, i, $) {
                     getFileData, null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
-                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     type = fixAnimeType($2, type);
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
@@ -82,7 +82,7 @@ async function search_title(link, i, $) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
@@ -92,7 +92,7 @@ async function search_title(link, i, $) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks);
                     if (isCollection) {
@@ -432,9 +432,9 @@ function extraSearchMatch($, link, title) {
         title = title.replace(/\*/g, '\\*');
         return (
             !!linkHref.match(/\/s\d+\/(.*\/?((\d{3,4}p(\.x265)?)|(DVDRip))\/)?$/i) ||
-            !!linkHref.match(new RegExp(`${title}\\/\\d+p(\\.x265)?\\/`)) ||
-            !!linkHref.match(new RegExp(`${title.replace(/\s+/g, '.')}\\/\\d+p(\\.x265)?\\/`)) ||
-            !!linkHref.match(new RegExp(`\\/serial\\/${title.replace(/\s+/g, '.')}\\/$`)) ||
+            !!linkHref.match(new RegExp(`${title .replace(/\*/g, '\\*')}\\/\\d+p(\\.x265)?\\/`)) ||
+            !!linkHref.match(new RegExp(`${title.replace(/\s+/g, '.') .replace(/\*/g, '\\*')}\\/\\d+p(\\.x265)?\\/`)) ||
+            !!linkHref.match(new RegExp(`\\/serial\\/${title.replace(/\s+/g, '.') .replace(/\*/g, '\\*')}\\/$`)) ||
             !!linkHref.match(/\/(duble|dubbed)\//i) ||
             !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d+-(\d+)?\/(\d\d\d\d?p(\.x265)?\/)?/i) ||
             !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d\d\d\d?p(\.x265)?\/?/i)
@@ -488,7 +488,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
         }
         let sizeMatch = info.match(/\.\d+MB(?=(\.|$))/i);
         if (sizeMatch) {
-            info = info.replace(new RegExp('\\' + sizeMatch[0], 'gi'), '');
+            info = info.replace(new RegExp('\\' + sizeMatch[0].replace(/\*/g, '\\*'), 'gi'), '');
             info = info + ' - ' + sizeMatch[0].replace('.', '');
         }
         if (info.includes('https')) {
@@ -533,8 +533,8 @@ function getQualityFromLinkHref(linkHref, title) {
         .replace(/\.Senario(?=(\.|$))/i, '')
         .replace(/\d\d\d\d?p(?!(\.|\s|$))/i, res => res.replace('p', 'p.'))
         .replace(/(^|\.)s\d+e\d+/i, '')
-        .replace(new RegExp('^' + title.replace(/\s+/g, '.'), 'i'), '')
-        .replace(new RegExp('[.\\/]' + title.replace(/\s+/g, '.'), 'i'), '')
+        .replace(new RegExp('^' + title.replace(/\s+/g, '.').replace(/\*/g, '\\*'), 'i'), '')
+        .replace(new RegExp('[.\\/]' + title.replace(/\s+/g, '.').replace(/\*/g, '\\*'), 'i'), '')
         .replace(/\d\d\d\d?p_?\d/, res => res.replace(/_?\d$/, ''))
         .replace(/\.x?264-/i, '.x264.')
         .replace(/(^|\.)10bit/i, '')
