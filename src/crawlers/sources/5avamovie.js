@@ -57,7 +57,7 @@ async function search_title(link, i, $, url) {
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, getQualitySample);
                 if (pageSearchResult) {
-                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
                         year = fixYear($2);
                     }
@@ -72,7 +72,7 @@ async function search_title(link, i, $, url) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     year = fixWrongYear(title, type, year);
                     downloadLinks = removeDuplicateLinks(downloadLinks);

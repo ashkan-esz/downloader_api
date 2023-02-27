@@ -136,6 +136,7 @@ export async function getSamplesFromFiles(pathToFiles, files) {
         let temp = readFile(paths[i]).then((f) => {
             let t = JSON.parse(f).map(item => {
                 item.sourceName = files[i].split('_')[0];
+                item.fileIndex = Number(files[i].split('_').pop().split('.')[0]);
                 return item;
             });
             samples = samples.concat(...t);
