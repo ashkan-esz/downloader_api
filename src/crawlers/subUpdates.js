@@ -3,6 +3,8 @@ import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
 import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
+import {CookieJar} from "tough-cookie";
+import {wrapper} from "axios-cookiejar-support";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
@@ -234,7 +236,9 @@ export function sortTrailers(trailers) {
 
 async function getFileSize(url, retryCounter = 0) {
     try {
-        let response = await axios.head(url);
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.head(url);
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&

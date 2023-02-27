@@ -15,6 +15,8 @@ import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
+import {CookieJar} from "tough-cookie";
+import {wrapper} from "axios-cookiejar-support";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 
@@ -79,7 +81,9 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         }
         let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
         let fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
-        let response = await axios.get(originalUrl, {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
@@ -153,7 +157,9 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
                 };
             }
         }
-        let response = await axios.get(originalUrl, {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary",
             headers: {
@@ -219,7 +225,9 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
 
         let fileName = getFileName(title, type, year, '', 'jpg');
         let fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
-        let response = await axios.get(originalUrl, {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.get(originalUrl, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });
@@ -835,7 +843,9 @@ function getFileName(title, titleType, year, extra, fileType) {
 
 async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
-        let response = await axios.head(url);
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.head(url);
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&

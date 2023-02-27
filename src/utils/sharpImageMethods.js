@@ -1,6 +1,8 @@
 import config from "../config/index.js";
 import axios from "axios";
 import sharp from "sharp";
+import {CookieJar} from "tough-cookie";
+import {wrapper} from "axios-cookiejar-support";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 
 export async function compressImage(responseData) {
@@ -80,7 +82,9 @@ export async function getImageThumbnail(inputImage, downloadFile = false) {
 
 async function downloadImage(url, retryCounter = 0) {
     try {
-        return await axios.get(url, {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        return await client.get(url, {
             responseType: "arraybuffer",
             responseEncoding: "binary"
         });

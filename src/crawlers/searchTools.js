@@ -11,6 +11,8 @@ import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 import {updatePageNumberCrawlerStatus} from "./crawlerStatus.js";
+import {CookieJar} from 'tough-cookie';
+import {wrapper} from "axios-cookiejar-support";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -187,7 +189,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
     }
 }
 
-async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData = null) {
+async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData = null, retryCounter = 0) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -222,7 +224,9 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 } else {
                     let sourcesObject = await getAxiosSourcesObject();
                     let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
-                    let response = await axios.get(url, {
+                    const jar = new CookieJar();
+                    const client = wrapper(axios.create({jar}));
+                    let response = await client.get(url, {
                         headers: {
                             Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
                         }
@@ -242,12 +246,21 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 }
             }
         } catch (error) {
+            if (
+                error.code === "ERR_BAD_REQUEST" &&
+                !error.response.data.includes("مطلبی که به دنبال آن بودید یافت نشد") &&
+                !error.response.data.includes("صفحه ای که به دنبال آن می گردید حذف یا اصلا وجود نداشته باشد") &&
+                retryCounter < 1) {
+                url = url.replace(/(?<=(page\/\d+))\/$/, '');
+                retryCounter++;
+                return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData, retryCounter);
+            }
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 if (decodeURIComponent(url) === url) {
                     let temp = url.replace(/\/$/, '').split('/').pop();
                     if (temp) {
                         url = url.replace(temp, encodeURIComponent(temp));
-                        return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData);
+                        return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData, retryCounter);
                     }
                 }
                 error.isAxiosError = true;

@@ -1,5 +1,7 @@
 import axios from "axios";
 import * as Sentry from "@sentry/node";
+import {wrapper} from 'axios-cookiejar-support';
+import {CookieJar} from 'tough-cookie';
 import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
@@ -42,7 +44,9 @@ async function checkSourcesUrl(sourcesUrls) {
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {
-                    let response = await axios.get(homePageLink);
+                    const jar = new CookieJar();
+                    const client = wrapper(axios.create({jar}));
+                    let response = await client.get(homePageLink);
                     responseUrl = response.request.res.responseUrl;
                 }
                 if (!responseUrl) {
@@ -53,7 +57,9 @@ async function checkSourcesUrl(sourcesUrls) {
                     let temp = homePageLink.replace(/\/$/, '').split('/').pop();
                     let url = homePageLink.replace(temp, encodeURIComponent(temp));
                     try {
-                        let response = await axios.get(url);
+                        const jar = new CookieJar();
+                        const client = wrapper(axios.create({jar}));
+                        let response = await client.get(url);
                         responseUrl = response.request.res.responseUrl;
                     } catch (error2) {
                         error2.isAxiosError = true;
@@ -92,7 +98,9 @@ export async function checkUrlWork(sourceName, sourceUrl) {
             if (pageData && pageData.pageContent) {
                 responseUrl = pageData.responseUrl;
             } else {
-                let response = await axios.get(homePageLink);
+                const jar = new CookieJar();
+                const client = wrapper(axios.create({jar}));
+                let response = await client.get(homePageLink);
                 responseUrl = response.request.res.responseUrl;
             }
         } catch (error) {
@@ -100,7 +108,9 @@ export async function checkUrlWork(sourceName, sourceUrl) {
                 let temp = homePageLink.replace(/\/$/, '').split('/').pop();
                 let url = homePageLink.replace(temp, encodeURIComponent(temp));
                 try {
-                    let response = await axios.get(url);
+                    const jar = new CookieJar();
+                    const client = wrapper(axios.create({jar}));
+                    let response = await client.get(url);
                     responseUrl = response.request.res.responseUrl;
                 } catch (error2) {
                     error2.isAxiosError = true;

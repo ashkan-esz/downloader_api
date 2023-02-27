@@ -132,3 +132,4 @@
 //todo : 136. smart suggestion method
 //todo : 137. fix duplicate titles bug
 //todo : 138. update mongodb driver
+//todo : 139. add size of download links while crawling

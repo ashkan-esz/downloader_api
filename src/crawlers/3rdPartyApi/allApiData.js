@@ -8,6 +8,8 @@ import {sortPosters} from "../subUpdates.js";
 import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
+import {CookieJar} from "tough-cookie";
+import {wrapper} from "axios-cookiejar-support";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
@@ -238,7 +240,9 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
             }
         }
         if (newPosterSize === 0) {
-            let response = await axios.head(newPosterUrl);
+            const jar = new CookieJar();
+            const client = wrapper(axios.create({jar}));
+            let response = await client.head(newPosterUrl);
             newPosterSize = Number(response.headers['content-length']) || 0;
         }
         if (newPosterSize > 0) {

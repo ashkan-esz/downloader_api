@@ -1,6 +1,8 @@
 import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
+import {CookieJar} from 'tough-cookie';
+import {wrapper} from 'axios-cookiejar-support';
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils.js"
 import {saveError} from "../error/saveError.js";
@@ -9,12 +11,16 @@ let remoteBrowsers = config.remoteBrowser.map(item => {
     item.password = encodeURIComponent(item.password);
     item.apiCallCount = 0;
     item.sourcesData = [];
+    item.disabledTime = 0;
+    item.disabled = false;
     return item;
 });
 
 let sourcesObject = await getSourcesObjDB();
 let sourcesObject_date = Date.now();
 let blackListSources = [];
+
+let errorsAndTimes = [];
 
 export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useAxiosFirst = false, cookieOnly = false, prevUsedBrowsers = []) {
     let decodedUrl = getDecodedLink(url);
@@ -39,11 +45,15 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         while (true) {
             freeBlockedSourcesFromBrowserServers();
+            reactivateDisabledServers();
             if (!checkAnyBrowserServerCanHandleSource(sourceName)) {
                 //this source is blocked on all browsers
                 return axiosResult;
             }
-            let notUsedBrowsers = remoteBrowsers.filter(item => !prevUsedBrowsers.includes(item.endpoint));
+
+            let notUsedBrowsers = remoteBrowsers
+                .filter(item => !item.disabled)
+                .filter(item => !prevUsedBrowsers.includes(item.endpoint));
             if (notUsedBrowsers.length === 0) {
                 //if there is only 1 browser, retry the same browser
                 if (remoteBrowsers.length === 1 && prevUsedBrowsers.length === 1) {
@@ -53,6 +63,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
                     return axiosResult;
                 }
             }
+
             selectedBrowser = notUsedBrowsers
                 //tabsCount - apiCallCount :: server capability
                 .sort((a, b) => (b.tabsCount - b.apiCallCount) - (a.tabsCount - a.apiCallCount))
@@ -73,7 +84,10 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
             : "";
         sourceCookies = sourceCookies ? ("&sourceCookies=" + sourceCookies) : "";
         let response = await axios.get(
-            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}` + sourceCookies
+            `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}` + sourceCookies,
+            {
+                timeout: 70 * 1000, //70s timeout
+            },
         );
         selectedBrowser.apiCallCount--;
 
@@ -99,20 +113,8 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         return data;
     } catch (error) {
-        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-            error.isAxiosError = true;
-            error.url = url;
-            error.filePath = 'remoteHeadlessBrowser';
-        }
-        if (selectedBrowser && error.response && error.response.status >= 500) {
-            selectedBrowser.apiCallCount--;
-            addSourceErrorToBrowserServer(selectedBrowser, sourceName);
-            error.url = url;
-            error.browserServer = selectedBrowser.endpoint;
-            error.prevUsedBrowsers = prevUsedBrowsers;
-            await saveError(error);
-            prevUsedBrowsers.push(selectedBrowser.endpoint);
-            await new Promise(resolve => setTimeout(resolve, 3000));
+        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName);
+        if (handleErrorResult === "retry") {
             return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         }
         await saveError(error);
@@ -134,7 +136,9 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         }
 
         while (true) {
-            let notUsedBrowsers = remoteBrowsers.filter(item => !prevUsedBrowsers.includes(item.endpoint));
+            let notUsedBrowsers = remoteBrowsers
+                .filter(item => !item.disabled)
+                .filter(item => !prevUsedBrowsers.includes(item.endpoint));
             if (notUsedBrowsers.length === 0) {
                 //if there is only 1 browser, retry the same browser
                 if (remoteBrowsers.length === 1 && prevUsedBrowsers.length === 1) {
@@ -156,7 +160,10 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
 
         selectedBrowser.apiCallCount++;
         let response = await axios.get(
-            `${selectedBrowser.endpoint}/youtube/getDownloadLink/?password=${selectedBrowser.password}&youtubeUrl=${youtubeUrl}`
+            `${selectedBrowser.endpoint}/youtube/getDownloadLink/?password=${selectedBrowser.password}&youtubeUrl=${youtubeUrl}`,
+            {
+                timeout: 70 * 1000, //70s timeout
+            },
         );
         selectedBrowser.apiCallCount--;
 
@@ -169,24 +176,64 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         //{downloadUrl, youtubeUrl}
         return data.res;
     } catch (error) {
-        if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
-            error.isAxiosError = true;
-            error.url = youtubeUrl;
-            error.filePath = 'remoteHeadlessBrowser';
-        }
-        if (selectedBrowser && error.response && error.response.status >= 500) {
-            selectedBrowser.apiCallCount--;
-            error.url = youtubeUrl;
-            error.browserServer = selectedBrowser.endpoint;
-            error.prevUsedBrowsers = prevUsedBrowsers;
-            await saveError(error);
-            prevUsedBrowsers.push(selectedBrowser.endpoint);
-            await new Promise(resolve => setTimeout(resolve, 3000));
+        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, youtubeUrl, prevUsedBrowsers, "");
+        if (handleErrorResult === "retry") {
             return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers);
         }
         await saveError(error);
         return null;
     }
+}
+
+async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName) {
+    if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+        error.isAxiosError = true;
+        error.url = url;
+        error.filePath = 'remoteHeadlessBrowser';
+    }
+    if (selectedBrowser && (
+        (error.response && error.response.status >= 500) ||
+        error.message === "timeout of 70000ms exceeded"
+    )) {
+        selectedBrowser.apiCallCount--;
+        if (sourceName) {
+            addSourceErrorToBrowserServer(selectedBrowser, sourceName);
+        }
+        if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
+            error.url = url;
+            error.browserServer = selectedBrowser.endpoint;
+            error.prevUsedBrowsers = prevUsedBrowsers;
+            await saveError(error);
+        }
+        prevUsedBrowsers.push(selectedBrowser.endpoint);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return "retry";
+    }
+    if (selectedBrowser && error.response && error.response.status === 404) {
+        try {
+            let r = await axios.get(selectedBrowser.endpoint);
+        } catch (err) {
+            if (selectedBrowser && error.response && error.response.status === 404) {
+                //remote server got deactivated or removed from server
+                selectedBrowser.apiCallCount--;
+                if (selectedBrowser.disabled) {
+                    return "retry";
+                }
+                selectedBrowser.disabled = true;
+                selectedBrowser.disabledTime = Date.now();
+                if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
+                    error.url = url;
+                    error.browserServer = selectedBrowser.endpoint;
+                    error.prevUsedBrowsers = prevUsedBrowsers;
+                    await saveError(error);
+                }
+                prevUsedBrowsers.push(selectedBrowser.endpoint);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                return "retry";
+            }
+        }
+    }
+    return "return null";
 }
 
 //--------------------------------------------------
@@ -213,7 +260,9 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
         let timeout = sourceAuthStatus === 'login-cookie' ? 6000 : 3000;
-        let response = await axios.get(url, {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let response = await client.get(url, {
             timeout: timeout,
             headers: {
                 Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
@@ -243,7 +292,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         }
         if (error.message !== 'timeout of 3000ms exceeded') {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
-                error.isAxiosError = true;
+                error.isAxiosError2 = true;
                 error.url = url;
                 error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
             } else {
@@ -253,7 +302,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
                 Object.assign(error, temp);
                 error.stack0 = temp.stack;
                 error.message0 = temp.message;
-                error.isAxiosError = true;
+                error.isAxiosError2 = true;
                 error.url = url;
                 error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
             }
@@ -364,6 +413,40 @@ function addSourceToAxiosBlackList(sourceName) {
 function freeAxiosBlackListSources() {
     for (let i = 0; i < blackListSources.length; i++) {
         //free source after 3 hour
-        blackListSources[i].isBlocked = (Date.now() - blackListSources[i].lastErrorTime) < 3 * 60 * 60 * 1000;
+        blackListSources[i].isBlocked = (Date.now() - blackListSources[i].lastErrorTime) < 3 * 60 * 60 * 1000; //3h
+    }
+}
+
+function reactivateDisabledServers() {
+    for (let i = 0; i < remoteBrowsers.length; i++) {
+        //reActivate browser server after 2 hour
+        if (remoteBrowsers[i].disabled) {
+            remoteBrowsers[i].disabled = (Date.now() - remoteBrowsers[i].disabledTime) < 2 * 60 * 60 * 1000; //2h
+            if (!remoteBrowsers[i].disabled) {
+                remoteBrowsers[i].disabledTime = 0;
+            }
+        }
+    }
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+function checkErrorNeedToSave(error, serverUrl) {
+    let errorMessage = error.message + '|' + error.code + '|' + error.response?.status + '|' + serverUrl;
+    let errDataTime = errorsAndTimes.find(item => item.errorMessage === errorMessage);
+    if (errDataTime) {
+        if (Date.now() - errDataTime.savedTime > 20 * 60 * 1000) {
+            //save errors every 20min, dont save duplicate errors
+            errDataTime.savedTime = Date.now();
+            return true;
+        }
+        return false;
+    } else {
+        errorsAndTimes.push({
+            errorMessage: errorMessage,
+            savedTime: Date.now(),
+        });
+        return true;
     }
 }
