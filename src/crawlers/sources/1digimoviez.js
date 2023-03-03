@@ -17,6 +17,7 @@ import {
     linkInfoRegex,
     releaseRegex,
 } from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {saveError} from "../../error/saveError.js";
@@ -92,7 +93,7 @@ async function search_title(link, i, $, url) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
                         subtitles: [],
@@ -138,20 +139,6 @@ function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
     } catch (error) {
         saveError(error);
         return {title, year: year || ''};
-    }
-}
-
-function getPersianSummary($) {
-    try {
-        let divs = $('div');
-        for (let i = 0; i < divs.length; i++) {
-            if ($(divs[i]).hasClass('plot_text'))
-                return $(divs[i]).text().trim();
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
     }
 }
 

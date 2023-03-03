@@ -11,6 +11,7 @@ import {
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -106,7 +107,7 @@ async function search_title(link, i) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
@@ -131,21 +132,6 @@ function fixYear($) {
                 return '';
             }
             return validateYear(yearArray[0]);
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
-}
-
-function getPersianSummary($) {
-    try {
-        let div = $('div');
-        for (let i = 0; i < div.length; i++) {
-            let temp = $(div[i]).text();
-            if (temp && temp === 'خلاصه داستان :')
-                return $(div[i]).next().text().trim();
         }
         return '';
     } catch (error) {

@@ -12,6 +12,7 @@ import {
     releaseRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import * as persianRex from "persian-rex";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -86,7 +87,7 @@ async function search_title(link, i) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
@@ -124,21 +125,6 @@ function fixWrongYear(title, type, year) {
         return '2017'; // 2019 --> 2017
     }
     return year;
-}
-
-function getPersianSummary($) {
-    try {
-        let paragraphs = $('p');
-        for (let i = 0; i < paragraphs.length; i++) {
-            let temp = $(paragraphs[i]).text();
-            if (temp && temp.includes('خلاصه داستان'))
-                return temp.replace('خلاصه داستان :', '').trim();
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
 }
 
 function getPoster($) {

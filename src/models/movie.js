@@ -45,7 +45,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         poster_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
         trailer_s3: null, // {url,originalUrl,size,vpnStatus}
         summary: {
-            persian: persianSummary.replace(/([.…])+$/, ''),
+            persian: persianSummary,
             persian_source: sourceName,
             english: '',
             english_source: '',

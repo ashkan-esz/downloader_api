@@ -21,6 +21,7 @@ import {
     releaseRegex,
     specialWords
 } from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
@@ -108,7 +109,7 @@ async function search_title(link, i, $) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: [],
                         subtitles: [],
@@ -180,33 +181,6 @@ function addTitleNameToInfo(downloadLinks) {
         } else {
             downloadLinks[i].info = splitInfo[0] + '. (' + name + ')' + ' - ' + splitInfo[1];
         }
-    }
-}
-
-function getPersianSummary($) {
-    try {
-        let $div = $('div');
-        for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('summary') && $($div[i]).text().includes('خلاصه')) {
-                return $($div[i]).text().replace('خلاصه داستان', '').replace(':', '').trim();
-            }
-        }
-        let $strong = $('strong');
-        for (let i = 0; i < $strong.length; i++) {
-            if ($($strong[i]).text().includes('خلاصه داستان')) {
-                return $($strong[i]).text().replace('خلاصه داستان', '').replace(':', '').trim();
-            }
-        }
-        let p = $('p');
-        for (let i = 0; i < p.length; i++) {
-            if ($(p[i]).text().includes('خلاصه فیلم')) {
-                return $(p[i]).text().split('–').pop().replace('خلاصه فیلم', '').replace(':', '').trim();
-            }
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
     }
 }
 

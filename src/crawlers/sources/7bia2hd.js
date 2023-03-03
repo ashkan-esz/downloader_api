@@ -20,6 +20,7 @@ import {
     encodersRegex,
     releaseRegex
 } from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {wordsToNumbers} from "words-to-numbers";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -72,7 +73,7 @@ async function search_title(link, i) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
@@ -121,22 +122,6 @@ function fixYear($, type) {
                 return '';
             }
             return validateYear(yearArray[0]);
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
-}
-
-function getPersianSummary($) {
-    try {
-        let $p = $('p');
-        for (let i = 0; i < $p.length; i++) {
-            let parent = $p[i].parent;
-            if (parent.name === 'div' && $(parent).hasClass('-plot')) {
-                return $($p[i]).text().replace('خلاصه داستان:', '').trim();
-            }
         }
         return '';
     } catch (error) {

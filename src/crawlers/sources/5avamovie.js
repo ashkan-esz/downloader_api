@@ -18,6 +18,7 @@ import {
     linkInfoRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
+import {summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -83,7 +84,7 @@ async function search_title(link, i, $, url) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
-                        persianSummary: getPersianSummary($2),
+                        persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: getPoster($2),
                         trailers: getTrailers($2),
                         subtitles: [],
@@ -139,21 +140,6 @@ function fixWrongYear(title, type, year) {
         return '2019'; // 2021 --> 2019
     }
     return year;
-}
-
-function getPersianSummary($) {
-    try {
-        let $div = $('div');
-        for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('plot')) {
-                return $($div[i]).text().replace('خلاصه داستان :', '').trim();
-            }
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
 }
 
 function getPoster($) {

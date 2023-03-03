@@ -1,10 +1,7 @@
-import fs from 'fs';
-import {getTitleAndYear} from "../../movieTitle.js";
-import {saveError} from "../../../error/saveError.js";
 import * as Path from "path";
 import {fileURLToPath} from "url";
-import inquirer from 'inquirer';
 import {getDataFileIndex, getDataFiles, getSamplesFromFiles, saveNewSampleData, updateSampleData} from "../utils.js";
+import {saveError} from "../../../error/saveError.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const pathToFiles = Path.dirname(__filename);
@@ -50,80 +47,16 @@ export async function saveSourcePageSample(pageContent, sourceData, title, type,
     }
 }
 
-export async function checkPrevTitleWithNewMethod(sourceName = null, updateData = false) {
-    //todo : implement
-    return -1;
+export async function updateSourcePageData(sourcePageData, updateFieldNames) {
     try {
-        let sourceFileName = !sourceName ? null : sourceName + '.json';
-        let titles = await getSourcePagesSamples(sourceFileName);
-        let counter = 0;
-        for (let i = 0; i < titles.length; i++) {
-            const {
-                title: newTitle,
-                year: newYear
-            } = getTitleAndYear(titles[i].originalTitle, titles[i].year, titles[i].type);
-
-            if (
-                titles[i].title.replace(' collection', '') !== newTitle.replace(' collection', '') ||
-                (titles[i].year !== newYear && newYear)
-            ) {
-                console.log(titles[i].sourceName, '|', titles[i].originalTitle, '|', titles[i].type);
-                console.log(`prev state    --> title: ${titles[i].title}, year: ${titles[i].year}`);
-                console.log(`current state --> title: ${newTitle}, year: ${newYear}`);
-                counter++;
-
-                if (updateData) {
-                    const questions = [
-                        {
-                            type: 'input',
-                            name: 'ans',
-                            message: "update this movie data? (y/n)",
-                        },
-                    ];
-                    let answers = await inquirer.prompt(questions);
-                    if (answers.ans.toLowerCase() === 'y') {
-                        await updatePageData(titles[i], newTitle, newYear);
-                    }
-                }
-                console.log('-------------------------');
-            }
-        }
-        console.log('-------------END-----------');
-        return counter;
-    } catch (error) {
-        saveError(error);
-    }
-}
-
-async function updatePageData(currentSampleData, newValue, fieldName) {
-    try {
-        //todo : implement
-        return -1;
         await waitForFileClose();
         isFileOpen = true;
-        const pathToFile = Path.join(pathToFiles, `${currentSampleData.sourceName}.json`);
-        let samplesFile = await fs.promises.readFile(pathToFile, 'utf8');
-        let samples = JSON.parse(samplesFile);
 
-        for (let i = 0; i < samples.length; i++) {
-            if (samples[i].pageLink.replace(/\/$/, '').split('/').pop() === currentSampleData.pageLink.replace(/\/$/, '').split('/').pop()) {
-                if (fieldName === 'downloadLinks') {
-                    samples[i].downloadLinks = newValue;
-                } else if (fieldName === 'watchOnlineLinks') {
-                    samples[i].watchOnlineLinks = newValue;
-                } else if (fieldName === 'subtitles') {
-                    samples[i].subtitles = newValue;
-                } else if (fieldName === 'poster') {
-                    samples[i].poster = newValue;
-                } else if (fieldName === 'trailers') {
-                    samples[i].trailers = newValue;
-                } else {
-                    samples[i].persianSummary = newValue;
-                }
-                await fs.promises.writeFile(pathToFile, JSON.stringify(samples), 'utf8');
-                break;
-            }
-        }
+        let {sourceName, fileIndex} = sourcePageData;
+        delete sourcePageData.sourceName;
+        delete sourcePageData.fileIndex;
+        await updateSampleData(pathToFiles, sourceName, sourcePageData.pageLink, sourcePageData, fileIndex, updateFieldNames);
+
         isFileOpen = false;
     } catch (error) {
         saveError(error);
@@ -136,7 +69,7 @@ export async function getSourcePagesSamples(sourceNames = null, start = null, en
         await waitForFileClose();
         isFileOpen = true;
         let files = await getDataFiles(pathToFiles, sourceNames);
-        if ((start || start === 0) && end) {
+        if ((start || start === 0) && (end || end === 0)) {
             files = files.filter(item => {
                 let n = Number(item.split('_').pop().split('.')[0]);
                 return n >= start && n <= end;
