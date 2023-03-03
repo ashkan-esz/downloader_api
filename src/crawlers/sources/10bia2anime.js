@@ -11,7 +11,7 @@ import {
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {summaryExtractor, posterExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
@@ -88,7 +88,7 @@ async function search_title(link, i) {
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
@@ -125,25 +125,6 @@ function fixYear($) {
                 return '';
             }
             return validateYear(yearArray[0]);
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
-}
-
-function getPoster($) {
-    try {
-        let $div = $('div');
-        for (let i = 0; i < $div.length; i++) {
-            if ($($div[i]).hasClass('post-poster')) {
-                let src = $($($div[i]).children()[0]).children()[0].attribs['data-lazy-src'];
-                src = src.replace(/-\d\d+x\d\d+/g, '');
-                if (src.includes('uploads')) {
-                    return src;
-                }
-            }
         }
         return '';
     } catch (error) {

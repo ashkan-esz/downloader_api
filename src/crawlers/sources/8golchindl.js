@@ -21,7 +21,7 @@ import {
     releaseRegex,
     specialWords
 } from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor} from "../extractors/index.js";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
@@ -110,7 +110,7 @@ async function search_title(link, i, $) {
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: [],
                         subtitles: [],
                         cookies
@@ -181,27 +181,6 @@ function addTitleNameToInfo(downloadLinks) {
         } else {
             downloadLinks[i].info = splitInfo[0] + '. (' + name + ')' + ' - ' + splitInfo[1];
         }
-    }
-}
-
-function getPoster($) {
-    try {
-        let $img = $('img');
-        for (let i = 0; i < $img.length; i++) {
-            let parent = $img[i].parent;
-            if (parent.name === 'a' && $(parent).hasClass('thumb')) {
-                let href = $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                if (href && (href.includes('uploads') || href.includes('cdn.'))) {
-                    return href
-                        .replace(/.+(?=https:)/, '')
-                        .replace(/-\d\d\dx\d\d\d(?=(\.jpg))/, '');
-                }
-            }
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
     }
 }
 

@@ -18,7 +18,7 @@ import {
     linkInfoRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -85,7 +85,7 @@ async function search_title(link, i, $, url) {
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: getTrailers($2),
                         subtitles: [],
                         cookies
@@ -140,29 +140,6 @@ function fixWrongYear(title, type, year) {
         return '2019'; // 2021 --> 2019
     }
     return year;
-}
-
-function getPoster($) {
-    try {
-        let $img = $('img');
-        for (let i = 0; i < $img.length; i++) {
-            let parent = $img[i].parent;
-            if (parent.name === 'a') {
-                let href = $img[i].attribs['src'];
-                if (href.includes('uploads')) {
-                    return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
-                }
-                href = $img[i].attribs['data-src'] || $img[i].attribs['data-lazy-src'];
-                if (href && !href.includes('/Logo.') && href.includes('uploads')) {
-                    return href.replace(/-\d\d\d+x\d\d\d+\./g, '.');
-                }
-            }
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
 }
 
 function getTrailers($) {

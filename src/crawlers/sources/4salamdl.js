@@ -12,7 +12,7 @@ import {
     releaseRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import * as persianRex from "persian-rex";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -88,7 +88,7 @@ async function search_title(link, i) {
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
@@ -125,38 +125,6 @@ function fixWrongYear(title, type, year) {
         return '2017'; // 2019 --> 2017
     }
     return year;
-}
-
-function getPoster($) {
-    try {
-        let badPoster = 'https://image.salamdl.shop/t/p/w440_and_h660_bestv2/';
-        let $img = $('img');
-        for (let i = 0; i < $img.length; i++) {
-            let src = $img[i].attribs.src;
-            let parent = $img[i].parent.name;
-            if (parent === 'a') {
-                return src.includes(badPoster) ? '' : src;
-            }
-        }
-        for (let i = 0; i < $img.length; i++) {
-            let src = $img[i].attribs.src;
-            let parent = $img[i].parent.name;
-            if (parent === 'p') {
-                return src;
-            }
-        }
-        for (let i = 0; i < $img.length; i++) {
-            let src = $img[i].attribs.src;
-            let parent = $img[i].parent.name;
-            if (parent === 'div') {
-                return src;
-            }
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
 }
 
 function getTrailers($) {

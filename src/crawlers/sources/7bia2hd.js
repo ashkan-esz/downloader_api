@@ -20,7 +20,7 @@ import {
     encodersRegex,
     releaseRegex
 } from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {wordsToNumbers} from "words-to-numbers";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -74,7 +74,7 @@ async function search_title(link, i) {
                         downloadLinks,
                         watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
@@ -122,25 +122,6 @@ function fixYear($, type) {
                 return '';
             }
             return validateYear(yearArray[0]);
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
-}
-
-function getPoster($) {
-    try {
-        let $img = $('img');
-        for (let i = 0; i < $img.length; i++) {
-            let parent = $img[i].parent;
-            if (parent.name === 'a') {
-                let href = parent.attribs.href;
-                if (href.includes('uploads')) {
-                    return href;
-                }
-            }
         }
         return '';
     } catch (error) {

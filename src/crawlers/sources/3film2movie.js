@@ -11,7 +11,7 @@ import {
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
-import {summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -108,7 +108,7 @@ async function search_title(link, i) {
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: getPoster($2),
+                        poster: posterExtractor.getPoster($2, sourceName),
                         trailers: getTrailers($2),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
@@ -132,30 +132,6 @@ function fixYear($) {
                 return '';
             }
             return validateYear(yearArray[0]);
-        }
-        return '';
-    } catch (error) {
-        saveError(error);
-        return '';
-    }
-}
-
-function getPoster($) {
-    try {
-        let $imgs = $('img');
-        for (let i = 0; i < $imgs.length; i++) {
-            let src = $imgs[i].attribs.src;
-            let id = $($imgs[i]).attr('id');
-            if (id && id === 'myimg') {
-                return src;
-            }
-        }
-        for (let i = 0; i < $imgs.length; i++) {
-            let src = $imgs[i].attribs.src;
-            let alt = $imgs[i].attribs.alt;
-            if (src.includes('.jpg') && alt.includes('دانلود')) {
-                return src;
-            }
         }
         return '';
     } catch (error) {
