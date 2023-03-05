@@ -18,14 +18,14 @@ import {
     linkInfoRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourceName = "avamovie";
 const needHeadlessBrowser = true;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'allOk',
     trailer: 'noVpn',
     downloadLink: 'noVpn',
@@ -86,7 +86,7 @@ async function search_title(link, i, $, url) {
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: getTrailers($2),
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: [],
                         cookies
                     };
@@ -140,27 +140,6 @@ function fixWrongYear(title, type, year) {
         return '2019'; // 2021 --> 2019
     }
     return year;
-}
-
-function getTrailers($) {
-    try {
-        let result = [];
-        let $a = $('a');
-        for (let i = 0; i < $a.length; i++) {
-            let href = $a[i].attribs.href;
-            if ($($a[i]).text().includes('تریلر') && href && href.includes('/trailer/')) {
-                result.push({
-                    url: href,
-                    info: 'avamovie-720p',
-                    vpnStatus: sourceVpnStatus.trailer,
-                });
-            }
-        }
-        return result;
-    } catch (error) {
-        saveError(error);
-        return [];
-    }
 }
 
 function getFileData($, link, type) {

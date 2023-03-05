@@ -3,7 +3,6 @@
 //todo : 4. adminPanel: show info and status of remoteBrowsers
 //todo : 4.2 adminPanel: show crawling links of remoteBrowsers
 //todo : 5. remoteBrowser: add api for crawler status
-//todo : 6. crawler: merge extractor functions of sources into single module
 //todo : 7. remoteBrowser: crawl youtube for trailers
 //todo : 8. reduce size of trailers
 //todo : 9. reduce size of users profile images
@@ -83,7 +82,6 @@
 //todo : 86. add feature: clustering for larger scales
 //todo : 87. organize cronjob times
 //todo : 89. add feature: extract device info from req
-//todo : 90. save sources pages and data into files for better and faster development
 //todo : 91. crawl source completely after changing its url manually on adminPanel
 //todo : 92. add env var to disable testUser requests
 //todo : 94. disable rateLimit for bots requests
@@ -111,7 +109,6 @@
 //todo : 115. Add fields username Change and description to crawler sources
 //todo : 116. better solution for cors and auth with cookies
 //todo : 117. remove the usage of page_counter on crawler
-//todo : 118. add better poster/trailer extractor function
 //todo : 119. add more efficient linkInfoUtils
 //todo : 120. add redis/memCache, (liara/arvanCloud free plan)
 //todo : 121. check youtube trailers size, and possible to reduce size, check imagekit.io, check new language stack
@@ -133,3 +130,4 @@
 //todo : 137. fix duplicate titles bug
 //todo : 138. update mongodb driver
 //todo : 139. add size of download links while crawling
+//todo : 140. add graphql

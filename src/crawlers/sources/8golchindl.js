@@ -21,7 +21,7 @@ import {
     releaseRegex,
     specialWords
 } from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import * as persianRex from "persian-rex";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
@@ -29,7 +29,7 @@ import {saveError} from "../../error/saveError.js";
 const sourceName = "golchindl";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'allOk',
     trailer: 'allOk',
     downloadLink: 'allOk',
@@ -111,7 +111,7 @@ async function search_title(link, i, $) {
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: [],
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: [],
                         cookies
                     };

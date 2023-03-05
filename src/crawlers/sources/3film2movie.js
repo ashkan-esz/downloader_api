@@ -11,7 +11,7 @@ import {
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText} from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -21,7 +21,7 @@ import {saveError} from "../../error/saveError.js";
 const sourceName = "film2movie";
 const needHeadlessBrowser = true;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'allOk',
     trailer: 'allOk',
     downloadLink: 'allOk',
@@ -109,7 +109,7 @@ async function search_title(link, i) {
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: getTrailers($2),
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
@@ -137,45 +137,6 @@ function fixYear($) {
     } catch (error) {
         saveError(error);
         return '';
-    }
-}
-
-function getTrailers($) {
-    try {
-        let result = [];
-        let a = $('a');
-        for (let i = 0; i < a.length; i++) {
-            let href = $(a[i]).attr('href');
-            if (href && href.toLowerCase().includes('trailer')) {
-                if (href.includes('.mp4') || href.includes('.mkv')) {
-                    let quality = href.includes('1080p') ? '1080p'
-                        : (href.includes('720p') || href.toLowerCase().includes('hd')) ? '720p' : '360p';
-                    result.push({
-                        url: href,
-                        info: 'film2movie-' + quality,
-                        vpnStatus: sourceVpnStatus.trailer,
-                    });
-                }
-            }
-        }
-
-        let unique = [];
-        for (let i = 0; i < result.length; i++) {
-            let exist = false;
-            for (let j = 0; j < unique.length; j++) {
-                if (result[i].url === unique[j].url) {
-                    exist = true;
-                    break;
-                }
-            }
-            if (!exist) {
-                unique.push(result[i]);
-            }
-        }
-        return unique;
-    } catch (error) {
-        saveError(error);
-        return [];
     }
 }
 

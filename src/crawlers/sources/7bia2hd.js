@@ -20,7 +20,7 @@ import {
     encodersRegex,
     releaseRegex
 } from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {wordsToNumbers} from "words-to-numbers";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -31,7 +31,7 @@ import {saveError} from "../../error/saveError.js";
 const sourceName = "bia2hd";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'allOk',
     trailer: 'allOk',
     downloadLink: 'noVpn',
@@ -75,7 +75,7 @@ async function search_title(link, i) {
                         watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: getTrailers($2),
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
@@ -127,30 +127,6 @@ function fixYear($, type) {
     } catch (error) {
         saveError(error);
         return '';
-    }
-}
-
-function getTrailers($) {
-    try {
-        let result = [];
-        let $video = $('video');
-        for (let i = 0; i < $video.length; i++) {
-            let sourceChild = $($video[i]).children()[0];
-            if (sourceChild) {
-                let src = sourceChild.attribs.src;
-                result.push({
-                    url: src,
-                    info: 'bia2hd-720p',
-                    vpnStatus: sourceVpnStatus.trailer,
-                });
-            }
-        }
-
-        result = removeDuplicateLinks(result);
-        return result;
-    } catch (error) {
-        saveError(error);
-        return [];
     }
 }
 

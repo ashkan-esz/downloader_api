@@ -1,12 +1,22 @@
-import digimoviez from "./sources/1digimoviez.js";
-import film2movie from "./sources/3film2movie.js";
-import salamdl from "./sources/4salamdl.js";
-import avamovie from "./sources/5avamovie.js";
-import bia2hd from "./sources/7bia2hd.js";
-import golchindl from "./sources/8golchindl.js";
-import bia2anime from "./sources/10bia2anime.js";
+import digimoviez, {sourceVpnStatus as digimoviez_config} from "./sources/1digimoviez.js";
+import film2movie, {sourceVpnStatus as film2movie_config} from "./sources/3film2movie.js";
+import salamdl, {sourceVpnStatus as salamdl_config} from "./sources/4salamdl.js";
+import avamovie, {sourceVpnStatus as avamovie_config} from "./sources/5avamovie.js";
+import bia2hd, {sourceVpnStatus as bia2hd_config} from "./sources/7bia2hd.js";
+import golchindl, {sourceVpnStatus as golchindl_config} from "./sources/8golchindl.js";
+import bia2anime, {sourceVpnStatus as bia2anime_config} from "./sources/10bia2anime.js";
 
 export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'salamdl', 'avamovie', 'bia2hd', 'golchindl', 'bia2anime']);
+
+export const sourcesConfigs = () => ({
+    digimoviez: digimoviez_config,
+    film2movie: film2movie_config,
+    salamdl: salamdl_config,
+    avamovie: avamovie_config,
+    bia2hd: bia2hd_config,
+    golchindl: golchindl_config,
+    bia2anime: bia2anime_config,
+});
 
 export const sourcesObj = () => {
     let now = new Date();
@@ -108,5 +118,5 @@ export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
 }
 
 
-export const sortPostersOrder = ['digimoviez', 'avamovie', 'film2movie', 'golchindl', 's3Poster', 'bia2anime', 'bia2hd', 'salamdl'];
-export const sortTrailersOrder = ['film2movie', 'bia2hd', 'bia2anime', 'golchindl', 's3Trailer', 'digimoviez', 'avamovie', 'salamdl'];
+export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 'golchindl', 's3Poster', 'bia2anime', 'bia2hd', 'salamdl']);
+export const sortTrailersOrder = Object.freeze(['film2movie', 'bia2hd', 'bia2anime', 'golchindl', 's3Trailer', 'digimoviez', 'avamovie', 'salamdl']);

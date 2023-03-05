@@ -11,7 +11,7 @@ import {
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
-import {summaryExtractor, posterExtractor} from "../extractors/index.js";
+import {summaryExtractor, posterExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
@@ -20,7 +20,7 @@ import {saveError} from "../../error/saveError.js";
 const sourceName = "bia2anime";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'allOk',
     trailer: 'allOk',
     downloadLink: 'allOk',
@@ -89,7 +89,7 @@ async function search_title(link, i) {
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: getTrailers($2),
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
@@ -130,30 +130,6 @@ function fixYear($) {
     } catch (error) {
         saveError(error);
         return '';
-    }
-}
-
-function getTrailers($) {
-    try {
-        let result = [];
-        let $video = $('video');
-        for (let i = 0; i < $video.length; i++) {
-            let sourceChild = $($video[i]).children()[0];
-            if (sourceChild) {
-                let src = sourceChild.attribs.src;
-                result.push({
-                    url: src,
-                    info: 'bia2anime-720p',
-                    vpnStatus: sourceVpnStatus.trailer,
-                });
-            }
-        }
-
-        result = removeDuplicateLinks(result);
-        return result;
-    } catch (error) {
-        saveError(error);
-        return [];
     }
 }
 

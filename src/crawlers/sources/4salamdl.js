@@ -12,7 +12,7 @@ import {
     releaseRegex,
     encodersRegex
 } from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor} from "../extractors/index.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import * as persianRex from "persian-rex";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -22,7 +22,7 @@ import {saveError} from "../../error/saveError.js";
 const sourceName = "salamdl";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
-const sourceVpnStatus = Object.freeze({
+export const sourceVpnStatus = Object.freeze({
     poster: 'vpnOnly',
     trailer: 'noVpn',
     downloadLink: 'noVpn',
@@ -89,7 +89,7 @@ async function search_title(link, i) {
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: getTrailers($2),
+                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
@@ -125,30 +125,6 @@ function fixWrongYear(title, type, year) {
         return '2017'; // 2019 --> 2017
     }
     return year;
-}
-
-function getTrailers($) {
-    try {
-        let result = [];
-        let a = $('a');
-        for (let i = 0; i < a.length; i++) {
-            let href = $(a[i]).attr('href');
-            if (href && href.toLowerCase().includes('trailer')) {
-                if (href.includes('.mp4') || href.includes('.mkv')) {
-                    let quality = href.includes('360p') ? '360p' : '720p';
-                    result.push({
-                        url: href,
-                        info: 'salamdl-' + quality,
-                        vpnStatus: sourceVpnStatus.trailer,
-                    });
-                }
-            }
-        }
-        return result;
-    } catch (error) {
-        saveError(error);
-        return [];
-    }
 }
 
 function getSubtitles($, type, pageLink) {
