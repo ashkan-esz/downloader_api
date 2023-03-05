@@ -22,18 +22,20 @@ import save from "../save_changes_db.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "digimoviez";
-const needHeadlessBrowser = true;
-const sourceAuthStatus = 'login-cookie';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'noVpn',
-    downloadLink: 'noVpn',
+export const sourceConfig = Object.freeze({
+    sourceName: "digimoviez",
+    needHeadlessBrowser: true,
+    sourceAuthStatus: 'login-cookie',
+    vpnStatus: {
+        poster: 'allOk',
+        trailer: 'noVpn',
+        downloadLink: 'noVpn',
+    },
 });
 
 export default async function digimoviez({movie_url, serial_url, page_count, serial_page_count}) {
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
-    let p2 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, serial_url, serial_page_count, search_title);
+    let p2 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1, p2];
 }
 
@@ -65,8 +67,8 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
-                    getFileData, getQualitySample, linkCheck, true);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                    getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies} = pageSearchResult;
@@ -75,8 +77,8 @@ async function search_title(link, i, $, url) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
-                            getFileData, getQualitySample, linkCheck, true);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                            getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {
                             return;
@@ -88,14 +90,13 @@ async function search_title(link, i, $, url) {
                     downloadLinks = downloadLinks.filter(item => !qualitySampleLinks.includes(item.link));
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: [],
                         cookies
                     };
@@ -161,7 +162,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 let sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
                 let size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
                 info = size ? (info + ' - ' + size.replace(/\s+/, '')) : info;
-                let watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceName, pageLink);
+                let watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName, pageLink);
                 watchOnlineLink.link = linkHref;
                 result.push(watchOnlineLink);
             }

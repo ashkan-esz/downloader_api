@@ -17,8 +17,7 @@ import {addPageLinkToCrawlerStatus, removePageLinkToCrawlerStatus} from "./crawl
 export default async function save(title, type, year, sourceData) {
     try {
         let {
-            sourceName,
-            sourceVpnStatus,
+            sourceConfig,
             pageLink,
             downloadLinks,
             watchOnlineLinks,
@@ -30,11 +29,11 @@ export default async function save(title, type, year, sourceData) {
         addPageLinkToCrawlerStatus(pageLink);
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
-        let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceVpnStatus);
+        let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
 
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
-                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceName);
+                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName);
                 if (result.titleModel.type.includes('movie')) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
                 }
@@ -53,9 +52,9 @@ export default async function save(title, type, year, sourceData) {
             return;
         }
 
-        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceName);
-        let subUpdates = await handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData);
+        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName);
+        let subUpdates = await handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceConfig.sourceName, sourceConfig.vpnStatus);
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData);
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);

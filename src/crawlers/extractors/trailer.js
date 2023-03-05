@@ -6,7 +6,7 @@ import {sourcesConfigs, sourcesNames} from "../sourcesArray.js";
 import {removeDuplicateLinks} from "../utils.js";
 import {saveError} from "../../error/saveError.js";
 
-export function getTrailers($, sourceName, sourceConfig) {
+export function getTrailers($, sourceName, sourceVpnStatus) {
     try {
         let result = [];
         let $video = $('video');
@@ -21,7 +21,7 @@ export function getTrailers($, sourceName, sourceConfig) {
                     let src = sourceChild.attribs.src
                         .replace('دانلود', '')
                         .replace('دانلو', '');
-                    result.push(purgeTrailer(src, sourceName, '720p', sourceConfig.trailer));
+                    result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
                 }
             }
         }
@@ -31,7 +31,7 @@ export function getTrailers($, sourceName, sourceConfig) {
             if ($($div[i]).hasClass('on_trailer_bottom')) {
                 let src = $div[i].attribs['data-trailerlink'];
                 if (src && src.toLowerCase().includes('trailer')) {
-                    result.push(purgeTrailer(src, sourceName, '720p', sourceConfig.trailer));
+                    result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
                 }
             }
         }
@@ -42,7 +42,7 @@ export function getTrailers($, sourceName, sourceConfig) {
             if (src && src.toLowerCase().includes('trailer')) {
                 if (src.includes('.mp4') || src.includes('.mkv')) {
                     src = src.replace('rel=', '');
-                    result.push(purgeTrailer(src, sourceName, '', sourceConfig.trailer));
+                    result.push(purgeTrailer(src, sourceName, '', sourceVpnStatus.trailer));
                 }
             }
         }
@@ -51,7 +51,7 @@ export function getTrailers($, sourceName, sourceConfig) {
         for (let i = 0, len = $a.length; i < len; i++) {
             let src = $a[i].attribs.href;
             if ($($a[i]).text().includes('تریلر') && src && src.includes('/trailer/')) {
-                result.push(purgeTrailer(src, sourceName, '720p', sourceConfig.trailer));
+                result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
             }
         }
 

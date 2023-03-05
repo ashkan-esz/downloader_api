@@ -22,18 +22,20 @@ import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "avamovie";
-const needHeadlessBrowser = true;
-const sourceAuthStatus = 'ok';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'noVpn',
-    downloadLink: 'noVpn',
+export const sourceConfig = Object.freeze({
+    sourceName: "avamovie",
+    needHeadlessBrowser: true,
+    sourceAuthStatus: 'ok',
+    vpnStatus: Object.freeze({
+        poster: 'allOk',
+        trailer: 'noVpn',
+        downloadLink: 'noVpn',
+    }),
 });
 
 export default async function avamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
-    let p2 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, serial_url, serial_page_count, search_title);
+    let p2 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1, p2];
 }
 
@@ -56,7 +58,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, getQualitySample);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData, getQualitySample);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -69,7 +71,7 @@ async function search_title(link, i, $, url) {
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData, getQualitySample);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData, getQualitySample);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -79,14 +81,13 @@ async function search_title(link, i, $, url) {
                     downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: [],
                         cookies
                     };

@@ -26,17 +26,19 @@ import * as persianRex from "persian-rex";
 import save from "../save_changes_db.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "golchindl";
-const needHeadlessBrowser = false;
-const sourceAuthStatus = 'ok';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'allOk',
-    downloadLink: 'allOk',
+export const sourceConfig = Object.freeze({
+    sourceName: "golchindl",
+    needHeadlessBrowser: false,
+    sourceAuthStatus: 'ok',
+    vpnStatus: Object.freeze({
+        poster: 'allOk',
+        trailer: 'allOk',
+        downloadLink: 'allOk',
+    }),
 });
 
 export default async function golchindl({movie_url, page_count}) {
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1];
 }
 
@@ -68,8 +70,8 @@ async function search_title(link, i, $) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
-                    getFileData, null, null, false,
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                    null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
@@ -77,8 +79,8 @@ async function search_title(link, i, $) {
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
-                            getFileData, null, null, false,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                            null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
                             return;
@@ -87,8 +89,8 @@ async function search_title(link, i, $) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
-                            getFileData, null, null, false,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                            null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
                             return;
@@ -104,14 +106,13 @@ async function search_title(link, i, $) {
                     }
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: [],
                         cookies
                     };

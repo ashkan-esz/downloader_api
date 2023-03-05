@@ -18,19 +18,21 @@ import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "film2movie";
-const needHeadlessBrowser = true;
-const sourceAuthStatus = 'ok';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'allOk',
-    downloadLink: 'allOk',
+export const sourceConfig = Object.freeze({
+    sourceName: "film2movie",
+    needHeadlessBrowser: true,
+    sourceAuthStatus: "ok",
+    vpnStatus: Object.freeze({
+        poster: 'allOk',
+        trailer: 'allOk',
+        downloadLink: 'allOk',
+    }),
 });
 let prevTitles = [];
 
 export default async function film2movie({movie_url, page_count}) {
     prevTitles = [];
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1];
 }
 
@@ -71,7 +73,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
@@ -84,7 +86,7 @@ async function search_title(link, i) {
                         downloadLinks[0].link.match(/\.s\d+e\d+\./i) ||
                         downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i))) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -102,14 +104,13 @@ async function search_title(link, i) {
                     downloadLinks = fixSeasonNumber(downloadLinks);
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
@@ -155,7 +156,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 let linkHref = $($a[i]).attr('href');
                 if (linkHref.includes('.upera.')) {
                     let info = getFileData($, $a[i], type);
-                    let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceName, pageLink);
+                    let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
                     result.push(watchOnlineLink);
                 }
             }
@@ -176,7 +177,7 @@ function getSubtitles($, type, pageLink) {
         for (let i = 0; i < $a.length; i++) {
             let linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink);
+                let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
                 result.push(subtitle);
             }
         }

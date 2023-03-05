@@ -40,13 +40,13 @@ axiosRetry(axios, {
 
 let axiosBlackListSources = [];
 
-export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, url, page_count, searchCB) {
+export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
     let lastPageNumber = 0;
     try {
         if (!url || page_count === 0) {
             return lastPageNumber;
         }
-        const concurrencyNumber = getConcurrencyNumber(sourceName, needHeadlessBrowser);
+        const concurrencyNumber = getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             try {
@@ -56,10 +56,10 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(url + `${i}`, sourceName, needHeadlessBrowser, sourceAuthStatus, 'sourcePage');
+                } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage');
                 updatePageNumberCrawlerStatus(i);
                 lastPageNumber = i;
-                if (checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, i)) {
+                if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
@@ -86,9 +86,8 @@ export async function wrapper_module(sourceName, needHeadlessBrowser, sourceAuth
     }
 }
 
-export async function search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus,
-                                           title, page_link, type, getFileData, getQualitySample = null,
-                                           extraChecker = null, getSeasonEpisodeFromInfo = false,
+export async function search_in_title_page(sourceConfig, title, page_link, type, getFileData,
+                                           getQualitySample = null, extraChecker = null, getSeasonEpisodeFromInfo = false,
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null) {
     try {
         let {
@@ -96,7 +95,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
             links,
             cookies,
             pageContent,
-        } = await getLinks(page_link, sourceName, needHeadlessBrowser, sourceAuthStatus, 'movieDataPage', sourceLinkData);
+        } = await getLinks(page_link, sourceConfig, 'movieDataPage', sourceLinkData);
         if ($ === null || $ === undefined) {
             return null;
         }
@@ -138,7 +137,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
                         link: link.trim(),
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
                         qualitySample: qualitySample,
-                        sourceName: sourceName,
+                        sourceName: sourceConfig.sourceName,
                         pageLink: page_link,
                         season, episode,
                     });
@@ -153,8 +152,8 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
                 extraSearchLinks.push(link);
 
                 let newPageLink = sourceLinkData ? (page_link + link) : link;
-                let resultPromise = search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus,
-                    title, newPageLink, type, extraSearch_getFileData, getQualitySample, extraChecker, false,
+                let resultPromise = search_in_title_page(sourceConfig, title, newPageLink, type, extraSearch_getFileData,
+                    getQualitySample, extraChecker, false,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
                         link: links[j],
@@ -189,7 +188,7 @@ export async function search_in_title_page(sourceName, needHeadlessBrowser, sour
     }
 }
 
-async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData = null, retryCounter = 0) {
+async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retryCounter = 0) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -204,8 +203,8 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
 
         try {
             let pageData = null;
-            if (needHeadlessBrowser && !sourceLinkData) {
-                pageData = await getPageData(url, sourceName, sourceAuthStatus, true);
+            if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                pageData = await getPageData(url, sourceConfig.sourceName, sourceConfig.sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -217,13 +216,13 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
             }
             if (!pageData || (!pageData.pageContent && !pageData.isAxiosCalled)) {
                 freeAxiosBlackListSources();
-                let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceName);
+                let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceConfig.sourceName);
                 if (sourceData && sourceData.isBlocked && !sourceLinkData && pageType === 'movieDataPage') {
                     $ = null;
                     links = [];
                 } else {
                     let sourcesObject = await getAxiosSourcesObject();
-                    let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
+                    let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName].cookies : [];
                     const jar = new CookieJar();
                     const client = wrapper(axios.create({jar}));
                     let response = await client.get(url, {
@@ -241,7 +240,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                         links = $('a');
                     }
                     if (links.length < 5 && !sourceLinkData) {
-                        addSourceToAxiosBlackList(sourceName);
+                        addSourceToAxiosBlackList(sourceConfig.sourceName);
                     }
                 }
             }
@@ -253,14 +252,14 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 retryCounter < 1) {
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
                 retryCounter++;
-                return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData, retryCounter);
+                return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
             }
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 if (decodeURIComponent(url) === url) {
                     let temp = url.replace(/\/$/, '').split('/').pop();
                     if (temp) {
                         url = url.replace(temp, encodeURIComponent(temp));
-                        return await getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, pageType, sourceLinkData, retryCounter);
+                        return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
                     }
                 }
                 error.isAxiosError = true;
@@ -269,7 +268,7 @@ async function getLinks(url, sourceName, needHeadlessBrowser, sourceAuthStatus, 
                 await saveError(error);
             } else {
                 if (!sourceLinkData) {
-                    addSourceToAxiosBlackList(sourceName);
+                    addSourceToAxiosBlackList(sourceConfig.sourceName);
                 }
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;

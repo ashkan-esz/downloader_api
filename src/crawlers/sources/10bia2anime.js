@@ -17,17 +17,19 @@ import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "bia2anime";
-const needHeadlessBrowser = false;
-const sourceAuthStatus = 'ok';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'allOk',
-    downloadLink: 'allOk',
+export const sourceConfig = Object.freeze({
+    sourceName: "bia2anime",
+    needHeadlessBrowser: false,
+    sourceAuthStatus: 'ok',
+    vpnStatus: Object.freeze({
+        poster: 'allOk',
+        trailer: 'allOk',
+        downloadLink: 'allOk',
+    }),
 });
 
 export default async function bia2anime({movie_url, page_count}) {
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1];
 }
 
@@ -57,7 +59,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -65,7 +67,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length === 0) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -82,14 +84,13 @@ async function search_title(link, i) {
                     downloadLinks = fixSpecialEpisodeSeason(downloadLinks);
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
@@ -145,7 +146,7 @@ function getSubtitles($, type, pageLink, downloadLinks) {
             linkHref = linkHref.split(/(?<=zip)http/i)[0];
             if (linkHref.match(subtitleFormatsRegex) || linkHref.match(/\/sub(titles)?\//i)) {
                 let isDirect = !!linkHref.match(subtitleFormatsRegex);
-                let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, isDirect);
+                let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, isDirect);
                 let subtitleSiblings = $($a[i]).parent().children().toArray().filter(item => item.name !== 'br');
                 if (subtitleSiblings.length > 1) {
                     let episodeLink = $($a[i]).prev();

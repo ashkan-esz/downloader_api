@@ -28,18 +28,20 @@ import {subtitleFormatsRegex} from "../subtitle.js";
 import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {saveError} from "../../error/saveError.js";
 
-const sourceName = "bia2hd";
-const needHeadlessBrowser = false;
-const sourceAuthStatus = 'ok';
-export const sourceVpnStatus = Object.freeze({
-    poster: 'allOk',
-    trailer: 'allOk',
-    downloadLink: 'noVpn',
+export const sourceConfig = Object.freeze({
+    sourceName: "bia2hd",
+    needHeadlessBrowser: false,
+    sourceAuthStatus: 'ok',
+    vpnStatus: Object.freeze({
+        poster: 'allOk',
+        trailer: 'allOk',
+        downloadLink: 'noVpn',
+    }),
 });
 
 export default async function bia2hd({movie_url, serial_url, page_count, serial_page_count}) {
-    let p1 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
-    let p2 = await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, serial_url, serial_page_count, search_title);
+    let p2 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
     return [p1, p2];
 }
 
@@ -59,7 +61,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !checkPersianSerial(title)) {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -68,14 +70,13 @@ async function search_title(link, i) {
                     downloadLinks = removeDuplicateLinks(downloadLinks);
 
                     let sourceData = {
-                        sourceName,
-                        sourceVpnStatus,
+                        sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceName, sourceVpnStatus),
+                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
@@ -142,7 +143,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 if ($($($a[i]).parent()[0]).hasClass('download-links')) {
                     info = getFileData($, $a[i], type);
                 }
-                let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceName, pageLink);
+                let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
                 result.push(watchOnlineLink);
             }
         }
@@ -163,7 +164,7 @@ function getSubtitles($, type, pageLink) {
             let linkHref = $($a[i]).attr('href');
             if (linkHref) {
                 if (linkHref.match(subtitleFormatsRegex)) {
-                    let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, true);
+                    let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, true);
                     result.push(subtitle);
                 } else if (linkHref.includes('/subtitles/')) {
                     let temp = linkHref.replace(/\/farsi_persian$/i, '').split('/').pop().replace(/-/g, ' ').toLowerCase();
@@ -171,7 +172,7 @@ function getSubtitles($, type, pageLink) {
                     temp = wordsToNumbers(temp).toString();
                     let seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
                     let season = seasonMatch ? seasonMatch.pop().replace(/(season)|\d\d\d\d/gi, '').trim() : '';
-                    let subtitle = getSubtitleModel(linkHref, '', type, sourceName, pageLink, false);
+                    let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, false);
                     if (season) {
                         let seasonNumber = Number(season);
                         subtitle.info = (subtitle.episode === 0)

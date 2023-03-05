@@ -1,10 +1,10 @@
-import digimoviez, {sourceVpnStatus as digimoviez_config} from "./sources/1digimoviez.js";
-import film2movie, {sourceVpnStatus as film2movie_config} from "./sources/3film2movie.js";
-import salamdl, {sourceVpnStatus as salamdl_config} from "./sources/4salamdl.js";
-import avamovie, {sourceVpnStatus as avamovie_config} from "./sources/5avamovie.js";
-import bia2hd, {sourceVpnStatus as bia2hd_config} from "./sources/7bia2hd.js";
-import golchindl, {sourceVpnStatus as golchindl_config} from "./sources/8golchindl.js";
-import bia2anime, {sourceVpnStatus as bia2anime_config} from "./sources/10bia2anime.js";
+import digimoviez, {sourceConfig as digimoviez_config} from "./sources/1digimoviez.js";
+import film2movie, {sourceConfig as film2movie_config} from "./sources/3film2movie.js";
+import salamdl, {sourceConfig as salamdl_config} from "./sources/4salamdl.js";
+import avamovie, {sourceConfig as avamovie_config} from "./sources/5avamovie.js";
+import bia2hd, {sourceConfig as bia2hd_config} from "./sources/7bia2hd.js";
+import golchindl, {sourceConfig as golchindl_config} from "./sources/8golchindl.js";
+import bia2anime, {sourceConfig as bia2anime_config} from "./sources/10bia2anime.js";
 
 export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'salamdl', 'avamovie', 'bia2hd', 'golchindl', 'bia2anime']);
 
