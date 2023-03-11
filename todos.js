@@ -109,8 +109,7 @@
 //todo : 115. Add fields username Change and description to crawler sources
 //todo : 116. better solution for cors and auth with cookies
 //todo : 117. remove the usage of page_counter on crawler
-//todo : 119. add more efficient linkInfoUtils
-//todo : 120. add redis/memCache, (liara/arvanCloud free plan)
+//todo : 120. add redis/memCache, (render/liara/arvanCloud free plan)
 //todo : 121. check youtube trailers size, and possible to reduce size, check imagekit.io, check new language stack
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
@@ -131,3 +130,4 @@
 //todo : 138. update mongodb driver
 //todo : 139. add size of download links while crawling
 //todo : 140. add graphql
+//todo : 141. add postman

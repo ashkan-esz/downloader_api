@@ -16,7 +16,7 @@ export async function saveErrorIfNeeded(error) {
 
 export async function saveError(error) {
     if (config.nodeEnv === 'production') {
-        if (error.isAxiosError || error.isAxiosError2) {
+        if (error.isAxiosError || error.isAxiosError2 || error.name === "AxiosError") {
             if (!error.url && error.config?.url) {
                 error.url = error.config.url;
             }

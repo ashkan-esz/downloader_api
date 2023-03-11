@@ -120,7 +120,7 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
                             ({season, episode} = getSeasonEpisode(link_info));
-                            if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p\./)) {
+                            if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p(\.|$)/)) {
                                 ({season, episode} = getSeasonEpisode(link));
                             }
                         } else {

@@ -14,7 +14,6 @@ import {
     encodersRegex,
     fixLinkInfo,
     fixLinkInfoOrder,
-    linkInfoRegex,
     purgeEncoderText,
     purgeQualityText,
     purgeSizeText,
@@ -35,6 +34,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'allOk',
         downloadLink: 'allOk',
     }),
+    replaceInfoOnDuplicate: true,
 });
 
 export default async function golchindl({movie_url, page_count}) {
@@ -97,7 +97,7 @@ async function search_title(link, i, $) {
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
-                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
                     if (isCollection) {
                         title += ' collection';
                         addTitleNameToInfo(downloadLinks);
@@ -165,17 +165,22 @@ function fixAnimeType($, type) {
     }
 }
 
-function addTitleNameToInfo(downloadLinks) {
+export function addTitleNameToInfo(downloadLinks, title, year) {
+    let names = [];
     for (let i = 0; i < downloadLinks.length; i++) {
-        let fileName = downloadLinks[i].link.split('/').pop();
+        let fileName = getDecodedLink(downloadLinks[i].link.split('/').pop()).split(/a\.?k\.?a/i)[0];
         let nameMatch = fileName.match(/.+(\d\d\d\d|\d\d\d)p/gi);
         if (!nameMatch) {
             nameMatch = fileName.match(/.+(hdtv)/gi);
         }
-        let name = nameMatch ? nameMatch.pop().replace(/\d\d\d\d?p|hdtv/gi, '').replace(/\.|%20/g, ' ').trim() : '';
-        if (!name) {
+        let name = nameMatch ? nameMatch.pop()
+            .replace(/\d\d\d\d?p|hdtv|%21|!|EXTENDED|REPACK/gi, '')
+            .replace(/\.|%20| /g, ' ')
+            .trim() : '';
+        if (!name || name.toLowerCase().replace(/-/g, ' ') === title + ' ' + year) {
             continue;
         }
+        names.push(name.toLowerCase());
         let splitInfo = downloadLinks[i].info.split(' - ');
         if (splitInfo.length === 1) {
             downloadLinks[i].info += '. (' + name + ')';
@@ -183,11 +188,20 @@ function addTitleNameToInfo(downloadLinks) {
             downloadLinks[i].info = splitInfo[0] + '. (' + name + ')' + ' - ' + splitInfo[1];
         }
     }
+    try {
+        if (names.length > 0 && names.every(item => item === names[0])) {
+            let name = new RegExp(`\\. \\(${names[0].replace(/\*/g, '\\*')}\\)`, 'i');
+            for (let i = 0; i < downloadLinks.length; i++) {
+                downloadLinks[i].info = downloadLinks[i].info.replace(name, '');
+            }
+        }
+    } catch (error) {
+
+    }
+    return downloadLinks;
 }
 
-function getFileData($, link, type) {
-    // '480p.BluRay.dubbed - 445MB' // '480p.Web-dl - 350MB'
-    // '720p.x265.Web-dl.PSA' // '720p.Web-dl.dubbed'
+export function getFileData($, link, type) {
     try {
         return type.includes('serial')
             ? getFileData_serial($, link)
@@ -199,6 +213,9 @@ function getFileData($, link, type) {
 }
 
 function getFileData_serial($, link) {
+    if ($($(link).parent().parent()).hasClass('wpd-comment-text')) {
+        return 'ignore';
+    }
     let infoText = $($(link).parent()[0]).text();
     let linkHref = $(link).attr('href');
     let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
@@ -234,7 +251,7 @@ function getFileData_serial($, link) {
     info = fixLinkInfoOrder(info);
     info = info
         .replace('HardSub.dubbed', 'dubbed')
-        .replace(/\.Www\.DownloadSpeed\.iR/i, '')
+        .replace(/\.Www\.DownloadSpeed\.iR/i, '');
     if (info.includes('https')) {
         return 'ignore';
     }
@@ -247,8 +264,7 @@ function getFileData_movie($, link) {
     if (infoText.includes('دانلود پشت صحنه') || $(link).text().includes('دانلود پشت صحنه')) {
         return 'ignore';
     }
-    let hardSub = linkHref.match(/softsub|hardsub/gi);
-    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+    let hardSub = linkHref.match(/softsub|hardsub/i)?.[0] || (checkHardSub(linkHref) ? 'HardSub' : '');
     let dubbed = checkDubbed(linkHref, infoText) ? 'dubbed' : '';
     let quality, encoder, size;
     if (infoText.includes('|')) {
@@ -299,15 +315,14 @@ function getFileData_movie($, link) {
         encoder = '';
     }
 
-    let matchPart = linkHref.match(/\.part\d\./gi);
-    let part = matchPart ? matchPart.pop().replace(/\./g, '') : '';
+    let part = linkHref.match(/\.part\d\./gi)?.pop().replace(/\./g, '') || '';
 
-    let info = [quality, encoder, part, hardSub, dubbed].filter(value => value).join('.')
-    info = fixLinkInfo(info, linkHref);
-    info = fixLinkInfoOrder(info);
+    let info = [quality, encoder, part, hardSub, dubbed].filter(value => value).join('.');
     if (info.includes('https')) {
         return 'ignore';
     }
+    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfoOrder(info);
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -530,43 +545,4 @@ function removeEpisodeNameFromQuality(quality) {
         }
     }
     return quality;
-}
-
-//------------------------------------------------
-//------------------------------------------------
-
-function printLinksWithBadInfo(downloadLinks) {
-    const golchindlMovieLinkInfoRegex = new RegExp([
-        /^\d\d\d\d?p/,
-        /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
-        /(\.Episode\(\d\d?\.5\))?/,
-        /(\.x265(\.10bit)?)?/,
-        /(\.(Special|OVA|NCED|NCOP)(_\d)?)?/,
-        /(\.Summary)?/,
-        /(\.Oscar(\.\d\d\d\d)?)?/,
-        /(\.REPACK)?/,
-        new RegExp(`(\\.(${releaseRegex.source}))?`),
-        /(\.[876]CH)?/,
-        new RegExp(`(\\.(${encodersRegex.source}))?`),
-        /(\.[876]CH)?/,
-        /(\.(HardSub|SoftSub|dubbed))?/,
-        /(\.\s\(.+\))?/,
-        /(\.\d+[A-Da-d])?/,
-        /( - ((\d\d\d?MB)|(\d(\.\d\d?)?GB)))?$/,
-    ].map(item => item.source).join(''));
-
-    const badLinks = downloadLinks.filter(item =>
-        !item.info.match(linkInfoRegex) &&
-        !item.info.match(golchindlMovieLinkInfoRegex)
-    );
-
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 47 || item.episode > 1300);
-
-    console.log([...badLinks, ...badSeasonEpisode].map(item => {
-        return ({
-            link: item.link,
-            info: item.info,
-            seasonEpisode: `S${item.season}E${item.episode}`,
-        })
-    }));
 }

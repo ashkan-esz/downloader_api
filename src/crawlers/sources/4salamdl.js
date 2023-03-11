@@ -8,9 +8,7 @@ import {
     fixLinkInfo,
     purgeQualityText,
     fixLinkInfoOrder,
-    linkInfoRegex,
     releaseRegex,
-    encodersRegex
 } from "../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
@@ -28,6 +26,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'noVpn',
         downloadLink: 'noVpn',
     }),
+    replaceInfoOnDuplicate: true,
 });
 
 export default async function salamdl({movie_url, page_count}) {
@@ -81,7 +80,7 @@ async function search_title(link, i) {
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     year = fixWrongYear(title, type, year);
-                    downloadLinks = removeDuplicateLinks(downloadLinks, true);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
 
                     let sourceData = {
                         sourceConfig,
@@ -148,9 +147,7 @@ function getSubtitles($, type, pageLink) {
     }
 }
 
-function getFileData($, link, type) {
-    //'720p.x265.WEB-DL - 200MB'    //'480p.WEB-DL - 150MB'
-    //'720p.WEB-DL.YTS - 848.85MB'  //'1080p.x265.10bit.WEB-DL.PSA - 1.98GB'
+export function getFileData($, link, type) {
     let text_array = [];
     try {
         if (type.includes('serial')) {
@@ -173,7 +170,7 @@ function getFileData($, link, type) {
         }
         return getFileData_movie(text_array, dubbed, linkHref);
     } catch (error) {
-        saveError(error2);
+        saveError(error);
         return "";
     }
 }
@@ -234,8 +231,22 @@ function getSerialFileInfoFromLink(linkHref) {
     info = fixLinkInfo(info, linkHref);
     info = fixLinkInfoOrder(info);
     info = info.replace(/(.+\.)\d\d\d\d?p+/, (res) => res.split('.').reverse().join('.'));
+    let temp = linkHref.split('/').pop().split('.');
+    let seasonEpisodeIndex = temp.findIndex(item => item.match(/^s\d+e\d+$/i));
+    if (seasonEpisodeIndex !== -1) {
+        let temp2 = temp.slice(seasonEpisodeIndex + 1).join('.')
+            .split(/\.\d\d\d\d?p/)[0]
+            .replace('DIRECTORS.CUT', '')
+            .replace('Encore.Edition', '')
+            .replace('3D', '')
+            .replace('EXTENDED', '')
+            .replace('REMASTERED', '')
+            .replace(/Part[._]\d/i, '');
+        if (temp2) {
+            info = info.replace('.' + temp2, '');
+        }
+    }
     return info;
-
 }
 
 function getFileData_movie(text_array, dubbed, linkHref) {
@@ -273,8 +284,7 @@ function getFileData_movie(text_array, dubbed, linkHref) {
         quality = [];
     }
 
-    let moviePartMatch = linkHref.match(/part[\s.]*\d(?=\.)/i);
-    let moviePart = moviePartMatch ? moviePartMatch.pop().replace(/part/i, 'Part') : '';
+    let moviePart = linkHref.match(/part[\s.]*\d(?=\.)/i)?.pop().replace(/part/i, 'Part') || '';
     let info = [...quality, moviePart, encoder, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, linkHref);
     info = fixLinkInfoOrder(info);
@@ -305,24 +315,4 @@ function getFileData_extraLink($, link) {
             return '';
         }
     }
-}
-
-function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item =>
-        !item.info.match(linkInfoRegex) &&
-        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.(${encodersRegex.source})$`)) &&
-        !item.info.match(/^\d\d\d\d?p\.(3D|(Part\.\d))(\.dubbed)?$/) &&
-        !item.info.match(/^\d\d\d\d?p(\.x265)?(\.Episode\(\d\d?\d?-\d\d?\d?\))?(\.dubbed)?$/) &&
-        !item.link.match(/\.s\d\de\d\d(\.REPACK)?(.*)\.\d\d\d\d?p(\.x265)?(\.hevc)?(\.Farsi\.Dubbed)?\.mkv/i)
-    );
-
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
-
-    console.log([...badLinks, ...badSeasonEpisode].map(item => {
-        return ({
-            link: item.link,
-            info: item.info,
-            seasonEpisode: `S${item.season}E${item.episode}`,
-        })
-    }));
 }

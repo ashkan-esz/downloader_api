@@ -14,7 +14,6 @@ import {
     purgeQualityText,
     fixLinkInfo,
     fixLinkInfoOrder,
-    linkInfoRegex,
     releaseRegex,
 } from "../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
@@ -31,6 +30,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'noVpn',
         downloadLink: 'noVpn',
     },
+    replaceInfoOnDuplicate: false,
 });
 
 export default async function digimoviez({movie_url, serial_url, page_count, serial_page_count}) {
@@ -85,7 +85,7 @@ async function search_title(link, i, $, url) {
                         }
                         ({downloadLinks, $2, cookies} = pageSearchResult);
                     }
-                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
                     const qualitySampleLinks = downloadLinks.map(item => item.qualitySample).filter(item => item);
                     downloadLinks = downloadLinks.filter(item => !qualitySampleLinks.includes(item.link));
 
@@ -181,9 +181,7 @@ function linkCheck($, link) {
     return (linkHref.includes('digimovie') && linkHref.endsWith('lm_action=download'));
 }
 
-function getFileData($, link, type) {
-    //'1080p.HDTV.dubbed - 550MB'  //'1080p.WEB-DL.SoftSub - 600MB'
-    //'720p.x265.WEB-DL.SoftSub - 250MB' //'2160p.x265.10bit.BluRay.IMAX.SoftSub - 4.42GB'
+export function getFileData($, link, type) {
     try {
         let linkHref = $(link).attr('href');
         let se = getSeasonEpisode(linkHref);
@@ -319,22 +317,4 @@ function getQualitySample($, link, type) {
         saveError(error);
         return '';
     }
-}
-
-function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item =>
-        !item.info.match(linkInfoRegex) &&
-        !item.info.match(/^\d\d\d\d?p\.dubbed - (\d\d\d)|(\d\d?(\.\d\d?)?)(MB|GB)/) &&
-        !item.info.match(/^\d\d\d\d?p\.(HardSub|SoftSub)$/)
-    );
-
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
-
-    console.log([...badLinks, ...badSeasonEpisode].map(item => {
-        return ({
-            link: item.link,
-            info: item.info,
-            seasonEpisode: `S${item.season}E${item.episode}`,
-        })
-    }));
 }

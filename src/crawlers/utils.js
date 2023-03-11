@@ -128,6 +128,7 @@ export function checkHardSub(input) {
     return (
         input.includes('softsub') ||
         input.includes('softsuv') ||
+        input.includes('|softsob') ||
         input.includes('hardsub') ||
         input.includes('subfa') ||
         input.match(/sub(?!(title|french|BED))/i) ||
@@ -372,7 +373,7 @@ export function checkBetterQuality(quality, prevQuality, withSubIsBetter = true)
     return isBetter;
 }
 
-export function removeDuplicateLinks(input, replaceInfo = false) {
+export function removeDuplicateLinks(input, replaceInfo = false, replaceBadInfoOnly = false) {
     let result = [];
     for (let i = 0; i < input.length; i++) {
         let exist = false;
@@ -381,7 +382,16 @@ export function removeDuplicateLinks(input, replaceInfo = false) {
                 (input[i].link || input[i].url) === (result[j].link || result[j].url)
             ) {
                 if (replaceInfo && input[i].info.length > result[j].info.length) {
-                    result[j].info = input[i].info;
+                    if (replaceBadInfoOnly) {
+                        if (
+                            (input[i].info.match(/^\d\d\d\d?p/) && !result[j].info.match(/^\d\d\d\d?p/)) ||
+                            (!input[i].info.match(/[\u0600-\u06FF]/) && result[j].info.match(/[\u0600-\u06FF]/))
+                        ) {
+                            result[j].info = input[i].info;
+                        }
+                    } else {
+                        result[j].info = input[i].info;
+                    }
                 }
                 exist = true;
                 break;

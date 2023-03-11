@@ -2,9 +2,11 @@ import * as cheerio from 'cheerio';
 import inquirer from "inquirer";
 import isEqual from 'lodash.isequal';
 import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePages/sourcePagesSample.js";
-import {sourcesConfigs, sourcesNames} from "../sourcesArray.js";
+import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
 import {removeDuplicateLinks} from "../utils.js";
 import {saveError} from "../../error/saveError.js";
+
+const sourcesMethods = getSourcesMethods();
 
 export function getTrailers($, sourceName, sourceVpnStatus) {
     try {
@@ -143,7 +145,7 @@ export async function comparePrevTrailerWithNewMethod(sourceName = null, updateM
                     stats.checked++;
                     let {sourceName: sName, trailers, pageContent} = sourcePages[j];
                     let $ = cheerio.load(pageContent);
-                    const newTrailers = getTrailers($, sName, sourcesConfigs()[sName]);
+                    const newTrailers = getTrailers($, sName, sourcesMethods[sName].sourceConfig.vpnStatus);
 
                     if (!isEqual(trailers, newTrailers)) {
                         let {sourceName: sName, fileIndex, title, type, pageLink} = sourcePages[j];

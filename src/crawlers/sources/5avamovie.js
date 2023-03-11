@@ -15,8 +15,6 @@ import {
     fixLinkInfoOrder,
     fixLinkInfo,
     purgeQualityText,
-    linkInfoRegex,
-    encodersRegex
 } from "../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
@@ -31,6 +29,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'noVpn',
         downloadLink: 'noVpn',
     }),
+    replaceInfoOnDuplicate: true,
 });
 
 export default async function avamovie({movie_url, serial_url, page_count, serial_page_count}) {
@@ -78,7 +77,7 @@ async function search_title(link, i, $, url) {
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     year = fixWrongYear(title, type, year);
-                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
 
                     let sourceData = {
                         sourceConfig,
@@ -143,9 +142,7 @@ function fixWrongYear(title, type, year) {
     return year;
 }
 
-function getFileData($, link, type) {
-    // 1080p.x265.10bit.BluRay - 600MB // 1080p.x265.WEB-DL - 380MB
-    // 1080p.x265.WEB-DL.PSA - 1.2GB  // 720p.BluRay.YTS.HardSub - 780MB
+export function getFileData($, link, type) {
     try {
         return type.includes('serial')
             ? getFileData_serial($, link)
@@ -163,9 +160,9 @@ function getFileData_serial($, link) {
     let temp = $(infoNodeChildren[0]).text();
     let qualityText = (temp.match(/\d\d\d\d?p/i) || temp.includes('کیفیت')) ? temp : $(infoNodeChildren[1]).text();
     let quality = replacePersianNumbers(qualityText);
-    quality = purgeQualityText(quality).split(/\s\s*/g).reverse().join('.');
-    let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
-    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
+    quality = purgeQualityText(quality).split(/\s+/g).reverse().join('.');
+    let hardSub = quality.match(/softsub|hardsub/i) || linkHref.match(/softs[uo]b|hardsub/i);
+    hardSub = hardSub ? hardSub[0].replace('ob', 'ub') : checkHardSub(linkHref) ? 'HardSub' : '';
     let size = $(infoNodeChildren[2]).text();
     if (size.includes('حجم')) {
         size = purgeSizeText(size);
@@ -197,9 +194,8 @@ function getFileData_movie($, link) {
     } else {
         quality = purgeQualityText(quality).split(' ').reverse().join('.').replace(/^\.?(softsub|hardsub)\.?/i, '');
     }
-    let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
-    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
 
+    let hardSub = linkHref.match(/softs[uo]b|hardsub/i)?.[0].replace('ob', 'ub') || (checkHardSub(linkHref) ? 'HardSub' : '');
     let encoder = purgeEncoderText($(infoNodeChildren[0]).text());
     let size = purgeSizeText($(infoNodeChildren[1]).text());
     if (encoder.includes('حجم')) {
@@ -210,7 +206,6 @@ function getFileData_movie($, link) {
     let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
     info = fixLinkInfo(info, linkHref);
     info = fixLinkInfoOrder(info);
-    info = info.replace('GalaxyRGAvaMovie', 'GalaxyRG');
     return [info, size].filter(value => value).join(' - ');
 }
 
@@ -229,23 +224,4 @@ function getQualitySample($, link) {
         saveError(error);
         return '';
     }
-}
-
-function printLinksWithBadInfo(downloadLinks) {
-    const badLinks = downloadLinks.filter(item =>
-        !item.info.match(linkInfoRegex) &&
-        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.(${encodersRegex.source})\\.SoftSub( - ((\\d\\d\\d?MB)|(\\d(\\.\\d)?GB)))?$`)) &&
-        !item.info.match(/^\d\d\d\d?p\.x265(\.10bit)?( - ((\d\d\d?MB)|(\d(\.\d)?GB)))?$/) &&
-        !item.info.match(new RegExp(`^\\d\\d\\d\\d?p\\.FULL-HD\\.(${encodersRegex.source})( - ((\\d\\d\\d?MB)|(\\d(\\.\\d)?GB)))?$`))
-    );
-
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 400);
-
-    console.log([...badLinks, ...badSeasonEpisode].map(item => {
-        return ({
-            link: item.link,
-            info: item.info,
-            seasonEpisode: `S${item.season}E${item.episode}`,
-        })
-    }));
 }

@@ -56,7 +56,8 @@ export async function updateSourcePageData(sourcePageData, updateFieldNames) {
         delete sourcePageData.sourceName;
         delete sourcePageData.fileIndex;
         await updateSampleData(pathToFiles, sourceName, sourcePageData.pageLink, sourcePageData, fileIndex, updateFieldNames);
-
+        sourcePageData.sourceName = sourceName;
+        sourcePageData.fileIndex = fileIndex;
         isFileOpen = false;
     } catch (error) {
         saveError(error);

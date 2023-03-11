@@ -10,7 +10,7 @@ import {
     validateYear,
 } from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
-import {fixLinkInfo, fixLinkInfoOrder, linkInfoRegex, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
+import {fixLinkInfo, fixLinkInfoOrder, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
 import {summaryExtractor, posterExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
@@ -26,6 +26,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'allOk',
         downloadLink: 'allOk',
     }),
+    replaceInfoOnDuplicate: true,
 });
 
 export default async function bia2anime({movie_url, page_count}) {
@@ -76,7 +77,7 @@ async function search_title(link, i) {
                             type = type.replace('movie', 'serial');
                         }
                     }
-                    downloadLinks = removeDuplicateLinks(downloadLinks);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
                     title = replaceShortTitleWithFull(title);
                     downloadLinks = fixWrongSeasonNumberIncrement(downloadLinks);
                     downloadLinks = fixSeasonSeparation(downloadLinks);
@@ -224,8 +225,7 @@ function getSubtitles($, type, pageLink, downloadLinks) {
     }
 }
 
-function getFileData($, link, type) {
-    // 'S1E01.720p'  //
+export function getFileData($, link, type) {
     try {
         return type.includes('serial')
             ? getFileData_serial($, link)
@@ -288,7 +288,7 @@ function getFileData_serial($, link) {
     let seasonPart = seasonPartMatch
         ? seasonPartMatch.pop()
             .replace(/[\s.]/g, '')
-            .replace('part', 'Part')
+            .replace('part', 'Part_')
         : '';
 
     if (seasonNumber === 1 && Number(episodeNumber) === 0 && !seasonPart) {
@@ -442,6 +442,15 @@ function getQuality($, infoNodeChildren, linkHref, linkText) {
     return quality;
 }
 
+export function handleLinksExtraStuff(downloadLinks) {
+    downloadLinks = removeDuplicateLinks(downloadLinks);
+    downloadLinks = fixWrongSeasonNumberIncrement(downloadLinks);
+    downloadLinks = fixSeasonSeparation(downloadLinks);
+    downloadLinks = sortLinks(downloadLinks);
+    downloadLinks = fixSpecialEpisodeSeason(downloadLinks);
+    return downloadLinks;
+}
+
 function fixWrongSeasonNumber(seasonNumber, linkHref) {
     let seasonName = '';
     if (linkHref.includes('kenpuu.denki.berserk')) {
@@ -485,7 +494,7 @@ function fixWrongSeasonNumber(seasonNumber, linkHref) {
 
 function fixWrongSeasonEpisodeNumber(seasonPart, seasonNumber, episodeNumber, linkHref) {
     if (linkHref.includes('jojo.no.kimyou.na.bouken')) {
-        if (seasonPart === 'Part3') {
+        if (seasonPart === 'Part_3') {
             if (seasonNumber === 1) {
                 seasonNumber = 3;
             } else if (seasonNumber === 2) {
@@ -494,7 +503,7 @@ function fixWrongSeasonEpisodeNumber(seasonPart, seasonNumber, episodeNumber, li
             }
         }
         if (seasonPart) {
-            seasonNumber = Number(seasonPart.replace('Part', ''));
+            seasonNumber = Number(seasonPart.replace('Part_', ''));
         }
     }
     return {seasonNumber, episodeNumber};
@@ -562,9 +571,9 @@ function fixWrongSeasonNumberIncrement(downloadLinks) {
 function fixSeasonSeparation(downloadLinks) {
     let saveResult = [];
     for (let i = 0; i < downloadLinks.length; i++) {
-        let partMatch = downloadLinks[i].info.match(/\.Part\d/gi);
+        let partMatch = downloadLinks[i].info.match(/\.Part_\d/gi);
         if (partMatch) {
-            let partNumber = Number(partMatch[0].replace(/Part|\./gi, ''));
+            let partNumber = Number(partMatch[0].replace(/Part|\.|_/gi, ''));
             if (partNumber === 1) {
                 continue;
             }
@@ -581,8 +590,8 @@ function fixSeasonSeparation(downloadLinks) {
             for (let j = 0; j < downloadLinks.length; j++) {
                 if (
                     (partNumber === 2 &&
-                        (downloadLinks[j].info.toLowerCase().includes('.part1') || !downloadLinks[j].info.toLowerCase().includes('.part'))) ||
-                    (partNumber > 2 && downloadLinks[j].info.toLowerCase().includes('.part' + (partNumber - 1)))
+                        (downloadLinks[j].info.toLowerCase().includes('.part_1') || !downloadLinks[j].info.toLowerCase().includes('.part'))) ||
+                    (partNumber > 2 && downloadLinks[j].info.toLowerCase().includes('.part_' + (partNumber - 1)))
                 ) {
                     if (downloadLinks[j].season === seasonNumber && downloadLinks[j].episode > lastEpisodeFromPrevPart) {
                         lastEpisodeFromPrevPart = downloadLinks[j].episode;
@@ -619,33 +628,4 @@ function fixSpecialEpisodeSeason(downloadLinks) {
         }
     }
     return downloadLinks;
-}
-
-function printLinksWithBadInfo(downloadLinks) {
-    const bia2animeLinkInfoRegex = new RegExp([
-        /^\d\d\d\d?p/,
-        /(\.x265)?(\.10bit)?/,
-        /(\.Part\.?\d)?/,
-        /(\.Episode\(\d\d?\.5\))?/,
-        /(\.(Special|OVA|NCED|NCOP)(_\d)?)?/,
-        /(\.UnCensored)?/,
-        /(\.dubbed\(english\))?/,
-        /(\.\s\(.+\))?/,
-        /( - (\d\d?(\.\d\d?)?GB|\d\d\d?MB))?$/,
-    ].map(item => item.source).join(''));
-
-    const badLinks = downloadLinks.filter(item =>
-        !item.info.match(linkInfoRegex) &&
-        !item.info.match(bia2animeLinkInfoRegex)
-    );
-
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 40 || item.episode > 1300);
-
-    console.log([...badLinks, ...badSeasonEpisode].map(item => {
-        return ({
-            link: item.link,
-            info: item.info,
-            seasonEpisode: `S${item.season}E${item.episode}`,
-        })
-    }));
 }

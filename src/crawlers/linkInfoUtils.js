@@ -1,5 +1,5 @@
 //----------------------------------------
-export const releaseRegex = /WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|HDTS|BR-RIP|BD-RIP|DVDRip|DVDScr|WEBSCR|Mobile|CAMRip|HD-CAM/;
+export const releaseRegex = /WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|HDTS|HDTC|BR-RIP|BD-RIP|DVDRip|DVDScr|WEBSCR|Mobile|CAMRip|HD-CAM/;
 
 export const encodersRegex = new RegExp([
     /RARBG?|Pa[Hh]e|[Pp][Ss][Aa]|YTS|[Rr][Mm][Tt]eam|EVO|R?MT|Y[Ii]?F[IY]/,
@@ -9,7 +9,7 @@ export const encodersRegex = new RegExp([
     /|anoXmous|Judas|ETRG|jbr|Kick|STRiFE|LIMITED|SUNSCREEN/,
     /|CMRG|sujaidr|[Ss]ilence|xTv|BTRG|TURG|HdT|KRT|DJT/,
     /|AMRAP|SiGMA|i[Kk][Aa]|LLG|FGT|MkvHub|MW|WiKi|Hon3y|JYK/,
-    /|AME|ELR|NTG|[Nn][Tt]b|eSc|associate|[Ss]c[Oo]rp|RDH|AMZN|afm7[23]/,
+    /|AME|ELR|NT[GB]|[Nn][Tt]b|eSc|associate|[Ss]c[Oo]rp|RDH|AMZN|afm7[23]/,
     /|Jalucian|muhHD|GAN|AC3|[Ww]orldmkv|AiRLiNE|DEFiNiTE/,
     /|HazMatt|FiDELiO|AR|monkee|vsenc|BDP|D3FiL3R|watcher/,
     /|SaNiG|Frontline|TNTVillage|LordVako|titler|rDX|w4f/,
@@ -40,53 +40,109 @@ export const encodersRegex = new RegExp([
     /|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta|PCOK|orenji/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]/,
     /|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo|[Aa][Rr][Ii][Ee][Ss]/,
+    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
-    /^(\d\d\d\d?p|(1080p\.FULL-HD)|(1440p\.2K)|(2160p\.4K))/,
-    /(\.DIRECTORS\.CUT)?/,
-    /(\.ALT-UNIVERSE-CUT)?/,
-    /(\.EXTENDED)?/,
-    /(\.Theatrical)?/,
-    /((\.3D)?\.x265(\.10bit)?(\.(HDR|HSBS))?(\.[876]CH)?|\.10bit(\.HDR)?|\.3D(\.HSBS)?(\.[876]CH)?)?/,
+    /^((\d\d\d\d?p)|(1080p\.FULL-HD)|(1440p\.2K)|(2160p\.4K)|(2160p\.UHD))/,
+    /((\.x265)?(\.10bit)?(\.HDR)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
     /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
     /(\.Episode\(\d\d?\.5\))?/,
-    /(\.(((Christmas\.)?Special)|OVA|NCED|NCOP)(_\d)?)?/,
-    /((\.Main\.Ceremony)|(\.Red\.Carpet))?/,
+    /((\.\d)?\.(((Christmas\.)?Special)|OVA|NCED|NCOP)(_\d)?)?/,
+    /((\.Main-Ceremony)|(\.Red-Carpet)|((\.Summary)?\.Oscar(\.\d\d\d\d)?))?/,
+    /(\.DIRECTORS-CUT)?/,
+    /(\.ALT-UNIVERSE-CUT)?/,
+    /(\.EXTRAS)?/,
+    /(\.Theatrical)?/,
     /(\.EXTENDED)?/,
     /(\.REMUX)?/,
     /(\.REPACK)?/,
-    /(\.Part\.\d)?/,
+    /(\.Part_\d)?/,
     /(\.Extra)?/,
-    /(\.Encore\.Edition)?/,
+    /(\.Encore-Edition)?/,
     /(\.IMAX)?/,
-    /(\.Backstage)?/,
-    new RegExp(`\\.(${releaseRegex.source})`), // --> /\.(releaseRegex)/
-    /(\.[876]CH)?/,
     /(\.REMASTERED)?/,
+    /(\.Backstage)?/,
+    /(\.Preview)?/,
+    new RegExp(`(\\.(${releaseRegex.source}))?`), // --> /\.(releaseRegex)/
     new RegExp(`(\\.(${encodersRegex.source}))?`), // --> /(\.(encodersRegex))?/
     /(\.(Un)?Censored)?/,
     /(\.(HardSub(\.dubbed)?|SoftSub(\.dubbed)?|dubbed(\(.+\))?))?/,
+    /(\.V2)?/,
+    /((\.\d\d\d\d)?\.\d\d\.\d\d)?/,
+    /(\.Round_\d+(\.Day_\d+(_\d+)?)?(\.(ReWatch|Preview))?)?/,
     /(\.\s\(whole season in one file\))?/,
     /(\.\s\(.+\))?/,
     /( - (\d\d?(\.\d\d?)?GB|\d\d\d?MB))?$/
 ].map(item => item.source).join(''), 'g');
 
+const countries = [
+    'St-Louis', 'Anaheim', 'Oakland', 'Glendale', 'San-Diego', 'Tampa', 'Arlington', 'Atlanta',
+    'Daytona', 'Valenciana', 'Europa', 'Teruel', 'Aragon', 'Lenovo-San-Marino', 'Czech-Republic',
+    'Jerez', 'Abu-Dhabi', 'Sakhir', 'Turkish', 'Eifel', 'Russian', 'Tuscan', 'Andalucia', 'Belgium',
+    'Grand-Prix', 'British', 'Hungarian', 'Styria', 'Austrian', 'Azerbaijan', 'Emilia-Romagna', 'Monaco',
+    'Spanish', 'Bahrain', 'Germany', 'Catalunya', 'Italy', 'France', 'Portugal', 'Doha', 'Gatar', 'Emilia-Romagna',
+];
+export const countriesRegex = new RegExp(`(480p|720p|1080p)(\\.FULL-HD)?(\\.Preview)?(\\.[1-5])?\\.(${countries.join('|')})`, 'i');
+
 export const specialWords = new RegExp([
     /x265|10bit|3D|HDR|HSBS/,
     /|HardSub|SoftSub|dubbed|Sub|Censored/,
     /|FULL-HD|2K|4K|[876]CH/,
-    /|DIRECTORS\.CUT|ALT-UNIVERSE-CUT/,
-    /|Main\.Ceremony|Red\.Carpet|Backstage/,
-    /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Part|Encore\.Edition/,
+    /|DIRECTORS-CUT|ALT-UNIVERSE-CUT/,
+    /|Main-Ceremony|Red-Carpet|Backstage/,
+    /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Part|Encore-Edition/,
     /|Episode/,
     /|((Christmas\.)?Special)|OVA|NCED|NCOP/,
 ].map(item => item.source).join(''), 'g');
 
-//----------------------------------------
+const episodeRangeRegex = /Episode\(\d\d?\d?-\d\d?\d?\)/;
+const episodeRangeRegex2 = /Episode\(\d\d?\d?-\d\d?\d?\)/;
+const specialRegex = /((Christmas\.)?Special)|OVA|NCED|NCOP(_\d)?/;
+const dubbedRegex = /dubbed(\(.+\))?/;
+const partRegex = /Part_\d/;
+const ceremonyRegex = /(Main-Ceremony)|(Red-Carpet)|(Oscar)/;
+const orders = Object.freeze([
+    'qualityRegex', 'full-hd', '2k', '4k', 'uhd',
+    'x265', '10bit', 'hdr',
+    '3d', 'hsbs', '6ch', '7ch', '8ch',
+    'episodeRangeRegex',
+    'episodeRangeRegex2',
+    'specialRegex',
+    'ceremonyRegex',
+    'directors-cut', 'alt-universe-cut',
+    'extras', 'theatrical',
+    'extended', 'remux', 'repack',
+    'imax', 'remastered', 'Encore-Edition',
+    'backstage',
+    'partRegex',
+    'releaseRegex',
+    'encodersRegex',
+    'uncensored', 'censored',
+    'softsub', 'hardsub',
+    'v2',
+    'dubbed', 'dubbedRegex',
+    ' (whole season in one file)',
+]);
+
+const ordersIndex = Object.freeze({
+    releaseRegex: orders.indexOf('releaseRegex'),
+    encodersRegex: orders.indexOf('encodersRegex'),
+    episodeRangeRegex: orders.indexOf('episodeRangeRegex'),
+    episodeRangeRegex2: orders.indexOf('episodeRangeRegex2'),
+    specialRegex: orders.indexOf('specialRegex'),
+    dubbedRegex: orders.indexOf('dubbedRegex'),
+    partRegex: orders.indexOf('partRegex'),
+    ceremonyRegex: orders.indexOf('ceremonyRegex'),
+});
+
+//-------------------------------------------------------
+//-------------------------------------------------------
+//-------------------------------------------------------
 
 export function purgeQualityText(qualityText) {
     return qualityText
+        .replace(/ /g, ' ')
         .replace(/\s\s+/g, ' ')
         .replace('دانلود', '')
         .replace('فیلم', '')
@@ -117,7 +173,7 @@ export function purgeQualityText(qualityText) {
         .replace('لينک مستقيم', '')
         .replace('لینک مستقیم', '') //its not duplicate
         .replace('لینک مستقم', '')
-        .replace(/قسمت \d\d?\d?(\s*([و٫]|تا)\s*)?\d?\d?\d?/, '')
+        .replace(/قسمت \d\d?\d?((\s*([و٫]|تا)\s*)?\d?\d?\d?)+/, '')
         .replace(/قسمت ها \d+/g, '')
         .replace(/\d+ دقیقه/g, '')
         .replace('قسمت', '')
@@ -135,13 +191,12 @@ export function purgeQualityText(qualityText) {
         .replace('اس‌پی', 'Special_')
         .replace('ان‌سی‌ئی‌دی', 'NCED')
         .replace('ان‌سی‌اُ‌پی', 'NCOP')
+        .replace('ان‌سی‌اُپی', 'NCOP')
         .replace('اووی‌ای', 'OVA')
         .replace('پارت ', 'Part ')
         .replace('مراسم اسکار', 'Oscar')
         .replace('اسکار', 'Oscar')
         .replace('خلاصه', 'Summary')
-        .replace('مراسم اصلی', 'Main.Ceremony')
-        .replace('مراسم فرش قرمز', 'Red Carpet')
         .replace('مراسم افتتاحیه بازی های المپیک', '')
         .replace('مراسم اختتامیه بازی های المپیک', '')
         .replace('مگابایت', 'MB')
@@ -149,6 +204,8 @@ export function purgeQualityText(qualityText) {
         .replace(/(اول)|(دوم)|(سوم)/, '')
         .replace(/در|با|و/g, '')
         .replace(/[)(:|«»\-_=\/]|\.H264|\sHQ/gi, '')
+        .replace('مراسم اصلی', 'Main-Ceremony')
+        .replace('مراسم فرش قرمز', 'Red-Carpet')
         .replace(/\.(DDP?|AAC)?\d\.\d(\.H)?(\.264)?(?!((\d\d\d?p)|(ch)))/i, '')
         .replace(/bluray/gi, 'BluRay')
         .replace(/weba?[-_]*d(l|$)/gi, 'WEB-DL')
@@ -159,27 +216,19 @@ export function purgeQualityText(qualityText) {
         .replace(/DvdRip/gi, 'DVDRip')
         .replace(/hdrip/gi, 'HD-RIP')
         .replace(/hdtv/gi, 'HDTV')
-        .replace(/full hd/gi, 'FULL-HD')
+        .replace(/full?[\s.]hd/gi, 'FULL-HD')
+        .replace(/(?<=(\s|\.|^))fhd/i, 'FULL-HD')
         .replace(/HD-?CAM/gi, 'HD-CAM')
         .replace(/ 4k /g, ' 4K ')
         .replace(/ Extended(\scut)?/gi, ' EXTENDED')
         .replace(/\s(BrRio|AC3|PROPER)/, '')
+        .replace(/\d\d\d\d?p & \d\d\d\d?p/, '')
         .replace(/\s\s+/g, ' ')
         .trim();
 }
 
 export function fixLinkInfo(info, linkHref) {
-    if (!info.match(/\d\d\d\d?p/gi)) {
-        let qualityMatch = linkHref.match(/[.\s]\d\d\d\d?p[.\s]/gi);
-        let qualityMatch2 = linkHref.match(/\[\d\d\d\d?p?]/gi);
-        let resolution = qualityMatch
-            ? qualityMatch.pop().replace(/[.\s]/g, '')
-            : qualityMatch2
-                ? qualityMatch2.pop().replace(/[\[\]]/g, '')
-                : (info.includes('DVDRip') || linkHref.includes('DVDRip')) ? '576p' : '480p';
-        resolution = !resolution.toLowerCase().includes('p') ? resolution + 'p' : resolution;
-        info = info ? resolution + '.' + info : resolution;
-    }
+    info = fixLinkInfoResolution(linkHref, info);
 
     info = info
         .replace(/(^|\.)x256\./, (res) => res.replace('256', '265'))
@@ -187,6 +236,7 @@ export function fixLinkInfo(info, linkHref) {
         .replace('.10bt.', '.10bit.')
         .replace('.x265p.', '.x265.')
         .replace('1080x264', '1080p')
+        .replace('1080x265', '1080p.x265')
         .replace(/bl?ue?rayR?L?/i, 'BluRay')
         .replace(/WEB-?DLR/i, 'WEB-DL')
         .replace(/WEB\.DL/i, 'WEB-DL')
@@ -197,9 +247,7 @@ export function fixLinkInfo(info, linkHref) {
         .replace(/(Farsi\.Dub(bed)?)|(Dubbed\.Farsi)|(Dub\.fa)/i, 'dubbed');
 
     if (!info.toLowerCase().includes('x265') && (linkHref.toLowerCase().includes('x265') || linkHref.toLowerCase().includes('.265.'))) {
-        info = info
-            .replace(/\d\d\d\d?p/g, (res) => res + '.x265')
-            .replace('2160p.x265.4K', '2160p.4K.x265');
+        info = info.replace(/\d\d\d\d?p/g, (res) => res + '.x265');
     }
 
     if (!info.toLowerCase().includes('10bit') && linkHref.toLowerCase().includes('10bit')) {
@@ -224,8 +272,58 @@ export function fixLinkInfo(info, linkHref) {
         info = info + '.' + 'WEB-DL';
     }
 
-    //---------------------------------------------------------------------
-    let multiEpisodeMatch = linkHref.match(/\.(s\d\d?)?e\d\d\d?([-.])?(e\d\d\d?)+\./gi);
+    info = handleMultiEpisode(linkHref, info);
+
+    let ovaMatch = linkHref.match(/\.(((Special|OVA|NCED|NCOP)\.?E?\d\d\d?)|(E?\d\d\d?\.(Special|OVA|NCED|NCOP)))\.\d\d\d\d?p/gi);
+    if (ovaMatch) {
+        let special = ovaMatch.pop().match(/Special|OVA|NCED|NCOP/i).pop();
+        info = info + '.' + special;
+    }
+
+    if (linkHref.match(/[._-]Uncen(sored)?[._-]/i)) {
+        info += '.UnCensored';
+    }
+
+    return info.replace(/\.$/, '');
+}
+
+function fixLinkInfoResolution(linkHref, info) {
+    info = info.replace(/(?<=(^\d+))P\./, 'p.');
+    let temp = info.match(/\d{3,5}p/)?.[0] || '';
+    if (
+        temp && linkHref.match(/[.\s_\[]\d\d\d\d?p?[.\s_\]]/) &&
+        !linkHref.includes(temp) &&
+        !linkHref.includes('.' + temp.replace('p', '') + '.')
+    ) {
+        if (temp === '1440p') {
+            if (!linkHref.toLowerCase().includes('2k')) {
+                info = info.replace(temp + '.', '').replace(temp, '');
+            }
+        } else if (temp === '2160p') {
+            if (!linkHref.toLowerCase().includes('4k')) {
+                info = info.replace(temp + '.', '').replace(temp, '');
+            }
+        } else {
+            info = info.replace(temp + '.', '').replace(temp, '');
+        }
+    }
+
+    if (!info.match(/\d\d\d\d?p/gi)) {
+        let qualityMatch = linkHref.match(/[.\s_]\d{3,5}p[.\s_]/gi);
+        let qualityMatch2 = linkHref.match(/\[\d\d\d\d?p?]/gi);
+        let resolution = qualityMatch
+            ? qualityMatch.pop().replace(/[.\s_]/g, '')
+            : qualityMatch2
+                ? qualityMatch2.pop().replace(/[\[\]]/g, '')
+                : (info.includes('DVDRip') || linkHref.includes('DVDRip')) ? '576p' : '480p';
+        resolution = !resolution.toLowerCase().includes('p') ? resolution + 'p' : resolution;
+        info = info ? resolution + '.' + info : resolution;
+    }
+    return info;
+}
+
+function handleMultiEpisode(linkHref, info) {
+    let multiEpisodeMatch = linkHref.match(/\.(s\d\d?)?e\d\d\d?(([-.])?(e\d\d\d?)+)+\./gi);
     if (!multiEpisodeMatch) {
         multiEpisodeMatch = linkHref.match(/E\d+-\d+\./gi);
         if (multiEpisodeMatch) {
@@ -256,335 +354,180 @@ export function fixLinkInfo(info, linkHref) {
             info = info.replace(/\d\d\d\d?p/, (res) => res + `.Episode(${number1}-${number2})`);
         }
     }
-    //---------------------------------------------------------------------
-
-    let ovaMatch = linkHref.match(/\.(((Special|OVA|NCED|NCOP)\.?E?\d\d\d?)|(E?\d\d\d?\.(Special|OVA|NCED|NCOP)))\.\d\d\d\d?p/gi);
-    if (ovaMatch) {
-        let special = ovaMatch.pop().match(/Special|OVA|NCED|NCOP/i).pop();
-        info = info + '.' + special;
-    }
-
-    if (linkHref.match(/[._-]Uncen(sored)?[._-]/i)) {
-        info += '.UnCensored';
-    }
-
-    return info.replace(/\.$/, '');
-}
-
-export function fixLinkInfoOrder(info) {
-    const subRegex = new RegExp(`(SoftSub|HardSub)\\.(${releaseRegex.source})`, 'g');
-    info = getCleanLinkInfo(info);
-
-    info = info
-        .replace(/3D\.HSBS\.\d\d\d\d?p/, (res) => {
-            let temp = res.split('.');
-            return [temp[2], temp[0], temp[1]].join('.');
-        })
-        .replace(new RegExp(`(${releaseRegex.source})((\\.10bit\\.x265)|((\\.x265)?(\\.10bit)?))`), (res) => {
-            let temp = res.split('.');
-            return [...temp.slice(1), temp[0]].filter(item => item).join('.');
-        })
-        .replace(new RegExp(`10bit\\.(${releaseRegex.source})(\\.[876]CH)?\\.x265`), (res) => {
-            let temp = res.split('.');
-            if (temp.length === 3) {
-                return [temp[2], temp[0], temp[1]].join('.');
-            }
-            return [temp[3], temp[0], temp[2], temp[1]].join('.');
-        })
-        .replace(new RegExp(`(${releaseRegex.source})\\d\\d\\d\\d?p`), (res) => res.replace(/\d\d\d\d?p/, (res2) => '.' + res2))
-        .replace(new RegExp(`(${releaseRegex.source})(\\.4K)?\\.\\d\\d\\d\\d?p(\\.4K)?(\\.3D\\.HSBS)?(\\.x265((\\.4K)?\\.10bit)?)?(\\.FULL-HD)?`), (res) => {
-            let temp = res.split('.');
-            return [...temp.slice(1), temp[0]].filter(item => item).join('.')
-                .replace(/(?<=\.)x265(\.10bit)?\.FULL-HD/, (res2) => {
-                    let temp2 = res2.split('.');
-                    let fullHd = temp2.pop();
-                    return [fullHd, ...temp2].join('.');
-                });
-        })
-        .replace(new RegExp(`(${releaseRegex.source})\\.(${encodersRegex.source})\\.x265`), (res) =>
-            'x265.' + res.replace('.x265', '')
-        )
-        .replace(new RegExp(`(${releaseRegex.source})\\.(${encodersRegex.source})\\.10bit`), (res) =>
-            '10bit.' + res.replace('.10bit', '')
-        )
-        .replace(new RegExp(`(${releaseRegex.source})\\.REPACK`), (res) => res.split('.').reverse().join('.'))
-        .replace(/REPACK\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'))
-        .replace('REPACK.10bit.x265', 'x265.10bit.REPACK')
-        .replace('REPACK.x265', 'x265.REPACK')
-        .replace('.10bit.REPACK.10bit', '.10bit.REPACK')
-        .replace('REPACK.10bit', '10bit.REPACK')
-        .replace('dubbed.x265', 'x265.dubbed');
-    //-------------- Sub - Dub --------------
-    info = fixLinkInfoOrder_sub_dub(info);
-    //-------------- Part --------------
-    info = fixLinkInfoOrder_part_number(info);
-    //----------------------------------
-    info = info.replace(subRegex, (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${encodersRegex.source})\\.\\d\\d\\d\\d?p`, 'g'), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${encodersRegex.source})\\.(${releaseRegex.source})`, 'g'), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${encodersRegex.source})\\.HDR`), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${releaseRegex.source})\\.HDR`), (res) => res.split('.').reverse().join('.'))
-        .replace(/10bit(\.[876]CH)?\.x265/, (res) => {
-            let temp = res.split('.');
-            let x265 = temp.pop();
-            return [x265, ...temp].join('.');
-        })
-        .replace(/(x265\.10bit\.\d\d\d\d?p)|(10bit\.\d\d\d\d?p\.x265)/g, (res) => res.match(/\d\d\d\d?p/)[0] + '.x265.10bit')
-        .replace(/(x265|10bit|(FULL-)?HD|3D)\.\d\d\d\d?p/g, (res) => res.split('.').reverse().join('.'));
-    //-------------- 2K | 4K | HDR | HSBS --------------
-    info = fixLinkInfoOrder_hdr_hsbs_2k_4k(info, subRegex);
-    //-------------- 6CH | 7CH | 8CH --------------
-    info = fixLinkInfoOrder_6ch(info);
-    //-------------- REMASTERED | EXTRAS | EXTENDED | Theatrical | IMAX --------------
-    info = fixLinkInfoOrder_extras_extended_imax(info);
-    //-------------- Episode --------------
-    info = fixLinkInfoOrder_episode(info);
-    //-------------- Directors Cut --------------
-    info = fixLinkInfoOrder_director_cut(info);
-    //-------------- Dates --------------
-    info = info.replace(/\.(2020|(Cut\.)?Exclusive)/gi, '')
-        .replace(/\d\d\d\d٫\d\d٫\d\d/, (res) => res.replace(/٫/g, '.').split('.').reverse().join('.')) //case: 2020٫11٫19
-        .replace(/\d\d٫\d\d٫\d\d\d\d/, (res) => res.replace(/٫/g, '.')) //case: 28٫09٫2020
-        .replace(/(Censored\.)?(dubbed\.)?(Special|OVA|NCED|NCOP)/, (res) => {
-            let temp = res.split('.');
-            let special = temp.pop();
-            return [special, ...temp].join('.');
-        })
-        .replace('10bit.6CH.10bit', '10bit.6CH')
-        .replace('10bit.10bit', '10bit')
-        .replace('REPACK.x265.10bit', 'x265.10bit.REPACK')
-        .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0]);
-    //---------------------------------------------------------
-    info = info.replace(new RegExp(`dubbed\\.((${releaseRegex.source})|(${encodersRegex.source}))\\.dubbed`), (res) =>
-        res.replace('dubbed.', '')
-    );
-    //-------------- Special | OVA | NCED | NCOP --------------
-    info = info.replace(new RegExp(`(${releaseRegex.source})\\.(${encodersRegex.source})?\\.(Special|OVA|NCED|NCOP)`), (res) => {
-        let temp = res.split('.');
-        let special = temp.pop();
-        return [special, ...temp].join('.');
-    });
     return info;
 }
 
-export function getCleanLinkInfo(info) {
+//-------------------------------------------------------
+//-------------------------------------------------------
+//-------------------------------------------------------
+
+export function fixLinkInfoOrder(info) {
+    info = fixInfoWrongQualityResolution(info);
+    info = fixInfoDubAndSub(info);
+    info = fixInfoCaseSensitiveWords(info);
+    info = getCleanLinkInfo(info);
+
+    let splitInfo = info.split(/(Episode\(\d+\.5\))|\./).filter(item => item);
+    let temp = splitInfo.sort((a, b) => {
+        if (a.match(/\d\d\d\d?p/)) {
+            return -1;
+        }
+        if (b.match(/\d\d\d\d?p/)) {
+            return 1;
+        }
+        let index_a = getOrderIndex(a, splitInfo);
+        let index_b = getOrderIndex(b, splitInfo);
+        return index_a > index_b ? 1 : -1;
+    });
+
+    info = temp.join('.')
+        .replace(/(?<!(1080p))\.FULL-HD/, '')
+        .replace(/(?<!(2160p))\.4k/i, '')
+        .replace(/(?<!(1440p))\.2k/i, '')
+        .replace('1080p.FULL-HD.2K', '1080p.FULL-HD')
+        .replace('FULL-HD.WEB-DL', 'WEB-DL')
+        .replace('Digital.Extras.EXTRAS', 'EXTRAS')
+        .replace(new RegExp(`(${releaseRegex.source})\\.(${releaseRegex.source})`), res => res.split('.')[0])
+        .replace(new RegExp(`(${encodersRegex.source})\\.(${encodersRegex.source})`), res => res.split('.')[0])
+        .replace(new RegExp(`(${specialRegex.source})\\.(${specialRegex.source})`), res => res.split('.')[0])
+        .replace(/dubbed(\.dubbed)+/gi, 'dubbed')
+        .replace(/SoftSub(\.SoftSub)+/gi, 'SoftSub')
+        .replace(/HarSub(\.HardSub)+/gi, 'HardSub');
+    return info;
+}
+
+function getOrderIndex(input, splitInfo) {
+    let index = orders.indexOf(input.toLowerCase());
+    if (index !== -1) {
+        return index;
+    }
+    if (input.match(releaseRegex)) {
+        index = ordersIndex.releaseRegex;
+    } else if (input.match(encodersRegex)) {
+        index = ordersIndex.encodersRegex;
+    } else if (input.match(episodeRangeRegex)) {
+        index = ordersIndex.episodeRangeRegex;
+    } else if (input.match(episodeRangeRegex2)) {
+        index = ordersIndex.episodeRangeRegex2;
+    } else if (input.match(specialRegex)) {
+        index = ordersIndex.specialRegex;
+    } else if (input.match(dubbedRegex)) {
+        index = ordersIndex.dubbedRegex;
+    } else if (input.match(partRegex)) {
+        index = ordersIndex.partRegex;
+    } else if (input.match(ceremonyRegex)) {
+        index = ordersIndex.ceremonyRegex;
+    } else {
+        if (index === -1) {
+            index = splitInfo.indexOf(input);
+        }
+    }
+    return index;
+}
+
+function fixInfoWrongQualityResolution(info) {
     return info
-        .replace(/[ًًًٌٍَُِ]/g, '')
-        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC)(?=(\.|\[|$))/gi, '')
-        .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
-        .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
-        .replace(/\d\d\d\d?P\./, (res) => res.replace('P', 'p'))
+        .replace(/\d\d\d\d?P([.p]|$)/, (res) => res.toLowerCase().replace('pp', 'p'))
         .replace('20160p.', '2160p.')
-        .replace(/(10820p|10800p|1080pHQ)\./, '1080p.')
+        .replace(/^080p/, '1080p')
+        .replace(/(100p|108p|10820p|10800p|1080pHQ)\./, '1080p.')
+        .replace(/750p|7200p/, '720p')
         .replace(/^720p.\./, '720p.')
         .replace(/\.(1080|80p|720|72p|70?p?|20p|480|40p|48p|128|0p|04)(?=(\.|$))/, '')
         .replace(/\.720$/, '')
         .replace(/\.?\[\d\d\d\d?p?]/i, '')
-        .replace(/HEVCPSA/i, 'PSA')
-        .replace(/\.(x254|x\.?264)/gi, '')
-        .replace('x256', 'x265')
-        .replace('X265', 'x265')
         .replace(/\d\d\d\d?px264/, (res) => res.replace('x264', ''))
-        .replace('.6C.', '.6CH.')
-        .replace(/4k/gi, '4K')
-        .replace('UHD.4K', '4K')
-        .replace('1080p.UHD', '1080p')
-        .replace('x265.4K', '4K.x265')
-        .replace('10bit.4K', '4K.10bit')
-        .replace('x265.4K', '4K.x265')
-        .replace('4K.2160p', '2160p.4K')
-        .replace('1080p.4K', '1080p')
+        .replace(/(UHD\.)?4k/gi, '4K')
+        .replace(/1080p\.(UHD|4k)/i, '1080p')
         .replace('WEB-DL.FULL-HD', 'WEB-DL')
-        .replace(/(?<!(1080))p\.FULL-HD/, 'p')
-        .replace(/10Bitr?/i, '10bit')
-        .replace(/\.10\.Bit/i, '.10bit')
-        .replace(/\.(H264|HEVC|mkv|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
-        .replace('10bit.10bit', '10bit')
-        .replace('10bit.10it', '10bit')
+        .replace(/(?<!(1080))p\.FULL-HD/, 'p');
+}
+
+function fixInfoDubAndSub(info) {
+    return info
+        //dubbed
         .replace(/\.(DUBLE|Dobleh|(dubbed\.Sound))/i, '.dubbed')
-        .replace(/(?<!\.)dubbed/, '.dubbed')
+        .replace(/(?<!(\.|^))dubbed/, '.dubbed')
         .replace(/dubbed(\.fa)?\.dubbed/i, 'dubbed')
         .replace(/((Sync(\.\d)?)|fa)\.dubbed/i, 'dubbed')
         .replace(/\.FA/i, '.dubbed')
-        .replace(/(?<!\.)SoftSub/, '.SoftSub')
-        .replace('SoftSub.SoftSub', 'SoftSub')
-        .replace(/\.(SoftSu|Sof)\.SoftSub/i, '.SoftSub')
-        .replace(/[-.]softsub/i, '.SoftSub')
-        .replace(/\.((Soft\.Sub)|(Sub\.Soft))/i, '.SoftSub')
-        .replace(/\.(SotSub|SoftSuv)/i, '.SoftSub')
-        .replace(/\.SoftSub\.SoftSub/i, '.SoftSub')
-        .replace(/\.NOT\.SUB(BED)?(\.SoftSub)?/i, '')
-        .replace(/\.NOT\.SoftSubSub/i, '')
-        .replace(/hardsub/i, 'HardSub')
-        .replace('.HarSub.HardSub', '.HardSub')
-        .replace('.SoftSub.HardSub', '.SoftSub')
-        .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'dubbed')
-        .replace(/dubbed\.10bit\.dubbed/i, '10bit.dubbed')
-        .replace('DUAL.SoftSub', 'SoftSub')
+        .replace(/dubbed(\.dubbed)+/gi, 'dubbed')
         .replace(/Dual\.Audio\.(SoftSub|dubbed)/i, 'dubbed')
         .replace(/(Dual|Dubbed)\.Audio/i, 'dubbed')
         .replace(/ENG\.Dub(bed)?/i, 'dubbed(english)')
         .replace(/dubbed(\.HardSub)?\.dubbed(?=(\.|$))/i, 'dubbed')
-        .replace(/Part \d/, (res) => res.replace(' ', '.'))
-        .replace(/Part\d/, (res) => res.replace('Part', 'Part.'))
-        .replace(/Special\d/, (res) => res.replace('Special', 'Special_'))
+        //softSub
+        .replace(/(?<!(\.|^))SoftSub/, '.SoftSub')
+        .replace(/\.(SoftSu|Sof)\.SoftSub/i, '.SoftSub')
+        .replace(/[-.]softsub/i, '.SoftSub')
+        .replace(/\.((Soft\.Sub)|(Sub\.Soft))/i, '.SoftSub')
+        .replace(/\.(SotSub|SoftSuv)/i, '.SoftSub')
+        .replace(/SoftSub(\.SoftSub)+/gi, 'SoftSub')
+        .replace(/\.NOT\.SUB(BED)?(\.SoftSub)?/i, '')
+        .replace(/\.NOT\.SoftSubSub/i, '')
+        //hardSub
+        .replace(/hardsub/i, 'HardSub')
+        .replace(/HarSub(\.HardSub)+/gi, 'HardSub')
+        .replace('.SoftSub.HardSub', '.SoftSub')
+        .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'dubbed')
+        .replace('DUAL.SoftSub', 'SoftSub');
+}
+
+function fixInfoCaseSensitiveWords(info) {
+    return info
         .replace(/remux/i, 'REMUX')
         .replace(/remastered/i, 'REMASTERED')
-        .replace(/(Cut\.)?Alt[-.]Universe(\.Cut)?/i, 'ALT-UNIVERSE-CUT')
+        .replace(/yify/gi, 'YIFY')
+        .replace(/repack/i, 'REPACK');
+}
+
+export function getCleanLinkInfo(info) {
+    return info
+        .replace(/\d\d\d\d٫\d\d٫\d\d/, (res) => res.replace(/٫/g, '.').split('.').reverse().join('.')) //case: 2020٫11٫19
+        .replace(/\d\d٫\d\d٫\d\d\d\d/, (res) => res.replace(/٫/g, '.')) //case: 28٫09٫2020
+        .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0])
+        .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0])
+        .replace(/[ًًًٌٍَُِ]/g, '')
+        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch)(?=(\.|\[|$))/gi, '')
+        .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
+        .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
+        .replace(/HEVCPSA/i, 'PSA')
+        .replace(/\.(x254|x\.?264)/gi, '')
+        .replace(/x256|X265/g, 'x265')
+        .replace('.6C.', '.6CH.')
+        .replace('6CHx264', '6CH')
+        .replace(/10Bitr?/i, '10bit')
+        .replace(/\.10\.Bit/i, '.10bit')
+        .replace(/\.(H264|HEVC|mkv|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
+        .replace(/10bit(\.10b?it)+/gi, '10bit')
+        .replace(/x265(\.x265)+/gi, 'xx265')
+        .replace(/Part([\s.])\d/, (res) => res.replace(/[\s.]/, '_'))
+        .replace(/Part\d/, (res) => res.replace('Part', 'Part_'))
+        .replace(/Special\d/, (res) => res.replace('Special', 'Special_'))
+        .replace(/(Cut\.)?Alt[-.]?Universe([.-]Cut)?/i, 'ALT-UNIVERSE-CUT')
+        .replace(/((Cut\.Directors?)|(DIRECTORS?\.CUT))(?=(\.|$))/i, 'DIRECTORS-CUT')
+        .replace(/Encore\.Edition(?=(\.|$))/i, 'Encore-Edition')
         .replace('.Unrated', '')
         .replace(/\.(MB|GB)[.\s]\d\d\d?\./, '.')
         .replace(/\.((\d\d\d?)|(\d\.\d\d?))[.\s](MB|GB)(?=(\.|$))/, '')
-        .replace(/yify/gi, 'YIFY')
         .replace(/WEB?-?Rip?/i, 'WEB-RIP')
         .replace(/(?<!(Full))\.hd(?=(\.|$))/i, '')
         .replace(/^(hd|7|g)(\.|$)/i, '')
         .replace(/(LQ|HQ)?DVD-?Rip/i, 'DVDRip')
-        .replace(/HD-?TV?/i, 'HDTV')
-        .replace(/repack/i, 'REPACK')
-        .replace(new RegExp(`(${releaseRegex.source})(?!(\\.|$))`), res => res + '.');
-}
-
-function fixLinkInfoOrder_sub_dub(info) {
-    return info
-        .replace(new RegExp(`dubbed(\\(.+\\))?\\.\\d\\d\\d\\d?p\\.10bit`, 'g'), (res) =>
-            '10bit.' + res.replace('.10bit', '')
-        )
-        .replace(new RegExp(`dubbed(\\(.+\\))?\\.\\d\\d\\d\\d?p(\\.(${releaseRegex.source}))?(\\.(${encodersRegex.source}))?`, 'g'), (res) => {
-            let temp = res.split('.');
-            return [...temp.slice(1), temp[0]].filter(item => item).join('.');
-        })
-        .replace(new RegExp(`dubbed(\\(.+\\))?(\\.Censored)?\\.(${releaseRegex.source})`, 'g'), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(HardSub\\.)?Censored\\.(${releaseRegex.source})`, 'g'), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(HardSub|SoftSub|dubbed(\\(.+\\))?)\\.Censored`, 'g'), (res) => res.split('.').reverse().join('.'))
-        .replace('HardSub.Censored', 'Censored.HardSub');
-}
-
-function fixLinkInfoOrder_part_number(info) {
-    //-------------- Part --------------
-    return info
-        .replace(new RegExp(`\\d\\.Part\\.\\d\\d\\d\\d?p(\\.x265\\.10bit)?`, 'g'), (res) => {
-            let temp = res.split('.');
-            return [...temp.slice(2), temp[1], temp[0]].filter(item => item).join('.');
-        })
-        .replace(new RegExp(`(${encodersRegex.source})\\.Part\\.\\d`), (res) => {
-            let temp = res.split('.');
-            return [temp[1], temp[2], temp[0]].join('.');
-        })
-        .replace(new RegExp(`(${releaseRegex.source})\\.Part\\.\\d`), (res) => {
-            let temp = res.split('.');
-            return [temp[1], temp[2], temp[0]].join('.');
-        });
-}
-
-function fixLinkInfoOrder_hdr_hsbs_2k_4k(info, subRegex) {
-    //-------------- 2K | 4K | HDR | HSBS --------------
-    return info
+        .replace(/HD-?TV?(?=(\.|$))/i, 'HDTV')
         .replace(/(\.Full)?\.HD\.WEB-DL/i, '.WEB-DL')
         .replace('.BDRip.WEB-DL', '.WEB-DL')
-        .replace(subRegex, (res) => res.split('.').reverse().join('.'))
-        .replace('HDR.1080p.10bit', '1080p.10bit.HDR')
-        .replace('HDR.10bit', '10bit.HDR')
-        .replace('10bit.HDR.x265', 'x265.10bit.HDR')
-        .replace('x265.3D', '3D.x265')
-        .replace('x265.x265', 'x265')
-        .replace('x265.10bit.4K', '4K.x265.10bit')
-        .replace('4K.2160p', '2160p.4K')
-        .replace('2K.1440p', '1440p.2K')
-        .replace('4K.HDR.x265', '4K.x265.HDR')
-        .replace('x265.10bit.3D', '3D.x265.10bit')
-        .replace(/((x265\.10bit)|(2160p\.x265)|(4K(\.x265)?)|BluRay)\.FULL?[-.]HD/i, (res) => res.replace(/\.FULL?[-.]HD/i, ''))
-        .replace('3D.10bit.HSBS.x265', '3D.x265.10bit.HSBS')
-        .replace('3D.HSBS.x265.10bit', '3D.x265.10bit.HSBS')
-        .replace('3D.HSBS.x265', '3D.x265.HSBS')
-        .replace('2K.1080p.', '1080p.')
-        .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0]);
-}
-
-function fixLinkInfoOrder_6ch(info) {
-    //-------------- 6CH | 7CH | 8CH --------------
-    info = info.replace(new RegExp(`(${releaseRegex.source})\\.dubbed\\.[876]CH\\.(${encodersRegex.source})\\.10bit`), (res) =>
-        '10bit.' + res.replace(/\.(dubbed|10bit)/g, '') + '.dubbed'
-    );
-    info = info.replace(new RegExp(`(${releaseRegex.source})\\.[876]CH(\\.x265)?\\.(${encodersRegex.source})(\\.10bit)?`), (res) => {
-        if (res.includes('x265') && res.includes('10bit')) {
-            return 'x265.10bit.' + res.replace(/\.(x265|10bit)/g, '');
-        }
-        if (res.includes('x265')) {
-            return 'x265.' + res.replace('.x265', '');
-        }
-        if (res.includes('10bit')) {
-            return '10bit.' + res.replace('.10bit', '');
-        }
-        return res;
-    });
-    info = info.replace(new RegExp(`(${releaseRegex.source})\\.[876]CH\\.x265(\\.10bit)?`), (res) => {
-        if (res.includes('10bit')) {
-            return 'x265.10bit.' + res.replace('.x265.10bit', '');
-        }
-        return 'x265.' + res.replace('.x265', '');
-    });
-    info = info.replace(new RegExp(`(${releaseRegex.source})(\\.[876]CH)?\\.(${releaseRegex.source})`), (res) => {
-        let temp = res.split('.');
-        temp.pop();
-        return temp.reverse().join('.');
-    });
-    info = info.replace(new RegExp(`[876]CH\\.(${releaseRegex.source})`), (res) =>
-        res.split('.').reverse().join('.')
-    );
-    return info;
-}
-
-function fixLinkInfoOrder_extras_extended_imax(info) {
-    //-------------- REMASTERED | EXTRAS | EXTENDED | Theatrical | IMAX --------------
-    return info
-        .replace(/REMASTERED\.\d\d\d\d?p(\.x265)?(\.10bit)?/, (res) => res.replace('REMASTERED.', '') + '.REMASTERED')
-        .replace(new RegExp(`REMASTERED\\.(${releaseRegex.source})`), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${releaseRegex.source})\\.EXTENDED\\.\\d\\d\\d\\d?p(\\.x265)?(\\.10bit)?`), (res) => {
-            let temp = res.split('.EXTENDED.');
-            return temp[1] + '.EXTENDED.' + temp[0];
-        })
-        .replace(new RegExp(`(${releaseRegex.source})\\.EXTENDED`), (res) => res.split('.').reverse().join('.'))
-        .replace(/EXTRAS\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'))
-        .replace(/EXTENDED\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'))
-        .replace(/Theatrical\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'))
+        .replace(new RegExp(`(${releaseRegex.source})(?!(\\.|$))`), res => res + '.')
+        .replace(/\d[.-]Part(?=(\.\d\d\d\d?p))/, (res) => res.split(/[.-]/).reverse().join('_'))
+        .replace(/\.(2020|(Cut\.)?Exclusive)/gi, '')
+        .replace(new RegExp(`I(${releaseRegex.source})\\.MAX`), (res) => res.replace('I', 'IMAX.').replace('.MAX', ''))
         .replace(new RegExp(`I\\d\\d\\d\\d?p\\.MAX`), (res) => res.replace('I', '').replace('MAX', 'IMAX'))
-        .replace(/IMAX(\.\d\d\d\d?p)?(\.4K)?\.x265\.10bit(\.HDR)?/, (res) => res.replace('IMAX.', '') + '.IMAX')
-        .replace(new RegExp(`(${releaseRegex.source})\\.IMAX`), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`I(${releaseRegex.source})\\.MAX`), (res) => res.replace('I', 'IMAX.').replace('.MAX', ''));
+        .replace(new RegExp(`(${releaseRegex.source})\\d\\d\\d\\d?p`), (res) => res.replace(/\d\d\d\d?p/, (res2) => '.' + res2));
 }
 
-function fixLinkInfoOrder_episode(info) {
-    //-------------- Episode --------------
-    return info
-        .replace(/Episode\(\d\d?\d?-\d\d?\d?\)(\.x265)?(\.10bit)?/, (res) => {
-            let temp = res.split('.');
-            return [...temp.slice(1), temp[0]].filter(item => item).join('.');
-        })
-        .replace(new RegExp(`(${releaseRegex.source})(\\.x265)?(\\.10bit)?\\.Episode\\(\\d\\d?\\d?-\\d\\d?\\d?\\)`), (res) => {
-            let temp = res.split('.');
-            let episode = temp.pop();
-            return [...temp.slice(1), episode, temp[0]].filter(item => item).join('.');
-        })
-        .replace(/Episode\(\d\d?\d?-\d\d?\d?\)\.FULL-HD/, (res) => res.split('.').reverse().join('.'))
-        .replace('REMUX.1080p.FULL-HD', '1080p.FULL-HD.REMUX')
-        .replace(new RegExp(`(${releaseRegex.source})\\.REMUX\\.\\d\\d\\d\\d?p`), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`(${releaseRegex.source})\\.REMUX(\\.FULL-HD)?`), (res) => res.split('.').reverse().join('.'))
-        .replace(new RegExp(`REMUX\\.\\d\\d\\d\\d?p`), (res) => res.split('.').reverse().join('.'));
-}
-
-function fixLinkInfoOrder_director_cut(info) {
-    //-------------- Directors Cut --------------
-    return info
-        .replace(/Cut\.Directors\.\d\d\d\d?p(\.4K)?/i, (res) => res.replace(/Cut\.Directors\./i, '') + '.DIRECTORS.CUT')
-        .replace(new RegExp(`(${releaseRegex.source})\\.Directors?\\.Cut`, 'i'), (res) => {
-            let temp = res.split('.');
-            return [temp[1], temp[2], temp[0]].join('.').replace(/Directors?\.Cut/i, 'DIRECTORS.CUT');
-        })
-        .replace(new RegExp(`x265\\.10bit\\.Directors?\\.Cut`, 'i'), (res) => {
-            let temp = res.split('.');
-            return [temp[2], temp[3], temp[0], temp[1]].join('.').replace(/Directors?\.Cut/i, 'DIRECTORS.CUT');
-        });
-}
+//-------------------------------------------------------
+//-------------------------------------------------------
+//-------------------------------------------------------
 
 export function purgeSizeText(sizeText) {
     if (sizeText === '') {
@@ -612,11 +555,13 @@ export function purgeSizeText(sizeText) {
         .replace('مکگابایت', 'MB')
         .replace('مگاابایت', 'MB')
         .replace('مگا بایت', 'MB')
+        .replace('مگایایت', 'MB')
         .replace('bytes', 'b')
         .replace('انکودر', '')
         .replace(/[\s:,]/g, '')
         .replace(/\(ورژن\d\)/g, '') // (ورژن1)
         .replace(/\(جدید\)/g, '') // (جدید)
+        .replace('ئذ', '')
         .replace(/bytes|kb|720p/gi, '')
         .replace(/^\d(\.\d)?(BG|G8|GHB)$/i, (res) => res.replace(/(BG|G8|GHB)/i, 'GB'))
         .replace(/\.([mg])/i, (res) => res.replace('.', ''))
