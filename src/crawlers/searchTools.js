@@ -116,21 +116,18 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
                 let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    let season = 0, episode = 0;
+                    let season = 0, episode = 0, isNormalCase = false;
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
-                            ({season, episode} = getSeasonEpisode(link_info));
+                            ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p(\.|$)/)) {
-                                ({season, episode} = getSeasonEpisode(link));
+                                ({season, episode, isNormalCase} = getSeasonEpisode(link));
                             }
                         } else {
-                            ({season, episode} = getSeasonEpisode(link));
-                            if (season === 0) {
-                                ({season, episode} = getSeasonEpisode(link_info));
+                            ({season, episode, isNormalCase} = getSeasonEpisode(link));
+                            if (season === 0 && !isNormalCase) {
+                                ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             }
-                        }
-                        if (episode > 3000) {
-                            episode = 0;
                         }
                     }
                     downloadLinks.push({

@@ -14,7 +14,7 @@ import {
     purgeQualityText,
     fixLinkInfo,
     fixLinkInfoOrder,
-    releaseRegex,
+    releaseRegex, specialRegex,
 } from "../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
 import save from "../save_changes_db.js";
@@ -246,7 +246,7 @@ export function getFileData($, link, type) {
         if (seasonData.seasonName) {
             info = info + '.' + seasonData.seasonName;
         }
-        if (isOva && !info.match(/Special|OVA|NCED|NCOP/)) {
+        if (isOva && !info.match(specialRegex)) {
             info = info.replace(new RegExp(`\\.(${releaseRegex.source})`), (res) => '.OVA' + res);
         }
         return [info, size].filter(value => value).join(' - ');
@@ -286,7 +286,7 @@ function getSeasonEpisode_extra($, link, type) {
                 seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
             } else if (!seasonInfo.match(/\d/)) {
                 seasonName = seasonInfo.replace('فصل :', '').trim().replace(/\s+/g, '_');
-                if (seasonName.match(/^(ova|nced|ncop|special)$/i)) {
+                if (seasonName.match(/^(ova|oad|nced|ncop|special)$/i)) {
                     seasonEpisode = 'S0E' + episodeNumber;
                 } else {
                     seasonEpisode = 'S1E' + episodeNumber;

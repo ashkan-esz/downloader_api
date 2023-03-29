@@ -66,7 +66,7 @@ async function search_title(link, i, $, url) {
                     if (type.includes('movie') && downloadLinks.length > 0 && (
                         downloadLinks[0].link.match(/s\d+e\d+/gi) ||
                         downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p?\./i) ||
-                        downloadLinks[0].link.match(/(?<=\.)(Special|OVA|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p?/i) ||
+                        downloadLinks[0].link.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p?/i) ||
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');

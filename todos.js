@@ -1,5 +1,4 @@
 
-//todo : 3. save links and generated info for better development
 //todo : 4. adminPanel: show info and status of remoteBrowsers
 //todo : 4.2 adminPanel: show crawling links of remoteBrowsers
 //todo : 5. remoteBrowser: add api for crawler status
@@ -29,7 +28,6 @@
 //todo : 30. adminPanel: manage bots like movie sources
 //todo : 31. add field 'isManual' to crawler status
 //todo : 32. save links with bad info into db, show warning in adminPanel
-//todo : 33. better and simpler function to fix/sort links info
 //todo : 34. check for a way to dont check movie links inside source page
 //todo : 35. lower memory consumption for crawler
 //todo : 36. save errors into db, add api to get them

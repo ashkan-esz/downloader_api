@@ -298,7 +298,7 @@ function getFileData_serial($, link) {
     let specialEpisodeName = '';
     if (seasonNumber === 0 && !seasonName) {
         let temp = linkHref.split('/').pop().replace(/\d\d\d\d?p?\.bia2anime\.mkv/gi, '').replace(/\./g, ' ');
-        specialEpisodeName = ' (' + temp + ')';
+        specialEpisodeName = ' (' + temp.trim() + ')';
     }
 
     ({seasonNumber, episodeNumber} = fixWrongSeasonEpisodeNumber(seasonPart, seasonNumber, episodeNumber, linkHref));

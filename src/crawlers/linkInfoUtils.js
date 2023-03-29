@@ -48,7 +48,7 @@ export const linkInfoRegex = new RegExp([
     /((\.x265)?(\.10bit)?(\.HDR)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
     /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
     /(\.Episode\(\d\d?\.5\))?/,
-    /((\.\d)?\.(((Christmas\.)?Special)|OVA|NCED|NCOP)(_\d)?)?/,
+    /((\.\d)?\.(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP)(_\d)?)?/,
     /((\.Main-Ceremony)|(\.Red-Carpet)|((\.Summary)?\.Oscar(\.\d\d\d\d)?))?/,
     /(\.DIRECTORS-CUT)?/,
     /(\.ALT-UNIVERSE-CUT)?/,
@@ -93,12 +93,12 @@ export const specialWords = new RegExp([
     /|Main-Ceremony|Red-Carpet|Backstage/,
     /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Part|Encore-Edition/,
     /|Episode/,
-    /|((Christmas\.)?Special)|OVA|NCED|NCOP/,
+    /|((Christmas\.)?Special)|OVA|OAD|NCED|NCOP/,
 ].map(item => item.source).join(''), 'g');
 
 const episodeRangeRegex = /Episode\(\d\d?\d?-\d\d?\d?\)/;
 const episodeRangeRegex2 = /Episode\(\d\d?\d?-\d\d?\d?\)/;
-const specialRegex = /((Christmas\.)?Special)|OVA|NCED|NCOP(_\d)?/;
+export const specialRegex = /((Christmas\.)?Special)|OVA|OAD|NCED|NCOP(_\d)?/;
 const dubbedRegex = /dubbed(\(.+\))?/;
 const partRegex = /Part_\d/;
 const ceremonyRegex = /(Main-Ceremony)|(Red-Carpet)|(Oscar)/;
@@ -189,6 +189,7 @@ export function purgeQualityText(qualityText) {
         .replace('روز', 'Day')
         .replace('اس‌پی‌یک', 'Special_1')
         .replace('اس‌پی', 'Special_')
+        .replace('ویژه', 'Special')
         .replace('ان‌سی‌ئی‌دی', 'NCED')
         .replace('ان‌سی‌اُ‌پی', 'NCOP')
         .replace('ان‌سی‌اُپی', 'NCOP')
@@ -274,9 +275,9 @@ export function fixLinkInfo(info, linkHref) {
 
     info = handleMultiEpisode(linkHref, info);
 
-    let ovaMatch = linkHref.match(/\.(((Special|OVA|NCED|NCOP)\.?E?\d\d\d?)|(E?\d\d\d?\.(Special|OVA|NCED|NCOP)))\.\d\d\d\d?p/gi);
+    let ovaMatch = linkHref.match(/\.(((Special|OVA|OAD|NCED|NCOP)\.?E?\d\d\d?)|(E?\d\d\d?\.(Special|OVA|OAD|NCED|NCOP)))\.\d\d\d\d?p/gi);
     if (ovaMatch) {
-        let special = ovaMatch.pop().match(/Special|OVA|NCED|NCOP/i).pop();
+        let special = ovaMatch.pop().match(/Special|OVA|OAD|NCED|NCOP/i).pop();
         info = info + '.' + special;
     }
 

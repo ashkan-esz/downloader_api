@@ -98,6 +98,7 @@ async function search_title(link, i, $) {
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+                    downloadLinks = handleLinksExtraStuff(downloadLinks);
                     if (isCollection) {
                         title += ' collection';
                         addTitleNameToInfo(downloadLinks);
@@ -174,10 +175,12 @@ export function addTitleNameToInfo(downloadLinks, title, year) {
             nameMatch = fileName.match(/.+(hdtv)/gi);
         }
         let name = nameMatch ? nameMatch.pop()
-            .replace(/\d\d\d\d?p|hdtv|%21|!|EXTENDED|REPACK/gi, '')
-            .replace(/\.|%20| /g, ' ')
+            .replace(/\d\d\d\d?p|hdtv|BluRay|WEB-DL|WEBRip|BRrip|DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi, '')
+            .replace(/\.|%20| |\s\s+/g, ' ')
             .trim() : '';
-        if (!name || name.toLowerCase().replace(/-/g, ' ') === title + ' ' + year) {
+        title = title.replace(/s/g, '');
+        let temp = name.toLowerCase().replace(/-/g, ' ').replace(/[()s]/g, '');
+        if (!name || temp === (title + ' ' + year) || temp === (title + ' ' + (Number(year) - 1))) {
             continue;
         }
         names.push(name.toLowerCase());
@@ -545,4 +548,14 @@ function removeEpisodeNameFromQuality(quality) {
         }
     }
     return quality;
+}
+
+export function handleLinksExtraStuff(downloadLinks) {
+    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && item.link.match(/part\d+/i))) {
+        return downloadLinks.map(item => {
+            const episodeMatch = Number(item.link.match(/\.part\d+\./i)[0].match(/\d+/)[0]);
+            return {...item, episode: episodeMatch};
+        });
+    }
+    return downloadLinks;
 }

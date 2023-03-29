@@ -5,7 +5,7 @@ import isEqual from 'lodash.isequal';
 import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePages/sourcePagesSample.js";
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
 import {getSeasonEpisode, removeDuplicateLinks} from "../utils.js";
-import {countriesRegex, fixLinkInfoOrder, linkInfoRegex} from "../linkInfoUtils.js";
+import {countriesRegex, fixLinkInfoOrder, linkInfoRegex, specialRegex} from "../linkInfoUtils.js";
 import {check_download_link, check_format, getMatchCases} from "../link.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -31,21 +31,18 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
                 let link_info = sourceMethods.getFileData($, links[j], type, null, title);
                 let qualitySample = sourceMethods.getQualitySample ? sourceMethods.getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
-                    let season = 0, episode = 0;
+                    let season = 0, episode = 0, isNormalCase = false;
                     if (type.includes('serial') || link_info.match(/^s\d+e\d+(-?e\d+)?\./i)) {
                         if (type.includes('anime')) {
-                            ({season, episode} = getSeasonEpisode(link_info));
+                            ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p(\.|$)/)) {
-                                ({season, episode} = getSeasonEpisode(link));
+                                ({season, episode, isNormalCase} = getSeasonEpisode(link));
                             }
                         } else {
-                            ({season, episode} = getSeasonEpisode(link));
-                            if (season === 0) {
-                                ({season, episode} = getSeasonEpisode(link_info));
+                            ({season, episode, isNormalCase} = getSeasonEpisode(link));
+                            if (season === 0 && !isNormalCase) {
+                                ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             }
-                        }
-                        if (episode > 3000) {
-                            episode = 0;
                         }
                     }
                     downloadLinks.push({
@@ -97,7 +94,7 @@ export function getDownloadLinksFromLinkInfo(downloadLinks) {
     }
 }
 
-export function getLinksDoesntMatchLinkRegex(downloadLinks) {
+export function getLinksDoesntMatchLinkRegex(downloadLinks, type) {
     const badLinks = downloadLinks.filter(item =>
         (
             !item.info.match(linkInfoRegex) &&
@@ -106,7 +103,24 @@ export function getLinksDoesntMatchLinkRegex(downloadLinks) {
         || item.info.match(/[\u0600-\u06FF]/)
     );
 
-    const badSeasonEpisode = downloadLinks.filter(item => item.season > 47 || item.episode > 1300);
+    const isSerial = type.includes('serial');
+    const badSeasonEpisode = downloadLinks.filter(({season, episode, info, link}) => {
+        if (type.includes('movie') && (season !== 0 || episode !== 0)) {
+            return true;
+        }
+        if (isSerial) {
+            if (season === 0 && !link.match(/s0+\.?e\d{1,2}/i) && !info.match(/\. \([a-zA-Z\s]+ \d{1,2}\)/) && !info.match(/\. \([a-zA-Z\s]+\)$/) && !info.match(specialRegex)) {
+                return true;
+            }
+            if (season <= 1 && episode === 0 && !link.match(/s\d{1,2}-?e0+/i) && !link.match(/\.e0+\./i) && !info.match(specialRegex)) {
+                return true;
+            }
+            if (season > 47 || episode > 1300) {
+                return true;
+            }
+        }
+        return false;
+    });
 
     return ([...badLinks, ...badSeasonEpisode].map(item => {
         return ({
@@ -183,7 +197,7 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                     let newDownloadLinks = (mode === "pageContent")
                         ? getDownloadLinksFromPageContent($, pageLink, title, type, year, sName)
                         : (mode === "checkRegex")
-                            ? getLinksDoesntMatchLinkRegex(downloadLinks)
+                            ? getLinksDoesntMatchLinkRegex(downloadLinks, type)
                             : getDownloadLinksFromLinkInfo(downloadLinks);
 
                     if (mode === "checkRegex") {
@@ -245,7 +259,11 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
 function printDiffLinks(downloadLinks, newDownloadLinks) {
     for (let k = 0; k < Math.max(downloadLinks.length, newDownloadLinks.length); k++) {
         if (!isEqual(downloadLinks[k], newDownloadLinks[k])) {
-            if (isEqual(downloadLinks[k]?.info, newDownloadLinks[k]?.info)) {
+            if (
+                isEqual(downloadLinks[k]?.info, newDownloadLinks[k]?.info) ||
+                downloadLinks[k]?.season !== newDownloadLinks[k]?.season ||
+                downloadLinks[k]?.episode !== newDownloadLinks[k]?.episode
+            ) {
                 console.log({
                     link1: downloadLinks[k],
                     link2: newDownloadLinks[k],

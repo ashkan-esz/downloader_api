@@ -65,6 +65,7 @@ async function search_title(link, i) {
                         year = fixYear($2, type);
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+                    downloadLinks = handleLinksExtraStuff(downloadLinks);
 
                     let sourceData = {
                         sourceConfig,
@@ -332,4 +333,14 @@ function checkPersianSerial(title) {
         }
     }
     return false;
+}
+
+export function handleLinksExtraStuff(downloadLinks) {
+    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && item.link.match(/chapter(%20)?\d+/i))) {
+        return downloadLinks.map(item => {
+            const episodeMatch = Number(item.link.match(/(?<=(chapter(%20)?))\d+/i)[0]);
+            return {...item, episode: episodeMatch};
+        });
+    }
+    return downloadLinks;
 }

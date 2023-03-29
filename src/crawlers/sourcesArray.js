@@ -10,15 +10,17 @@ export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'salamdl'
 export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 'golchindl', 's3Poster', 'bia2anime', 'bia2hd', 'salamdl']);
 export const sortTrailersOrder = Object.freeze(['film2movie', 'bia2hd', 'bia2anime', 'golchindl', 's3Trailer', 'digimoviez', 'avamovie', 'salamdl']);
 
-export const getSourcesMethods = () => ({
-    digimoviez: digimoviez,
-    film2movie: film2movie,
-    salamdl: salamdl,
-    avamovie: avamovie,
-    bia2hd: bia2hd,
-    golchindl: golchindl,
-    bia2anime: bia2anime,
-});
+export function getSourcesMethods() {
+    return ({
+        digimoviez: digimoviez,
+        film2movie: film2movie,
+        salamdl: salamdl,
+        avamovie: avamovie,
+        bia2hd: bia2hd,
+        golchindl: golchindl,
+        bia2anime: bia2anime,
+    });
+}
 
 export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
     let pageCounterTime = new Date((pageCounter_time || sourcesObj.pageCounter_time));
