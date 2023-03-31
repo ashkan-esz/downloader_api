@@ -90,13 +90,14 @@ export async function checkPrevTitleWithNewMethod(sourceName = null, updateData 
                 if (updateData) {
                     const questions = [
                         {
-                            type: 'input',
+                            type: 'list',
                             name: 'ans',
-                            message: "update this movie data? (y/n)",
+                            message: "update this movie data?",
+                            choices: ["Yes", "No"],
                         },
                     ];
                     let answers = await inquirer.prompt(questions);
-                    if (answers.ans.toLowerCase() === 'y') {
+                    if (answers.ans.toLowerCase() === 'yes') {
                         await updateMovieData(titles[i], newTitle, newYear);
                     }
                 }

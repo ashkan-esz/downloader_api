@@ -92,6 +92,14 @@ async function search_title(link, i) {
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
+                    if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
+                        type = type.replace('serial', 'movie');
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        if (!pageSearchResult) {
+                            return;
+                        }
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+                    }
                     if (typeFix && (downloadLinks.length === 0 || !downloadLinks[0].link.match(/\.s\d+e\d+\./i))) {
                         type = typeFix; //convert type serial to movie
                         downloadLinks = downloadLinks.map(item => {
@@ -101,7 +109,7 @@ async function search_title(link, i) {
                         })
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
-                    downloadLinks = fixSeasonNumber(downloadLinks);
+                    downloadLinks = handleLinksExtraStuff(downloadLinks);
 
                     let sourceData = {
                         sourceConfig,
@@ -314,7 +322,7 @@ function fixSpecialCases(info) {
     return info.replace(/.+\.\d\d\d\d?p/, (res) => res.split('.').reverse().join('.'));
 }
 
-export function fixSeasonNumber(downloadLinks) {
+export function handleLinksExtraStuff(downloadLinks) {
     for (let i = 0; i < downloadLinks.length; i++) {
         if (downloadLinks[i].info.includes('OVA') && downloadLinks[i].season === 1) {
             downloadLinks[i].season = 0;

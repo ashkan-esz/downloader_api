@@ -1,6 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {validateYear, getType, removeDuplicateLinks} from "../utils.js";
+import {validateYear, getType, removeDuplicateLinks, getSeasonEpisode} from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     purgeEncoderText,
@@ -201,15 +201,19 @@ function getSerialFileInfoFromLink(linkHref) {
     linkHref = linkHref.replace(/[/_\s]/g, '.').replace('.-.', '.');
     let link_href_array = linkHref.split('.');
     let seasonEpisode_match = linkHref.match(/s\d+e\d+(-?e\d+)*/gi);
-    if (!seasonEpisode_match) {
-        return '';
+    let info = '';
+    if (seasonEpisode_match) {
+        let seasonEpisode = seasonEpisode_match.pop();
+        let index = link_href_array.indexOf(seasonEpisode);
+        let array = link_href_array.slice(index + 1);
+        array.pop();
+        info = purgeQualityText(array.join('.'));
+    } else {
+        let seasonEpisode = getSeasonEpisode(linkHref);
+        if (seasonEpisode.season !== 1 || seasonEpisode.episode === 0) {
+            return '';
+        }
     }
-
-    let seasonEpisode = seasonEpisode_match.pop();
-    let index = link_href_array.indexOf(seasonEpisode);
-    let array = link_href_array.slice(index + 1);
-    array.pop();
-    let info = purgeQualityText(array.join('.'));
 
     info = info
         .replace(/repack\.\d\d\d\d?p/i, (res) => res.split('.').reverse().join('.'))

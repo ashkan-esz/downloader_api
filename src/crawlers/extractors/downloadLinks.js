@@ -6,7 +6,7 @@ import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePage
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
 import {getSeasonEpisode, removeDuplicateLinks} from "../utils.js";
 import {countriesRegex, fixLinkInfoOrder, linkInfoRegex, specialRegex} from "../linkInfoUtils.js";
-import {check_download_link, check_format, getMatchCases} from "../link.js";
+import {check_format} from "../link.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourcesMethods = getSourcesMethods();
@@ -16,7 +16,6 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
         let sourceMethods = sourcesMethods[sourceName];
         let links = $('a');
 
-        let matchCases = getMatchCases(title, type);
         let downloadLinks = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
@@ -26,7 +25,7 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
 
             if (
                 (sourceMethods.extraChecker && sourceMethods.extraChecker($, links[j], title, type)) ||
-                (check_format(link, type) && check_download_link(link, matchCases, type))
+                check_format(link, title)
             ) {
                 let link_info = sourceMethods.getFileData($, links[j], type, null, title);
                 let qualitySample = sourceMethods.getQualitySample ? sourceMethods.getQualitySample($, links[j], type) || '' : '';
@@ -57,9 +56,6 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
             }
         }
 
-        if (sourceMethods.fixSeasonNumber) {
-            downloadLinks = sourceMethods.fixSeasonNumber(downloadLinks);
-        }
         if (sourceMethods.addTitleNameToInfo && !type.includes('serial')) {
             downloadLinks = sourceMethods.addTitleNameToInfo(downloadLinks, title, year);
         }

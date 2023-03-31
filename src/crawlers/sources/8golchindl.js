@@ -169,17 +169,18 @@ function fixAnimeType($, type) {
 export function addTitleNameToInfo(downloadLinks, title, year) {
     let names = [];
     for (let i = 0; i < downloadLinks.length; i++) {
-        let fileName = getDecodedLink(downloadLinks[i].link.split('/').pop()).split(/a\.?k\.?a/i)[0];
+        const fileName = getDecodedLink(downloadLinks[i].link.split('/').pop()).split(/a\.?k\.?a/i)[0];
         let nameMatch = fileName.match(/.+(\d\d\d\d|\d\d\d)p/gi);
         if (!nameMatch) {
             nameMatch = fileName.match(/.+(hdtv)/gi);
         }
-        let name = nameMatch ? nameMatch.pop()
-            .replace(/\d\d\d\d?p|hdtv|BluRay|WEB-DL|WEBRip|BRrip|DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi, '')
-            .replace(/\.|%20| |\s\s+/g, ' ')
+        const name = nameMatch ? nameMatch.pop()
+            .replace(/\d\d\d\d?p|[()]|hdtv|BluRay|WEB-DL|WEBRip|BR-?rip|(hq|lq)?DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi, '')
+            .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
+            .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
             .trim() : '';
         title = title.replace(/s/g, '');
-        let temp = name.toLowerCase().replace(/-/g, ' ').replace(/[()s]/g, '');
+        let temp = name.toLowerCase().replace(/-/g, ' ').replace(/s/g, '');
         if (!name || temp === (title + ' ' + year) || temp === (title + ' ' + (Number(year) - 1))) {
             continue;
         }

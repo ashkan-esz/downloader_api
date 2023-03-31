@@ -71,7 +71,7 @@ async function search_title(link, i, $, url) {
                     getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
-                    let {downloadLinks, $2, cookies} = pageSearchResult;
+                    let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
                         ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
                     }
@@ -83,7 +83,7 @@ async function search_title(link, i, $, url) {
                         if (!pageSearchResult) {
                             return;
                         }
-                        ({downloadLinks, $2, cookies} = pageSearchResult);
+                        ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
                     downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
                     const qualitySampleLinks = downloadLinks.map(item => item.qualitySample).filter(item => item);

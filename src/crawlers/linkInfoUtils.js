@@ -229,6 +229,7 @@ export function purgeQualityText(qualityText) {
 }
 
 export function fixLinkInfo(info, linkHref) {
+    //todo : add part\d to info
     info = fixLinkInfoResolution(linkHref, info);
 
     info = info
@@ -320,6 +321,12 @@ function fixLinkInfoResolution(linkHref, info) {
         resolution = !resolution.toLowerCase().includes('p') ? resolution + 'p' : resolution;
         info = info ? resolution + '.' + info : resolution;
     }
+
+    if (info.includes('480p') && !linkHref.match(/\d\d\d\d?p/) && (info.includes('3D') || linkHref.toLowerCase().includes('full.hd'))) {
+        info = info.replace('480p', '1080p');
+    }
+    info = info.replace('540p', '576p');
+
     return info;
 }
 

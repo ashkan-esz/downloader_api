@@ -48,6 +48,7 @@ export function replacePersianNumbers(input) {
 export function getType(title) {
     if (title.includes('فیلم') ||
         title.includes('فيلم') || //its not duplicate
+        title.includes('تاک‌شو') ||
         title.includes('استندآپ') ||
         title.includes('استند آپ') ||
         title.includes('دانلود مراسم')
@@ -81,7 +82,8 @@ export function getType(title) {
     if (
         title.includes('سینمایی') ||
         title.includes('لایو اکشن') ||
-        (title.includes('دانلود مستند') && !title.includes('دانلود مستند سریالی'))
+        (title.includes('دانلود مستند') && !title.includes('دانلود مستند سریالی')) ||
+        (title.includes('نمایش') && !title.includes('سریالی'))
     ) {
         return 'movie';
     }

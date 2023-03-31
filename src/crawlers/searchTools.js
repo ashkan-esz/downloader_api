@@ -3,7 +3,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as cheerio from 'cheerio';
 import {default as pQueue} from "p-queue";
-import {check_download_link, getMatchCases, check_format} from "./link.js";
+import {check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
 import {getSeasonEpisode} from "./utils.js";
@@ -99,7 +99,7 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
         if ($ === null || $ === undefined) {
             return null;
         }
-        let matchCases = getMatchCases(title, type);
+
         let extraSearchLinks = [];
         let promiseArray = [];
         let downloadLinks = [];
@@ -111,7 +111,7 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
 
             if (
                 (extraChecker && extraChecker($, links[j], title, type)) ||
-                (check_format(link, type) && check_download_link(link, matchCases, type))
+                check_format(link, title)
             ) {
                 let link_info = getFileData($, links[j], type, sourceLinkData, title);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
