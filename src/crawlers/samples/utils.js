@@ -70,6 +70,37 @@ export async function updateSampleData(pathToFiles, sourceName, pageLink, data, 
     }
 }
 
+export async function updateSampleData_batch(pathToFiles, sourceName, dataArray, fileIndex, updateFieldNames = []) {
+    const pathToFile = getPathToFile(pathToFiles, sourceName, fileIndex);
+    let samplesFile = await readFile(pathToFile);
+    let samples = JSON.parse(samplesFile);
+    for (let i = 0; i < dataArray.length; i++) {
+        const link = dataArray[i].pageLink.replace(/\/$/, '').split('/').pop();
+        for (let j = 0; j < samples.length; j++) {
+            if (samples[j].pageLink.replace(/\/$/, '').split('/').pop() === link) {
+                if (updateFieldNames.length === 0) {
+                    samples[j] = dataArray[i];
+                } else {
+                    for (let k = 0; k < updateFieldNames.length; k++) {
+                        samples[j][updateFieldNames[k]] = dataArray[i][updateFieldNames[k]];
+                    }
+                }
+                break;
+            }
+        }
+    }
+    let stringifySamples = JSON.stringify(samples);
+    if (pathToFile.endsWith(".zip")) {
+        await createZipFile(pathToFile, stringifySamples);
+    } else {
+        if (stringifySamples.length >= _fileSizeLimit) {
+            await convertJsonToZip(pathToFile, stringifySamples);
+        } else {
+            await fs.promises.writeFile(pathToFile, stringifySamples, 'utf8');
+        }
+    }
+}
+
 export async function saveNewSampleData(pathToFiles, sourceName, data, lastFileIndex) {
     const pathToFile = getPathToFile(pathToFiles, sourceName, lastFileIndex);
     //check last data file reached file size limit

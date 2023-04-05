@@ -111,6 +111,7 @@ export function checkDubbed(link, info = '') {
     info = info.toLowerCase();
     return (
         (link.includes('farsi') && !link.includes('farsisub')) ||
+        link.includes('dual.audio') ||
         link.includes('dubbed') ||
         link.includes('duble') ||
         link.includes('دوبله فارسی') ||
@@ -128,12 +129,14 @@ export function checkDubbed(link, info = '') {
 export function checkHardSub(input) {
     input = input.toLowerCase();
     return (
-        input.includes('softsub') ||
-        input.includes('softsuv') ||
+        input.match(/soft?\.?s[ou][bv]/) ||
         input.includes('|softsob') ||
         input.includes('hardsub') ||
         input.includes('subfa') ||
-        input.match(/sub(?!(title|french|BED))/i) ||
+        input.includes('farsisub') ||
+        input.includes('sub.farsi') ||
+        input.includes('multisub') ||
+        (input.includes('.subbed') && !input.includes('not.subbed')) ||
         input.includes('هاردساب فارسی') ||
         input.includes('زیرنویس')
     );

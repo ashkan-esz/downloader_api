@@ -1,11 +1,20 @@
-import config from "../../config/index.js";
 import * as cheerio from 'cheerio';
 import inquirer from "inquirer";
 import isEqual from 'lodash.isequal';
-import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePages/sourcePagesSample.js";
+import {
+    getSourcePagesSamples,
+    updateSourcePageData,
+    updateSourcePageData_batch
+} from "../samples/sourcePages/sourcePagesSample.js";
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
 import {getSeasonEpisode, removeDuplicateLinks} from "../utils.js";
-import {countriesRegex, fixLinkInfoOrder, linkInfoRegex, specialRegex} from "../linkInfoUtils.js";
+import {
+    countriesRegex, filterLowResDownloadLinks,
+    fixLinkInfoOrder,
+    handleRedundantPartNumber,
+    linkInfoRegex,
+    specialRegex
+} from "../linkInfoUtils.js";
 import {check_format} from "../link.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -55,6 +64,9 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
                 }
             }
         }
+
+        downloadLinks = filterLowResDownloadLinks(downloadLinks);
+        downloadLinks = handleRedundantPartNumber(downloadLinks);
 
         if (sourceMethods.addTitleNameToInfo && !type.includes('serial')) {
             downloadLinks = sourceMethods.addTitleNameToInfo(downloadLinks, title, year);
@@ -127,28 +139,7 @@ export function getLinksDoesntMatchLinkRegex(downloadLinks, type) {
     }));
 }
 
-function checkDownloadLink(url, sourceName, quality, vpnStatus) {
-    // todo : print link if include persian character
-    if (config.nodeEnv === 'dev') {
-
-    }
-    if (url.includes('media-imdb.com') || url.includes('.ir/') || url.includes('aparat.com')) {
-        return null;
-    }
-    url = url.trim().replace(/\s/g, '%20');
-    if (sourceName === "film2movie") {
-        //from: https://dl200.ftk.pw/?s=7&f=/trailer/***.mp4
-        //to: https://dl7.ftk.pw/trailer/***.mp4
-        let temp = url.match(/\/\?s=\d+&f=(?=(\/(trailer|user|serial)))/gi);
-        if (temp) {
-            let match = temp.pop();
-            let number = Number(match.match(/\d+/g).pop());
-            url = url.replace(/(?<=dl)\d+(?=\.)/, number).replace(match, '');
-        }
-    }
-}
-
-export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, mode = "pageContent", updateMode = false) {
+export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, mode = "pageContent", updateMode = false, batchUpdate = true) {
     let stats = {
         total: 0,
         checked: 0,
@@ -164,6 +155,7 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
             let sourcePages = [];
             let start = 1;
             let lastFileIndex = 1;
+            let pageDataUpdateArray = [];
             while (true) {
                 sourcePages = await getSourcePagesSamples(sources[i], start, start);
                 start++;
@@ -175,6 +167,11 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
 
                 for (let j = 0; j < sourcePages.length; j++) {
                     if (lastFileIndex !== sourcePages[j].fileIndex) {
+                        //new source page file
+                        if (batchUpdate) {
+                            await updateSourcePageData_batch(pageDataUpdateArray, ["downloadLinks"]);
+                            pageDataUpdateArray = [];
+                        }
                         lastFileIndex = sourcePages[j].fileIndex;
                         console.log(`------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`);
                     }
@@ -201,7 +198,7 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                             continue;
                         }
                         stats.diffs++;
-                        console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
+                        console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', `${pageDataUpdateArray.length}/20`, '|', title, '|', type, '|', pageLink);
                         console.log(`prev vs new: ${downloadLinks.length} vs ${newDownloadLinks.length}`);
                         for (let k = 0; k < newDownloadLinks.length; k++) {
                             console.log(newDownloadLinks[k]);
@@ -224,12 +221,12 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                     }
 
                     if (!isEqual(downloadLinks, newDownloadLinks)) {
-                        console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
+                        console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', `${pageDataUpdateArray.length}/20`, '|', title, '|', type, '|', pageLink);
                         console.log(`prev vs new: ${downloadLinks.length} vs ${newDownloadLinks.length}`);
                         printDiffLinks(downloadLinks, newDownloadLinks);
                         stats.diffs++;
                         if (updateMode) {
-                            let answer = await handleUpdatePrompt(newDownloadLinks, sourcePages[j], stats);
+                            let answer = await handleUpdatePrompt(newDownloadLinks, sourcePages[j], pageDataUpdateArray, stats, batchUpdate);
                             if (mode === "checkRegex" && answer === "yes") {
                                 j--;
                             }
@@ -239,6 +236,11 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                     } else if (mode === "checkRegex") {
                         console.log('************ No diff in new extracted links, check linkInfoRegex or linksExtractorFunctions');
                     }
+                }
+                //end of source page files
+                if (batchUpdate) {
+                    await updateSourcePageData_batch(pageDataUpdateArray, ["downloadLinks"]);
+                    pageDataUpdateArray = [];
                 }
             }
         }
@@ -255,33 +257,32 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
 function printDiffLinks(downloadLinks, newDownloadLinks) {
     for (let k = 0; k < Math.max(downloadLinks.length, newDownloadLinks.length); k++) {
         if (!isEqual(downloadLinks[k], newDownloadLinks[k])) {
-            if (
-                isEqual(downloadLinks[k]?.info, newDownloadLinks[k]?.info) ||
-                downloadLinks[k]?.season !== newDownloadLinks[k]?.season ||
-                downloadLinks[k]?.episode !== newDownloadLinks[k]?.episode
-            ) {
+            if (!downloadLinks[k] || !newDownloadLinks[k]) {
                 console.log({
                     link1: downloadLinks[k],
                     link2: newDownloadLinks[k],
                 });
-            } else {
-                console.log({
-                    link1: {
-                        link: downloadLinks[k]?.link,
-                        info: downloadLinks[k]?.info,
-                    },
-                    link2: {
-                        link: newDownloadLinks[k]?.link,
-                        info: newDownloadLinks[k]?.info,
-                    },
-                });
+                continue;
             }
+            let keys = Object.keys(newDownloadLinks[k]);
+            let link1 = {link: downloadLinks[k].link};
+            let link2 = {link: newDownloadLinks[k].link};
+            for (let i = 0; i < keys.length; i++) {
+                if (downloadLinks[k][keys[i]] !== newDownloadLinks[k][keys[i]]) {
+                    link1[keys[i]] = downloadLinks[k][keys[i]];
+                    link2[keys[i]] = newDownloadLinks[k][keys[i]];
+                }
+            }
+            console.log({
+                link1: link1,
+                link2: link2,
+            });
             console.log('------------------');
         }
     }
 }
 
-async function handleUpdatePrompt(newDownloadLinks, pageData, stats) {
+async function handleUpdatePrompt(newDownloadLinks, pageData, pageDataUpdateArray, stats, batchUpdate) {
     const questions = [
         {
             type: 'list',
@@ -295,7 +296,18 @@ async function handleUpdatePrompt(newDownloadLinks, pageData, stats) {
     if (answers.ans.toLowerCase() === 'yes') {
         stats.updated++;
         pageData.downloadLinks = newDownloadLinks;
-        await updateSourcePageData(pageData, ["downloadLinks"]);
+        if (batchUpdate) {
+            pageDataUpdateArray.push(pageData);
+            if (pageDataUpdateArray.length === 20) {
+                await updateSourcePageData_batch(pageDataUpdateArray, ["downloadLinks"]);
+                pageDataUpdateArray = [];
+            }
+        } else {
+            await updateSourcePageData(pageData, ["downloadLinks"]);
+        }
+    } else if (batchUpdate) {
+        await updateSourcePageData_batch(pageDataUpdateArray, ["downloadLinks"]);
+        pageDataUpdateArray = [];
     }
     console.log();
     return answers.ans.toLowerCase();

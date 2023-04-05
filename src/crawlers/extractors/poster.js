@@ -11,13 +11,13 @@ const badPosterRegex = /https:\/\/image\.salamdl\.[a-zA-Z]+\/t\/p\/w\d+_and_h\d+
 
 export function getPoster($, sourceName) {
     try {
-        let $img = $('img');
+        const $img = $('img');
 
         if (sourceName === "golchindl") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-                let parent = $img[i].parent;
+                const parent = $img[i].parent;
                 if (parent.name === 'a' && $(parent).hasClass('thumb')) {
-                    let href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                    const href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                     if (href && (href.includes('uploads') || href.includes('cdn.'))) {
                         return purgePoster(href);
                     }
@@ -29,7 +29,7 @@ export function getPoster($, sourceName) {
         if (sourceName === "bia2anime" || sourceName === "bia2hd") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
                 if ($($img[i]).hasClass('wp-post-image')) {
-                    let src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                    const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                     if (src && src.includes('uploads')) {
                         return purgePoster(src);
                     }
@@ -40,9 +40,9 @@ export function getPoster($, sourceName) {
 
         if (sourceName === "film2movie") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-                let id = $($img[i]).attr('id');
-                let alt = $img[i].attribs.alt;
-                let src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                const id = $($img[i]).attr('id');
+                const alt = $img[i].attribs.alt;
+                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 if ((id && id === 'myimg') || (src.includes('.jpg') && alt && alt.includes('دانلود'))) {
                     return purgePoster(src);
                 }
@@ -52,9 +52,9 @@ export function getPoster($, sourceName) {
 
         //digimoviez|avamovie|salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-            let parent = $img[i].parent;
+            const parent = $img[i].parent;
             if (parent.name === 'a') {
-                let src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 if (src.includes('uploads')) {
                     return src.match(badPosterRegex) ? '' : purgePoster(src);
                 }
@@ -63,9 +63,9 @@ export function getPoster($, sourceName) {
 
         //salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-            let parent = $img[i].parent.name;
+            const parent = $img[i].parent.name;
             if (parent === 'p' || parent === 'div') {
-                let src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 return src.match(badPosterRegex) ? '' : purgePoster(src);
             }
         }

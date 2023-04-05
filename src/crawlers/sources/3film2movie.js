@@ -133,10 +133,10 @@ async function search_title(link, i) {
 
 function fixYear($) {
     try {
-        let postInfo = $('.postinfo');
+        const postInfo = $('.postinfo');
         if (postInfo) {
-            let temp = $($(postInfo).children()[1]).text().toLowerCase();
-            let yearArray = temp.split(',').filter(item => item && !isNaN(item.trim()));
+            const temp = $($(postInfo).children()[1]).text().toLowerCase();
+            const yearArray = temp.split(',').filter(item => item && !isNaN(item.trim()));
             if (yearArray.length === 0) {
                 return '';
             }
@@ -154,17 +154,17 @@ function getWatchOnlineLinks($, type, pageLink) {
     //NOTE: cannot extract season/episode from link
     try {
         let result = [];
-        let $a = $('a');
+        const $a = $('a');
         for (let i = 0; i < $a.length; i++) {
-            let infoNode = type.includes('serial')
+            const infoNode = type.includes('serial')
                 ? $($a[i]).parent()
                 : $($a[i]).parent().parent().prev();
-            let infoText = $(infoNode).text();
+            const infoText = $(infoNode).text();
             if (infoText && infoText.includes('پخش آنلاین')) {
-                let linkHref = $($a[i]).attr('href');
+                const linkHref = $($a[i]).attr('href');
                 if (linkHref.includes('.upera.')) {
-                    let info = getFileData($, $a[i], type);
-                    let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
+                    const info = getFileData($, $a[i], type);
+                    const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
                     result.push(watchOnlineLink);
                 }
             }
@@ -181,11 +181,11 @@ function getWatchOnlineLinks($, type, pageLink) {
 function getSubtitles($, type, pageLink) {
     try {
         let result = [];
-        let $a = $('a');
-        for (let i = 0; i < $a.length; i++) {
-            let linkHref = $($a[i]).attr('href');
+        const $a = $('a');
+        for (let i = 0, _length = $a.length; i < _length; i++) {
+            const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
                 result.push(subtitle);
             }
         }
@@ -201,15 +201,15 @@ function getSubtitles($, type, pageLink) {
 export function getFileData($, link, type) {
     try {
         return type.includes('serial')
-            ? getFileData_serial($, link)
-            : getFileData_movie($, link);
+            ? getFileData_serial($, link, type)
+            : getFileData_movie($, link, type);
     } catch (error) {
         saveError(error);
         return "";
     }
 }
 
-function getFileData_serial($, link) {
+function getFileData_serial($, link, type) {
     let textNode = $(link).parent();
     let text = textNode.text();
     while (
@@ -225,26 +225,20 @@ function getFileData_serial($, link) {
         text = textNode.text();
     }
     text = replacePersianNumbers(text.replace(/[:_|]/g, ''));
-    let linkHref = $(link).attr('href');
-    let HardSub = (checkHardSub(text) || checkHardSub(linkHref)) ? 'HardSub' : '';
-    let dubbed = checkDubbed(text, linkHref) ? 'dubbed' : '';
-    let Censored = (text.toLowerCase().includes('family') || dubbed || HardSub) ? 'Censored' : '';
-    let quality = purgeQualityText(text).replace(/\s/g, '.').replace('.Family', '');
-    let roundMatch = linkHref.match(/\.Round\d\d?\./i);
-    let round = roundMatch ? roundMatch.pop().replace(/\./g, '').replace(/\d\d?/, (res) => '_' + res) : '';
-    let info = [quality, round, HardSub, dubbed, Censored].filter(value => value).join('.');
+    const linkHref = $(link).attr('href');
+    const Censored = (text.toLowerCase().includes('family') || checkDubbed(text, linkHref) || checkHardSub(text) || checkHardSub(linkHref)) ? 'Censored' : '';
+    const quality = purgeQualityText(text).replace(/\s/g, '.').replace('.Family', '');
+    const roundMatch = linkHref.match(/\.Round\d\d?\./i);
+    const round = roundMatch?.pop().replace(/\./g, '').replace(/\d\d?/, (res) => '_' + res) || '';
+    let info = [quality, round, Censored].filter(Boolean).join('.');
     info = fixSpecialCases(info);
-    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    info = info
-        .replace(/FULL-HD\.Round_\d\d?/, (res) => res.split('.').reverse().join('.'))
-        .replace(/(\d\d?\.)?\d\d?\.Day/, (res) => res.split('.').reverse().join('.').replace(/\./g, '_'))
-        .replace(/((Day_\d\d?(_\d\d?)?)|(Preview)|(ReWatch))\.Round_\d\d?/, (res) => res.split('.').reverse().join('.'));
     return info;
 }
 
-function getFileData_movie($, link) {
-    let parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
+function getFileData_movie($, link, type) {
+    const parent = ($(link).parent()[0].name === 'p') ? $(link).parent() : $(link).parent().parent();
     let textNode = $(parent).prev();
     let text = textNode.text();
     while (
@@ -260,16 +254,12 @@ function getFileData_movie($, link) {
         text = textNode.text();
     }
     text = replacePersianNumbers(text);
-    let linkHref = $(link).attr('href');
-    let HardSub = checkHardSub(linkHref) ? 'HardSub' : '';
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let Censored = ($(link).next().text().toLowerCase().includes('family') || dubbed || HardSub) ? 'Censored' : '';
-    let quality = purgeQualityText(text.replace(/[()]/g, ' ')).replace(/\s/g, '.');
-    let moviePartMatch = linkHref.match(/part[\s.]*\d/i);
-    let moviePart = moviePartMatch ? moviePartMatch.pop().replace(/part/i, 'Part') : '';
-    let info = [quality, moviePart, HardSub, dubbed, Censored].filter(value => value).join('.');
+    const linkHref = $(link).attr('href');
+    const Censored = ($(link).next().text().toLowerCase().includes('family') || checkDubbed(linkHref, '') || checkHardSub(linkHref)) ? 'Censored' : '';
+    const quality = purgeQualityText(text.replace(/[()]/g, ' ')).replace(/\s/g, '.');
+    let info = [quality, Censored].filter(Boolean).join('.');
     info = fixSpecialCases(info);
-    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
     return info;
 }

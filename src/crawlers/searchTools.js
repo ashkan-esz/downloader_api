@@ -6,7 +6,8 @@ import {default as pQueue} from "p-queue";
 import {check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
-import {getSeasonEpisode} from "./utils.js";
+import {getDecodedLink, getSeasonEpisode} from "./utils.js";
+import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
@@ -133,9 +134,9 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
                     downloadLinks.push({
                         link: link.trim(),
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
-                        qualitySample: qualitySample,
+                        qualitySample: getDecodedLink(qualitySample),
                         sourceName: sourceConfig.sourceName,
-                        pageLink: page_link,
+                        pageLink: getDecodedLink(page_link),
                         season, episode,
                     });
                 }
@@ -178,6 +179,8 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
             }
         }
         await Promise.allSettled(promiseArray);
+        downloadLinks = filterLowResDownloadLinks(downloadLinks);
+        downloadLinks = handleRedundantPartNumber(downloadLinks);
         return {downloadLinks: downloadLinks, $2: $, cookies, pageContent};
     } catch (error) {
         saveError(error);

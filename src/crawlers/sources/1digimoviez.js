@@ -3,7 +3,6 @@ import {search_in_title_page, wrapper_module} from "../searchTools.js";
 import {
     getType,
     removeDuplicateLinks,
-    checkDubbed,
     getYear,
     getSeasonEpisode
 } from "../utils.js";
@@ -111,17 +110,17 @@ async function search_title(link, i, $, url) {
 
 function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
     try {
-        let titleHeader = $2('.head_meta');
+        const titleHeader = $2('.head_meta');
         if (titleHeader) {
-            let temp = $2($2($2(titleHeader).children()[1]).children()[0]).text().toLowerCase();
-            let splitTitle = purgeTitle(temp, type, true);
+            const temp = $2($2($2(titleHeader).children()[1]).children()[0]).text().toLowerCase();
+            const splitTitle = purgeTitle(temp, type, true);
             year = splitTitle[splitTitle.length - 1];
             if (!isNaN(year) && Number(year) > 1900) {
                 splitTitle.pop();
                 title = splitTitle.join(" ");
                 if (year.length === 8) {
-                    let y1 = year.slice(0, 4);
-                    let y2 = year.slice(4);
+                    const y1 = year.slice(0, 4);
+                    const y2 = year.slice(4);
                     if (y1 > 2000 && y2 > 2000) {
                         year = Math.min(y1, y2);
                     } else {
@@ -147,22 +146,22 @@ function getWatchOnlineLinks($, type, pageLink) {
     //NOTE: need vip account to access
     try {
         let result = [];
-        let $a = $('a');
+        const $a = $('a');
         for (let i = 0; i < $a.length; i++) {
-            let infoNode = $($a[i]).parent().parent().parent().prev().children()[1];
-            let infoText = $(infoNode).text();
+            const infoNode = $($a[i]).parent().parent().parent().prev().children()[1];
+            const infoText = $(infoNode).text();
             if (infoText && infoText.includes('پخش آنلاین')) {
-                let linkHref = $($a[i]).attr('href');
+                const linkHref = $($a[i]).attr('href');
                 if (!linkHref.includes('/play/')) {
                     continue;
                 }
                 let info = purgeQualityText($($(infoNode).children()[0]).text()).replace(/\s+/g, '.');
-                info = fixLinkInfo(info, linkHref);
+                info = fixLinkInfo(info, linkHref, type);
                 info = fixLinkInfoOrder(info);
-                let sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
-                let size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
+                const sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
+                const size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
                 info = size ? (info + ' - ' + size.replace(/\s+/, '')) : info;
-                let watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName, pageLink);
+                const watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName, pageLink);
                 watchOnlineLink.link = linkHref;
                 result.push(watchOnlineLink);
             }
@@ -177,15 +176,15 @@ function getWatchOnlineLinks($, type, pageLink) {
 }
 
 function linkCheck($, link) {
-    let linkHref = $(link).attr('href');
+    const linkHref = $(link).attr('href');
     return (linkHref.includes('digimovie') && linkHref.endsWith('lm_action=download'));
 }
 
 export function getFileData($, link, type) {
     try {
-        let linkHref = $(link).attr('href');
-        let se = getSeasonEpisode(linkHref);
-        let seasonEpisodeFromLink = 'S' + se.season + 'E' + se.episode;
+        const linkHref = $(link).attr('href');
+        const se = getSeasonEpisode(linkHref);
+        const seasonEpisodeFromLink = 'S' + se.season + 'E' + se.episode;
         let seasonData = getSeasonEpisode_extra($, link, type);
         if (seasonData === 'ignore') {
             seasonData = {
@@ -199,26 +198,15 @@ export function getFileData($, link, type) {
             }
         }
 
-        let infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
+        const infoNode = (type.includes('serial') || linkHref.match(/s\d+e\d+/gi))
             ? $($(link).parent().parent().parent().prev().children()[1]).children()
             : $(link).parent().parent().next().children();
         let isOva = false;
         if (type.includes('serial') && $($(link).parent().parent().parent().prev().children()[0]).text().includes('فصل : OVA')) {
             isOva = true;
         }
-        let infoNodeChildren = $(infoNode[1]).children();
-        let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-        let quality = purgeQualityText($(infoNode[0]).text()).replace(/\s+/g, '.').replace('زیرنویس.چسبیده', '');
-        let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
-        if (hardSub) {
-            hardSub = hardSub[0];
-            quality = quality.replace('.' + hardSub, '');
-        }
-
-        if (quality.includes('.Dual.Audio') || linkHref.includes('.Dual.Audio')) {
-            quality = quality.replace('.Dual.Audio', '');
-            dubbed = 'dubbed';
-        }
+        const infoNodeChildren = $(infoNode[1]).children();
+        const quality = purgeQualityText($(infoNode[0]).text()).replace(/\s+/g, '.').replace('زیرنویس.چسبیده', '');
 
         let encoder = (infoNodeChildren.length === 3) ? purgeEncoderText($(infoNodeChildren[0]).text()) : '';
         encoder = encoder
@@ -237,8 +225,8 @@ export function getFileData($, link, type) {
             seasonStack = ' (whole season in one file)'
             size = '';
         }
-        let info = [quality, encoder, hardSub, dubbed, seasonStack].filter(value => value).join('.');
-        info = fixLinkInfo(info, linkHref);
+        let info = [quality, encoder, seasonStack].filter(Boolean).join('.');
+        info = fixLinkInfo(info, linkHref, type);
         info = fixLinkInfoOrder(info);
         if (seasonData.seasonEpisode) {
             info = seasonData.seasonEpisode + '.' + info;
@@ -249,7 +237,7 @@ export function getFileData($, link, type) {
         if (isOva && !info.match(specialRegex)) {
             info = info.replace(new RegExp(`\\.(${releaseRegex.source})`), (res) => '.OVA' + res);
         }
-        return [info, size].filter(value => value).join(' - ');
+        return [info, size].filter(Boolean).join(' - ');
     } catch (error) {
         saveError(error);
         return '';
@@ -275,11 +263,10 @@ function getSeasonEpisode_extra($, link, type) {
             } else {
                 return 'ignore';
             }
-            let seasonInfo = $($($(link).parent().parent().parent().prev().children()[0]).children()[1]).text();
-            seasonInfo = seasonInfo.replace(/\d+قسمت/, '').trim();
-            let seasonMatch = seasonInfo.match(/فصل\s*:\s*\d+/g);
+            const seasonInfo = $($($(link).parent().parent().parent().prev().children()[0]).children()[1]).text().replace(/\d+قسمت/, '').trim();
+            const seasonMatch = seasonInfo.match(/فصل\s*:\s*\d+/g);
             if (seasonMatch) {
-                let seasonNumber = seasonMatch.pop().match(/\d+/g).pop();
+                const seasonNumber = seasonMatch.pop().match(/\d+/g).pop();
                 if (!seasonNumber || Number(seasonNumber) === 0) {
                     return 'ignore';
                 }
@@ -307,8 +294,7 @@ function getQualitySample($, link, type) {
         if (type.includes('serial') || $(link).attr('href').match(/s\d+e\d+/gi)) {
             return '';
         }
-        let nextNode = $(link).next()[0];
-        let sampleUrl = nextNode ? nextNode.attribs.href : '';
+        const sampleUrl = $(link).next()[0]?.attribs.href || '';
         if (sampleUrl.match(/\.(jpeg|jpg|png)/) || sampleUrl.endsWith('lm_action=download')) {
             return sampleUrl;
         }

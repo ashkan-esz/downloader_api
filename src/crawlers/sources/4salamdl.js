@@ -104,7 +104,7 @@ async function search_title(link, i) {
 
 function fixYear($) {
     try {
-        let postInfo = $('p:contains("تاریخ انتشار")');
+        const postInfo = $('p:contains("تاریخ انتشار")');
         if (postInfo.length === 1) {
             let yearMatch = $(postInfo).text().match(/\d\d\d\d/g);
             if (!yearMatch) {
@@ -130,11 +130,11 @@ function fixWrongYear(title, type, year) {
 function getSubtitles($, type, pageLink) {
     try {
         let result = [];
-        let $a = $('a');
-        for (let i = 0; i < $a.length; i++) {
-            let linkHref = $($a[i]).attr('href');
+        const $a = $('a');
+        for (let i = 0, _length = $a.length; i < _length; i++) {
+            const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
                 result.push(subtitle);
             }
         }
@@ -148,14 +148,17 @@ function getSubtitles($, type, pageLink) {
 }
 
 export function getFileData($, link, type) {
-    let text_array = [];
     try {
+        if ($($(link).parent().prev()).hasClass('comment-meta')) {
+            return 'ignore';
+        }
+
         if (type.includes('serial')) {
-            return getFileData_serial($, link);
+            return getFileData_serial($, link, type);
         }
 
         let text = $(link).text();
-        let linkHref = $(link).attr('href');
+        const linkHref = $(link).attr('href');
         let dubbed = '';
         if (text.includes('(دوبله فارسی)') ||
             text.includes('(دو زبانه)') ||
@@ -163,68 +166,57 @@ export function getFileData($, link, type) {
             dubbed = 'dubbed';
             text = text.replace('(دوبله فارسی)', '').replace('(دو زبانه)', '');
         }
-        text_array = text.split('|');
 
         if (text.includes('لینک مستقیم')) {
-            return getFileData_extraLink($, link);
+            return getFileData_extraLink($, link, type);
         }
-        return getFileData_movie(text_array, dubbed, linkHref);
+        return getFileData_movie(text.split('|'), dubbed, linkHref, type);
     } catch (error) {
         saveError(error);
         return "";
     }
 }
 
-function getFileData_serial($, link) {
-    let linkHref = $(link).attr('href');
-    let prevNodeChildren = $(link).parent().parent().parent().prev().children();
+function getFileData_serial($, link, type) {
+    const linkHref = $(link).attr('href');
+    const prevNodeChildren = $(link).parent().parent().parent().prev().children();
     let text_array = purgeQualityText($(prevNodeChildren[3]).text()).split(' ');
-    let bit10 = linkHref.toLowerCase().includes('10bit') ? '10bit' : '';
-    let size = purgeSizeText($(prevNodeChildren[5]).text());
+    const size = purgeSizeText($(prevNodeChildren[5]).text());
 
-    let filtered_text_array = text_array.filter(value => value && !persianRex.hasLetter.test(value));
-    if (filtered_text_array.length === 0) {
-        return getSerialFileInfoFromLink(linkHref);
+    if (text_array.filter(value => value && !persianRex.hasLetter.test(value)).length === 0) {
+        return getSerialFileInfoFromLink(linkHref, type);
     }
 
     if (text_array.length === 1 && text_array[0] === '') {
         text_array = $(link).parent().prev().text().split(' ');
     }
 
-    let info = [...text_array, bit10].filter(value => value).join('.');
-    info = fixLinkInfo(info, linkHref);
+    let info = fixLinkInfo(text_array.filter(Boolean).join('.'), linkHref, type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
-function getSerialFileInfoFromLink(linkHref) {
+function getSerialFileInfoFromLink(linkHref, type) {
     linkHref = linkHref.replace(/[/_\s]/g, '.').replace('.-.', '.');
-    let link_href_array = linkHref.split('.');
-    let seasonEpisode_match = linkHref.match(/s\d+e\d+(-?e\d+)*/gi);
+    const link_href_array = linkHref.split('.');
+    const seasonEpisode_match = linkHref.match(/s\d+e\d+(-?e\d+)*/gi);
     let info = '';
     if (seasonEpisode_match) {
-        let seasonEpisode = seasonEpisode_match.pop();
-        let index = link_href_array.indexOf(seasonEpisode);
-        let array = link_href_array.slice(index + 1);
+        const index = link_href_array.indexOf(seasonEpisode_match.pop());
+        const array = link_href_array.slice(index + 1);
         array.pop();
         info = purgeQualityText(array.join('.'));
     } else {
-        let seasonEpisode = getSeasonEpisode(linkHref);
+        const seasonEpisode = getSeasonEpisode(linkHref);
         if (seasonEpisode.season !== 1 || seasonEpisode.episode === 0) {
-            return '';
+            info = fixLinkInfo(info, linkHref, type);
+            info = fixLinkInfoOrder(info);
+            return info;
         }
     }
 
-    info = info
-        .replace(/repack\.\d\d\d\d?p/i, (res) => res.split('.').reverse().join('.'))
-        .replace(/\.(nf|2ch|co)(?=(\.|$))/gi, '')
-        .replace(/PaHe\.SalamDL/i, 'PaHe')
-        .replace('amzn.', '')
-        .replace(/^new\./i, '')
-        .replace(/\.tehmovies\.com/i, '');
-
     if (!info.match(/\d\d\d\d?p/i)) {
-        let splitInfo = info.split('.');
+        const splitInfo = info.split('.');
         let resIndex = splitInfo.findIndex(item => item.match(/\d\d\d\d?p/));
         if (resIndex === -1) {
             resIndex = splitInfo.findIndex(item => item.match(releaseRegex));
@@ -232,20 +224,14 @@ function getSerialFileInfoFromLink(linkHref) {
         info = resIndex !== -1 ? splitInfo.slice(resIndex).join('.') : '';
     }
 
-    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    info = info.replace(/(.+\.)\d\d\d\d?p+/, (res) => res.split('.').reverse().join('.'));
-    let temp = linkHref.split('/').pop().split('.');
-    let seasonEpisodeIndex = temp.findIndex(item => item.match(/^s\d+e\d+$/i));
+    const temp = linkHref.split('/').pop().split('.');
+    const seasonEpisodeIndex = temp.findIndex(item => item.match(/^s\d+e\d+$/i));
     if (seasonEpisodeIndex !== -1) {
         let temp2 = temp.slice(seasonEpisodeIndex + 1).join('.')
             .split(/\.\d\d\d\d?p/)[0]
-            .replace('DIRECTORS.CUT', '')
-            .replace('Encore.Edition', '')
-            .replace('3D', '')
-            .replace('EXTENDED', '')
-            .replace('REMASTERED', '')
-            .replace(/Part[._]\d/i, '');
+            .replace(/DIRECTORS?\.CUT|Encore\.Edition|3D|EXTENDED|REMASTERED|Part[._]\d/gi, '');
         if (temp2) {
             info = info.replace('.' + temp2, '');
         }
@@ -253,34 +239,37 @@ function getSerialFileInfoFromLink(linkHref) {
     return info;
 }
 
-function getFileData_movie(text_array, dubbed, linkHref) {
+function getFileData_movie(text_array, dubbed, linkHref, type) {
     if (text_array[0].includes('تریلر') || text_array[0].includes('تیزر')) {
         return 'trailer';
     }
 
     let encoder = '';
-    let encoder_index = (text_array.length === 1) ? 0 :
+    const encoder_index = (text_array.length === 1) ? 0 :
         (text_array[1].includes('انکدر') || text_array[1].includes('انکودر')) ? 1
             : (text_array[2] && text_array[2].includes('انکودر:')) ? 2 : '';
     if (encoder_index) {
         encoder = purgeEncoderText(text_array[encoder_index])
     } else {
-        let temp = text_array[0].match(/MkvCage|ShAaNiG|Ganool|YIFY|nItRo/i);
+        const temp = text_array[0].match(/MkvCage|ShAaNiG|Ganool|YIFY|nItRo/i);
         if (temp) {
             encoder = temp[0];
             text_array[0] = text_array[0].replace(new RegExp(`${temp[0]}\\s*-\\s`), '');
         }
     }
 
-    let size_index = (text_array.length === 1) ? 0 :
+    const size_index = (text_array.length === 1) ? 0 :
         (text_array[1].includes('حجم')) ? 1 :
             (text_array[2]) ? 2 : '';
-    let size = size_index ? purgeSizeText(text_array[size_index]) : '';
+    if (size_index && text_array[size_index].includes('کیفیت')) {
+        text_array[size_index] = text_array[size_index].split('حجم').pop();
+    }
+    const size = size_index ? purgeSizeText(text_array[size_index]) : '';
 
     let quality = purgeQualityText(text_array[0]);
     if (quality.includes('دانلود نسخه سه بعد')) {
-        let info = ['3D', dubbed].filter(value => value).join('.')
-        return [info, size].filter(value => value).join(' - ');
+        const info = ['3D', dubbed].filter(Boolean).join('.')
+        return [info, size].filter(Boolean).join(' - ');
     }
 
     quality = quality.split(' ');
@@ -288,31 +277,29 @@ function getFileData_movie(text_array, dubbed, linkHref) {
         quality = [];
     }
 
-    let moviePart = linkHref.match(/part[\s.]*\d(?=\.)/i)?.pop().replace(/part/i, 'Part') || '';
-    let info = [...quality, moviePart, encoder, dubbed].filter(value => value).join('.');
-    info = fixLinkInfo(info, linkHref);
+    let info = [...quality, encoder, dubbed].filter(Boolean).join('.');
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
-function getFileData_extraLink($, link) {
-    let link_href = $(link).attr('href');
-    let link_href_array = link_href.split('.');
-    let quality_match = link_href.match(/\d\d\d\d?p/gi);
+function getFileData_extraLink($, link, type) {
+    const link_href = $(link).attr('href');
+    const link_href_array = link_href.split('.');
+    const quality_match = link_href.match(/\d\d\d\d?p/gi);
     if (quality_match) {
-        let quality = quality_match.pop();
-        let quality_index = link_href_array.indexOf(quality);
-        let text_array = link_href_array.slice(quality_index, quality_index + 4);
+        const quality_index = link_href_array.indexOf(quality_match.pop());
+        const text_array = link_href_array.slice(quality_index, quality_index + 4);
         let info = purgeQualityText(text_array.join('.'));
+        info = fixLinkInfo(info, link_href, type);
         info = fixLinkInfoOrder(info);
         return info;
     } else {
         let year_match = link_href.match(/\d\d\d\d/g);
         if (year_match) {
-            let year = year_match.pop();
-            let year_index = link_href_array.indexOf(year);
+            const year_index = link_href_array.indexOf(year_match.pop());
             let info = link_href_array[year_index + 1];
-            info = fixLinkInfo(info, link_href);
+            info = fixLinkInfo(info, link_href, type);
             info = fixLinkInfoOrder(info);
             return info;
         } else {

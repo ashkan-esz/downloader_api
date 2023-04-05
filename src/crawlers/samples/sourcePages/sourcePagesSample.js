@@ -1,6 +1,13 @@
 import * as Path from "path";
 import {fileURLToPath} from "url";
-import {getDataFileIndex, getDataFiles, getSamplesFromFiles, saveNewSampleData, updateSampleData} from "../utils.js";
+import {
+    getDataFileIndex,
+    getDataFiles,
+    getSamplesFromFiles,
+    saveNewSampleData,
+    updateSampleData,
+    updateSampleData_batch
+} from "../utils.js";
 import {saveError} from "../../../error/saveError.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +65,31 @@ export async function updateSourcePageData(sourcePageData, updateFieldNames) {
         await updateSampleData(pathToFiles, sourceName, sourcePageData.pageLink, sourcePageData, fileIndex, updateFieldNames);
         sourcePageData.sourceName = sourceName;
         sourcePageData.fileIndex = fileIndex;
+        isFileOpen = false;
+    } catch (error) {
+        saveError(error);
+        isFileOpen = false;
+    }
+}
+
+export async function updateSourcePageData_batch(sourcePageDataArray, updateFieldNames) {
+    try {
+        await waitForFileClose();
+        isFileOpen = true;
+        if (sourcePageDataArray.length &&
+            sourcePageDataArray.every(item => item.sourceName === sourcePageDataArray[0].sourceName && item.fileIndex === sourcePageDataArray[0].fileIndex)
+        ) {
+            let {sourceName, fileIndex} = sourcePageDataArray[0];
+            for (let i = 0; i < sourcePageDataArray.length; i++) {
+                delete sourcePageDataArray[i].sourceName;
+                delete sourcePageDataArray[i].fileIndex;
+            }
+            await updateSampleData_batch(pathToFiles, sourceName, sourcePageDataArray, fileIndex, updateFieldNames);
+            for (let i = 0; i < sourcePageDataArray.length; i++) {
+                sourcePageDataArray[i].sourceName = sourceName;
+                sourcePageDataArray[i].fileIndex = fileIndex;
+            }
+        }
         isFileOpen = false;
     } catch (error) {
         saveError(error);

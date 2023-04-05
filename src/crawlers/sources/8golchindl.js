@@ -1,14 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {
-    validateYear,
-    getType,
-    checkDubbed,
-    checkHardSub,
-    removeDuplicateLinks,
-    getDecodedLink,
-    replacePersianNumbers,
-} from "../utils.js";
+import {validateYear, getType, removeDuplicateLinks, getDecodedLink, replacePersianNumbers} from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     encodersRegex,
@@ -128,13 +120,15 @@ async function search_title(link, i, $) {
 
 function fixYear($, link) {
     try {
-        let linkNodeParent = link.parent().parent().parent().parent().next().next().next();
-        let yearNodeParentChildren = $(linkNodeParent).children().children().children();
-        for (let i = 0; i < yearNodeParentChildren.length; i++) {
-            let text = $(yearNodeParentChildren[i]).text();
+        const linkNodeParent = link.parent().parent().parent().parent().next().next().next();
+        const yearNodeParentChildren = $(linkNodeParent).children().children().children();
+        for (let i = 0, _length = yearNodeParentChildren.length; i < _length; i++) {
+            const text = $(yearNodeParentChildren[i]).text();
             if (text.includes('سال ساخت :')) {
-                let temp = text.replace('سال ساخت :', '').trim();
-                let yearArray = temp.split(/\s+|-|–/g)
+                const yearArray = text
+                    .replace('سال ساخت :', '')
+                    .trim()
+                    .split(/\s+|-|–/g)
                     .filter(item => item && !isNaN(item.trim()))
                     .sort((a, b) => Number(a) - Number(b));
                 if (yearArray.length === 0) {
@@ -155,7 +149,7 @@ function fixAnimeType($, type) {
         if (type.includes('anime')) {
             return type;
         }
-        let details = $('.details')?.text().toLowerCase() || '';
+        const details = $('.details')?.text().toLowerCase() || '';
         if (details.includes('انیمیشن') && (details.includes('کشور سازنده :japan') || details.includes('زبان :japan'))) {
             return 'anime_' + type;
         }
@@ -167,25 +161,22 @@ function fixAnimeType($, type) {
 }
 
 export function addTitleNameToInfo(downloadLinks, title, year) {
-    let names = [];
-    for (let i = 0; i < downloadLinks.length; i++) {
+    const names = [];
+    for (let i = 0, downloadLinksLength = downloadLinks.length; i < downloadLinksLength; i++) {
         const fileName = getDecodedLink(downloadLinks[i].link.split('/').pop()).split(/a\.?k\.?a/i)[0];
-        let nameMatch = fileName.match(/.+(\d\d\d\d|\d\d\d)p/gi);
-        if (!nameMatch) {
-            nameMatch = fileName.match(/.+(hdtv)/gi);
-        }
+        const nameMatch = fileName.match(/.+\d\d\d\d?p/gi) || fileName.match(/.+(hdtv)/gi);
         const name = nameMatch ? nameMatch.pop()
             .replace(/\d\d\d\d?p|[()]|hdtv|BluRay|WEB-DL|WEBRip|BR-?rip|(hq|lq)?DvdRip|%21|!|UNRATED|Uncut|EXTENDED|REPACK|Imax|Direct[ou]rs?[.\s]?Cut/gi, '')
             .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
             .replace(/\.|_|\+|%20| |(\[.+])|\[|\s\s+/g, ' ')
             .trim() : '';
         title = title.replace(/s/g, '');
-        let temp = name.toLowerCase().replace(/-/g, ' ').replace(/s/g, '');
+        const temp = name.toLowerCase().replace(/-/g, ' ').replace(/s/g, '');
         if (!name || temp === (title + ' ' + year) || temp === (title + ' ' + (Number(year) - 1))) {
             continue;
         }
         names.push(name.toLowerCase());
-        let splitInfo = downloadLinks[i].info.split(' - ');
+        const splitInfo = downloadLinks[i].info.split(' - ');
         if (splitInfo.length === 1) {
             downloadLinks[i].info += '. (' + name + ')';
         } else {
@@ -194,8 +185,8 @@ export function addTitleNameToInfo(downloadLinks, title, year) {
     }
     try {
         if (names.length > 0 && names.every(item => item === names[0])) {
-            let name = new RegExp(`\\. \\(${names[0].replace(/\*/g, '\\*')}\\)`, 'i');
-            for (let i = 0; i < downloadLinks.length; i++) {
+            const name = new RegExp(`\\. \\(${names[0].replace(/\*/g, '\\*')}\\)`, 'i');
+            for (let i = 0, downloadLinksLength = downloadLinks.length; i < downloadLinksLength; i++) {
                 downloadLinks[i].info = downloadLinks[i].info.replace(name, '');
             }
         }
@@ -208,26 +199,24 @@ export function addTitleNameToInfo(downloadLinks, title, year) {
 export function getFileData($, link, type) {
     try {
         return type.includes('serial')
-            ? getFileData_serial($, link)
-            : getFileData_movie($, link);
+            ? getFileData_serial($, link, type)
+            : getFileData_movie($, link, type);
     } catch (error) {
         saveError(error);
         return 'ignore';
     }
 }
 
-function getFileData_serial($, link) {
+function getFileData_serial($, link, type) {
     if ($($(link).parent().parent()).hasClass('wpd-comment-text')) {
         return 'ignore';
     }
-    let infoText = $($(link).parent()[0]).text();
-    let linkHref = $(link).attr('href');
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let bit10 = linkHref.includes('10bit') ? '10bit' : '';
-    let splitInfoText = infoText.split(' – ');
+    const infoText = $($(link).parent()[0]).text();
+    const linkHref = $(link).attr('href');
+    const splitInfoText = infoText.split(' – ');
     let quality, encoder;
     if (splitInfoText[0].includes('کیفیت')) {
-        let qualityText = splitInfoText[0].split('کیفیت')[1].trim().replace(/ |\s/g, '.');
+        const qualityText = splitInfoText[0].split('کیفیت')[1].trim().replace(/ |\s/g, '.');
         quality = purgeQualityText(qualityText);
         encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1]) : '';
     } else if (splitInfoText[0].includes('«')) {
@@ -235,44 +224,35 @@ function getFileData_serial($, link) {
         quality = purgeQualityText(quality).replace(/\s+/g, '.');
         encoder = splitInfoText.length > 1 ? purgeEncoderText(splitInfoText[1].replace('»: لينک مستقيم', '')) : '';
     } else {
-        let splitLinkHref = linkHref.split('.');
+        const splitLinkHref = linkHref.split('.');
         splitLinkHref.pop();
-        let seasonEpisodeIndex = splitLinkHref.findIndex((value => value.match(/s\d+e\d+/gi)));
-        quality = splitLinkHref.slice(seasonEpisodeIndex + 1).join('.').replace('.HardSub', '');
+        const seasonEpisodeIndex = splitLinkHref.findIndex((value => value.match(/s\d+e\d+/gi)));
+        quality = splitLinkHref.slice(seasonEpisodeIndex + 1).join('.');
         quality = purgeQualityText(quality);
         quality = quality
             .replace(/\.(Golchindl|net|BWBP|2CH)/gi, '')
-            .replace('REAL.', '')
             .replace('DD%202.0.H.264monkee', 'monkee');
         encoder = '';
     }
 
-    let hardSub = quality.match(/softsub|hardsub/gi) || linkHref.match(/softsub|hardsub/gi);
-    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
-
-    let info = [quality, bit10, encoder, hardSub, dubbed].filter(value => value).join('.').replace(/\.+/g, '.');
-    info = fixLinkInfo(info, linkHref);
+    let info = [quality, encoder].filter(Boolean).join('.').replace(/\.+/g, '.');
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    info = info
-        .replace('HardSub.dubbed', 'dubbed')
-        .replace(/\.Www\.DownloadSpeed\.iR/i, '');
     if (info.includes('https')) {
         return 'ignore';
     }
     return info;
 }
 
-function getFileData_movie($, link) {
-    let linkHref = $(link).attr('href');
-    let infoText = getMovieInfoText($, link);
+function getFileData_movie($, link, type) {
+    const linkHref = $(link).attr('href');
+    const infoText = getMovieInfoText($, link);
     if (infoText.includes('دانلود پشت صحنه') || $(link).text().includes('دانلود پشت صحنه')) {
         return 'ignore';
     }
-    let hardSub = linkHref.match(/softsub|hardsub/i)?.[0] || (checkHardSub(linkHref) ? 'HardSub' : '');
-    let dubbed = checkDubbed(linkHref, infoText) ? 'dubbed' : '';
     let quality, encoder, size;
     if (infoText.includes('|')) {
-        let splitInfoText = infoText.split('|');
+        const splitInfoText = infoText.split('|');
         if (splitInfoText.length === 3) {
             if (splitInfoText[0].includes('کیفیت')) {
                 quality = purgeQualityText(splitInfoText[0]).replace(/\s/g, '.');
@@ -297,7 +277,7 @@ function getFileData_movie($, link) {
             encoder = '';
         }
     } else if (infoText.includes(' –') || infoText.includes(' -')) {
-        let splitInfoText = infoText.split(/\s[–-]/g);
+        const splitInfoText = infoText.split(/\s[–-]/g);
         quality = purgeQualityText(splitInfoText[0]).replace(/\s/g, '.');
         if (splitInfoText.length === 3) {
             if (splitInfoText[1].includes('انکودر')) {
@@ -313,26 +293,24 @@ function getFileData_movie($, link) {
             encoder = splitInfoText[1].includes('انکودر') ? purgeEncoderText(splitInfoText[1]) : '';
         }
     } else {
-        let splitInfoText = infoText.split('حجم');
+        const splitInfoText = infoText.split('حجم');
         quality = purgeQualityText(splitInfoText[0]).replace(/\s/g, '.');
         size = splitInfoText.length > 1 ? purgeSizeText(splitInfoText[1]) : '';
         encoder = '';
     }
 
-    let part = linkHref.match(/\.part\d\./gi)?.pop().replace(/\./g, '') || '';
-
-    let info = [quality, encoder, part, hardSub, dubbed].filter(value => value).join('.');
+    let info = [quality, encoder].filter(Boolean).join('.');
     if (info.includes('https')) {
         return 'ignore';
     }
-    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
 function getMovieInfoText($, link) {
     let infoText = '';
-    let parentName = $(link).parent()[0].name;
+    const parentName = $(link).parent()[0].name;
     if (parentName !== 'li') {
         let infoNodeChildren;
         if (parentName === 'strong') {
@@ -385,7 +363,7 @@ function getMovieInfoText($, link) {
 
 function extraSearchMatch($, link, title) {
     try {
-        let linkHref = replacePersianNumbers(getDecodedLink($(link).attr('href'))).toLowerCase();
+        const linkHref = replacePersianNumbers(getDecodedLink($(link).attr('href'))).toLowerCase();
 
         if (linkHref.includes('/sub/download/') ||
             linkHref.includes('/movie_cats/') ||
@@ -405,9 +383,9 @@ function extraSearchMatch($, link, title) {
         title = title.replace(/\*/g, '\\*');
         return (
             !!linkHref.match(/\/s\d+\/(.*\/?((\d{3,4}p(\.x265)?)|(DVDRip))\/)?$/i) ||
-            !!linkHref.match(new RegExp(`${title .replace(/\*/g, '\\*')}\\/\\d+p(\\.x265)?\\/`)) ||
+            !!linkHref.match(new RegExp(`${title.replace(/\*/g, '\\*')}\\/\\d+p(\\.x265)?\\/`)) ||
             !!linkHref.match(new RegExp(`${title.replace(/\s+/g, '.') .replace(/\*/g, '\\*')}\\/\\d+p(\\.x265)?\\/`)) ||
-            !!linkHref.match(new RegExp(`\\/serial\\/${title.replace(/\s+/g, '.') .replace(/\*/g, '\\*')}\\/$`)) ||
+            !!linkHref.match(new RegExp(`\\/serial\\/${title.replace(/\s+/g, '.').replace(/\*/g, '\\*')}\\/$`)) ||
             !!linkHref.match(/\/(duble|dubbed)\//i) ||
             !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d+-(\d+)?\/(\d\d\d\d?p(\.x265)?\/)?/i) ||
             !!linkHref.match(/\/(HardSub|SoftSub|dubbed|duble|(Zaban\.Asli))\/\d\d\d\d?p(\.x265)?\/?/i)
@@ -420,10 +398,8 @@ function extraSearchMatch($, link, title) {
 
 function extraSearch_getFileData($, link, type, sourceLinkData, title) {
     try {
-        let linkHref = getDecodedLink($(link).attr('href'));
-        let pageHref = $(sourceLinkData.link).attr('href');
-        let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-        let bit10 = linkHref.includes('10bit') ? '10bit' : '';
+        const linkHref = getDecodedLink($(link).attr('href'));
+        const pageHref = $(sourceLinkData.link).attr('href');
 
         let quality = getQualityFromLinkHref(linkHref, title);
         quality = removeEpisodeNameFromQuality(quality);
@@ -435,13 +411,9 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
             .replace('DD%202.0.H.264monkee', 'monkee')
             .replace('[AioFilm.com]', '');
 
-        let hardSub = quality.match(/softsub|hardsub/gi) ||
-            linkHref.match(/softsub|hardsub/gi) ||
-            pageHref.match(/softsub|hardsub/gi);
-        hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
-
-        let info = [quality, bit10, hardSub, dubbed].filter(value => value).join('.')
-        info = fixLinkInfo(info, linkHref);
+        const hardSub = pageHref.match(/softsub|hardsub/gi);
+        let info = hardSub ? (quality + '.' + hardSub[0]) : quality;
+        info = fixLinkInfo(info, linkHref, type);
         info = fixLinkInfoOrder(info);
         info = info
             .replace('HardSub.dubbed', 'dubbed')
@@ -450,7 +422,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
             .replace(/\.ATVP\.GalaxyTV/i, '.GalaxyTV')
             .replace(/\.DIMENSION\.pahe/i, '');
         if (!info.match(/^\d\d\d\d?p/)) {
-            let t = info;
+            const t = info;
             info = info.replace(/.+(?=(\d\d\d\dp))/, '');
             if (t === info) {
                 info = info.replace(/.+(?=(\d\d\dp))/, '');
@@ -459,7 +431,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
         if (!hardSub && pageHref.match(/duble/i) && !info.includes('dubbed')) {
             info = info + '.dubbed';
         }
-        let sizeMatch = info.match(/\.\d+MB(?=(\.|$))/i);
+        const sizeMatch = info.match(/\.\d+MB(?=(\.|$))/i);
         if (sizeMatch) {
             info = info.replace(new RegExp('\\' + sizeMatch[0].replace(/\*/g, '\\*'), 'gi'), '');
             info = info + ' - ' + sizeMatch[0].replace('.', '');
@@ -475,7 +447,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
 }
 
 function getQualityFromLinkHref(linkHref, title) {
-    let splitLinkHref = linkHref
+    const splitLinkHref = linkHref
         .replace(/\s+/g, '.')
         .replace(/(\.-\.)/, '.')
         .replace(/\.+/g, '.')
@@ -529,17 +501,17 @@ function getQualityFromLinkHref(linkHref, title) {
 
 function removeEpisodeNameFromQuality(quality) {
     quality = quality.replace(/(^|\.)(silence|Joyeux|problème|loki)/gi, '');
-    let tempQuality = quality.replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special)|(Part\.\d+))/gi, '');
+    const tempQuality = quality.replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special))/gi, '');
     const specialWordsRegex = new RegExp(`(\\d\\d\\d\\d?p)|(${releaseRegex.source})|(${encodersRegex.source})|(${specialWords.source})`);
 
     if (tempQuality && !tempQuality.match(specialWordsRegex)) {
-        let splitTempQuality = tempQuality.split('.');
+        const splitTempQuality = tempQuality.split('.');
         for (let i = 0; i < splitTempQuality.length; i++) {
             quality = quality.replace(splitTempQuality[i], '');
         }
         quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
     } else {
-        let tempQuality2 = quality.split(/\.\d\d\d\d?p/)[0].replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special)|(Part\.\d+))/gi, '');
+        let tempQuality2 = quality.split(/\.\d\d\d\d?p/)[0].replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special))/gi, '');
         if (tempQuality2 && tempQuality2.split('.').length > 0 && !tempQuality2.match(specialWordsRegex)) {
             let splitTempQuality = tempQuality2.split('.');
             for (let i = 0; i < splitTempQuality.length; i++) {
@@ -552,9 +524,10 @@ function removeEpisodeNameFromQuality(quality) {
 }
 
 export function handleLinksExtraStuff(downloadLinks) {
-    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && item.link.match(/part\d+/i))) {
+    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && (item.link.match(/part\d+/i) || item.info.match(/part_\d+/i)))) {
         return downloadLinks.map(item => {
-            const episodeMatch = Number(item.link.match(/\.part\d+\./i)[0].match(/\d+/)[0]);
+            const partNumber = item.link.match(/(?<=(part))\d+/i) || item.info.match(/(?<=(part_))\d+/i);
+            const episodeMatch = Number(partNumber[0]);
             return {...item, episode: episodeMatch};
         });
     }

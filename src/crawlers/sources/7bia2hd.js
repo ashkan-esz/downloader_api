@@ -1,13 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {
-    validateYear,
-    getType,
-    checkDubbed,
-    checkHardSub,
-    removeDuplicateLinks,
-    replacePersianNumbers,
-} from "../utils.js";
+import {validateYear, getType, removeDuplicateLinks, replacePersianNumbers} from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     purgeEncoderText,
@@ -103,7 +96,7 @@ function fixYear($, type) {
                     temp = $(postInfo).text().replace('سال های پخش', '').replace('سال انتشار', '').toLowerCase().trim();
                 }
             }
-            let yearArray = temp.split(/\s+|-|–/g)
+            const yearArray = temp.split(/\s+|-|–/g)
                 .filter(item => item && !isNaN(item.trim()))
                 .sort((a, b) => Number(a) - Number(b));
             if (yearArray.length === 0) {
@@ -112,9 +105,9 @@ function fixYear($, type) {
             return validateYear(yearArray[0]);
         }
         if (type.includes('movie')) {
-            let postInfo = $('span[class=pr-item]:contains("سال انتشار")');
-            let temp = $(postInfo).text().replace('سال انتشار', '').toLowerCase().trim();
-            let yearArray = temp.split(/\s+|-|–/g)
+            const postInfo = $('span[class=pr-item]:contains("سال انتشار")');
+            const temp = $(postInfo).text().replace('سال انتشار', '').toLowerCase().trim();
+            const yearArray = temp.split(/\s+|-|–/g)
                 .filter(item => item && !isNaN(item.trim()))
                 .sort((a, b) => Number(a) - Number(b));
             if (yearArray.length === 0) {
@@ -132,16 +125,16 @@ function fixYear($, type) {
 function getWatchOnlineLinks($, type, pageLink) {
     try {
         let result = [];
-        let $a = $('a');
-        for (let i = 0; i < $a.length; i++) {
-            let text = $($a[i]).text();
+        const $a = $('a');
+        for (let i = 0, aLength = $a.length; i < aLength; i++) {
+            const text = $($a[i]).text();
             if (text && text.toLowerCase().includes('پخش آنلاین') || $($a[i]).hasClass('play-online')) {
-                let linkHref = $($a[i]).attr('href');
+                const linkHref = $($a[i]).attr('href');
                 let info = linkHref.includes('1080') ? '1080p' : linkHref.includes('480') ? '480p' : '720p';
                 if ($($($a[i]).parent()[0]).hasClass('download-links')) {
                     info = getFileData($, $a[i], type);
                 }
-                let watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
+                const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
                 result.push(watchOnlineLink);
             }
         }
@@ -157,20 +150,20 @@ function getWatchOnlineLinks($, type, pageLink) {
 function getSubtitles($, type, pageLink) {
     try {
         let result = [];
-        let $a = $('a');
-        for (let i = 0; i < $a.length; i++) {
+        const $a = $('a');
+        for (let i = 0, aLength = $a.length; i < aLength; i++) {
             let linkHref = $($a[i]).attr('href');
             if (linkHref) {
                 if (linkHref.match(subtitleFormatsRegex)) {
-                    let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, true);
+                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, true);
                     result.push(subtitle);
                 } else if (linkHref.includes('/subtitles/')) {
                     let temp = linkHref.replace(/\/farsi_persian$/i, '').split('/').pop().replace(/-/g, ' ').toLowerCase();
                     temp = temp.replace(' sconed ', ' second ');
                     temp = wordsToNumbers(temp).toString();
-                    let seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
-                    let season = seasonMatch ? seasonMatch.pop().replace(/(season)|\d\d\d\d/gi, '').trim() : '';
-                    let subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, false);
+                    const seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
+                    const season = seasonMatch?.pop().replace(/(season)|\d\d\d\d/gi, '').trim() || '';
+                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, false);
                     if (season) {
                         let seasonNumber = Number(season);
                         subtitle.info = (subtitle.episode === 0)
@@ -189,7 +182,7 @@ function getSubtitles($, type, pageLink) {
 
         result = removeDuplicateLinks(result);
         if (type.includes('serial')) {
-            let filterDuplicateLinksByInfo = [];
+            const filterDuplicateLinksByInfo = [];
             for (let i = 0; i < result.length; i++) {
                 let found = false;
                 for (let j = 0; j < filterDuplicateLinksByInfo.length; j++) {
@@ -218,60 +211,54 @@ function getSubtitles($, type, pageLink) {
 export function getFileData($, link, type) {
     try {
         return type.includes('serial')
-            ? getFileData_serial($, link)
-            : getFileData_movie($, link);
+            ? getFileData_serial($, link, type)
+            : getFileData_movie($, link, type);
     } catch (error) {
         saveError(error);
         return '';
     }
 }
 
-function getFileData_serial($, link) {
-    let infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
-    let linkHref = $(link).attr('href').split('ihttp')[0];
+function getFileData_serial($, link, type) {
+    const infoNodeChildren = $($(link).parent().parent().parent().parent().prev().children()[0]).children();
+    const linkHref = $(link).attr('href').split('ihttp')[0];
     if (!linkHref.match(/http|www\.|s\d+/)) {
         return 'ignore';
     }
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
     let quality = $(infoNodeChildren[2]).text()
     quality = replacePersianNumbers(quality);
     quality = purgeQualityText(quality).replace(/\s/g, '.');
-    let hardSub = linkHref.match(/softsub|hardsub/gi);
-    hardSub = hardSub ? hardSub[0] : checkHardSub(linkHref) ? 'HardSub' : '';
 
     let size = '';
     if ($(link).parent()[0].name === 'div') {
-        let sizeInfoNodeChildren = $($(link).parent().prev().children()[0]).children();
+        const sizeInfoNodeChildren = $($(link).parent().prev().children()[0]).children();
         for (let i = 0; i < sizeInfoNodeChildren.length; i++) {
-            let sizeText = $(sizeInfoNodeChildren[1]).text();
+            const sizeText = $(sizeInfoNodeChildren[1]).text();
             if (sizeText.includes('حجم')) {
                 size = purgeSizeText(sizeText);
                 break;
             }
         }
     }
-    let info = [quality, hardSub, dubbed].filter(value => value).join('.');
-    info = fixLinkInfo(info, linkHref);
+    let info = fixLinkInfo(quality, linkHref, type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
-function getFileData_movie($, link) {
-    let infoNodeChildren = $($(link).parent().prev().children()[0]).children();
-    let linkHref = $(link).attr('href').split('ihttp')[0];
+function getFileData_movie($, link, type) {
+    const infoNodeChildren = $($(link).parent().prev().children()[0]).children();
+    const linkHref = $(link).attr('href').split('ihttp')[0];
     if (!linkHref.match(/http|www\.|s\d+/)) {
         return 'ignore';
     }
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let qualityText = $(infoNodeChildren[1]).text();
-    let sizeText = $(infoNodeChildren[2]).text();
-    let encoderText = $(infoNodeChildren[3]).text();
+    const qualityText = $(infoNodeChildren[1]).text();
+    const sizeText = $(infoNodeChildren[2]).text();
+    const encoderText = $(infoNodeChildren[3]).text();
     let quality = replacePersianNumbers(qualityText);
     if (qualityText.includes('انکودر')) {
         quality = purgeEncoderText(quality).replace(/(^\.)|(\.$)/g, '');
     }
     quality = purgeQualityText(quality).replace(/\s+/g, '.');
-    let hardSub = linkHref.match(/softsub|hardsub/i)?.[0] || (checkHardSub(linkHref) ? 'HardSub' : '');
     let size = purgeSizeText(sizeText);
     let encoder = purgeEncoderText(encoderText);
     if (sizeText.includes('انکودر') && !encoderText) {
@@ -292,28 +279,23 @@ function getFileData_movie($, link) {
         size = purgeSizeText(qualityText.replace('کیفیت', ''));
     }
 
-    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
-    let temp = linkHref.split('/').pop().split(/\.\d\d\d\d\./).pop().split(/[!.-]+/g).filter(item => item);
-    let seasonEpisodeIndex = temp.findIndex((item, index) => (index !== 0 && item.match(/\d\d\d\d?p/)) || item === "MkvCage" || item === "MkvCage");
-    if (seasonEpisodeIndex !== -1) {
-        let temp2 = temp.slice(0, seasonEpisodeIndex).join('.')
-            .replace('DIRECTORS.CUT', '')
-            .replace('Encore.Edition', '')
-            .replace('3D', '')
-            .replace('EXTENDED', '')
-            .replace('REMASTERED', '')
-            .replace(/Part[._]\d/i, '');
+    let info = [quality, encoder].filter(Boolean).join('.');
+    const temp = linkHref.split('/').pop().split(/\.\d\d\d\d\./).pop().split(/[!.-]+/g).filter(Boolean);
+    const yearIndex = temp.findIndex((item, index) => (index !== 0 && item.match(/\d\d\d\d?p/)) || item === "MkvCage");
+    if (yearIndex !== -1) {
+        let temp2 = temp.slice(0, yearIndex).join('.')
+            .replace(/DIRECTORS?\.CUT|Encore\.Edition|3D|EXTENDED|REMASTERED|Part[._]\d/gi, '');
         if (temp2) {
-            info = info.replace('.' + temp2, '');
+            info = info.replace(`.${temp2}`, '');
         }
     }
-    info = fixLinkInfo(info, linkHref);
+    info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
 function checkPersianSerial(title) {
-    let names = [
+    const names = [
         'bidar bash', 'dodkesh', 'bi seda faryad kon',
         'baaghe mozaffar', 'avaye baran', 'sakhteman pezeshkan',
         'kolah pahlavi', 'marde 2000 chehreh', 'zero degree turn',
@@ -336,9 +318,10 @@ function checkPersianSerial(title) {
 }
 
 export function handleLinksExtraStuff(downloadLinks) {
-    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && item.link.match(/chapter(%20)?\d+/i))) {
+    if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && (item.link.match(/chapter(%20)?\d+/i) || item.info.match(/chapter_\d/i)))) {
         return downloadLinks.map(item => {
-            const episodeMatch = Number(item.link.match(/(?<=(chapter(%20)?))\d+/i)[0]);
+            const chapter = item.link.match(/(?<=(chapter(%20)?))\d+/i) || item.info.match(/(?<=(chapter_))\d+/i);
+            const episodeMatch = Number(chapter[0]);
             return {...item, episode: episodeMatch};
         });
     }

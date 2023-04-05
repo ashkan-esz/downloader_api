@@ -1,13 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {
-    validateYear,
-    getType,
-    checkDubbed,
-    checkHardSub,
-    replacePersianNumbers,
-    removeDuplicateLinks,
-} from "../utils.js";
+import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks} from "../utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     purgeEncoderText,
@@ -109,12 +102,12 @@ function fixYear($) {
             postInfo = $('li:contains("سال تولید")');
         }
         if (postInfo.length === 1) {
-            let temp = $(postInfo).text()
+            const temp = $(postInfo).text()
                 .replace('سال های پخش', '')
                 .replace('سال انتشار', '')
                 .replace('سال تولید', '')
                 .toLowerCase().trim();
-            let yearArray = temp.split(/\s+|-/g)
+            const yearArray = temp.split(/\s+|-/g)
                 .filter(item => item && !isNaN(item.trim()))
                 .sort((a, b) => Number(a) - Number(b));
             if (yearArray.length === 0) {
@@ -145,77 +138,63 @@ function fixWrongYear(title, type, year) {
 export function getFileData($, link, type) {
     try {
         return type.includes('serial')
-            ? getFileData_serial($, link)
-            : getFileData_movie($, link);
+            ? getFileData_serial($, link, type)
+            : getFileData_movie($, link, type);
     } catch (error) {
         saveError(error);
         return '';
     }
 }
 
-function getFileData_serial($, link) {
-    let linkHref = $(link).attr('href');
-    let infoNodeChildren = $($(link).parent().parent().parent().parent().prev()).children();
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
-    let temp = $(infoNodeChildren[0]).text();
-    let qualityText = (temp.match(/\d\d\d\d?p/i) || temp.includes('کیفیت')) ? temp : $(infoNodeChildren[1]).text();
+function getFileData_serial($, link, type) {
+    const infoNodeChildren = $($(link).parent().parent().parent().parent().prev()).children();
+    const temp = $(infoNodeChildren[0]).text();
+    const qualityText = (temp.match(/\d\d\d\d?p/i) || temp.includes('کیفیت')) ? temp : $(infoNodeChildren[1]).text();
     let quality = replacePersianNumbers(qualityText);
     quality = purgeQualityText(quality).split(/\s+/g).reverse().join('.');
-    let hardSub = quality.match(/softsub|hardsub/i) || linkHref.match(/softs[uo]b|hardsub/i);
-    hardSub = hardSub ? hardSub[0].replace('ob', 'ub') : checkHardSub(linkHref) ? 'HardSub' : '';
     let size = $(infoNodeChildren[2]).text();
     if (size.includes('حجم')) {
         size = purgeSizeText(size);
     } else if (infoNodeChildren.length > 3) {
-        let text = $(infoNodeChildren[3]).text();
-        if (text === 'SoftSub') {
-            size = '';
-        } else {
-            size = purgeSizeText(text);
-        }
+        const text = $(infoNodeChildren[3]).text();
+        size = text === 'SoftSub' ? '' : purgeSizeText(text);
     }
-    let info = [quality, hardSub, dubbed].filter(value => value).join('.');
-    if (info === '' && size === '') {
+    if (quality === '' && size === '') {
         return 'ignore';
     }
-    info = fixLinkInfo(info, linkHref);
+    let info = fixLinkInfo(quality, $(link).attr('href'), type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
-function getFileData_movie($, link) {
-    let infoNode = $(link).parent().next().children();
-    let infoNodeChildren = $(infoNode[1]).children();
-    let linkHref = $(link).attr('href');
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+function getFileData_movie($, link, type) {
+    const containerText = $($(link).parent().parent().parent().parent().prev()).text().trim();
+    const infoNode = $(link).parent().next().children();
+    const infoNodeChildren = $(infoNode[1]).children();
     let quality = replacePersianNumbers($(infoNode[0]).text());
-    if (quality.includes('نلود فیلم')) {
-        quality = '';
-    } else {
-        quality = purgeQualityText(quality).split(' ').reverse().join('.').replace(/^\.?(softsub|hardsub)\.?/i, '');
-    }
-
-    let hardSub = linkHref.match(/softs[uo]b|hardsub/i)?.[0].replace('ob', 'ub') || (checkHardSub(linkHref) ? 'HardSub' : '');
+    quality = quality.includes('نلود فیلم') ? '' : purgeQualityText(quality).replace(/\s+/g, '.');
     let encoder = purgeEncoderText($(infoNodeChildren[0]).text());
     let size = purgeSizeText($(infoNodeChildren[1]).text());
     if (encoder.includes('حجم')) {
         size = purgeSizeText(encoder);
         encoder = '';
     }
-
-    let info = [quality, encoder, hardSub, dubbed].filter(value => value).join('.');
-    info = fixLinkInfo(info, linkHref);
+    if (containerText.includes('بدون زیرنویس')) {
+        quality = quality.replace(/\.?HardSub|SoftSub/i, '');
+    }
+    let info = [quality, encoder].filter(Boolean).join('.');
+    info = fixLinkInfo(info, $(link).attr('href'), type);
     info = fixLinkInfoOrder(info);
-    return [info, size].filter(value => value).join(' - ');
+    return [info, size].filter(Boolean).join(' - ');
 }
 
 function getQualitySample($, link) {
     try {
-        let nextNode = $(link).next()[0];
+        const nextNode = $(link).next()[0];
         if (!nextNode || nextNode.name !== 'div') {
             return '';
         }
-        let sampleUrl = nextNode.attribs['data-imgqu'];
+        const sampleUrl = nextNode.attribs['data-imgqu'];
         if (sampleUrl.endsWith('.jpg')) {
             return sampleUrl;
         }

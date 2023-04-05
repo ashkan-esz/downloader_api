@@ -250,7 +250,7 @@ function getTitleObjFromJikanData(allTitles) {
     }
     let temp = utils.removeDuplicateElements(
         [allTitles.apiTitleEnglish, allTitles.apiTitleJapanese]
-            .filter(value => value)
+            .filter(Boolean)
             .map(value => value.toLowerCase())
     );
     if (temp.length > 1 && temp[1].includes(temp[0].replace('.', '')) && temp[1].match(/(\dth|2nd|3rd) season/gi)) {

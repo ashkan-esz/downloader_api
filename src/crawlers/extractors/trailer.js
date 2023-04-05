@@ -11,16 +11,16 @@ const sourcesMethods = getSourcesMethods();
 export function getTrailers($, sourceName, sourceVpnStatus) {
     try {
         let result = [];
-        let $video = $('video');
-        let $div = $('div');
-        let $a = $('a');
+        const $video = $('video');
+        const $div = $('div');
+        const $a = $('a');
 
         //bia2anime|bia2hd|golchindl
         if (sourceName !== 'film2movie') {
             for (let i = 0, len = $video.length; i < len; i++) {
-                let sourceChild = $($video[i]).children()[0];
+                const sourceChild = $($video[i]).children()[0];
                 if (sourceChild) {
-                    let src = sourceChild.attribs.src
+                    const src = sourceChild.attribs.src
                         .replace('دانلود', '')
                         .replace('دانلو', '');
                     result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
@@ -31,7 +31,7 @@ export function getTrailers($, sourceName, sourceVpnStatus) {
         //digimoviez
         for (let i = 0, len = $div.length; i < len; i++) {
             if ($($div[i]).hasClass('on_trailer_bottom')) {
-                let src = $div[i].attribs['data-trailerlink'];
+                const src = $div[i].attribs['data-trailerlink'];
                 if (src && src.toLowerCase().includes('trailer')) {
                     result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
                 }
@@ -51,7 +51,7 @@ export function getTrailers($, sourceName, sourceVpnStatus) {
 
         //avamovie|salamdl
         for (let i = 0, len = $a.length; i < len; i++) {
-            let src = $a[i].attribs.href;
+            const src = $a[i].attribs.href;
             if ($($a[i]).text().includes('تریلر') && src && src.includes('/trailer/')) {
                 result.push(purgeTrailer(src, sourceName, '720p', sourceVpnStatus.trailer));
             }
@@ -77,14 +77,14 @@ function purgeTrailer(url, sourceName, quality, vpnStatus) {
         //to: https://dl7.ftk.pw/trailer/***.mp4
         let temp = url.match(/\/\?s=\d+&f=(?=(\/(trailer|user|serial)))/gi);
         if (temp) {
-            let match = temp.pop();
-            let number = Number(match.match(/\d+/g).pop());
+            const match = temp.pop();
+            const number = Number(match.match(/\d+/g).pop());
             url = url.replace(/(?<=dl)\d+(?=\.)/, number).replace(match, '');
         }
     }
 
     if (!quality) {
-        let qualityMatch = url.match(/(\d\d\d\d?p)|((?<=_)\d\d\d\d?(?=\.))/g);
+        const qualityMatch = url.match(/(\d\d\d\d?p)|((?<=_)\d\d\d\d?(?=\.))/g);
         if (qualityMatch) {
             quality = qualityMatch.pop();
             if (Number(quality) > 1080) {

@@ -8,68 +8,68 @@ import {saveError} from "../../error/saveError.js";
 
 export function getPersianSummary($, title, year) {
     try {
-        let $div = $('div');
-        let $p = $('p');
-        let $strong = $('strong');
+        const $div = $('div');
+        const $p = $('p');
+        const $strong = $('strong');
 
-        for (let i = 0; i < $div.length; i++) {
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
             if ($($div[i]).hasClass('plot_text')) {
                 return purgePersianSummary($($div[i]).text(), title, year);
             }
         }
 
         // bia2anime -conflict with خلاصه داستان
-        for (let i = 0; i < $p.length; i++) {
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
             if ($($p[i]).parent().hasClass('-plot')) {
                 return purgePersianSummary($($p[i]).text(), title, year);
             }
         }
 
         //golchindl -conflict with خلاصه داستان
-        for (let i = 0; i < $div.length; i++) {
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
             if ($($div[i]).hasClass('summary') && $($div[i]).text().includes('خلاصه')) {
                 return purgePersianSummary($($div[i]).text(), title, year);
             }
         }
 
         //avamovie -conflict with خلاصه داستان
-        for (let i = 0; i < $div.length; i++) {
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
             if ($($div[i]).hasClass('plot')) {
                 return purgePersianSummary($($div[i]).text(), title, year);
             }
         }
 
         //film2movie
-        for (let i = 0; i < $div.length; i++) {
-            let temp = $($div[i]).text();
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
+            const temp = $($div[i]).text();
             if (temp && temp === 'خلاصه داستان :') {
                 return purgePersianSummary($($div[i]).next().text(), title, year);
             }
         }
 
         //salamdl
-        for (let i = 0; i < $p.length; i++) {
-            let temp = $($p[i]).text();
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
+            const temp = $($p[i]).text();
             if (temp && temp.includes('خلاصه داستان')) {
                 return purgePersianSummary(temp, title, year);
             }
         }
 
         //bia2hd
-        for (let i = 0; i < $p.length; i++) {
-            let parent = $p[i].parent;
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
+            const parent = $p[i].parent;
             if (parent.name === 'div' && $(parent).hasClass('-plot')) {
                 return purgePersianSummary($($p[i]).text(), title, year);
             }
         }
 
         //golchindl
-        for (let i = 0; i < $strong.length; i++) {
+        for (let i = 0, strongLength = $strong.length; i < strongLength; i++) {
             if ($($strong[i]).text().includes('خلاصه داستان')) {
                 return purgePersianSummary($($strong[i]).text(), title, year);
             }
         }
-        for (let i = 0; i < $p.length; i++) {
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
             if ($($p[i]).text().includes('خلاصه فیلم')) {
                 return purgePersianSummary($($p[i]).text().split('–').pop(), title, year);
             }
@@ -107,15 +107,15 @@ function purgePersianSummary(persianSummary, title, year) {
             })
             .join('');
 
-        let titleRegex = new RegExp("^(\\s)?" + title.replace(/\*/g, '\\*') + `( ${year})?(!)?`, 'i');
-        let titleRegex2 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title2.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
-        let titleRegex3 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title3.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
+        const titleRegex = new RegExp("^(\\s)?" + title.replace(/\*/g, '\\*') + `( ${year})?(!)?`, 'i');
+        const titleRegex2 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title2.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
+        const titleRegex3 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title3.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
         persianSummary = persianSummary.replace(titleRegex, '');
         persianSummary = persianSummary.replace(titleRegex2, '');
         persianSummary = persianSummary.replace(titleRegex3, '');
 
-        let titleRegex4 = new RegExp(`در خلاصه داستان (سریال|فیلم|فيلم) ${title.replace(/\*/g, '\\*')} آمده است :`, 'i');
-        let titleRegex5 = new RegExp(`در خلاصه داستان (سریال|فیلم|فيلم) ${title.replace(/\*/g, '\\*')} آمده است که , `, 'i');
+        const titleRegex4 = new RegExp(`در خلاصه داستان (سریال|فیلم|فيلم) ${title.replace(/\*/g, '\\*')} آمده است :`, 'i');
+        const titleRegex5 = new RegExp(`در خلاصه داستان (سریال|فیلم|فيلم) ${title.replace(/\*/g, '\\*')} آمده است که , `, 'i');
         persianSummary = persianSummary.replace(titleRegex4, '');
         persianSummary = persianSummary.replace(titleRegex5, '');
     } catch (error) {
