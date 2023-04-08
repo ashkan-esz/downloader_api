@@ -11,7 +11,7 @@ export async function compressImage(responseData) {
     if (responseData.length > 1024 * 1024) {
         let tempQuality = 50 - (Math.ceil(responseData.length / (1024 * 1024)) - 2) * 5;
         let sharpQuality = Math.max(Math.min(35, tempQuality), 10);
-        let temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
+        let temp = await sharp(responseData, {failOn: 'error'}).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
         let counter = 0;
         while ((temp.length / (1024 * 1024)) > 1 && counter < 4 && sharpQuality > 10) {
             counter++;
@@ -19,13 +19,13 @@ export async function compressImage(responseData) {
             if (sharpQuality <= 0) {
                 sharpQuality = 10;
             }
-            temp = await sharp(responseData).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
+            temp = await sharp(responseData, {failOn: 'error'}).jpeg({quality: sharpQuality, mozjpeg: true}).toBuffer();
         }
         dataBuffer = temp;
     } else {
         let metadata = await sharp(responseData).metadata();
         if (metadata.format !== 'jpg' && metadata.format !== 'jpeg') {
-            dataBuffer = await sharp(responseData).jpeg({quality: 75, mozjpeg: true}).toBuffer();
+            dataBuffer = await sharp(responseData, {failOn: 'error'}).jpeg({quality: 75, mozjpeg: true}).toBuffer();
         }
     }
     return dataBuffer;
@@ -48,7 +48,7 @@ export async function getImageThumbnail(inputImage, downloadFile = false) {
             fileSize = Number(downloadResult.headers['content-length']) || 0;
         }
 
-        const image = sharp(inputImage).rotate();
+        const image = sharp(inputImage, {failOn: 'error'}).rotate();
         const metadata = await image.metadata();
 
         let size = Math.min(metadata.width, 128);

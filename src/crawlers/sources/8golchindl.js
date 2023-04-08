@@ -93,9 +93,9 @@ async function search_title(link, i, $) {
                     downloadLinks = handleLinksExtraStuff(downloadLinks);
                     if (isCollection) {
                         title += ' collection';
-                        addTitleNameToInfo(downloadLinks);
+                        addTitleNameToInfo(downloadLinks, title, year);
                     } else if (isCeremony) {
-                        addTitleNameToInfo(downloadLinks);
+                        addTitleNameToInfo(downloadLinks, title, year);
                     }
 
                     let sourceData = {

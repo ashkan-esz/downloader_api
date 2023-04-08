@@ -117,7 +117,6 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         if (handleErrorResult === "retry") {
             return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         }
-        await saveError(error);
         return null;
     }
 }
@@ -180,7 +179,6 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         if (handleErrorResult === "retry") {
             return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers);
         }
-        await saveError(error);
         return null;
     }
 }
@@ -233,6 +231,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             }
         }
     }
+    await saveError(error);
     return "return null";
 }
 
