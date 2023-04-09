@@ -10,13 +10,15 @@ import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
 import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
+import {changePageLinkStateFromCrawlerStatus} from "../crawlerStatus.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
-export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName) {
+export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName, pageLink) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'new title: uploading poster to s3');
         let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, titleModel.posters[0].url);
         if (s3poster) {
             titleModel.poster_s3 = s3poster;
@@ -38,6 +40,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
             titleModel.posters = sortPosters(titleModel.posters);
         }
         if (!titleModel.posters[0].thumbnail) {
+            changePageLinkStateFromCrawlerStatus(pageLink, 'new title: generating thumbnail');
             let thumbnailData = await getImageThumbnail(titleModel.posters[0].url, true);
             if (thumbnailData) {
                 titleModel.posters[0].size = thumbnailData.fileSize;
@@ -46,6 +49,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    changePageLinkStateFromCrawlerStatus(pageLink, 'new title: calling omdb/tvmaze apis');
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
 
@@ -77,16 +81,19 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     }
 
     if (titleModel.type.includes('serial')) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'new title: handling seasons fields');
         let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
     if (titleModel.type.includes('anime')) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'new title: calling jikan api');
         let jikanApiData = await getJikanApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.jikanID);
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, 'new title: uploading youtube trailer to s3');
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiFields.youtubeTrailer, {});
                     titleModel = {...titleModel, ...trailerUploadFields};
                 }
@@ -104,6 +111,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                 }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
                 titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
+                changePageLinkStateFromCrawlerStatus(pageLink, 'new title: adding related titles');
                 titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
             }
         }
@@ -118,7 +126,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName) {
+export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName, pageLink) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (getDatesBetween(now, apiUpdateDate).hours < 8) {
@@ -129,7 +137,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         apiUpdateDate: now,
     };
 
+    changePageLinkStateFromCrawlerStatus(pageLink, 'update title: checking poster');
     if (sitePoster && (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'update title: uploading poster to s3');
         let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, sitePoster, 0, true);
         if (s3poster) {
             db_data.poster_s3 = s3poster;
@@ -137,6 +147,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    changePageLinkStateFromCrawlerStatus(pageLink, 'update title: calling omdb/tvmaze apis');
     let {omdbApiData, tvmazeApiData} = await handleApiCalls(db_data);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
 
@@ -170,11 +181,13 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     }
 
     if (db_data.type.includes('serial')) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'update title: handling seasons fields');
         let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
     if (db_data.type.includes('anime') || siteType.includes('anime')) {
+        changePageLinkStateFromCrawlerStatus(pageLink, 'update title: calling jikan api');
         let jikanApiData = await getJikanApiData(db_data.title, db_data.year, db_data.type, db_data.jikanID);
         if (jikanApiData) {
             let temp = handleTypeAndTitleUpdate(db_data, jikanApiData.titleObj, siteType);
@@ -183,6 +196,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
                 if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, 'update title: uploading youtube trailer to s3');
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, jikanApiFields.youtubeTrailer, {});
                     db_data = {...db_data, ...trailerUploadFields};
                     updateFields = {...updateFields, ...trailerUploadFields};
@@ -197,6 +211,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                 currentRating.myAnimeList = jikanApiFields.myAnimeListScore;
                 db_data.rating = currentRating;
                 updateFields.rating = currentRating;
+                changePageLinkStateFromCrawlerStatus(pageLink, 'update title: adding related titles');
                 let newRelatedTitles = await getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
                 db_data.relatedTitles = newRelatedTitles;
                 updateFields.relatedTitles = newRelatedTitles;

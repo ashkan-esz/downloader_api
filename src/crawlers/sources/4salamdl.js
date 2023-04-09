@@ -57,7 +57,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -65,7 +65,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks[0].info === '') {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -73,7 +73,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }

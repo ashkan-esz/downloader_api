@@ -2,43 +2,53 @@ import dotenv from 'dotenv';
 
 dotenv.config({path: './.env'});
 
-export default {
+export default Object.freeze({
     nodeEnv: process.env.NODE_ENV,
     port: process.env.PORT || 3000,
     printErrors: process.env.PRINT_ERRORS,
-    disableCrawler: process.env.DISABLE_CRAWLER,
+    crawler: Object.freeze({
+        concurrency: process.env.CRAWLER_CONCURRENCY,
+        disable: process.env.DISABLE_CRAWLER === 'true',
+        pauseOnHighLoad: process.env.PAUSE_CRAWLER_ON_HIGH_LOAD !== 'false',
+        totalMemory: Number(process.env.CRAWLER_TOTAL_MEMORY || 500),
+        memoryLimit: Number(process.env.CRAWLER_MEMORY_LIMIT || 0),
+        cpuLimit: Number(process.env.CRAWLER_CPU_LIMIT || 95),
+    }),
     disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
-    crawlerConcurrency: process.env.CRAWLER_CONCURRENCY,
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,
     imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
     omdbApiKeys: getOmdbApiKeys(),
-    cloudStorage: {
+    cloudStorage: Object.freeze({
         endpoint: process.env.CLOUAD_STORAGE_ENDPOINT,
         accessKeyId: process.env.CLOUAD_STORAGE_ACCESS_KEY,
         secretAccessKey: process.env.CLOUAD_STORAGE_SECRET_ACCESS_KEY,
         websiteEndPoint: process.env.CLOUAD_STORAGE_WEBSITE_ENDPOINT,
         bucketNamePrefix: process.env.BUCKET_NAME_PREFIX || '',
-    },
+    }),
     remoteBrowser: getRemoteBrowsers(),
-    email: {
+    email: Object.freeze({
         username: process.env.EMAIL_USERNAME,
         password: process.env.EMAIL_PASSWORD,
-    },
-    jwt: {
+    }),
+    jwt: Object.freeze({
         accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
         refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
         accessTokenExpire: '1h',
         refreshTokenExpire: '180d',
-    },
+    }),
     corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),
-    corsAllowedOrigins_local: [
+    corsAllowedOrigins_local: Object.freeze([
         'http://127.0.0.1:3000',
         'http://localhost:3000',
         'http://127.0.0.1:5000',
         'http://localhost:5000',
-    ],
-}
+    ]),
+    diskSpace: Object.freeze({
+        totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 500),
+        defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
+    }),
+})
 
 function getRemoteBrowsers() {
     let remoteBrowsers = [];

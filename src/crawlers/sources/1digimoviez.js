@@ -66,7 +66,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
                     getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
@@ -76,7 +76,7 @@ async function search_title(link, i, $, url) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
                             getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {

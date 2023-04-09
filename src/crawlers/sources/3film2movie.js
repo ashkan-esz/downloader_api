@@ -73,7 +73,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
@@ -86,7 +86,7 @@ async function search_title(link, i) {
                         downloadLinks[0].link.match(/\.s\d+e\d+\./i) ||
                         downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i))) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -94,7 +94,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }

@@ -59,7 +59,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -67,7 +67,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length === 0) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }

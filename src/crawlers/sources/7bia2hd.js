@@ -51,7 +51,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !checkPersianSerial(title)) {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {

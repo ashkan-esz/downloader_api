@@ -16,22 +16,26 @@ const jobTypes = ["email", "computeUserJob", "userAnalysisJob"];
 
 export async function startAgenda() {
     try {
-        agenda.define("start crawler cycle", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            if (config.disableCrawler !== 'true') {
+        agenda.define("start crawler cycle", {
+            concurrency: 1,
+            priority: "highest",
+            shouldSaveResult: true
+        }, async (job) => {
+            if (!config.crawler.disable) {
                 await removeCompletedJobs();
                 await crawlerCycle();
             }
         });
 
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            if (config.disableCrawler !== 'true') {
+            if (!config.crawler.disable) {
                 await removeCompletedJobs();
                 await crawler('', 0);
             }
         });
 
         agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
-            if (config.disableCrawler !== 'true') {
+            if (!config.crawler.disable) {
                 await removeCompletedJobs();
                 await Promise.allSettled([
                     updateImdbData(),
@@ -83,6 +87,9 @@ process.on("SIGTERM", graceful);
 process.on("SIGINT", graceful);
 
 async function graceful() {
-    await agenda.stop();
-    process.exit(0);
+    try {
+        await agenda.stop();
+        process.exit(0);
+    } catch (error) {
+    }
 }

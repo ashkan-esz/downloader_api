@@ -11,9 +11,10 @@ import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUt
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
-import {updatePageNumberCrawlerStatus} from "./crawlerStatus.js";
+import {addPageLinkToCrawlerStatus, updatePageNumberCrawlerStatus} from "./crawlerStatus.js";
 import {CookieJar} from 'tough-cookie';
 import {wrapper} from "axios-cookiejar-support";
+import {checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -47,9 +48,10 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
         if (!url || page_count === 0) {
             return lastPageNumber;
         }
-        const concurrencyNumber = getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser);
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, page_count);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
+            await pauseCrawler();
             try {
                 let {
                     $,
@@ -58,13 +60,14 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                     responseUrl,
                     pageTitle
                 } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage');
-                updatePageNumberCrawlerStatus(i);
+                updatePageNumberCrawlerStatus(i, page_count);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
                     break;
                 }
-                for (let j = 0; j < links.length; j++) {
+                for (let j = 0, _length = links.length; j < _length; j++) {
+                    await pauseCrawler();
                     if (config.nodeEnv === 'dev') {
                         await searchCB($(links[j]), i, $, url);
                     } else {
@@ -87,10 +90,14 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
     }
 }
 
-export async function search_in_title_page(sourceConfig, title, page_link, type, getFileData,
+export async function search_in_title_page(sourceConfig, title, type, page_link, pageNumber, getFileData,
                                            getQualitySample = null, extraChecker = null, getSeasonEpisodeFromInfo = false,
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null) {
     try {
+        if (!sourceLinkData) {
+            addPageLinkToCrawlerStatus(page_link, pageNumber);
+        }
+        await pauseCrawler();
         let {
             $,
             links,
@@ -150,7 +157,7 @@ export async function search_in_title_page(sourceConfig, title, page_link, type,
                 extraSearchLinks.push(link);
 
                 let newPageLink = sourceLinkData ? (page_link + link) : link;
-                let resultPromise = search_in_title_page(sourceConfig, title, newPageLink, type, extraSearch_getFileData,
+                let resultPromise = search_in_title_page(sourceConfig, title, type, newPageLink, pageNumber, extraSearch_getFileData,
                     getQualitySample, extraChecker, false,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
@@ -202,6 +209,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
         let $, links = [];
 
         try {
+            await pauseCrawler();
             let pageData = null;
             if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                 pageData = await getPageData(url, sourceConfig.sourceName, sourceConfig.sourceAuthStatus, true);
@@ -300,17 +308,17 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
             if (pageNumber > 1 && !responseUrl.includes('page')) {
                 return true;
             }
-            for (let i = 0; i < links.length; i++) {
-                let linkText = $(links[i]).text();
-                let linkTitle = $(links[i]).attr('title');
+            for (let i = 0, _length = links.length; i < _length; i++) {
+                const linkText = $(links[i]).text();
+                const linkTitle = $(links[i]).attr('title');
                 if (digimovie_checkTitle(linkText, linkTitle, responseUrl)) {
                     return false;
                 }
             }
             return true;
         } else if (sourceName === "animelist") {
-            let $div = $('div');
-            for (let i = 0; i < $div.length; i++) {
+            const $div = $('div');
+            for (let i = 0, _length = $div.length; i < _length; i++) {
                 if ($($div[i]).hasClass('character-movie')) {
                     return false;
                 }
@@ -328,15 +336,19 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
     }
 }
 
-function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
+async function getConcurrencyNumber(sourceName, needHeadlessBrowser, pageCount) {
     let concurrencyNumber = 0;
-    if (config.crawlerConcurrency) {
-        concurrencyNumber = Number(config.crawlerConcurrency);
+    if (config.crawler.concurrency) {
+        concurrencyNumber = Number(config.crawler.concurrency);
     }
     if (concurrencyNumber === 0) {
         concurrencyNumber = (sourceName === "animelist" || sourceName === "golchindl" || needHeadlessBrowser)
             ? 9
             : 12;
+    }
+    if (pageCount < 3 && await checkServerIsIdle()) {
+        //use higher concurrency when mode is 0 and server is idle
+        concurrencyNumber += 2;
     }
     return concurrencyNumber;
 }

@@ -62,7 +62,7 @@ async function search_title(link, i, $) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
                     null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
@@ -71,7 +71,7 @@ async function search_title(link, i, $) {
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
@@ -81,7 +81,7 @@ async function search_title(link, i, $) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, pageLink, type, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {

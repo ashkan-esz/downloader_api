@@ -1,6 +1,6 @@
 import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
-import {getDatesBetween} from "./utils.js";
+import {getDatesBetween, getDecodedLink} from "./utils.js";
 
 const crawlerStatus = {
     crawlId: '',
@@ -8,6 +8,7 @@ const crawlerStatus = {
     isCrawlCycle: false,
     crawledSources: [],
     crawlingSource: null,
+    totalPausedDuration: 0,
     lastCrawl: {
         startTime: 0,
         endTime: 0,
@@ -21,29 +22,53 @@ const crawlerStatus = {
     },
 };
 
-const crawlerStatus_titles = {
+const crawlerStatus_temp = {
     pageNumber: 0,
+    pageCount: 0,
     pageLinks: [],
+    isPaused: false,
+    pausedFrom: 0,
 }
 
 
 export function getCrawlerStatusObj() {
-    return ({...crawlerStatus, ...crawlerStatus_titles});
+    return ({...crawlerStatus, ...crawlerStatus_temp});
 }
 
 //-----------------------------------------
 //-----------------------------------------
 
-export function updatePageNumberCrawlerStatus(pageNumber) {
-    crawlerStatus_titles.pageNumber = pageNumber;
+export function updatePageNumberCrawlerStatus(pageNumber, pageCount) {
+    crawlerStatus_temp.pageNumber = pageNumber;
+    crawlerStatus_temp.pageCount = pageCount;
 }
 
-export function addPageLinkToCrawlerStatus(pageLink) {
-    crawlerStatus_titles.pageLinks.push(pageLink);
+export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
+    pageLink = getDecodedLink(pageLink);
+    if (!crawlerStatus_temp.pageLinks.find(item => item.url === pageLink)) {
+        crawlerStatus_temp.pageLinks.push({
+            url: pageLink,
+            pageNumber: pageNumber,
+            time: new Date(),
+            state: 'getting page data',
+            stateTime: new Date()
+        });
+    }
 }
+
+export function changePageLinkStateFromCrawlerStatus(pageLink, state) {
+    pageLink = getDecodedLink(pageLink);
+    let data = crawlerStatus_temp.pageLinks.find(item => item.url === pageLink);
+    if (data) {
+        data.state = state;
+        data.stateTime = new Date();
+    }
+}
+
 
 export function removePageLinkToCrawlerStatus(pageLink) {
-    crawlerStatus_titles.pageLinks = crawlerStatus_titles.pageLinks.filter(item => item !== pageLink);
+    pageLink = getDecodedLink(pageLink);
+    crawlerStatus_temp.pageLinks = crawlerStatus_temp.pageLinks.filter(item => item.url !== pageLink);
 }
 
 //-----------------------------------------
@@ -58,6 +83,7 @@ export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
         name: sourceName,
         startTime: new Date,
         crawlMode: crawlMode,
+        pausedDuration: 0,
     }
     await saveCrawlerLog({
         ...crawlerStatus.lastCrawl,
@@ -85,6 +111,27 @@ export async function updateCrawlerStatus_sourceEnd(lastPages) {
 //-----------------------------------------
 //-----------------------------------------
 
+export function saveCrawlerPause() {
+    if (!crawlerStatus_temp.isPaused) {
+        crawlerStatus_temp.isPaused = true;
+        crawlerStatus_temp.pausedFrom = Date.now();
+    }
+}
+
+export function removeCrawlerPause() {
+    if (crawlerStatus_temp.isPaused) {
+        const pauseDuration = (Date.now() - crawlerStatus_temp.pausedFrom) / 1000;
+        crawlerStatus_temp.isPaused = false;
+        crawlerStatus.totalPausedDuration += pauseDuration;
+        crawlerStatus_temp.pausedFrom = 0;
+        if (crawlerStatus.crawlingSource) {
+            crawlerStatus.crawlingSource.pausedDuration += pauseDuration;
+        }
+    }
+}
+
+//-----------------------------------------
+//-----------------------------------------
 
 export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, crawlMode) {
     crawlerStatus.crawlId = uuidv4();
@@ -92,6 +139,7 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, 
     crawlerStatus.isCrawlCycle = isCrawlCycle;
     crawlerStatus.crawledSources = [];
     crawlerStatus.crawlingSource = null;
+    crawlerStatus.totalPausedDuration = 0;
     crawlerStatus.lastCrawl = {
         startTime: startTime,
         endTime: 0,
@@ -103,8 +151,10 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, 
         isCrawlCycle: isCrawlCycle,
         crawlMode: crawlMode,
     };
-    crawlerStatus_titles.pageNumber = 0;
-    crawlerStatus_titles.pageLinks = [];
+    crawlerStatus_temp.pageNumber = 0;
+    crawlerStatus_temp.pageLinks = [];
+    crawlerStatus_temp.isPaused = false;
+    crawlerStatus_temp.pausedFrom = 0;
     await saveCrawlerLog(crawlerStatus.lastCrawl);
 }
 
