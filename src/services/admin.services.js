@@ -5,6 +5,7 @@ import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.j
 import {getCrawlerLogsInTimes, getUserCountsInTimes} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
+import {getServerResourcesStatus} from "../utils/serverStatus.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -125,6 +126,14 @@ export async function getActiveUsersAnalysis(startTime, endTime, skip, limit) {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getServerStatus() {
+    let result = await getServerResourcesStatus();
+    if (result === null) {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
     return generateServiceResult({data: result}, 200, '');
 }

@@ -75,5 +75,9 @@ router.get('/analysis/activeUsers/:startTime/:endTime/:skip/:limit',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getActiveUsersAnalysis);
 
+//admin/server/status
+router.get('/server/status',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerStatus);
 
 export default router;

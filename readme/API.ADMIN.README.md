@@ -24,6 +24,7 @@
 - [PUT admin/crawler/editSource/[sourceName]](#put-admincrawlereditsourcesourcename)
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
 - [GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisactiveusersstarttimeendtimeskiplimit)
+- [GET /admin/server/status](#get-adminserverstatus)
 
 <br />
 <br />
@@ -97,6 +98,10 @@ Query parameters:
 
 <br />
 
+### GET /admin/server/status
+> return resource status of the server
+
+<br />
 
 
 # API

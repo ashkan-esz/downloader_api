@@ -46,3 +46,9 @@ export async function getActiveUsersAnalysis(req, res) {
 
     return res.status(result.responseData.code).json(result.responseData);
 }
+
+export async function getServerStatus(req, res) {
+    let result = await adminServices.getServerStatus();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
