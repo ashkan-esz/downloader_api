@@ -12,6 +12,7 @@ import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
 import {getDatesBetween} from "./utils.js";
 import {changePageLinkStateFromCrawlerStatus, removePageLinkToCrawlerStatus} from "./crawlerStatus.js";
 import {saveError} from "../error/saveError.js";
+import {checkNeedForceStopCrawler} from "./crawlerController.js";
 
 
 export default async function save(title, type, year, sourceData) {
@@ -27,6 +28,10 @@ export default async function save(title, type, year, sourceData) {
             cookies
         } = sourceData;
         changePageLinkStateFromCrawlerStatus(pageLink, 'checking db');
+        if (checkNeedForceStopCrawler()) {
+            removePageLinkToCrawlerStatus(pageLink);
+            return;
+        }
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
         let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
@@ -34,6 +39,10 @@ export default async function save(title, type, year, sourceData) {
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
                 changePageLinkStateFromCrawlerStatus(pageLink, 'new title');
+                if (checkNeedForceStopCrawler()) {
+                    removePageLinkToCrawlerStatus(pageLink);
+                    return;
+                }
                 let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName, pageLink);
                 if (result.titleModel.type.includes('movie')) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
@@ -57,6 +66,10 @@ export default async function save(title, type, year, sourceData) {
         }
 
         changePageLinkStateFromCrawlerStatus(pageLink, 'update title');
+        if (checkNeedForceStopCrawler()) {
+            removePageLinkToCrawlerStatus(pageLink);
+            return;
+        }
         let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink);
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceConfig.sourceName, sourceConfig.vpnStatus);
         await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink);

@@ -11,6 +11,18 @@ const validations = Object.freeze({
         .trim().isInt({min: 0}).withMessage('Invalid parameter limit :: Number 1 to Infinite')
         .toInt(),
 
+    duration: param('duration')
+        .trim().isInt({min: 1, max: 120}).withMessage('Invalid parameter duration :: Number 1 to 120')
+        .toInt(),
+
+    force: param('force')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter force :: (true|false)')
+        .toBoolean(),
+
     startTime: param('startTime')
         .custom((value) => {
             try {

@@ -1,8 +1,9 @@
 ## API Parameters
 
-| param name     | Values | Description                     | Required |
-|----------------|--------|---------------------------------|----------|
-
+| param name | Values         | Description              | Required |
+|------------|----------------|--------------------------|----------|
+| duration   | Number [1-120] | amount of time in minute | true     |
+| force      | Boolean        | amount of time in minute | true     |
 
 > they are case-insensitive.
 
@@ -18,6 +19,9 @@
 - [POST /admin/login](#post-adminlogin)
 - [PUT /admin/getToken](#put-admingettoken)
 - [PUT /admin/crawler/start](#put-admincrawlerstart)
+- [PUT /admin/crawler/pause/[duration]](#put-admincrawlerpauseduration)
+- [PUT /admin/crawler/resume/[force]](#put-admincrawlerresumeforce)
+- [PUT /admin/crawler/stop](#put-admincrawlerstop)
 - [GET /admin/crawler/status](#get-admincrawlerstatus)
 - [GET admin/crawler/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerhistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/sources/[checkWarnings]](#get-admincrawlersourcescheckwarnings)
@@ -62,9 +66,23 @@ Query parameters:
 
 <br />
 
+### PUT /admin/crawler/pause/[duration]
+> pause crawler for `duration` minutes.
+
+<br />
+
+### PUT /admin/crawler/resume/[force]
+> resume the paused crawler session.
+
+<br />
+
+### PUT /admin/crawler/stop
+> stop the current crawler session.
+
+<br />
 
 ### GET /admin/crawler/status
-> return status of the crawler
+> return status of the crawler.
 
 <br />
 

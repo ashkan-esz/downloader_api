@@ -30,7 +30,7 @@ export async function startAgenda() {
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
             if (!config.crawler.disable) {
                 await removeCompletedJobs();
-                await crawler('', 0);
+                await crawler('', {crawlMode: 0});
             }
         });
 

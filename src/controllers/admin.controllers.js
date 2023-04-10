@@ -13,6 +13,26 @@ export async function getCrawlerStatus(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function manualPauseCrawler(req, res) {
+    let {duration} = req.params;
+    let result = await adminServices.manualPauseCrawler(duration);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function resumeCrawler(req, res) {
+    let {force} = req.params;
+    let result = await adminServices.resumeCrawler(force);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function manualStopCrawler(req, res) {
+    let result = await adminServices.manualStopCrawler();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 export async function getCrawlingHistory(req, res) {
     let {startTime, endTime, skip, limit} = req.params;
     let result = await adminServices.getCrawlingHistory(startTime, endTime, skip, limit);

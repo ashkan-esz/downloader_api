@@ -11,10 +11,14 @@ import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUt
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
-import {addPageLinkToCrawlerStatus, updatePageNumberCrawlerStatus} from "./crawlerStatus.js";
+import {
+    addPageLinkToCrawlerStatus,
+    removePageLinkToCrawlerStatus,
+    updatePageNumberCrawlerStatus
+} from "./crawlerStatus.js";
 import {CookieJar} from 'tough-cookie';
 import {wrapper} from "axios-cookiejar-support";
-import {checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
+import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -51,6 +55,9 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, page_count);
         const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
+            if (checkNeedForceStopCrawler()) {
+                break;
+            }
             await pauseCrawler();
             try {
                 let {
@@ -67,6 +74,9 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                     break;
                 }
                 for (let j = 0, _length = links.length; j < _length; j++) {
+                    if (checkNeedForceStopCrawler()) {
+                        break;
+                    }
                     await pauseCrawler();
                     if (config.nodeEnv === 'dev') {
                         await searchCB($(links[j]), i, $, url);
@@ -97,6 +107,9 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
         if (!sourceLinkData) {
             addPageLinkToCrawlerStatus(page_link, pageNumber);
         }
+        if (checkNeedForceStopCrawler()) {
+            return null;
+        }
         await pauseCrawler();
         let {
             $,
@@ -105,6 +118,9 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
             pageContent,
         } = await getLinks(page_link, sourceConfig, 'movieDataPage', sourceLinkData);
         if ($ === null || $ === undefined) {
+            return null;
+        }
+        if (checkNeedForceStopCrawler()) {
             return null;
         }
 
@@ -191,6 +207,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
         return {downloadLinks: downloadLinks, $2: $, cookies, pageContent};
     } catch (error) {
         saveError(error);
+        removePageLinkToCrawlerStatus(page_link);
         return null;
     }
 }
@@ -209,6 +226,9 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
         let $, links = [];
 
         try {
+            if (checkNeedForceStopCrawler()) {
+                return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
+            }
             await pauseCrawler();
             let pageData = null;
             if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {

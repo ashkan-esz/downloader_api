@@ -2,6 +2,7 @@ import {Router} from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import middlewares from "../middlewares/index.js";
 import {usersControllers, adminControllers} from '../../controllers/index.js';
+import {resumeCrawler} from "../../services/admin.services.js";
 
 const router = Router();
 
@@ -27,6 +28,25 @@ router.put('/crawler/start',
         ['sourceName_query', 'crawlerMode', 'handleDomainChange', 'handleDomainChangeOnly', 'handleCastUpdate']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']), adminControllers.startCrawler);
+
+//admin/crawler/pause/:duration
+router.put('/crawler/pause/:duration',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['duration']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin']), adminControllers.manualPauseCrawler);
+
+//admin/crawler/resume/:force
+router.put('/crawler/resume/:force',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['force']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin']), adminControllers.resumeCrawler);
+
+//admin/crawler/stop
+router.put('/crawler/stop',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin']), adminControllers.manualStopCrawler);
 
 //admin/crawler/status
 router.get('/crawler/status',

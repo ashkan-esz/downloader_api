@@ -6,10 +6,12 @@ import {getCrawlerLogsInTimes, getUserCountsInTimes} from "../data/db/serverAnal
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
+import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/crawlerController.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
-    let result = await crawler(sourceName, mode, false, {
+    let result = await crawler(sourceName, {
+        crawlMode: mode,
         handleDomainChange,
         handleCastUpdate,
         handleDomainChangeOnly,
@@ -18,6 +20,30 @@ export async function startCrawler(sourceName, mode, handleDomainChange, handleD
         return generateServiceResult({data: result}, 500, result.message);
     }
     return generateServiceResult({data: result}, 200, '');
+}
+
+export async function manualPauseCrawler(duration) {
+    let result = pauseCrawler_manual(duration);
+    if (result === "ok") {
+        return generateServiceResult({data: result}, 200, '');
+    }
+    return generateServiceResult({data: ""}, 409, result);
+}
+
+export async function resumeCrawler(force) {
+    let result = resumeCrawler_manual(force);
+    if (result === "ok") {
+        return generateServiceResult({data: result}, 200, '');
+    }
+    return generateServiceResult({data: ""}, 409, result);
+}
+
+export async function manualStopCrawler(duration) {
+    let result = stopCrawler_manual(duration);
+    if (result === "ok") {
+        return generateServiceResult({data: result}, 200, '');
+    }
+    return generateServiceResult({data: ""}, 409, result);
 }
 
 export async function getCrawlerStatus() {
