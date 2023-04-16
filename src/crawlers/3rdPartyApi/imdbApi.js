@@ -12,6 +12,7 @@ import {
     checkNeedTrailerUpload,
     uploadTitlePosterAndAddToTitleModel
 } from "../posterAndTrailer.js";
+import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 
 let imdbApiKey = [];
 
@@ -395,7 +396,13 @@ async function handleApiCall(url) {
                     data.errorMessage.includes('Invalid API Key')
                 )) {
                 selectedApiKey.reachedMax = true;
-                Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                if (data.errorMessage.includes('Invalid API Key')) {
+                    const message = `Invalid imdb api key: ${selectedApiKey.apikey}`;
+                    Sentry.captureMessage(message);
+                    await saveCrawlerWarning(message);
+                } else {
+                    Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                }
                 //get next active api key
                 selectedApiKey = imdbApiKey.filter(item => !item.reachedMax).sort((a, b) => a.callCounter - b.callCounter)[0];
                 if (selectedApiKey) {

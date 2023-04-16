@@ -174,10 +174,179 @@ export async function getCrawlerLogsInTimes(startTime, endTime, skip, limit) {
 //-----------------------------------------
 //-----------------------------------------
 
+export async function saveCrawlerWarning(message) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        let now = new Date();
+        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+
+        let newWarning = {
+            message: message,
+            date: now,
+            resolved: false,
+            resolvedDate: 0,
+        };
+
+        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+                'warnings.message': newWarning.message,
+            }, {
+                $set: {
+                    'warnings.$': newWarning,
+                }
+            });
+
+            if (updateResult.modifiedCount === 0) {
+                //new warning
+                await collection.updateOne({
+                    _id: bucket[0]._id,
+                }, {
+                    $push: {
+                        warnings: newWarning
+                    }
+                });
+            }
+        } else {
+            //create new bucket
+            let newBucket = getNewBucket(yearAndMonth);
+            newBucket.warnings.push(newWarning);
+            await collection.insertOne(newBucket);
+        }
+
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function resolveCrawlerWarning(message) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        let now = new Date();
+        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+
+        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+                'warnings.message': message,
+                'warnings.resolved': false,
+            }, {
+                $set: {
+                    'warnings.$.resolved': true,
+                    'warnings.$.resolvedDate': new Date(),
+                }
+            });
+
+            if (updateResult.modifiedCount === 0) {
+                return "not found";
+            }
+        } else {
+            return "not found";
+        }
+
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getCrawlerWarningsInTimes(startTime, endTime, skip, limit) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+
+        let aggregationPipeline = [
+            {
+                $match: {
+                    'warnings.date': {$gte: startTime, $lte: endTime},
+                }
+            },
+            {
+                $unwind: '$warnings',
+            },
+            {
+                $match: {
+                    'warnings.date': {$gte: startTime, $lte: endTime},
+                }
+            },
+            {
+                $sort: {
+                    'warnings.date': 1
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$warnings",
+                }
+            },
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getCrawlerCurrentWarnings() {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        const now = new Date();
+        const yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let aggregationPipeline = [
+            {
+                $match: {
+                    yearAndMonth: yearAndMonth,
+                }
+            },
+            {
+                $limit: 1,
+            },
+            {
+                $unwind: '$warnings',
+            },
+            {
+                $match: {
+                    'warnings.resolved': false,
+                }
+            },
+            {
+                $sort: {
+                    'warnings.date': 1
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$warnings",
+                }
+            },
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
 function getNewBucket(yearAndMonth) {
     return ({
         yearAndMonth: yearAndMonth,
         userCounts: [],
         crawlerLogs: [],
+        warnings: [],
     });
 }

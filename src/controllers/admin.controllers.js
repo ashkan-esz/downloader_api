@@ -40,8 +40,21 @@ export async function getCrawlingHistory(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function getCrawlerWarningsHistory(req, res) {
+    let {startTime, endTime, skip, limit} = req.params;
+    let result = await adminServices.getCrawlerWarningsHistory(startTime, endTime, skip, limit);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 export async function getCrawlerSources(req, res) {
-    let result = await adminServices.getCrawlerSources(req.params.checkWarnings);
+    let result = await adminServices.getCrawlerSources();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function getCrawlerWarnings(req, res) {
+    let result = await adminServices.getCrawlerWarnings();
 
     return res.status(result.responseData.code).json(result.responseData);
 }

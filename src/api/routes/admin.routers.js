@@ -2,7 +2,6 @@ import {Router} from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import middlewares from "../middlewares/index.js";
 import {usersControllers, adminControllers} from '../../controllers/index.js';
-import {resumeCrawler} from "../../services/admin.services.js";
 
 const router = Router();
 
@@ -60,12 +59,22 @@ router.get('/crawler/history/:startTime/:endTime/:skip/:limit',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlingHistory);
 
-//admin/crawler/sources/:checkWarnings
-router.get('/crawler/sources/:checkWarnings',
+//admin/crawler/warnings/history/:startTime/:endTime/:skip/:limit
+router.get('/crawler/warnings/history/:startTime/:endTime/:skip/:limit',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(["checkWarnings"]),
+    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerWarningsHistory);
+
+//admin/crawler/sources
+router.get('/crawler/sources',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerSources);
+
+//admin/crawler/warnings
+router.get('/crawler/warnings',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerWarnings);
 
 //admin/crawler/editSource/:sourceName
 router.put('/crawler/editSource/:sourceName',

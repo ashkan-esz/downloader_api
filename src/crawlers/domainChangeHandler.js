@@ -7,6 +7,7 @@ import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
+import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
@@ -156,13 +157,19 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
 
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
-                let sourceCookies = sourcesObj[sourceName].cookies;
-                let disabled = sourcesObj[sourceName].disabled;
+                const sourceCookies = sourcesObj[sourceName].cookies;
+                const disabled = sourcesObj[sourceName].disabled;
+                const expireCookieMessage = `source (${sourceName}) cookies expired (crawler skipped --domainChangeHandler).`;
+                const disabledSourceMessage = `source (${sourceName}) is disabled (crawler skipped --domainChangeHandler).`;
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired (crawler skipped --domainChangeHandler).`);
+                    Sentry.captureMessage('Warning: ' + expireCookieMessage);
+                    await saveCrawlerWarning(expireCookieMessage);
                 } else if (disabled) {
-                    Sentry.captureMessage(`Warning: source (${sourceName}) is disabled (crawler skipped --domainChangeHandler).`);
+                    Sentry.captureMessage('Warning: ' + disabledSourceMessage);
+                    await saveCrawlerWarning(disabledSourceMessage);
                 } else {
+                    await resolveCrawlerWarning(expireCookieMessage);
+                    await resolveCrawlerWarning(disabledSourceMessage);
                     let crawled = false;
                     if (!fullyCrawledSources.includes(sourceName)) {
                         await findSource.starter();

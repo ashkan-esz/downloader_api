@@ -13,6 +13,7 @@ import {
     updateCrawlerStatus_sourceEnd,
     updateCrawlerStatus_sourceStart,
 } from "./crawlerStatus.js";
+import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 
 export let _handleCastUpdate = true;
@@ -118,14 +119,20 @@ export async function crawler(sourceName, {
                 for (let i = 0; i < sourcesArray.length; i++) {
                     let sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
                     let disabled = sourcesObj[sourcesArray[i].name].disabled;
+                    const expireCookieMessage = `source (${sourcesArray[i].name}) cookies expired (crawler skipped).`;
+                    const disabledSourceMessage = `source (${sourcesArray[i].name}) is disabled (crawler skipped).`;
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) cookies expired (crawler skipped).`);
+                        Sentry.captureMessage('Warning: ' + expireCookieMessage);
+                        await saveCrawlerWarning(expireCookieMessage);
                         continue;
                     }
                     if (disabled) {
-                        Sentry.captureMessage(`Warning: source (${sourcesArray[i].name}) is disabled (crawler skipped).`);
+                        Sentry.captureMessage('Warning: ' + disabledSourceMessage);
+                        await saveCrawlerWarning(disabledSourceMessage);
                         continue;
                     }
+                    await resolveCrawlerWarning(expireCookieMessage);
+                    await resolveCrawlerWarning(disabledSourceMessage);
                     await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
                     let lastPages = await sourcesArray[i].starter();
                     await updateCrawlerStatus_sourceEnd(lastPages);
@@ -141,13 +148,19 @@ export async function crawler(sourceName, {
             } else {
                 let findSource = sourcesArray.find(x => x.name === sourceName);
                 if (findSource) {
-                    let sourceCookies = sourcesObj[sourceName].cookies;
-                    let disabled = sourcesObj[sourceName].disabled;
+                    const sourceCookies = sourcesObj[sourceName].cookies;
+                    const disabled = sourcesObj[sourceName].disabled;
+                    const expireCookieMessage = `source (${sourceName}) cookies expired (crawler skipped).`;
+                    const disabledSourceMessage = `source (${sourceName}) is disabled (crawler skipped).`;
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        Sentry.captureMessage(`Warning: source (${sourceName}) cookies expired (crawler skipped).`);
+                        Sentry.captureMessage('Warning: ' + expireCookieMessage);
+                        await saveCrawlerWarning(expireCookieMessage);
                     } else if (disabled) {
-                        Sentry.captureMessage(`Warning: source (${sourceName}) is disabled (crawler skipped).`);
+                        Sentry.captureMessage('Warning: ' + disabledSourceMessage);
+                        await saveCrawlerWarning(disabledSourceMessage);
                     } else {
+                        await resolveCrawlerWarning(expireCookieMessage);
+                        await resolveCrawlerWarning(disabledSourceMessage);
                         await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
                         let lastPages = await findSource.starter();
                         await updateCrawlerStatus_sourceEnd(lastPages);

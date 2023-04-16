@@ -12,7 +12,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = ["email", "computeUserJob", "userAnalysisJob"];
+const jobTypes = ["email", "computeUserJob", "userAnalysisJob", "checkSourceDomains"];
 
 export async function startAgenda() {
     try {
@@ -62,6 +62,7 @@ export async function startAgenda() {
         //for more info check https://crontab.guru
         await agenda.every("0 2 * * *", "start crawler cycle", {}); //At 02:00.
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
+        await agenda.every("15 * * * *", "check movie source domains", {});// Every hour - **:15
         await agenda.every("0 */12 * * *", "update jikan/imdb data");
         await agenda.every("0 1 1 * *", "reset month likes");
         await agenda.every("0 0 * * 0", "remove unused files from s3"); //At 00:00 on Sunday.

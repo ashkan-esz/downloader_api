@@ -1,4 +1,5 @@
 import getCollection from "../../mongoDB.js";
+import {resolveCrawlerWarning} from "../serverAnalysisDbMethods.js";
 import {saveError} from "../../../error/saveError.js";
 
 export async function updateSourceData(sourceName, data) {
@@ -24,6 +25,14 @@ export async function updateSourceData(sourceName, data) {
             //source got disabled
             sourceData.disabled = true;
             sourceData.disabledDate = new Date();
+        }
+
+        if (
+            sourceData.cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000))) &&
+            data.cookies.length > 0 &&
+            !data.cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))
+        ) {
+            await resolveCrawlerWarning(`Source (${sourceName}) has expired cookie(s)`);
         }
 
         sourceData = {...sourceData, ...data};
