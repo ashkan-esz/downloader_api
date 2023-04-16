@@ -10,7 +10,7 @@ import {
 } from "./crawlerStatus.js";
 
 
-const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.8)) - 10;
+export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.9)) - 10;
 
 let manualPauseStart = 0;
 let manualPauseDuration = 0;
@@ -92,7 +92,7 @@ export async function checkServerIsIdle() {
     const cpuAverageLoad = getCpuAverageLoad();
     return (
         memoryStatus.used < crawlerMemoryLimit &&
-        memoryStatus.used < (config.crawler.totalMemory * 0.6) &&
+        memoryStatus.used < (config.crawler.totalMemory * 0.7) &&
         cpuAverageLoad[0] < 50 &&
         cpuAverageLoad[1] < 50
     );

@@ -1,6 +1,8 @@
+import config from "../config/index.js";
 import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
+import {crawlerMemoryLimit} from "./crawlerController.js";
 
 const crawlerStatus = {
     crawlId: '',
@@ -19,14 +21,20 @@ const crawlerStatus = {
     pageNumber: 0,
     pageCount: 0,
     pageLinks: [],
-    isPaused: false,
-    pauseReason: '',
-    isManualPause: false,
-    manualPauseDuration: 0,
-    pausedFrom: 0,
+    pauseData: {
+        isPaused: false,
+        pauseReason: '',
+        isManualPause: false,
+        manualPauseDuration: 0,
+        pausedFrom: 0,
+    },
     crawlerState: 'ok',
     forceResume: false,
     forceStop: false,
+    limits: {
+        memory: crawlerMemoryLimit.toFixed(0),
+        cpu: config.crawler.cpuLimit.toFixed(0),
+    }
 };
 
 const crawlerLog = {
@@ -131,49 +139,49 @@ export function checkForceStopCrawler() {
 //-----------------------------------------
 
 export function saveCrawlerPause(reason, isManualPause = false, manualPauseDuration = 0) {
-    if (crawlerStatus.isPaused) {
+    if (crawlerStatus.pauseData.isPaused) {
         return "crawler is already paused";
     }
     if (isManualPause) {
         crawlerStatus.crawlerState = 'waiting for manual pause applying';
-        crawlerStatus.isManualPause = true;
-        crawlerStatus.manualPauseDuration = manualPauseDuration;
+        crawlerStatus.pauseData.isManualPause = true;
+        crawlerStatus.pauseData.manualPauseDuration = manualPauseDuration;
     } else {
-        if (crawlerStatus.isManualPause) {
+        if (crawlerStatus.pauseData.isManualPause) {
             crawlerStatus.crawlerState = 'manual paused';
         } else {
             crawlerStatus.crawlerState = 'paused';
         }
-        crawlerStatus.isPaused = true;
-        crawlerStatus.pauseReason = reason;
-        crawlerStatus.pausedFrom = Date.now();
+        crawlerStatus.pauseData.isPaused = true;
+        crawlerStatus.pauseData.pauseReason = reason;
+        crawlerStatus.pauseData.pausedFrom = Date.now();
     }
     return "ok";
 }
 
 export function removeCrawlerPause(handleManual = false, force = false) {
-    if (!crawlerStatus.isPaused) {
+    if (!crawlerStatus.pauseData.isPaused) {
         return "crawler is not paused";
     }
-    if (handleManual && !force && !crawlerStatus.isManualPause) {
+    if (handleManual && !force && !crawlerStatus.pauseData.isManualPause) {
         return "crawler is not manually paused, use force=true";
     }
     if (force) {
         crawlerStatus.forceResume = true;
     }
-    const pauseDuration = (Date.now() - crawlerStatus.pausedFrom) / 1000;
-    crawlerStatus.isPaused = false;
-    crawlerStatus.pauseReason = '';
+    const pauseDuration = (Date.now() - crawlerStatus.pauseData.pausedFrom) / 1000;
+    crawlerStatus.pauseData.isPaused = false;
+    crawlerStatus.pauseData.pauseReason = '';
     crawlerStatus.totalPausedDuration += pauseDuration;
-    crawlerStatus.pausedFrom = 0;
+    crawlerStatus.pauseData.pausedFrom = 0;
     if (crawlerStatus.crawlingSource) {
         crawlerStatus.crawlingSource.pausedDuration += pauseDuration;
     }
     if (!crawlerStatus.forceStop) {
         crawlerStatus.crawlerState = 'ok';
     }
-    crawlerStatus.isManualPause = false;
-    crawlerStatus.manualPauseDuration = 0;
+    crawlerStatus.pauseData.isManualPause = false;
+    crawlerStatus.pauseData.manualPauseDuration = 0;
     return "ok";
 }
 
@@ -205,11 +213,11 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, 
     crawlerStatus.pageNumber = 0;
     crawlerStatus.pageCount = 0;
     crawlerStatus.pageLinks = [];
-    crawlerStatus.isPaused = false;
-    crawlerStatus.pauseReason = '';
-    crawlerStatus.isManualPause = false;
-    crawlerStatus.pausedFrom = 0;
-    crawlerStatus.manualPauseDuration = 0;
+    crawlerStatus.pauseData.isPaused = false;
+    crawlerStatus.pauseData.pauseReason = '';
+    crawlerStatus.pauseData.isManualPause = false;
+    crawlerStatus.pauseData.pausedFrom = 0;
+    crawlerStatus.pauseData.manualPauseDuration = 0;
     crawlerStatus.crawlerState = 'ok';
     crawlerStatus.forceResume = false;
     crawlerStatus.forceStop = false;
