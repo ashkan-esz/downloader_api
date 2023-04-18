@@ -1,6 +1,7 @@
 import getCollection from "../../mongoDB.js";
 import {resolveCrawlerWarning} from "../serverAnalysisDbMethods.js";
 import {saveError} from "../../../error/saveError.js";
+import {getCrawlerWarningMessages} from "../../../crawlers/crawlerWarnings.js";
 
 export async function updateSourceData(sourceName, data) {
     try {
@@ -32,7 +33,7 @@ export async function updateSourceData(sourceName, data) {
             data.cookies.length > 0 &&
             !data.cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))
         ) {
-            await resolveCrawlerWarning(`Source (${sourceName}) has expired cookie(s)`);
+            await resolveCrawlerWarning(getCrawlerWarningMessages(sourceName).expireCookie);
         }
 
         sourceData = {...sourceData, ...data};

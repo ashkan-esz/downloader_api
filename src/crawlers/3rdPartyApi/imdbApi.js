@@ -13,6 +13,7 @@ import {
     uploadTitlePosterAndAddToTitleModel
 } from "../posterAndTrailer.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
 
 let imdbApiKey = [];
 
@@ -397,9 +398,9 @@ async function handleApiCall(url) {
                 )) {
                 selectedApiKey.reachedMax = true;
                 if (data.errorMessage.includes('Invalid API Key')) {
-                    const message = `Invalid imdb api key: ${selectedApiKey.apikey}`;
-                    Sentry.captureMessage(message);
-                    await saveCrawlerWarning(message);
+                    const warningMessages = getCrawlerWarningMessages(selectedApiKey.apikey);
+                    Sentry.captureMessage(warningMessages.invalidImdb);
+                    await saveCrawlerWarning(warningMessages.invalidImdb);
                 } else {
                     Sentry.captureMessage(`reached imdb api maximum daily usage`);
                 }

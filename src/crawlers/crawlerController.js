@@ -8,9 +8,12 @@ import {
     removeCrawlerPause,
     saveCrawlerPause
 } from "./crawlerStatus.js";
+import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import * as Sentry from "@sentry/node";
+import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 
-export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.9)) - 10;
+export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.85)) - 10;
 
 let manualPauseStart = 0;
 let manualPauseDuration = 0;
@@ -68,7 +71,14 @@ export async function pauseCrawler() {
     manualPauseUntil = 0;
     let memoryStatus = await getMemoryStatus(false);
     let cpuAverageLoad = getCpuAverageLoad();
+    const startTime = Date.now();
     while (memoryStatus.used >= crawlerMemoryLimit || cpuAverageLoad[0] > config.crawler.cpuLimit) {
+        if (Date.now() - startTime > config.crawler.pauseDurationLimit * 60 * 1000) {
+            const warningMessages = getCrawlerWarningMessages(config.crawler.pauseDurationLimit);
+            Sentry.captureMessage('Warning: ' + warningMessages.crawlerPauseLimit);
+            await saveCrawlerWarning(warningMessages.crawlerPauseLimit);
+            break;
+        }
         if (checkForceStopCrawler()) {
             break;
         }

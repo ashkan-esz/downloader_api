@@ -84,7 +84,8 @@ To run this project, you will need to add the following environment variables to
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
 | **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                                       | `false`  |               |
 | **`PAUSE_CRAWLER_ON_HIGH_LOAD`**       | with this flag crawler get paused inorder to prevent server crash                                                              | `false`  | true          |
-| **`CRAWLER_TOTAL_MEMORY`**             | this value get used to determine crawler need to get paused. (MB)                                                              | `false`  | 500           |
+| **`CRAWLER_PAUSE_DURATION_LIMIT`**     | Number of minutes to crawler can be paused on high load                                                                        | `false`  | 30            |
+| **`CRAWLER_TOTAL_MEMORY`**             | this value get used to determine crawler need to get paused. (MB)                                                              | `false`  | 512           |
 | **`CRAWLER_MEMORY_LIMIT`**             | if the memory usage is higher than this value, crawler will pause, if not set, it will use 80% of `CRAWLER_TOTAL_MEMORY`. (MB) | `false`  | 0             |
 | **`CRAWLER_CPU_LIMIT`**                | if the cpu usage is higher than this value, crawler will pause                                                                 | `false`  | 95            |
 | **`TOTAL_DISK_SPACE`**                 | amount of disk space that app can use, by default its 500. (MB)                                                                | `false`  | 512           |

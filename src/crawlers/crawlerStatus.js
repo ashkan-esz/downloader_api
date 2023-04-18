@@ -34,6 +34,7 @@ const crawlerStatus = {
     limits: {
         memory: crawlerMemoryLimit.toFixed(0),
         cpu: config.crawler.cpuLimit.toFixed(0),
+        pauseDuration: config.crawler.pauseDurationLimit,
     }
 };
 

@@ -2,6 +2,7 @@ import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
 import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
+import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
 
 
 export default function (agenda) {
@@ -28,22 +29,21 @@ export default function (agenda) {
             for (let i = 0; i < sources.length; i++) {
                 let cookies = sources[i].cookies;
                 if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    warnings.push(`Source (${sources[i].sourceName}) has expired cookie(s)`);
+                    warnings.push(getCrawlerWarningMessages(sources[i].sourceName).expireCookie);
                 }
             }
 
             let promiseArray = [];
             for (let i = 0; i < sources.length; i++) {
                 let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
-                    const notWorkingMessage = `Source (${sources[i].sourceName}) url not working`;
-                    const changeDomainMessage = `Source (${sources[i].sourceName}) domain changed to (${checkUrlResult})`;
+                    const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                     if (checkUrlResult === "error") {
-                        warnings.push(notWorkingMessage);
+                        warnings.push(warningMessages.notWorking);
                     } else if (checkUrlResult === "ok") {
-                        await serverAnalysisDbMethods.resolveCrawlerWarning(notWorkingMessage);
-                        await serverAnalysisDbMethods.resolveCrawlerWarning(changeDomainMessage);
+                        await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
+                        await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
                     } else if (checkUrlResult !== "ok") {
-                        warnings.push(changeDomainMessage);
+                        warnings.push(warningMessages.domainChange);
                     }
                 });
                 promiseArray.push(prom);

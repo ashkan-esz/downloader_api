@@ -11,6 +11,7 @@ import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
     let result = await crawler(sourceName, {
         crawlMode: mode,
+        isManualStart: true,
         handleDomainChange,
         handleCastUpdate,
         handleDomainChangeOnly,
@@ -99,8 +100,6 @@ export async function getCrawlerWarnings(startTime, endTime, skip, limit) {
     let result = await serverAnalysisDbMethods.getCrawlerCurrentWarnings(startTime, endTime, skip, limit);
     if (result === "error") {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (result.length === 0) {
-        return generateServiceResult({data: []}, 404, "Not found");
     }
     return generateServiceResult({data: result}, 200, '');
 }

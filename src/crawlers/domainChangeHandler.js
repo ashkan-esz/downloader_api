@@ -8,6 +8,7 @@ import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils.js";
 import {saveError} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
@@ -159,17 +160,16 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
             if (findSource) {
                 const sourceCookies = sourcesObj[sourceName].cookies;
                 const disabled = sourcesObj[sourceName].disabled;
-                const expireCookieMessage = `source (${sourceName}) cookies expired (crawler skipped --domainChangeHandler).`;
-                const disabledSourceMessage = `source (${sourceName}) is disabled (crawler skipped --domainChangeHandler).`;
+                const warningMessages = getCrawlerWarningMessages(sourceName);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    Sentry.captureMessage('Warning: ' + expireCookieMessage);
-                    await saveCrawlerWarning(expireCookieMessage);
+                    Sentry.captureMessage('Warning: ' + warningMessages.expireCookieSkip_domainChange);
+                    await saveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
                 } else if (disabled) {
-                    Sentry.captureMessage('Warning: ' + disabledSourceMessage);
-                    await saveCrawlerWarning(disabledSourceMessage);
+                    Sentry.captureMessage('Warning: ' + warningMessages.disabledSourceSkip_domainChange);
+                    await saveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
                 } else {
-                    await resolveCrawlerWarning(expireCookieMessage);
-                    await resolveCrawlerWarning(disabledSourceMessage);
+                    await resolveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
+                    await resolveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
                     let crawled = false;
                     if (!fullyCrawledSources.includes(sourceName)) {
                         await findSource.starter();
