@@ -4,7 +4,7 @@ import {getPersonModel} from "../../../models/person.js";
 import {getCharacterModel} from "../../../models/character.js";
 import isEqual from 'lodash.isequal';
 import isEmpty from 'lodash.isempty';
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import {extractStaffDataFromJikanAbout} from "../extractDataFields.js";
 import {saveError} from "../../../error/saveError.js";
 import {
@@ -339,7 +339,7 @@ async function getJikanStaff_voiceActors(movieID, movieName, movieType, moviePos
 }
 
 async function getJikanStaff(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanStaffArray, staff) {
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const promiseQueue = new PQueue({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanStaffArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].person.mal_id).then(staffApiData => {
@@ -372,7 +372,7 @@ async function getJikanStaff(movieID, movieName, movieType, moviePoster, movieTh
 }
 
 async function getJikanCharaters(movieID, movieName, movieType, moviePoster, movieThumbnail, jikanCharatersArray, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 5});
+    const promiseQueue = new PQueue({concurrency: 5});
     let result = [];
     for (let i = 0; i < jikanCharatersArray.length && i < maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(characterApiData => {

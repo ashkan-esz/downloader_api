@@ -1,6 +1,6 @@
 import mongodb from "mongodb";
 import getCollection from "../../mongoDB.js";
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import {removeDuplicateElements} from "../../../crawlers/utils.js";
 import {saveError} from "../../../error/saveError.js";
 
@@ -227,7 +227,7 @@ export async function handleRemovedMoviesStaffOrCharacters(staffOrCharacters) {
     temp = temp.map(item => new mongodb.ObjectId(item));
 
     let nullCounter = 0;
-    const promiseQueue = new pQueue.default({concurrency: 30});
+    const promiseQueue = new PQueue({concurrency: 30});
     for (let i = 0; i < temp.length; i++) {
         promiseQueue.add(() => {
             moviesCollection.findOne({_id: temp[i]}, {projection: {title: 1}}).then(async movie => {
@@ -243,9 +243,7 @@ export async function handleRemovedMoviesStaffOrCharacters(staffOrCharacters) {
                 }
             })
         });
-        while (promiseQueue.size > 300) {
-            await new Promise((resolve => setTimeout(resolve, 20)));
-        }
+        await promiseQueue.onSizeLessThan(300);
     }
     await promiseQueue.onEmpty();
     await promiseQueue.onIdle();

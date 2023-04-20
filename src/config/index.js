@@ -18,8 +18,10 @@ export default Object.freeze({
     disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
     databaseURL: process.env.DATABASE_URL,
     sentryDns: process.env.SENTRY_DNS,
-    imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
-    omdbApiKeys: getOmdbApiKeys(),
+    apiKeys: Object.freeze({
+        imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
+        omdbApiKeys: getOmdbApiKeys(),
+    }),
     cloudStorage: Object.freeze({
         endpoint: process.env.CLOUAD_STORAGE_ENDPOINT,
         accessKeyId: process.env.CLOUAD_STORAGE_ACCESS_KEY,

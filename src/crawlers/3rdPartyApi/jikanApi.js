@@ -9,7 +9,7 @@ import {
     uploadTitlePosterAndAddToTitleModel,
     uploadTitleYoutubeTrailerAndAddToTitleModel
 } from "../posterAndTrailer.js";
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import isEqual from 'lodash.isequal';
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
@@ -429,8 +429,8 @@ export async function updateJikanData() {
 }
 
 async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
-    const updatePromiseQueue = new pQueue.default({concurrency: 25});
-    const insertPromiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new PQueue({concurrency: 25});
+    const insertPromiseQueue = new PQueue({concurrency: 5});
 
     let rank = 0;
     for (let k = 1; k <= numberOfPage; k++) {

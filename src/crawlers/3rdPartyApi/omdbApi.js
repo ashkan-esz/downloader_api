@@ -5,7 +5,7 @@ import {getEpisodeModel} from "../../models/episode.js";
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 
-const apiKeys = createApiKeys(config.omdbApiKeys);
+const apiKeys = createApiKeys(config.apiKeys.omdbApiKeys);
 
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {

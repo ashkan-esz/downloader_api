@@ -4,7 +4,7 @@ import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as utils from "../utils.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import {getMovieModel} from "../../models/movie.js";
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 import {
@@ -18,7 +18,7 @@ import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
 let imdbApiKey = [];
 
 export async function updateImdbData() {
-    imdbApiKey = config.imdbApiKey.map(item => {
+    imdbApiKey = config.apiKeys.imdbApiKey.map(item => {
         return {apikey: item.trim(), reachedMax: false, callCounter: 0};
     });
 
@@ -88,8 +88,8 @@ async function add_Top_popular(type, mode) {
     }
 
     let top_popular = apiResult.items;
-    const updatePromiseQueue = new pQueue.default({concurrency: 25});
-    const insertPromiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new PQueue({concurrency: 25});
+    const insertPromiseQueue = new PQueue({concurrency: 5});
 
     for (let i = 0; i < top_popular.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(top_popular[i].title, top_popular[i].year, type);
@@ -145,8 +145,8 @@ async function add_inTheaters_comingSoon(type, mode) {
         return;
     }
     let theatres_soon = apiResult.items;
-    const updatePromiseQueue = new pQueue.default({concurrency: 25});
-    const insertPromiseQueue = new pQueue.default({concurrency: 5});
+    const updatePromiseQueue = new PQueue({concurrency: 25});
+    const insertPromiseQueue = new PQueue({concurrency: 5});
 
     for (let i = 0; i < theatres_soon.length; i++) {
         let titleDataFromDB = await getTitleDataFromDB(theatres_soon[i].title, theatres_soon[i].year, type);

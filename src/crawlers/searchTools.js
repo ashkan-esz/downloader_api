@@ -2,7 +2,7 @@ import config from "../config/index.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as cheerio from 'cheerio';
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import {check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
@@ -53,7 +53,7 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
             return lastPageNumber;
         }
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, page_count);
-        const promiseQueue = new pQueue.default({concurrency: concurrencyNumber});
+        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; i <= page_count; i++) {
             if (checkNeedForceStopCrawler()) {
                 break;
@@ -78,14 +78,8 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                         break;
                     }
                     await pauseCrawler();
-                    if (config.nodeEnv === 'dev') {
-                        await searchCB($(links[j]), i, $, url);
-                    } else {
-                        while (promiseQueue.size > 24) {
-                            await new Promise((resolve => setTimeout(resolve, 50)));
-                        }
-                        promiseQueue.add(() => searchCB($(links[j]), i, $, url));
-                    }
+                    await promiseQueue.onSizeLessThan(25);
+                    promiseQueue.add(() => searchCB($(links[j]), i, $, url));
                 }
             } catch (error) {
                 saveError(error);

@@ -1,11 +1,11 @@
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import * as crawlerMethodsDB from "../../../data/db/crawlerMethodsDB.js";
 import * as cloudStorage from "../../../data/cloudStorage.js";
 import {updateStaffAndCharactersFields} from "./personCharacter.js";
 import {saveError} from "../../../error/saveError.js";
 
 export async function addImageToStaffAndCharacters(dataArray) {
-    const promiseQueue = new pQueue.default({concurrency: 10});
+    const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < dataArray.length; i++) {
         if (dataArray[i].imageData) {
             continue;
@@ -24,7 +24,7 @@ export async function addImageToStaffAndCharacters(dataArray) {
 }
 
 export async function fetchDataFromDB(staff_characters, type) {
-    const promiseQueue = new pQueue.default({concurrency: 30});
+    const promiseQueue = new PQueue({concurrency: 30});
     for (let i = 0; i < staff_characters.length; i++) {
         promiseQueue.add(() => crawlerMethodsDB.searchStaffAndCharactersDB(
             type,
@@ -49,7 +49,7 @@ export async function fetchDataFromDB(staff_characters, type) {
 }
 
 export async function insertData(staff, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 30});
+    const promiseQueue = new PQueue({concurrency: 30});
 
     for (let i = 0; i < staff.length; i++) {
         let insertFlag = staff[i].insertFlag;
@@ -82,7 +82,7 @@ export async function insertData(staff, characters) {
 }
 
 export async function updateData(staff, characters) {
-    const promiseQueue = new pQueue.default({concurrency: 30});
+    const promiseQueue = new PQueue({concurrency: 30});
     for (let i = 0; i < staff.length; i++) {
         let updateFlag = staff[i].updateFlag;
         delete staff[i].updateFlag;

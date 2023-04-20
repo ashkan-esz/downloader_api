@@ -8,7 +8,7 @@ import {setCache} from "../api/middlewares/moviesCache.js";
 import {dataLevelConfig_staff} from "../models/person.js";
 import {dataLevelConfig_character} from "../models/character.js";
 import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils.js";
-import {default as pQueue} from "p-queue";
+import PQueue from 'p-queue';
 import {
     getFollowedStaffTodayBirthday,
     getTodayStaffOrCharactersBirthday
@@ -355,7 +355,7 @@ export async function getMovieSources(routeUrl) {
 
 export async function getAnimeEnglishNames(japaneseNames) {
     let result = [];
-    const promiseQueue = new pQueue.default({concurrency: 10});
+    const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < japaneseNames.length; i++) {
         let titleObj = {
             title: japaneseNames[i].toLowerCase(),
