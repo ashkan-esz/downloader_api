@@ -4,10 +4,10 @@ import Tracing from "@sentry/tracing";
 import express from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
-import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+import cors from "./api/middlewares/cors.js";
 import {loadAgenda} from './loaders/index.js';
 import {saveError} from "./error/saveError.js";
 //--------------------------------------
@@ -30,21 +30,7 @@ app.use(helmet());
 app.use(bodyParser.urlencoded({extended: false, limit: '10mb'}));
 app.use(bodyParser.json({limit: '10mb'}));
 app.use(cookieParser());
-//-------------------
-const corsOptions = {
-    origin: (origin, callback) => {
-        let allowedOrigins = [...config.corsAllowedOrigins_local, ...config.corsAllowedOrigins];
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    }, // origin: 'http://localhost:3000',
-    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-    credentials: true,
-};
-app.use(cors(corsOptions));
-//-------------------
+app.use(cors);
 app.use(compression());
 app.use(rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
@@ -81,13 +67,14 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
-    let fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an supported format image!')));
-    if (!fileError && err.message !== "Not allowed by CORS") {
+    const fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an supported format image!')));
+    const corsError = err.message === "Not allowed by CORS";
+    if (!fileError && !corsError) {
         saveError(err);
     }
     res.status(500).json({
-        errorMessage: fileError ? err.message : err.code || 'Internal Server Error',
-        code: fileError ? 400 : 500,
+        errorMessage: (fileError || corsError) ? err.message : err.code || 'Internal Server Error',
+        code: (fileError || corsError) ? 400 : 500,
         sentryErrorId: res.sentry,
     });
 });

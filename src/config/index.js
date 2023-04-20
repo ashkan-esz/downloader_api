@@ -41,17 +41,11 @@ export default Object.freeze({
         refreshTokenExpire: '180d',
     }),
     corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),
-    corsAllowedOrigins_local: Object.freeze([
-        'http://127.0.0.1:3000',
-        'http://localhost:3000',
-        'http://127.0.0.1:5000',
-        'http://localhost:5000',
-    ]),
     diskSpace: Object.freeze({
         totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 500),
         defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
     }),
-})
+});
 
 function getRemoteBrowsers() {
     let remoteBrowsers = [];
