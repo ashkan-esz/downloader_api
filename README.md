@@ -91,6 +91,7 @@ To run this project, you will need to add the following environment variables to
 | **`TOTAL_DISK_SPACE`**                 | amount of disk space that app can use, by default its 500. (MB)                                                                | `false`  | 512           |
 | **`DEFAULT_USED_DISK_SPACE`**          | amount of disk space that app use in init state, by default its. (MB)                                                          | `false`  | 0             |
 
+>**NOTE: check [configs schema](readme/CONFIGS.README.md) for other configs that read from db.**
 
 
 ## Future updates
@@ -111,6 +112,7 @@ To run this project, you will need to add the following environment variables to
 - Open [movie api docs](readme/API.MOVIES.README.md).
 - Open [schema](readme/SCHEMA.README.md).
 - Open [sources schema](readme/SOURCES.README.md).
+- Open [configs schema](readme/CONFIGS.README.md).
 
 ## Clients
 - [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter)

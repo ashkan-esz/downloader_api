@@ -1,6 +1,7 @@
 import getCollection, {database} from './mongoDB.js';
 import {sourcesObj} from "../crawlers/sourcesArray.js";
 import {saveError} from "../error/saveError.js";
+import {defaultConfigsDb} from "../config/configsDb.js";
 
 
 // run this method to create collections and their indexes
@@ -106,6 +107,15 @@ export async function createCollectionsAndIndexes() {
             let sourcesCollection = await getCollection('sources');
             await sourcesCollection.insertOne(sourcesObj());
         } catch (err2) {
+            console.log(err2);
+        }
+
+        try {
+            await database.createCollection('configs');
+            let configsCollection = await getCollection('configs');
+            await configsCollection.insertOne({...defaultConfigsDb});
+        } catch (err2) {
+            console.log(err2);
         }
 
         console.log('creating mongodb collection and indexes --done!');

@@ -569,3 +569,4 @@ movieSources = Array({
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
 - Open [error messages docs](ERRORMESSAGE.README.md).
+- Open [configs schema](CONFIGS.README.md).
