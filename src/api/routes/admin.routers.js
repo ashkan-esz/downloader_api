@@ -97,6 +97,23 @@ router.put('/crawler/addSource',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/configs/update
+router.put('/configs/update',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['configs']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin']),
+    mongoSanitize(),
+    adminControllers.updateConfigsDb);
+
+//admin/configs
+router.get('/configs',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getConfigsDb);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 //admin/analysis/activeUsers/:startTime/:endTime/:skip/:limit
 router.get('/analysis/activeUsers/:startTime/:endTime/:skip/:limit',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

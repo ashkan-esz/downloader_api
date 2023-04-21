@@ -2,6 +2,7 @@ import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import {crawler} from "../crawlers/crawler.js";
 import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.js";
+import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
@@ -141,6 +142,36 @@ export async function addSource(sourceName, movie_url, page_count, serial_url, s
     }
     return generateServiceResult({data: result}, 200, '');
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function updateConfigsDb(configs, requestOrigin) {
+    if (!configs.corsAllowedOrigins.includes(requestOrigin)) {
+        return generateServiceResult({data: null}, 400, errorMessage.cantRemoveCurrentOrigin);
+    }
+    let result = await adminConfigDbMethods.updateServerConfigs(configs);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === "notfound") {
+        return generateServiceResult({data: null}, 404, errorMessage.configsDbNotFound);
+    }
+    return generateServiceResult({data: {}}, 200, '');
+}
+
+export async function getConfigsDb() {
+    let result = await adminConfigDbMethods.getServerConfigs_safe();
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === null) {
+        return generateServiceResult({data: null}, 404, errorMessage.configsDbNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 
 export async function getActiveUsersAnalysis(startTime, endTime, skip, limit) {
     let result = await serverAnalysisDbMethods.getUserCountsInTimes(startTime, endTime, skip, limit);

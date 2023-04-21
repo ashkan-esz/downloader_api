@@ -5,6 +5,13 @@ setInterval(async () => {
     configsDB = await getServerConfigs();
 }, 30 * 60 * 1000); //30 min
 
+export function getServerConfigsDb() {
+    return configsDB;
+}
+
+export async function updateServerConfigsDb() {
+    configsDB = await getServerConfigs();
+}
 
 export const defaultConfigsDb = Object.freeze({
     title: 'server configs',
@@ -14,4 +21,9 @@ export const defaultConfigsDb = Object.freeze({
         'http://127.0.0.1:5000',
         'http://localhost:5000',
     ]),
+});
+
+export const safeFieldsToRead_array = ['corsAllowedOrigins'];
+export const safeFieldsToRead = Object.freeze({
+    corsAllowedOrigins: 1,
 });

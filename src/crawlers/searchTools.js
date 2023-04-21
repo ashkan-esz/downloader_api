@@ -40,7 +40,8 @@ axiosRetry(axios, {
             error.response.status !== 500 &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
-            error.response.status !== 403)
+            error.response.status !== 403 &&
+            error.response.status !== 400)
     ),
 });
 

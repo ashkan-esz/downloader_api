@@ -73,6 +73,26 @@ export async function addSource(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function updateConfigsDb(req, res) {
+    let {configs} = req.body;
+    let result = await adminServices.updateConfigsDb(configs, req.get('origin'));
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function getConfigsDb(req, res) {
+    let result = await adminServices.getConfigsDb();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+
 export async function getActiveUsersAnalysis(req, res) {
     let {startTime, endTime, skip, limit} = req.params;
     let result = await adminServices.getActiveUsersAnalysis(startTime, endTime, skip, limit);

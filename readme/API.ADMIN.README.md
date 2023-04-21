@@ -7,12 +7,6 @@
 
 > they are case-insensitive.
 
-**Note: Cors enabled for [
-'http://127.0.0.1:3000',
-'http://localhost:3000',
-'http://127.0.0.1:5000',
-'http://localhost:5000'
-]**
 
 ## API Resources
 
@@ -31,6 +25,8 @@
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
 - [GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisactiveusersstarttimeendtimeskiplimit)
 - [GET /admin/server/status](#get-adminserverstatus)
+- [PUT /admin/configs/update](#put-adminconfigsupdate)
+- [GET /admin/configs](#get-adminconfigs)
 
 <br />
 <br />
@@ -133,6 +129,17 @@ Query parameters:
 
 <br />
 
+### PUT /admin/configs/update
+> update configs of the server
+
+> editable configs: ['corsAllowedOrigins']
+
+<br />
+
+### GET /admin/configs
+> return configs of the server
+
+<br />
 
 # API
 - Open [user api docs](API.USER.README.md).

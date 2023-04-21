@@ -1,5 +1,6 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {isUri} from "valid-url";
+import {safeFieldsToRead_array} from "../../config/configsDb.js";
 
 const validations = Object.freeze({
 
@@ -193,6 +194,26 @@ const validations = Object.freeze({
                 }
                 if (isNaN(value[i].expire)) {
                     throw new Error(`cookies[${i}].expire must be Number (Int)`);
+                }
+            }
+            return value;
+        }),
+
+    configs: body('configs')
+        .exists().withMessage("Missed parameter configs")
+        .custom((value, {req, loc, path}) => {
+            if (!value || Array.isArray(value) || typeof value !== 'object') {
+                throw new Error('Invalid parameter configs :: Object');
+            }
+            let keys = Object.keys(value);
+            for (let i = 0; i < keys.length; i++) {
+                if (!safeFieldsToRead_array.includes(keys[i])) {
+                    throw new Error(`Wrong parameter settings.${keys[i]}`);
+                }
+                if (keys[i] === "corsAllowedOrigins") {
+                    if (!Array.isArray(value[keys[i]])) {
+                        throw new Error(`Invalid parameter configs.${keys[i]} :: Array(String)`);
+                    }
                 }
             }
             return value;
