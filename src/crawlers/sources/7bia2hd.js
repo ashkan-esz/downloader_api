@@ -134,7 +134,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 if ($($($a[i]).parent()[0]).hasClass('download-links')) {
                     info = getFileData($, $a[i], type);
                 }
-                const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
+                const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName);
                 result.push(watchOnlineLink);
             }
         }
@@ -155,7 +155,7 @@ function getSubtitles($, type, pageLink) {
             let linkHref = $($a[i]).attr('href');
             if (linkHref) {
                 if (linkHref.match(subtitleFormatsRegex)) {
-                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, true);
+                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, true);
                     result.push(subtitle);
                 } else if (linkHref.includes('/subtitles/')) {
                     let temp = linkHref.replace(/\/farsi_persian$/i, '').split('/').pop().replace(/-/g, ' ').toLowerCase();
@@ -163,7 +163,7 @@ function getSubtitles($, type, pageLink) {
                     temp = wordsToNumbers(temp).toString();
                     const seasonMatch = temp.match(/\s\d\d?(\sseason)?(\s\d\d\d\d)?$/gi);
                     const season = seasonMatch?.pop().replace(/(season)|\d\d\d\d/gi, '').trim() || '';
-                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, false);
+                    const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, false);
                     if (season) {
                         let seasonNumber = Number(season);
                         subtitle.info = (subtitle.episode === 0)

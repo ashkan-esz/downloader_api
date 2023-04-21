@@ -8,7 +8,7 @@ export async function removeMovieSource(sourceName) {
     let collection = await getCollection('movies');
 
     while (true) {
-        let result = await collection.find({sources: sourceName}, {
+        let result = await collection.find({'sources.sourceName': sourceName}, {
             projection: {
                 title: 1,
                 type: 1,
@@ -28,7 +28,7 @@ export async function removeMovieSource(sourceName) {
         for (let i = 0; i < result.length; i++) {
             //------------------------------------------
             let updateFields = {
-                sources: result[i].sources.filter(item => item !== sourceName),
+                sources: result[i].sources.filter(item => item.sourceName !== sourceName),
                 posters: result[i].posters.filter(item => !item.info.includes(sourceName)),
                 trailers: result[i].trailers ? result[i].trailers.filter(item => !item.info.includes(sourceName)) : result[i].trailers,
             };

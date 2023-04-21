@@ -280,13 +280,13 @@ export async function changeMoviesReleaseStateDB(currentState, newState, types) 
 //-----------------------------------
 //-----------------------------------
 
-export async function getDuplicateTitleInsertion(sourceName) {
+export async function getDuplicateTitleInsertion(sourceName, pageLink) {
     try {
         let collection = await getCollection('movies');
         return await collection.aggregate([
             {
                 $match: {
-                    sources: [sourceName],
+                    sources: [{sourceName: sourceName, pageLink: pageLink}],
                 }
             },
             {

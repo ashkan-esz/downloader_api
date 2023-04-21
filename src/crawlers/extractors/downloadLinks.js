@@ -20,7 +20,7 @@ import {saveError} from "../../error/saveError.js";
 
 const sourcesMethods = getSourcesMethods();
 
-export function getDownloadLinksFromPageContent($, page_link, title, type, year, sourceName) {
+export function getDownloadLinksFromPageContent($, title, type, year, sourceName) {
     try {
         let sourceMethods = sourcesMethods[sourceName];
         let links = $('a');
@@ -58,7 +58,6 @@ export function getDownloadLinksFromPageContent($, page_link, title, type, year,
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
                         qualitySample: qualitySample,
                         sourceName: sourceName,
-                        pageLink: page_link,
                         season, episode,
                     });
                 }
@@ -188,7 +187,7 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                     } = sourcePages[j];
                     let $ = cheerio.load(pageContent);
                     let newDownloadLinks = (mode === "pageContent")
-                        ? getDownloadLinksFromPageContent($, pageLink, title, type, year, sName)
+                        ? getDownloadLinksFromPageContent($, title, type, year, sName)
                         : (mode === "checkRegex")
                             ? getLinksDoesntMatchLinkRegex(downloadLinks, type)
                             : getDownloadLinksFromLinkInfo(downloadLinks);
@@ -217,7 +216,7 @@ export async function comparePrevDownloadLinksWithNewMethod(sourceName = null, m
                         console.log();
                         console.log('-------------------------');
                         console.log('-------------------------');
-                        newDownloadLinks = getDownloadLinksFromPageContent($, pageLink, title, type, year, sName);
+                        newDownloadLinks = getDownloadLinksFromPageContent($, title, type, year, sName);
                     }
 
                     if (!isEqual(downloadLinks, newDownloadLinks)) {

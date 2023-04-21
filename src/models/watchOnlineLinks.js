@@ -1,6 +1,6 @@
 import {getSeasonEpisode} from "../crawlers/utils.js";
 
-export function getWatchOnlineLinksModel(link, info, movieType, sourceName, page_link) {
+export function getWatchOnlineLinksModel(link, info, movieType, sourceName) {
     let season = 0, episode = 0;
     if (movieType.includes('serial')) {
         ({season, episode} = getSeasonEpisode(link));
@@ -9,7 +9,6 @@ export function getWatchOnlineLinksModel(link, info, movieType, sourceName, page
         link: link.trim(),
         info: info,
         sourceName: sourceName,
-        pageLink: page_link,
         season: season,
         episode: episode,
     };

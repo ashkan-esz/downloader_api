@@ -235,12 +235,18 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.subtitles = db_data.subtitles;
         }
 
-        if (!db_data.sources.includes(sourceName) && (downloadLinks.length > 0 || watchOnlineLinks.length > 0)) {
-            db_data.sources.push(sourceName);
+        if (!db_data.sources.find(s => s.sourceName === sourceName) && (downloadLinks.length > 0 || watchOnlineLinks.length > 0)) {
+            db_data.sources.push({sourceName: sourceName, pageLink: pageLink});
             updateFields.sources = db_data.sources;
-        } else if (db_data.sources.includes(sourceName) && (downloadLinks.length === 0 && watchOnlineLinks.length === 0)) {
-            db_data.sources = db_data.sources.filter(item => item !== sourceName);
-            updateFields.sources = db_data.sources;
+        } else {
+            const source = db_data.sources.find(s => s.sourceName === sourceName);
+            if (source && downloadLinks.length === 0 && watchOnlineLinks.length === 0) {
+                db_data.sources = db_data.sources.filter(item => item.sourceName !== sourceName);
+                updateFields.sources = db_data.sources;
+            } else if (source.pageLink !== pageLink) {
+                source.pageLink = pageLink;
+                updateFields.sources = db_data.sources;
+            }
         }
 
         if (db_data.summary.persian.length < persianSummary.length) {

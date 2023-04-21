@@ -79,7 +79,7 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                         break;
                     }
                     await pauseCrawler();
-                    await promiseQueue.onSizeLessThan(25);
+                    await promiseQueue.onSizeLessThan(50);
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url));
                 }
             } catch (error) {
@@ -154,7 +154,6 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
                         qualitySample: getDecodedLink(qualitySample),
                         sourceName: sourceConfig.sourceName,
-                        pageLink: getDecodedLink(page_link),
                         season, episode,
                     });
                 }

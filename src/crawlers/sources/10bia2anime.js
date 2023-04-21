@@ -142,7 +142,7 @@ function getSubtitles($, type, pageLink, downloadLinks) {
             linkHref = linkHref.split(/(?<=zip)http/i)[0];
             if (linkHref.match(subtitleFormatsRegex) || linkHref.match(/\/sub(titles)?\//i)) {
                 const isDirect = !!linkHref.match(subtitleFormatsRegex);
-                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink, isDirect);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, isDirect);
                 const subtitleSiblings = $($a[i]).parent().children().toArray().filter(item => item.name !== 'br');
                 if (subtitleSiblings.length > 1) {
                     let episodeLink = $($a[i]).prev();

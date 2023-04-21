@@ -8,7 +8,7 @@ export let database = null;
 async function startDatabase() {
     try {
         const uri = config.databaseURL;
-        connection = new mongodb.MongoClient(uri, {compressors: ["zstd"]});
+        connection = new mongodb.MongoClient(uri, {compressors: ["zstd", "zlib"]});
         await connection.connect();
         database = connection.db();
     } catch (error) {

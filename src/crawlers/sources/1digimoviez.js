@@ -161,7 +161,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 const sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
                 const size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
                 info = size ? (info + ' - ' + size.replace(/\s+/, '')) : info;
-                const watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName, pageLink);
+                const watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName);
                 watchOnlineLink.link = linkHref;
                 result.push(watchOnlineLink);
             }

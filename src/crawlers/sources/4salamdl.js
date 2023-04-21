@@ -134,7 +134,7 @@ function getSubtitles($, type, pageLink) {
         for (let i = 0, _length = $a.length; i < _length; i++) {
             const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName);
                 result.push(subtitle);
             }
         }

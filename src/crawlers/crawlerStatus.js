@@ -5,6 +5,7 @@ import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
 
 const crawlerStatus = {
+    disable: config.crawler.disable,
     crawlId: '',
     isCrawling: false,
     isCrawlCycle: false,

@@ -180,7 +180,7 @@ function getSubtitles($, type, pageLink) {
                 dedicated = dedicated ? 'dedicated' : '';
                 let info = [linkInfo, translator, dedicated].filter(item => item).join('.');
                 let isDirect = !!href.match(subtitleFormatsRegex);
-                let subtitle = getSubtitleModel(href, info, type, sourceName, pageLink, isDirect);
+                let subtitle = getSubtitleModel(href, info, type, sourceName, isDirect);
                 subtitles.push(subtitle);
             }
         }

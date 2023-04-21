@@ -1,6 +1,6 @@
 import {getDecodedLink, getSeasonEpisode} from "../crawlers/utils.js";
 
-export function getSubtitleModel(link, info, movieType, sourceName, page_link, direct = true) {
+export function getSubtitleModel(link, info, movieType, sourceName, direct = true) {
     let season = 0, episode = 0;
     if (movieType.includes('serial')) {
         ({season, episode} = getSeasonEpisode(link));
@@ -32,7 +32,6 @@ export function getSubtitleModel(link, info, movieType, sourceName, page_link, d
         link: link.trim(),
         info: info,
         sourceName: sourceName,
-        pageLink: page_link,
         season: season,
         episode: episode,
         direct: direct,

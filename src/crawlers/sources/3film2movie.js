@@ -164,7 +164,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 const linkHref = $($a[i]).attr('href');
                 if (linkHref.includes('.upera.')) {
                     const info = getFileData($, $a[i], type);
-                    const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName, pageLink);
+                    const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName);
                     result.push(watchOnlineLink);
                 }
             }
@@ -185,7 +185,7 @@ function getSubtitles($, type, pageLink) {
         for (let i = 0, _length = $a.length; i < _length; i++) {
             const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName, pageLink);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName);
                 result.push(subtitle);
             }
         }
