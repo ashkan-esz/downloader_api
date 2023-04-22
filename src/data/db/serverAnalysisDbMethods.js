@@ -1,6 +1,22 @@
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
 
+const _maxSaveLogDuration = 1;
+
+export async function removeOldAnalysis() {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        let now = new Date();
+        let yearAndMonth = (now.getFullYear() - _maxSaveLogDuration) + '-' + (now.getMonth() + 1);
+        let result = await collection.deleteMany({
+            yearAndMonth: yearAndMonth,
+        });
+        return result.value;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
 
 export async function saveTotalAndActiveUsersCount(counts) {
     try {

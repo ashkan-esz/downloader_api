@@ -68,6 +68,7 @@ export async function startAgenda() {
         await agenda.every("0 0 * * 0", "remove unused files from s3"); //At 00:00 on Sunday.
         await agenda.every("0 1 * * 0", "compute users favorite genres"); //At 01:00 on Sunday.
         await agenda.every("0 23 * * *", "save total/active users count"); //At 23:00.
+        await agenda.every("0 0 7 * *", "remove server analysis old logs"); //At 00:00 on day-of-month 7.
 
     } catch (error) {
         saveError(error);
