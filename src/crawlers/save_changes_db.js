@@ -10,7 +10,11 @@ import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
 import {getDatesBetween} from "./utils.js";
-import {changePageLinkStateFromCrawlerStatus, removePageLinkToCrawlerStatus} from "./crawlerStatus.js";
+import {
+    changePageLinkStateFromCrawlerStatus,
+    linkStateMessages,
+    removePageLinkToCrawlerStatus
+} from "./crawlerStatus.js";
 import {saveError} from "../error/saveError.js";
 import {checkNeedForceStopCrawler} from "./crawlerController.js";
 
@@ -27,7 +31,7 @@ export default async function save(title, type, year, sourceData) {
             subtitles,
             cookies
         } = sourceData;
-        changePageLinkStateFromCrawlerStatus(pageLink, 'checking db');
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkNeedForceStopCrawler()) {
             removePageLinkToCrawlerStatus(pageLink);
             return;
@@ -38,7 +42,7 @@ export default async function save(title, type, year, sourceData) {
 
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
-                changePageLinkStateFromCrawlerStatus(pageLink, 'new title');
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.newTitle);
                 if (checkNeedForceStopCrawler()) {
                     removePageLinkToCrawlerStatus(pageLink);
                     return;
@@ -47,14 +51,14 @@ export default async function save(title, type, year, sourceData) {
                 if (result.titleModel.type.includes('movie')) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
                 }
-                changePageLinkStateFromCrawlerStatus(pageLink, 'new title: inserting');
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
                 let insertedId = await insertToDB('movies', result.titleModel);
                 if (insertedId) {
                     if (type.includes('anime')) {
-                        changePageLinkStateFromCrawlerStatus(pageLink, 'new title: connecting related titles');
+                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.connectingRelatedTitles);
                         await connectNewAnimeToRelatedTitles(titleModel, insertedId);
                     }
-                    changePageLinkStateFromCrawlerStatus(pageLink, 'new title: adding cast and characters');
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
                     let castAndCharacters = await getCastAndCharactersFromApi(insertedId, titleModel, result.allApiData);
                     if (castAndCharacters) {
                         await updateByIdDB('movies', insertedId, castAndCharacters);
@@ -65,7 +69,7 @@ export default async function save(title, type, year, sourceData) {
             return;
         }
 
-        changePageLinkStateFromCrawlerStatus(pageLink, 'update title');
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updateTitle);
         if (checkNeedForceStopCrawler()) {
             removePageLinkToCrawlerStatus(pageLink);
             return;
@@ -209,7 +213,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         let updateFields = apiData ? apiData.updateFields : {};
 
         if (db_data.releaseState !== 'done' && downloadLinks.length > 0) {
-            changePageLinkStateFromCrawlerStatus(pageLink, 'update title: converting unreleased to released');
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.convertingToRelease);
             await convertUnReleasedTitleToNewTitle(db_data, updateFields, type);
         }
 
@@ -276,7 +280,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         let {_handleCastUpdate} = await import("./crawler.js");
         if (apiData && _handleCastUpdate) {
-            changePageLinkStateFromCrawlerStatus(pageLink, 'update title: adding cast and characters');
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingCast);
             let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
             if (castAndCharacters) {
                 updateFields = {...updateFields, ...castAndCharacters};
@@ -286,7 +290,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         if (db_data.trailer_s3 && db_data.trailers) {
             if (!checkNeedTrailerUpload(null, db_data.trailers)) {
                 //remove trailer from s3
-                changePageLinkStateFromCrawlerStatus(pageLink, 'update title: removing s3 trailer');
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.removingS3Trailer);
                 await removeS3Trailer(db_data, updateFields);
             } else if (db_data.releaseState === 'done' && db_data.insert_date && getDatesBetween(new Date(), db_data.insert_date).days > 90) {
                 let dLinksLength = db_data.type.includes('movie') ?
@@ -297,7 +301,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
                         db_data.qualities.map(item => item.watchOnlineLinks).flat(1).length
                         : db_data.seasons.map(s => s.episodes.map(e => e.watchOnlineLinks).flat(1)).flat(1);
                     if (onlineLinksLength === 0) {
-                        changePageLinkStateFromCrawlerStatus(pageLink, 'update title: removing s3 trailer');
+                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.removingS3Trailer);
                         await removeS3Trailer(db_data, updateFields);
                     }
                 }
@@ -306,7 +310,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
 
         if (Object.keys(updateFields).length > 0) {
-            changePageLinkStateFromCrawlerStatus(pageLink, 'update title: updating');
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
             await updateByIdDB('movies', db_data._id, updateFields);
         }
 

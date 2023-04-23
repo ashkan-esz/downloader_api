@@ -62,6 +62,37 @@ export function getCrawlerStatusObj() {
 //-----------------------------------------
 //-----------------------------------------
 
+export const linkStateMessages = Object.freeze({
+    checkingDB: 'checking db',
+    newTitle: Object.freeze({
+        newTitle: 'new title',
+        inserting: 'new title: inserting',
+        connectingRelatedTitles: 'new title: connecting related titles',
+        addingCast: 'new title: adding cast and characters',
+        uploadingPosterToS3: 'new title: uploading poster to s3',
+        generatingThumbnail: 'new title: generating thumbnail',
+        callingOmdbTvMaze: 'new title: calling omdb/tvmaze apis',
+        handlingSeasonFields: 'new title: handling seasons fields',
+        callingJikan: 'new title: calling jikan api',
+        uploadingYoutubeTrailerToS3: 'new title: uploading youtube trailer to s3',
+        addingRelatedTitles: 'new title: adding related titles',
+    }),
+    updateTitle: Object.freeze({
+        updateTitle: 'update title',
+        convertingToRelease: 'update title: converting unreleased to released',
+        addingCast: 'update title: adding cast and characters',
+        removingS3Trailer: 'update title: removing s3 trailer',
+        updating: 'update title: updating',
+        checkingPoster: 'update title: checking poster',
+        uploadingPosterToS3: 'update title: uploading poster to s3',
+        callingOmdbTvMaze: 'update title: calling omdb/tvmaze apis',
+        handlingSeasonFields: 'update title: handling seasons fields',
+        callingJikan: 'update title: calling jikan api',
+        uploadingYoutubeTrailerToS3: 'update title: uploading youtube trailer to s3',
+        addingRelatedTitles: 'update title: adding related titles',
+    }),
+});
+
 export function updatePageNumberCrawlerStatus(pageNumber, pageCount) {
     crawlerStatus.pageNumber = pageNumber;
     crawlerStatus.pageCount = pageCount;
