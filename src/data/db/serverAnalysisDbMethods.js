@@ -248,8 +248,7 @@ export async function resolveCrawlerWarning(message) {
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
-                'warnings.message': message,
-                'warnings.resolved': false,
+                warnings: {$elemMatch: {message: message, resolved: false}}
             }, {
                 $set: {
                     'warnings.$.resolved': true,

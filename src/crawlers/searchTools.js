@@ -27,8 +27,8 @@ axiosRetry(axios, {
         return retryCount * 1000; // time interval between retries
     },
     onRetry: (retryCount, error, config) => {
-        //todo : temporary fix, not fixed yet on axios 1.1.3
-        delete config.headers;
+        // todo : check fixed on axios 1.3.6
+        // delete config.headers;
     },
     retryCondition: (error) => (
         error.code === 'ECONNRESET' ||
