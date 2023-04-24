@@ -273,7 +273,7 @@ function getSeasonEpisode_extra($, link, type) {
                 seasonEpisode = 'S' + seasonNumber + 'E' + episodeNumber;
             } else if (!seasonInfo.match(/\d/)) {
                 seasonName = seasonInfo.replace('فصل :', '').trim().replace(/\s+/g, '_');
-                if (seasonName.match(/^(ova|oad|nced|ncop|special)$/i)) {
+                if (seasonName.match(/^(ova|oad|nced|ncop|special|redial)$/i)) {
                     seasonEpisode = 'S0E' + episodeNumber;
                 } else {
                     seasonEpisode = 'S1E' + episodeNumber;

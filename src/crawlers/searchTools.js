@@ -140,10 +140,10 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
                         if (type.includes('anime') || getSeasonEpisodeFromInfo) {
                             ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             if ((season === 0 && episode === 0) || link_info.match(/^\d\d\d\d?p(\.|$)/)) {
-                                ({season, episode, isNormalCase} = getSeasonEpisode(link));
+                                ({season, episode, isNormalCase} = getSeasonEpisode(link, true));
                             }
                         } else {
-                            ({season, episode, isNormalCase} = getSeasonEpisode(link));
+                            ({season, episode, isNormalCase} = getSeasonEpisode(link, true));
                             if (season === 0 && !isNormalCase) {
                                 ({season, episode, isNormalCase} = getSeasonEpisode(link_info));
                             }

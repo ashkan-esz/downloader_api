@@ -305,6 +305,7 @@ function getFileData_movie($, link, type) {
     }
     info = fixLinkInfo(info, linkHref, type);
     info = fixLinkInfoOrder(info);
+    info = info.replace('.تاریخ.جهان.2.ساعت', '');
     return [info, size].filter(Boolean).join(' - ');
 }
 
@@ -405,14 +406,17 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
         quality = removeEpisodeNameFromQuality(quality);
 
         quality = purgeQualityText(quality)
-            .replace(/(\.nf)?(\.ss)?\.(((Dub)?Golchi?n\.?dl?n?(fa)?(\.\d)?\d?)|RMTGolchindl|GolchinMusics|Golchuindl)(_\d)?/gi, '')
-            .replace(/(\.nf)?(\.ss)?\.(NightMovie|AvaMovie|Sas?ber(Fun)?|ValaMovi?e|DayMovie|Bia2M|MrMovie|(filmb(\.in)?)|Amazon|net|BWBP+|2CH)(_\d)?/gi, '')
+            .replace(/[\[\]]/g, '.')
+            .replace(/(\.nf)?(\.ss)?\.(((Dub)?Golchi?n\.?dl?n?(\.?fa)?(\.\d)?\d?)|RMTGolchindl|GolchinMusics|Golchuindl)(_\d)?/gi, '')
+            .replace(/(\.nf)?(\.ss)?\.(NightMovie|AvaMovie|Sas?ber(Fun)?|ValaMovi?e|DayMovie|Bia2M(ovies)?|MrMovie|(filmb(\.in)?)|MovieBaz[.\s]?tv|Amazon|net|BWBP+|2CH)(_\d)?/gi, '')
+            .replace(/(^|\.)(iT00NZ|BluZilla|BluDragon|264|AAC2|v2|2hd|MA|60FPS|sub|soft|softsub|8bit|not|(Erai\.raws)|MULVAcoded|RubixFa|0SEC|XOR|Zarfilm|proper|XviD|30nama)/gi, '')
+            .replace(/(^|\.)((s\d+e\d+)|(episode\.\d+))/i, '')
             .replace('REAL.', '')
             .replace('DD%202.0.H.264monkee', 'monkee')
             .replace('[AioFilm.com]', '');
 
         const hardSub = pageHref.match(/softsub|hardsub/gi);
-        let info = hardSub ? (quality + '.' + hardSub[0]) : quality;
+        let info = hardSub ? (quality + '.' + hardSub.pop()) : quality;
         info = fixLinkInfo(info, linkHref, type);
         info = fixLinkInfoOrder(info);
         info = info
@@ -470,10 +474,12 @@ function getQualityFromLinkHref(linkHref, title) {
     return splitLinkHref.slice(seasonEpisodeIndex + 1).join('.')
         .replace(/\d\d\d\d?\.p/, res => res.replace('.p', 'p.'))
         .replace(/^E?\d+\./i, '')
-        .replace('.HardSub', '')
-        .replace('.SoftSub', '')
+        .replace(/(^|\.)(SoftSub|HardSub)\d*/gi, '')
+        .replace(/(^|\.)Not\.Sub(bed)?/i, '')
+        .replace(/\?dubbed\d+/i, '')
+        .replace(/\.dubbed\.fa(rsi)?/i, '')
         .replace('.netDUBLE', '.DUBLE')
-        .replace(/\.(DUBE|DIBLE)/i, '.DUBLE')
+        .replace(/\.(DUBEL?|DIBLE)/i, '.DUBLE')
         .replace('20x264', '')
         .replace(/\.Senario(?=(\.|$))/i, '')
         .replace(/\d\d\d\d?p(?!(\.|\s|$))/i, res => res.replace('p', 'p.'))
@@ -499,11 +505,11 @@ function getQualityFromLinkHref(linkHref, title) {
         .replace(/[_\-]/g, '.').replace(/\.+/g, '.').replace(/^\./, '');
 }
 
+const specialWordsRegex = new RegExp(`(\\d\\d\\d\\d?p)|(${releaseRegex.source})|(${encodersRegex.source})|(${specialWords.source})`);
+
 function removeEpisodeNameFromQuality(quality) {
     quality = quality.replace(/(^|\.)(silence|Joyeux|problème|loki)/gi, '');
-    const tempQuality = quality.replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special))/gi, '');
-    const specialWordsRegex = new RegExp(`(\\d\\d\\d\\d?p)|(${releaseRegex.source})|(${encodersRegex.source})|(${specialWords.source})`);
-
+    const tempQuality = quality.replace(/(^|\.)((DVDRip)|(Special))/gi, '');
     if (tempQuality && !tempQuality.match(specialWordsRegex)) {
         const splitTempQuality = tempQuality.split('.');
         for (let i = 0; i < splitTempQuality.length; i++) {
@@ -511,17 +517,22 @@ function removeEpisodeNameFromQuality(quality) {
         }
         quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
     } else {
-        let tempQuality2 = quality.split(/\.\d\d\d\d?p/)[0].replace(/(^|\.)((DVDRip)|(Not\.Sub(bed)?)|(Special))/gi, '');
-        if (tempQuality2 && tempQuality2.split('.').length > 0 && !tempQuality2.match(specialWordsRegex)) {
+        const tempQuality2 = quality.split(/\.\d\d\d\d?p/)[0].replace(/(^|\.)((DVDRip)|(Special))/gi, '');
+        if (tempQuality2 && !tempQuality2.match(specialWordsRegex)) {
             let splitTempQuality = tempQuality2.split('.');
-            for (let i = 0; i < splitTempQuality.length; i++) {
-                quality = quality.replace(splitTempQuality[i], '');
+            if (splitTempQuality.length > 0) {
+                for (let i = 0; i < splitTempQuality.length; i++) {
+                    quality = quality.replace(splitTempQuality[i], '');
+                }
+                quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
             }
-            quality = quality.replace(/\.+/g, '.').replace(/(^\.)|(\.$)/g, '');
         }
     }
     return quality;
 }
+
+//------------------------------------------------
+//------------------------------------------------
 
 export function handleLinksExtraStuff(downloadLinks) {
     if (downloadLinks.every(item => item.season === 1 && item.episode === 0 && (item.link.match(/part\d+/i) || item.info.match(/part_\d+/i)))) {

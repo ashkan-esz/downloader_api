@@ -3,7 +3,7 @@ import {saveError} from "../error/saveError.js";
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]/g, ' ')
+        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
         .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
@@ -135,6 +135,7 @@ export function checkHardSub(input) {
         input.includes('subfa') ||
         input.includes('farsisub') ||
         input.includes('sub.farsi') ||
+        input.includes('fa.sub') ||
         input.includes('multisub') ||
         (input.includes('.subbed') && !input.includes('not.subbed')) ||
         input.includes('هاردساب فارسی') ||
@@ -166,7 +167,7 @@ export function getYear(title, page_link, downloadLinks) {
     return '';
 }
 
-export function getSeasonEpisode(input) {
+export function getSeasonEpisode(input, isLinkInput = false) {
     try {
         if (!input) {
             return {season: 0, episode: 0, isNormalCase: false}
@@ -179,6 +180,7 @@ export function getSeasonEpisode(input) {
         }
         input = input
             .replace(/(?<!\.)10bit/g, '.10bit')
+            .replace(/\.e\d+end/i, res => res.replace('end', '.end'))
             .replace(/(?<!(\.|^))(2160|1440|1080|720|576|480|360)p/g, (res) => '.' + res); // .S06E03720p.WEB-DL
 
         let season = 0, episode = 0;
@@ -203,10 +205,13 @@ export function getSeasonEpisode(input) {
 
         if (season === 0 || episode === 0) {
             const episodeRegex = /(\.\d\d\d\d)*\.e?\d+\.((\d\d\d\d?p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
-            const episodeMatch = input.replace(/[-_]/g, '.').match(episodeRegex);
+            const episodeMatch = input.replace(/[-_]|%20/g, '.').match(episodeRegex);
             if (episodeMatch) {
                 const match = episodeMatch.find(item => item.includes('e')) || episodeMatch.pop();
                 episode = match.replace(/^(\.\d{4})*\.e?/i, '').split('.')[0];
+                if (episodeMatch.length > 0 && (episode === '' || Number(episode) > 1900)) {
+                    episode = episodeMatch.pop().replace(/^(\.\d{4})*\.e?/i, '').split('.')[0];
+                }
                 if (episode.endsWith('p')) {
                     episode = 0;
                 }
@@ -228,9 +233,9 @@ export function getSeasonEpisode(input) {
         }
 
         if (season <= 1 && episode === 0) {
-            let ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP)\.\d\d\d?\.\d\d\d\d?p/i);
+            let ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p/i);
             if (!ovaMatch) {
-                ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP)(E?)\d\d\d?\.\d\d\d\d?p/gi);
+                ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(E?)\d\d\d?\.\d\d\d\d?p/gi);
             }
             if (ovaMatch) {
                 episode = ovaMatch.pop().match(/\d+(?=\.)/)[0];
@@ -238,14 +243,14 @@ export function getSeasonEpisode(input) {
         }
 
         if ((season === 1 || season === "01") && !episode) {
-            const epMatch = input.match(/\bep(\d+)\b/g);
+            const epMatch = input.match(/\bep(\d+)\b/g) || input.match(/(?<=_)ep\d+(?=_)/g);
             if (epMatch && epMatch.length === 1) {
                 season = '1';
                 episode = epMatch[0].replace('ep', '');
             }
         }
 
-        if ((season === 1 || season === "01") && episode === 0) {
+        if ((season === 1 || season === "01") && (episode === 0 || episode === "")) {
             const decodeLink = getDecodedLink(input);
             if (input !== decodeLink) {
                 const seMatch = decodeLink.match(/s\d+\s*([-.])\s*e?\d+/gi);
@@ -270,6 +275,19 @@ export function getSeasonEpisode(input) {
         }
         if (episode > 3000) {
             episode = 0;
+        }
+
+        if (isLinkInput && season === 1 && episode === 0) {
+            const episodeMatch = input.match(/\.\d\de\d\d\./gi);
+            if (episodeMatch) {
+                const temp = episodeMatch.pop().replace(/\./g, '').split('e');
+                season = Number(temp[0]);
+                episode = Number(temp[1]);
+            }
+            const seasonMatch = input.match(/\/s\d+\//gi)?.pop().match(/\d+/)[0];
+            if (seasonMatch) {
+                season = Number(seasonMatch);
+            }
         }
         return {season, episode, isNormalCase: false};
     } catch (error) {

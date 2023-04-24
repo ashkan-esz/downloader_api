@@ -25,7 +25,7 @@ export const encodersRegex = new RegExp([
     /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo/,
-    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed/,
+    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
@@ -33,7 +33,7 @@ export const linkInfoRegex = new RegExp([
     /((\.x265)?(\.10bit)?(\.HDR)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
     /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
     /(\.Episode\(\d\d?\.5\))?/,
-    /((\.\d)?\.(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP)(_\d)?)?/,
+    /((\.\d)?\.(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial)(_\d)?)?/,
     /((\.Main-Ceremony)|(\.Red-Carpet)|((\.Summary)?\.Oscar(\.\d\d\d\d)?))?/,
     /(\.DIRECTORS-CUT)?/,
     /(\.ALT-UNIVERSE-CUT)?/,
@@ -77,14 +77,14 @@ export const specialWords = new RegExp([
     /|FULL-HD|2K|4K|[876]CH/,
     /|DIRECTORS-CUT|ALT-UNIVERSE-CUT/,
     /|Main-Ceremony|Red-Carpet|Backstage/,
-    /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Part|Encore-Edition/,
+    /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Encore-Edition/,
     /|Episode/,
-    /|((Christmas\.)?Special)|OVA|OAD|NCED|NCOP/,
+    /|((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial/,
 ].map(item => item.source).join(''), 'g');
 
 const episodeRangeRegex = /Episode\(\d\d?\d?-\d\d?\d?\)/;
 const episodeRangeRegex2 = /Episode\(\d\d?\d?-\d\d?\d?\)/;
-export const specialRegex = /((Christmas\.)?Special)|OVA|OAD|NCED|NCOP(_\d)?/;
+export const specialRegex = /(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial)(_\d)?/;
 const dubbedRegex = /dubbed(\(.+\))?/;
 const softSubRegex = /SoftSub(\(.+\))?/;
 const hardSubRegex = /HardSub(\(.+\))?/;
@@ -284,9 +284,10 @@ export function fixLinkInfo(info, linkHref, type) {
 
     info = handleMultiEpisode(linkHref, info);
 
-    const specialRegex = /(?<=\.)(Special|OVA|OAD|NCED|NCOP)(?=(\.?e?\d))/gi;
+    const specialRegex = /(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(?=(\.?e?\d))/gi;
+    const specialRegex2 = /(?<=%20)(Special|OVA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
     if (!specialRegex.test(info)) {
-        let ovaMatch = linkHref.match(specialRegex);
+        let ovaMatch = linkHref.match(specialRegex) || linkHref.match(specialRegex2);
         if (ovaMatch) {
             info += '.' + ovaMatch.pop();
         }
@@ -388,13 +389,13 @@ function addDubAndSub(lowCaseLinkHref, info) {
     if (lowCaseLinkHref.includes('korsub')) {
         info += '.HardSub(korean)';
     } else {
-        const subRegex = /s[ou]fts[ou]b|hards[ou]b/gi;
+        const subRegex = /s[ou]ft\.?s[ou]b|hards[ou]b/gi;
         let subMatch = info.match(subRegex) || lowCaseLinkHref.match(subRegex);
         if (subMatch) {
             //HardSob --> HardSub
             //SuftSub --> SoftSub
-            info += ('.' + subMatch[0].replace('uft', 'oft').replace('ob', 'ub'));
-        } else if (lowCaseLinkHref.includes('subsoft')) {
+            info += ('.' + subMatch.pop().replace('uft', 'oft').replace('ob', 'ub').replace('.', ''));
+        } else if (lowCaseLinkHref.includes('subsoft') || lowCaseLinkHref.includes('softsuv')) {
             info += '.SoftSub';
         } else if (checkHardSub(info) || checkHardSub(lowCaseLinkHref)) {
             info += '.HardSub';
@@ -497,7 +498,7 @@ function fixInfoDubAndSub(info) {
         .replace(/(?<!(\.|^))dubbed/, '.dubbed')
         .replace(/dubbed(\.fa)?\.dubbed/i, 'dubbed')
         .replace(/((Sync(\.\d)?)|fa)\.dubbed/i, 'dubbed')
-        .replace(/\.FA/i, '.dubbed')
+        .replace(/\.FA(rsi)/i, '.dubbed')
         .replace(/dubbed(\.dubbed)+/gi, 'dubbed')
         .replace(/Dual\.Audio\.(SoftSub|dubbed)/i, 'dubbed')
         .replace(/(Dual|Dubbed)\.Audio/i, 'dubbed')
@@ -535,7 +536,7 @@ export function getCleanLinkInfo(info) {
         .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0])
         .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0])
         .replace(/[ًًًٌٍَُِ]/g, '')
-        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co)(?=(\.|\[|$))/gi, '')
+        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m)(?=(\.|\[|$))/gi, '')
         .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
         .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
         .replace(/HEVCPSA/i, 'PSA')
@@ -545,6 +546,7 @@ export function getCleanLinkInfo(info) {
         .replace('.6C.', '.6CH.')
         .replace('6CHx264', '6CH')
         .replace(/10B?itr?/i, '10bit')
+        .replace('.HDR10Plus', '.HDR10')
         .replace(/\.10\.Bit/i, '.10bit')
         .replace(/\.(H264|HEVC|mkv|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
         .replace(/Part([\s.])\d/g, (res) => res.replace(/[\s.]/, '_'))
