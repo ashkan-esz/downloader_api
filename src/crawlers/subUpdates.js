@@ -234,7 +234,7 @@ export function sortTrailers(trailers) {
     return sortedTrailers;
 }
 
-async function getFileSize(url, retryCounter = 0) {
+export async function getFileSize(url, retryCounter = 0) {
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));

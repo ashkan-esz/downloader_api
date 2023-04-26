@@ -63,6 +63,7 @@ export function getCrawlerStatusObj() {
 //-----------------------------------------
 
 export const linkStateMessages = Object.freeze({
+    addFileSize: 'adding file size to downloadLinks info',
     checkingDB: 'checking db',
     newTitle: Object.freeze({
         newTitle: 'new title',

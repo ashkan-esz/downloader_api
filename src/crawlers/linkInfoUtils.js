@@ -130,6 +130,9 @@ const ordersIndex = Object.freeze({
     ceremonyRegex: orders.indexOf('ceremonyRegex'),
 });
 
+const findSpecialRegex = /(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(?=(\.?e?\d))/gi;
+const findSpecialRegex2 = /(?<=%20)(Special|OVA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
+
 //-------------------------------------------------------
 //-------------------------------------------------------
 //-------------------------------------------------------
@@ -284,10 +287,8 @@ export function fixLinkInfo(info, linkHref, type) {
 
     info = handleMultiEpisode(linkHref, info);
 
-    const specialRegex = /(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(?=(\.?e?\d))/gi;
-    const specialRegex2 = /(?<=%20)(Special|OVA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
-    if (!specialRegex.test(info)) {
-        let ovaMatch = linkHref.match(specialRegex) || linkHref.match(specialRegex2);
+    if (!findSpecialRegex.test(info)) {
+        let ovaMatch = linkHref.match(findSpecialRegex) || linkHref.match(findSpecialRegex2);
         if (ovaMatch) {
             info += '.' + ovaMatch.pop();
         }

@@ -3,7 +3,7 @@ import {deleteTrailerFromS3} from "../data/cloudStorage.js";
 import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/staffAndCharacters/personCharacter.js";
 import {handleSiteSeasonEpisodeUpdate, getTotalDuration, getSeasonEpisode} from "./seasonEpisode.js";
-import {handleSubUpdates} from "./subUpdates.js";
+import {getFileSize, handleSubUpdates} from "./subUpdates.js";
 import {getMovieModel} from "../models/movie.js";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
@@ -17,6 +17,7 @@ import {
 } from "./crawlerStatus.js";
 import {saveError} from "../error/saveError.js";
 import {checkNeedForceStopCrawler} from "./crawlerController.js";
+import PQueue from "p-queue";
 
 
 export default async function save(title, type, year, sourceData) {
@@ -31,11 +32,16 @@ export default async function save(title, type, year, sourceData) {
             subtitles,
             cookies
         } = sourceData;
+
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
+        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.vpnStatus);
+
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkNeedForceStopCrawler()) {
             removePageLinkToCrawlerStatus(pageLink);
             return;
         }
+
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
 
         let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
@@ -354,5 +360,53 @@ async function removeS3Trailer(db_data, updateFields) {
         updateFields.trailers = db_data.trailers;
         db_data.trailer_s3 = null;
         updateFields.trailer_s3 = null;
+    }
+}
+
+async function addFileSizeToDownloadLinks(type, downloadLinks, sourceVpnStatus) {
+    if (sourceVpnStatus.downloadLink === 'noVpn') {
+        return;
+    }
+    const promiseQueue = new PQueue({concurrency: 15});
+    if (type.includes('movie')) {
+        for (let j = 0, _length = downloadLinks.length; j < _length; j++) {
+            if (!downloadLinks[j].info.includes(' - ')) {
+                promiseQueue.add(() => getFileSize(downloadLinks[j].link).then(size => {
+                    if (size > 0) {
+                        size = Math.ceil(size / 1024 / 1024);
+                        size = size < 1000 ? `${size}MB` : `${(size / 1024).toFixed(1)}GB`;
+                        downloadLinks[j].info = downloadLinks[j].info + ' - ' + size;
+                    }
+                }));
+            }
+        }
+    } else {
+        let gps = [];
+        let groupedDownloadLinks = downloadLinks.reduce((groups, item) => {
+            let g = item.info.split(' - ')[0] + '/' + item.season;
+            if (!groups[g]) {
+                groups[g] = [item];
+                gps.push(g);
+            } else {
+                groups[g].push(item);
+            }
+            return groups;
+        }, {});
+
+        for (let j = 0; j < gps.length; j++) {
+            if (groupedDownloadLinks[gps[j]].every(l => !l.info.includes(' - '))) {
+                promiseQueue.add(() => getFileSize(groupedDownloadLinks[gps[j]][0].link).then(size => {
+                    if (size > 0) {
+                        let g = gps[j];
+                        size = Math.ceil(size / 1024 / 1024);
+                        size = size < 1000 ? `${Math.round((size - 50) / 100) * 100 + 50}MB` : `${(size / 1024).toFixed(1)}GB`;
+                        for (let k = 0; k < groupedDownloadLinks[g].length; k++) {
+                            groupedDownloadLinks[g][k].info = groupedDownloadLinks[g][k].info + ' - ' + size;
+                        }
+                    }
+                }));
+            }
+        }
+        await promiseQueue.onIdle();
     }
 }
