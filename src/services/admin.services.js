@@ -105,6 +105,16 @@ export async function getCrawlerWarnings(startTime, endTime, skip, limit) {
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function resolveCrawlerWarning(id) {
+    let result = await serverAnalysisDbMethods.resolveCrawlerWarningById(id);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
 export async function editSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,

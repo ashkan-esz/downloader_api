@@ -59,6 +59,12 @@ export async function getCrawlerWarnings(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function resolveCrawlerWarning(req, res) {
+    let result = await adminServices.resolveCrawlerWarning(req.params.id);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 export async function editSource(req, res) {
     let {movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies} = req.body;
     let result = await adminServices.editSource(req.params.sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies);

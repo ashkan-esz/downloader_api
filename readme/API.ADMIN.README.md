@@ -4,6 +4,7 @@
 |------------|----------------|--------------------------|----------|
 | duration   | Number [1-120] | amount of time in minute | true     |
 | force      | Boolean        | amount of time in minute | true     |
+| id         | String, uuid   |                          | true     |
 
 > they are case-insensitive.
 
@@ -20,6 +21,7 @@
 - [GET admin/crawler/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerhistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerwarningshistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/sources](#get-admincrawlersources)
+- [PUT admin/crawler/warnings/resolve/[id]](#put-admincrawlerwarningsresolveid)
 - [GET admin/crawler/warnings](#get-admincrawlerwarnings)
 - [PUT admin/crawler/editSource/[sourceName]](#put-admincrawlereditsourcesourcename)
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
@@ -100,6 +102,12 @@ Query parameters:
 > return sources that get use by crawler.
 
 <br />
+
+### PUT admin/crawler/warnings/resolve/[id]
+> resolve crawler warnings.
+
+<br />
+
 
 ### GET admin/crawler/warnings
 > return crawler warnings.

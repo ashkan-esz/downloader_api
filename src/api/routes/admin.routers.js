@@ -71,6 +71,13 @@ router.get('/crawler/sources',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerSources);
 
+//admin/crawler/warnings/resolve/:id
+router.put('/crawler/warnings/resolve/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveCrawlerWarning);
+
 //admin/crawler/warnings
 router.get('/crawler/warnings',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
