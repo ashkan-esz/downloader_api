@@ -71,7 +71,7 @@ let uploadingTrailer = 0;
 async function waitForTrailerUpload() {
     let start = Date.now();
     while (uploadingTrailer >= trailerUploadConcurrency) {
-        updateTrailerUploadLimit(uploadingTrailer);
+        updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
         if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
             saveCrawlerWarning(crawlerWarningMessages.trailerUploadHighWait);
@@ -79,12 +79,12 @@ async function waitForTrailerUpload() {
         await new Promise(resolve => setTimeout(resolve, 50));
     }
     uploadingTrailer++;
-    updateTrailerUploadLimit(uploadingTrailer);
+    updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
 }
 
 function decreaseUploadingTrailerNumber() {
     uploadingTrailer--;
-    updateTrailerUploadLimit(uploadingTrailer);
+    updateTrailerUploadLimit(uploadingTrailer, trailerUploadConcurrency);
 }
 
 //------------------------------------------

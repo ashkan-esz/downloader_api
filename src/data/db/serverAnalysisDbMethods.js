@@ -1,3 +1,4 @@
+import {v4 as uuidv4} from "uuid";
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -201,16 +202,23 @@ export async function saveCrawlerWarning(message) {
             date: now,
             resolved: false,
             resolvedDate: 0,
+            count: 1,
+            id: uuidv4(),
         };
 
         let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
-                'warnings.message': newWarning.message,
+                'warnings.message': message,
             }, {
                 $set: {
-                    'warnings.$': newWarning,
+                    'warnings.$.date': now,
+                    'warnings.$.resolved': false,
+                    'warnings.$.resolvedDate': 0,
+                },
+                $inc: {
+                    'warnings.$.count': 1,
                 }
             });
 
@@ -249,6 +257,38 @@ export async function resolveCrawlerWarning(message) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
                 warnings: {$elemMatch: {message: message, resolved: false}}
+            }, {
+                $set: {
+                    'warnings.$.resolved': true,
+                    'warnings.$.resolvedDate': new Date(),
+                }
+            });
+
+            if (updateResult.modifiedCount === 0) {
+                return "not found";
+            }
+        } else {
+            return "not found";
+        }
+
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function resolveCrawlerWarningById(id) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        let now = new Date();
+        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+
+        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+                warnings: {$elemMatch: {id: id, resolved: false}}
             }, {
                 $set: {
                     'warnings.$.resolved': true,

@@ -16,20 +16,20 @@ let imageOperations = 0;
 async function waitForImageOperation() {
     let start = Date.now();
     while (imageOperations >= imageOperationsConcurrency) {
-        updateImageOperationsLimit(imageOperations);
-        if (Date.now() - start > saveWarningTimeout){
+        updateImageOperationsLimit(imageOperations, imageOperationsConcurrency);
+        if (Date.now() - start > saveWarningTimeout) {
             start = Date.now();
             saveCrawlerWarning(crawlerWarningMessages.imageOperationsHighWait);
         }
         await new Promise(resolve => setTimeout(resolve, 50));
     }
     imageOperations++;
-    updateImageOperationsLimit(imageOperations);
+    updateImageOperationsLimit(imageOperations, imageOperationsConcurrency);
 }
 
 function decreaseImageOperationNumber() {
     imageOperations--;
-    updateImageOperationsLimit(imageOperations);
+    updateImageOperationsLimit(imageOperations, imageOperationsConcurrency);
 }
 
 //------------------------------------------

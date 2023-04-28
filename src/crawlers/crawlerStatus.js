@@ -3,8 +3,6 @@ import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
-import {trailerUploadConcurrency} from "../data/cloudStorage.js";
-import {imageOperationsConcurrency} from "../utils/sharpImageMethods.js";
 
 const crawlerStatus = {
     disable: config.crawler.disable,
@@ -41,8 +39,8 @@ const crawlerStatus = {
     limits: {
         memory: {value: crawlerMemoryLimit.toFixed(0), limit: config.crawler.totalMemory},
         cpu: {value: 0, limit: config.crawler.cpuLimit.toFixed(0)},
-        imageOperations: {value:0, limit: imageOperationsConcurrency},
-        trailerUpload: {value:0, limit: trailerUploadConcurrency},
+        imageOperations: {value: 0, limit: 0},
+        trailerUpload: {value: 0, limit: 0},
     }
 };
 
@@ -136,12 +134,14 @@ export function removePageLinkToCrawlerStatus(pageLink) {
 //-----------------------------------------
 //-----------------------------------------
 
-export function updateImageOperationsLimit(number) {
+export function updateImageOperationsLimit(number, limit) {
     crawlerStatus.limits.imageOperations.value = number;
+    crawlerStatus.limits.imageOperations.limit = limit;
 }
 
-export function updateTrailerUploadLimit(number) {
+export function updateTrailerUploadLimit(number, limit) {
     crawlerStatus.limits.trailerUpload.value = number;
+    crawlerStatus.limits.trailerUpload.limit = limit;
 }
 
 //-----------------------------------------
