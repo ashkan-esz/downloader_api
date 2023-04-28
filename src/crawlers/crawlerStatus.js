@@ -44,7 +44,7 @@ const crawlerStatus = {
     }
 };
 
-const crawlerLog = {
+const crawlerLog = () => ({
     crawlId: crawlerStatus.crawlId,
     startTime: crawlerStatus.startTime,
     endTime: crawlerStatus.endTime,
@@ -57,7 +57,7 @@ const crawlerLog = {
     error: crawlerStatus.error,
     errorMessage: crawlerStatus.errorMessage,
     forceStop: crawlerStatus.forceStop,
-}
+});
 
 export function getCrawlerStatusObj() {
     return crawlerStatus;
@@ -158,8 +158,7 @@ export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
         crawlMode: crawlMode,
         pausedDuration: 0,
     }
-
-    await saveCrawlerLog(crawlerLog);
+    await saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_sourceEnd(lastPages) {
@@ -171,8 +170,7 @@ export async function updateCrawlerStatus_sourceEnd(lastPages) {
     });
 
     crawlerStatus.crawlingSource = null;
-
-    await saveCrawlerLog(crawlerLog);
+    await saveCrawlerLog(crawlerLog());
 }
 
 
@@ -274,8 +272,7 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, 
     crawlerStatus.crawlerState = 'ok';
     crawlerStatus.forceResume = false;
     crawlerStatus.forceStop = false;
-
-    await saveCrawlerLog(crawlerLog);
+    await saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_crawlerEnd(endTime, crawlDuration) {
@@ -286,7 +283,7 @@ export async function updateCrawlerStatus_crawlerEnd(endTime, crawlDuration) {
     crawlerStatus.isManualStart = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.crawlerState = 'ok';
-    await saveCrawlerLog(crawlerLog);
+    await saveCrawlerLog(crawlerLog());
 }
 
 export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
@@ -299,6 +296,5 @@ export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
     crawlerStatus.error = true;
     crawlerStatus.errorMessage = errorMessage;
     crawlerStatus.crawlerState = 'error';
-
-    await saveCrawlerLog(crawlerLog);
+    await saveCrawlerLog(crawlerLog());
 }

@@ -352,7 +352,6 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     vpnStatus: s3VpnStatus,
                 });
             } catch (error2) {
-                decreaseUploadingTrailerNumber();
                 if (videoReadStream) {
                     videoReadStream.destroy();
                 }
