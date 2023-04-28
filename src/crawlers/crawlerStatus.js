@@ -3,6 +3,8 @@ import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
+import {trailerUploadConcurrency} from "../data/cloudStorage.js";
+import {imageOperationsConcurrency} from "../utils/sharpImageMethods.js";
 
 const crawlerStatus = {
     disable: config.crawler.disable,
@@ -32,11 +34,15 @@ const crawlerStatus = {
     crawlerState: 'ok',
     forceResume: false,
     forceStop: false,
-    limits: {
-        totalMemory: config.crawler.totalMemory,
-        memory: crawlerMemoryLimit.toFixed(0),
-        cpu: config.crawler.cpuLimit.toFixed(0),
+    constValues: {
+        concurrencyNumber: 0,
         pauseDuration: config.crawler.pauseDurationLimit,
+    },
+    limits: {
+        memory: {value: crawlerMemoryLimit.toFixed(0), limit: config.crawler.totalMemory},
+        cpu: {value: 0, limit: config.crawler.cpuLimit.toFixed(0)},
+        imageOperations: {value:0, limit: imageOperationsConcurrency},
+        trailerUpload: {value:0, limit: trailerUploadConcurrency},
     }
 };
 
@@ -94,9 +100,10 @@ export const linkStateMessages = Object.freeze({
     }),
 });
 
-export function updatePageNumberCrawlerStatus(pageNumber, pageCount) {
+export function updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber) {
     crawlerStatus.pageNumber = pageNumber;
     crawlerStatus.pageCount = pageCount;
+    crawlerStatus.constValues.concurrencyNumber = concurrencyNumber;
 }
 
 export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
@@ -124,6 +131,17 @@ export function changePageLinkStateFromCrawlerStatus(pageLink, state) {
 export function removePageLinkToCrawlerStatus(pageLink) {
     pageLink = getDecodedLink(pageLink);
     crawlerStatus.pageLinks = crawlerStatus.pageLinks.filter(item => item.url !== pageLink);
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+export function updateImageOperationsLimit(number) {
+    crawlerStatus.limits.imageOperations.value = number;
+}
+
+export function updateTrailerUploadLimit(number) {
+    crawlerStatus.limits.trailerUpload.value = number;
 }
 
 //-----------------------------------------
@@ -264,6 +282,8 @@ export async function updateCrawlerStatus_crawlerEnd(endTime, crawlDuration) {
     crawlerStatus.endTime = endTime;
     crawlerStatus.duration = crawlDuration;
     crawlerStatus.isCrawling = false;
+    crawlerStatus.isCrawlCycle = false;
+    crawlerStatus.isManualStart = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.crawlerState = 'ok';
     await saveCrawlerLog(crawlerLog);
@@ -273,6 +293,8 @@ export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
     crawlerStatus.endTime = new Date();
     crawlerStatus.duration = getDatesBetween(new Date(), crawlerStatus.startTime).minutes;
     crawlerStatus.isCrawling = false;
+    crawlerStatus.isCrawlCycle = false;
+    crawlerStatus.isManualStart = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.error = true;
     crawlerStatus.errorMessage = errorMessage;

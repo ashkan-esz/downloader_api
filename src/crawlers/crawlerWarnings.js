@@ -10,5 +10,7 @@ export function getCrawlerWarningMessages(sourceName = "", newUrl = "") {
         domainChange: `Source (${sourceName}) domain changed to (${newUrl})`,
         crawlerPauseLimit: `Maximum allowed duration for crawler pause exceeded (${sourceName}min) (crawler need more resource)`,
         invalidImdb: `Invalid imdb api key: ${sourceName}`,
+        trailerUploadHighWait: `High wait for trailer upload to start (${sourceName})`,
+        imageOperationsHighWait: `High wait for trailer upload to start (${sourceName})`,
     });
 }

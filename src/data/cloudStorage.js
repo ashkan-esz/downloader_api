@@ -18,6 +18,9 @@ import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
 import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
+import {updateTrailerUploadLimit} from "../crawlers/crawlerStatus.js";
+import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
 
 
 const s3 = new S3Client({
@@ -59,6 +62,33 @@ export function getS3Client() {
 }
 
 export const s3VpnStatus = 'allOk';
+
+export const trailerUploadConcurrency = 5;
+export const saveWarningTimeout = 60 * 1000; //60s
+const crawlerWarningMessages = getCrawlerWarningMessages(60);
+let uploadingTrailer = 0;
+
+async function waitForTrailerUpload() {
+    let start = Date.now();
+    while (uploadingTrailer >= trailerUploadConcurrency) {
+        updateTrailerUploadLimit(uploadingTrailer);
+        if (Date.now() - start > saveWarningTimeout) {
+            start = Date.now();
+            saveCrawlerWarning(crawlerWarningMessages.trailerUploadHighWait);
+        }
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    uploadingTrailer++;
+    updateTrailerUploadLimit(uploadingTrailer);
+}
+
+function decreaseUploadingTrailerNumber() {
+    uploadingTrailer--;
+    updateTrailerUploadLimit(uploadingTrailer);
+}
+
+//------------------------------------------
+//------------------------------------------
 
 export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
@@ -293,6 +323,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
             }
         }
 
+        await waitForTrailerUpload();
         let fileName = getFileName(title, type, year, '', 'mp4');
         let fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
         return await new Promise(async (resolve, reject) => {
@@ -313,7 +344,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                 });
 
                 let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, videoReadStream, fileName, fileUrl);
-
+                decreaseUploadingTrailerNumber();
                 resolve({
                     url: fileUrl,
                     originalUrl: originalUrl,
@@ -321,6 +352,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     vpnStatus: s3VpnStatus,
                 });
             } catch (error2) {
+                decreaseUploadingTrailerNumber();
                 if (videoReadStream) {
                     videoReadStream.destroy();
                 }
@@ -329,6 +361,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         });
 
     } catch (error) {
+        decreaseUploadingTrailerNumber();
         if (
             ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 4) ||
             (error.statusCode === 410 && retryCounter < 1)
@@ -370,11 +403,13 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
             }
         }
 
+        await waitForTrailerUpload();
         let fileName = getFileName(title, type, year, '', 'mp4');
         let fileUrl = `https://${bucketNamesObject.downloadTrailer}.${bucketsEndpointSuffix}/${fileName}`;
 
         let remoteBrowserData = await getYoutubeDownloadLink(originalUrl);
         if (!remoteBrowserData) {
+            decreaseUploadingTrailerNumber();
             return null;
         }
 
@@ -384,7 +419,7 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
         });
 
         let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, response.data, fileName, fileUrl);
-
+        decreaseUploadingTrailerNumber();
         return ({
             url: fileUrl,
             originalUrl: originalUrl,
@@ -392,6 +427,7 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
             vpnStatus: s3VpnStatus,
         });
     } catch (error) {
+        decreaseUploadingTrailerNumber();
         if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));

@@ -68,7 +68,7 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                     responseUrl,
                     pageTitle
                 } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage');
-                updatePageNumberCrawlerStatus(i, page_count);
+                updatePageNumberCrawlerStatus(i, page_count, concurrencyNumber);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
                     Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
