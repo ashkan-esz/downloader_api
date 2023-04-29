@@ -19,7 +19,7 @@ let manualPauseStart = 0;
 let manualPauseDuration = 0;
 let manualPauseUntil = 0;
 
-export async function pauseCrawler_manual(duration) {
+export function pauseCrawler_manual(duration) {
     let res = saveCrawlerPause('manual pause', true, duration);
     if (res !== "ok") {
         return res;
@@ -31,7 +31,7 @@ export async function pauseCrawler_manual(duration) {
     return "ok";
 }
 
-export async function resumeCrawler_manual(force) {
+export function resumeCrawler_manual(force) {
     let res = removeCrawlerPause(true, force);
     if (res !== "ok") {
         return res;
@@ -42,7 +42,7 @@ export async function resumeCrawler_manual(force) {
     return "ok";
 }
 
-export async function stopCrawler_manual() {
+export function stopCrawler_manual() {
     forceStopCrawler();
     removeCrawlerPause();
     manualPauseStart = 0;
@@ -83,7 +83,7 @@ export async function pauseCrawler() {
             break;
         }
         const pauseReason = memoryStatus.used >= crawlerMemoryLimit
-            ? `memory/limit: ${memoryStatus.used.toFixed(1)}/${crawlerMemoryLimit.toFixed(1)} `
+            ? `memory/limit: ${memoryStatus.used.toFixed(0)}/${crawlerMemoryLimit.toFixed(0)} `
             : `cpu/limit: ${cpuAverageLoad[0]}/${config.crawler.cpuLimit}`;
         saveCrawlerPause(pauseReason);
         if (checkForceResume()) {

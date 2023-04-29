@@ -118,7 +118,7 @@ export async function saveCrawlerLog(crawlerLog) {
                 }
             });
 
-            if (updateResult.modifiedCount === 0) {
+            if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new crawl
                 await collection.updateOne({
                     _id: bucket[0]._id,

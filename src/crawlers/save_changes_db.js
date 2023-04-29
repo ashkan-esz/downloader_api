@@ -34,7 +34,7 @@ export default async function save(title, type, year, sourceData) {
         } = sourceData;
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
-        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.vpnStatus);
+        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.sourceName, sourceConfig.vpnStatus);
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkNeedForceStopCrawler()) {
@@ -250,12 +250,14 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.sources = db_data.sources;
         } else {
             const source = db_data.sources.find(s => s.sourceName === sourceName);
-            if (source && downloadLinks.length === 0 && watchOnlineLinks.length === 0) {
-                db_data.sources = db_data.sources.filter(item => item.sourceName !== sourceName);
-                updateFields.sources = db_data.sources;
-            } else if (source.pageLink !== pageLink) {
-                source.pageLink = pageLink;
-                updateFields.sources = db_data.sources;
+            if (source) {
+                if (downloadLinks.length === 0 && watchOnlineLinks.length === 0) {
+                    db_data.sources = db_data.sources.filter(item => item.sourceName !== sourceName);
+                    updateFields.sources = db_data.sources;
+                } else if (source.pageLink !== pageLink) {
+                    source.pageLink = pageLink;
+                    updateFields.sources = db_data.sources;
+                }
             }
         }
 
@@ -363,7 +365,7 @@ async function removeS3Trailer(db_data, updateFields) {
     }
 }
 
-async function addFileSizeToDownloadLinks(type, downloadLinks, sourceVpnStatus) {
+async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourceVpnStatus) {
     if (sourceVpnStatus.downloadLink === 'noVpn') {
         return;
     }
@@ -371,7 +373,17 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceVpnStatus) 
     if (type.includes('movie')) {
         for (let j = 0, _length = downloadLinks.length; j < _length; j++) {
             if (!downloadLinks[j].info.includes(' - ')) {
-                promiseQueue.add(() => getFileSize(downloadLinks[j].link).then(size => {
+                let url = downloadLinks[j].link;
+                if (sourceName === "film2movie") {
+                    let temp = url.match(/\/\?s=\d+&f=/gi);
+                    if (temp) {
+                        const match = temp.pop();
+                        const number = Number(match.match(/\d+/g).pop());
+                        url = url.replace(/(?<=dl)\d+(?=\.)/, number).replace(match, '');
+                    }
+                }
+
+                promiseQueue.add(() => getFileSize(url).then(size => {
                     if (size > 0) {
                         size = Math.ceil(size / 1024 / 1024);
                         size = size < 1000 ? `${size}MB` : `${(size / 1024).toFixed(1)}GB`;
@@ -395,7 +407,17 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceVpnStatus) 
 
         for (let j = 0; j < gps.length; j++) {
             if (groupedDownloadLinks[gps[j]].every(l => !l.info.includes(' - '))) {
-                promiseQueue.add(() => getFileSize(groupedDownloadLinks[gps[j]][0].link).then(size => {
+                let url = groupedDownloadLinks[gps[j]][0].link;
+                if (sourceName === "film2movie") {
+                    let temp = url.match(/\/\?s=\d+&f=/gi);
+                    if (temp) {
+                        const match = temp.pop();
+                        const number = Number(match.match(/\d+/g).pop());
+                        url = url.replace(/(?<=dl)\d+(?=\.)/, number).replace(match, '');
+                    }
+                }
+
+                promiseQueue.add(() => getFileSize(url).then(size => {
                     if (size > 0) {
                         let g = gps[j];
                         size = Math.ceil(size / 1024 / 1024);
@@ -407,6 +429,7 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceVpnStatus) 
                 }));
             }
         }
-        await promiseQueue.onIdle();
     }
+    await promiseQueue.onIdle();
+    return downloadLinks;
 }

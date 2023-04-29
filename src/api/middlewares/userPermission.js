@@ -12,7 +12,7 @@ export async function uploadProfileImage(req, res, next) {
         });
     }
     if (!userData) {
-        return res.status(409).json({
+        return res.status(404).json({
             data: null,
             code: 404,
             errorMessage: errorMessage.userNotFound,
