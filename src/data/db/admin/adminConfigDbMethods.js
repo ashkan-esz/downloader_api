@@ -38,6 +38,18 @@ export async function getServerConfigs_safe() {
 export async function updateServerConfigs(configs) {
     try {
         let collection = await getCollection('configs');
+        let prevConfigs = await collection.findOne({title: 'server configs'});
+
+        if (configs.disableCrawlerForDuration !== undefined) {
+            if (configs.disableCrawlerForDuration === 0 && prevConfigs.crawlerDisabled) {
+                configs.disableCrawlerStart = 0;
+                configs.crawlerDisabled = false;
+            } else if (configs.disableCrawlerForDuration > 0) {
+                configs.disableCrawlerStart = new Date();
+                configs.crawlerDisabled = true;
+            }
+        }
+
         let result = await collection.updateOne({title: 'server configs'}, {
             $set: configs,
         });

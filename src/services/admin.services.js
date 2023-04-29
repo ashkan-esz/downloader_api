@@ -7,7 +7,7 @@ import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js"
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/crawlerController.js";
-import {safeFields_array} from "../config/configsDb.js";
+import {safeFieldsToEdit_array} from "../config/configsDb.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -40,8 +40,8 @@ export async function resumeCrawler(force) {
     return generateServiceResult({data: ""}, 409, result);
 }
 
-export async function manualStopCrawler(duration) {
-    let result = stopCrawler_manual(duration);
+export async function manualStopCrawler() {
+    let result = stopCrawler_manual();
     if (result === "ok") {
         return generateServiceResult({data: result}, 200, '');
     }
@@ -189,7 +189,7 @@ export async function updateConfigsDb(configs, requestOrigin) {
     const keys = Object.keys(configs);
     let errors = [];
     for (let i = 0; i < keys.length; i++) {
-        if (!safeFields_array.includes(keys[i])) {
+        if (!safeFieldsToEdit_array.includes(keys[i])) {
             errors.push(`unKnown parameter ${keys[i]}`);
         }
     }
@@ -200,6 +200,7 @@ export async function updateConfigsDb(configs, requestOrigin) {
     if (configs.corsAllowedOrigins && !configs.corsAllowedOrigins.includes(requestOrigin)) {
         return generateServiceResult({data: null}, 400, errorMessage.cantRemoveCurrentOrigin);
     }
+
     let result = await adminConfigDbMethods.updateServerConfigs(configs);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);

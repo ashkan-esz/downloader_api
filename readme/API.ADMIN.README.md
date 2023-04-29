@@ -158,7 +158,12 @@ Query parameters:
 ### PUT /admin/configs/update
 > update configs of the server
 
-> editable configs: ['corsAllowedOrigins', 'disableTestUserRequests']
+> editable configs: [ <br />
+> 'corsAllowedOrigins', <br />
+> 'disableTestUserRequests', <br />
+> 'disableCrawlerForDuration' <br />
+> 'disableCrawler' <br />
+> ]
 
 <br />
 

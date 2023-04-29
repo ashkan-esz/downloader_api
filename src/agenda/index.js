@@ -5,6 +5,7 @@ import {crawler, crawlerCycle} from "../crawlers/crawler.js";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi.js";
 import {deleteUnusedFiles} from "../data/cloudStorage.js";
+import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 import {saveError} from "../error/saveError.js";
 
 let agenda = new Agenda({
@@ -21,21 +22,21 @@ export async function startAgenda() {
             priority: "highest",
             shouldSaveResult: true
         }, async (job) => {
-            if (!config.crawler.disable) {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
                 await removeCompletedJobs();
                 await crawlerCycle();
             }
         });
 
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            if (!config.crawler.disable) {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
                 await removeCompletedJobs();
                 await crawler('', {crawlMode: 0});
             }
         });
 
         agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
-            if (!config.crawler.disable) {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
                 await removeCompletedJobs();
                 await Promise.allSettled([
                     updateImdbData(),
