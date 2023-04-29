@@ -65,6 +65,25 @@ export async function resolveCrawlerWarning(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function getServerLogsInTimes(req, res) {
+    let {startTime, endTime, skip, limit} = req.params;
+    let result = await adminServices.getServerLogsHistory(startTime, endTime, skip, limit);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function getServerLogs(req, res) {
+    let result = await adminServices.getServerLogs();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function removeServerLog(req, res) {
+    let result = await adminServices.removeServerLog(req.params.id);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 export async function editSource(req, res) {
     let {movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies} = req.body;
     let result = await adminServices.editSource(req.params.sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies);

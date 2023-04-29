@@ -97,8 +97,8 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function getCrawlerWarnings(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getCrawlerCurrentWarnings(startTime, endTime, skip, limit);
+export async function getCrawlerWarnings() {
+    let result = await serverAnalysisDbMethods.getCrawlerCurrentWarnings();
     if (result === "error") {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     }
@@ -107,6 +107,34 @@ export async function getCrawlerWarnings(startTime, endTime, skip, limit) {
 
 export async function resolveCrawlerWarning(id) {
     let result = await serverAnalysisDbMethods.resolveCrawlerWarningById(id);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getServerLogsHistory(startTime, endTime, skip, limit) {
+    let result = await serverAnalysisDbMethods.getServerLogsInTimes(startTime, endTime, skip, limit);
+    if (result === "error") {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getServerLogs() {
+    let result = await serverAnalysisDbMethods.getCurrentServerLogs();
+    if (result === "error") {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function removeServerLog(id) {
+    let result = await serverAnalysisDbMethods.removeServerLogById(id);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result === 'not found') {

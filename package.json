@@ -68,7 +68,7 @@
     "uuid": "^9.0.0",
     "valid-url": "^1.0.9",
     "words-to-numbers": "^1.5.1",
-    "ytdl-core": "^4.11.2",
+    "ytdl-core": "^4.11.4",
     "zipson": "^0.2.12"
   },
   "devDependencies": {

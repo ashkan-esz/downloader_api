@@ -3,6 +3,7 @@ import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
+import {getCpuStatus} from "../utils/serverStatus.js";
 
 const crawlerStatus = {
     disable: config.crawler.disable,
@@ -58,6 +59,12 @@ const crawlerLog = () => ({
     errorMessage: crawlerStatus.errorMessage,
     forceStop: crawlerStatus.forceStop,
 });
+
+setInterval(() => {
+    getCpuStatus(false).then(res => {
+        crawlerStatus.limits.cpu.value = res.loadAvg
+    });
+}, 1000);
 
 export function getCrawlerStatusObj() {
     return crawlerStatus;

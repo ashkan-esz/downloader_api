@@ -19,6 +19,9 @@
 - [PUT /admin/crawler/stop](#put-admincrawlerstop)
 - [GET /admin/crawler/status](#get-admincrawlerstatus)
 - [GET admin/crawler/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerhistorystarttimeendtimeskiplimit)
+- [GET admin/serverLogs/history/[startTime]/[endTime]/[skip]/[limit]](#get-adminserverlogshistorystarttimeendtimeskiplimit)
+- [GET admin/serverLogs](#get-adminserverlogs)
+- [PUT admin/serverLogs/remove/[id]](#put-adminserverlogsremoveid)
 - [GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerwarningshistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/sources](#get-admincrawlersources)
 - [PUT admin/crawler/warnings/resolve/[id]](#put-admincrawlerwarningsresolveid)
@@ -93,6 +96,21 @@ Query parameters:
 
 ### GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]
 > return history of crawler warnings.
+
+<br />
+
+### GET admin/serverLogs/history/[startTime]/[endTime]/[skip]/[limit]
+> return history of server logs.
+
+<br />
+
+### GET admin/serverLogs
+> return server logs.
+
+<br />
+
+### PUT admin/serverLogs/remove/[id]
+> remove server log.
 
 <br />
 

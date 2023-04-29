@@ -104,6 +104,28 @@ router.put('/crawler/addSource',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/serverLogs/history/:startTime/:endTime/:skip/:limit
+router.get('/serverLogs/history/:startTime/:endTime/:skip/:limit',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerLogsInTimes);
+
+//admin/serverLogs/remove/:id
+router.put('/serverLogs/remove/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeServerLog);
+
+//admin/serverLogs
+router.get('/serverLogs',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerLogs);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 //admin/configs/update
 router.put('/configs/update',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
