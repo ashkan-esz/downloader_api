@@ -102,8 +102,7 @@ export async function addSource(req, res) {
 //---------------------------------------------------
 
 export async function updateConfigsDb(req, res) {
-    let {configs} = req.body;
-    let result = await adminServices.updateConfigsDb(configs, req.get('origin'));
+    let result = await adminServices.updateConfigsDb(req.body, req.get('origin'));
 
     return res.status(result.responseData.code).json(result.responseData);
 }

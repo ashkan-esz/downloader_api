@@ -1,4 +1,6 @@
 import {getServerConfigs} from "../data/db/admin/adminConfigDbMethods.js";
+import {updateCorsAllowedOriginsMiddleWareData} from "../api/middlewares/cors.js";
+import {updateDisableTestUserRequestsMiddleWareData} from "../api/middlewares/isAuth.js";
 
 let configsDB = await getServerConfigs();
 setInterval(async () => {
@@ -11,6 +13,8 @@ export function getServerConfigsDb() {
 
 export async function updateServerConfigsDb() {
     configsDB = await getServerConfigs();
+    updateCorsAllowedOriginsMiddleWareData(configsDB.corsAllowedOrigins);
+    updateDisableTestUserRequestsMiddleWareData(configsDB.disableTestUserRequests);
 }
 
 export const defaultConfigsDb = Object.freeze({
@@ -21,9 +25,12 @@ export const defaultConfigsDb = Object.freeze({
         'http://127.0.0.1:5000',
         'http://localhost:5000',
     ]),
+    disableTestUserRequests: false,
 });
 
-export const safeFieldsToRead_array = ['corsAllowedOrigins'];
+export const safeFields_array = ['corsAllowedOrigins', 'disableTestUserRequests'];
+export const safeFieldsToRead_array = ['corsAllowedOrigins', 'disableTestUserRequests'];
 export const safeFieldsToRead = Object.freeze({
     corsAllowedOrigins: 1,
+    disableTestUserRequests: 1,
 });

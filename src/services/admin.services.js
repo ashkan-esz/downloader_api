@@ -7,6 +7,7 @@ import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js"
 import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/crawlerController.js";
+import {safeFields_array} from "../config/configsDb.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -185,7 +186,18 @@ export async function addSource(sourceName, movie_url, page_count, serial_url, s
 //---------------------------------------------------
 
 export async function updateConfigsDb(configs, requestOrigin) {
-    if (!configs.corsAllowedOrigins.includes(requestOrigin)) {
+    const keys = Object.keys(configs);
+    let errors = [];
+    for (let i = 0; i < keys.length; i++) {
+        if (!safeFields_array.includes(keys[i])) {
+            errors.push(`unKnown parameter ${keys[i]}`);
+        }
+    }
+    if (errors.length > 0) {
+        return generateServiceResult({data: null}, 400, errors.join(', '));
+    }
+
+    if (configs.corsAllowedOrigins && !configs.corsAllowedOrigins.includes(requestOrigin)) {
         return generateServiceResult({data: null}, 400, errorMessage.cantRemoveCurrentOrigin);
     }
     let result = await adminConfigDbMethods.updateServerConfigs(configs);

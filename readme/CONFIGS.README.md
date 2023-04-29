@@ -3,7 +3,8 @@
 
 ```javascript
 dbConfigs = {
-    CORS_ALLOWED_ORIGINS: Array(String), //default value: ['http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:5000', 'http://localhost:5000']
+    corsAllowedOrigins: Array(String), //default value: ['http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:5000', 'http://localhost:5000']
+    disableTestUserRequests: Boolean, //default value: false
 }
 ```
 

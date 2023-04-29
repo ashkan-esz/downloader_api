@@ -1,11 +1,11 @@
 import config from "../../config/index.js";
 import cors from "cors";
-import {getCorsAllowedOrigins} from "../../data/db/admin/adminConfigDbMethods.js";
+import {getConfigDB_CorsAllowedOrigins} from "../../data/db/admin/adminConfigDbMethods.js";
 
-let corsAllowedOriginsDB = await getCorsAllowedOrigins();
+let corsAllowedOriginsDB = await getConfigDB_CorsAllowedOrigins();
 
 setInterval(async () => {
-    corsAllowedOriginsDB = await getCorsAllowedOrigins();
+    corsAllowedOriginsDB = await getConfigDB_CorsAllowedOrigins();
 }, 30 * 60 * 1000); //30 min
 
 export function updateCorsAllowedOriginsMiddleWareData(allowedOrigins) {

@@ -129,7 +129,8 @@ router.get('/serverLogs',
 //admin/configs/update
 router.put('/configs/update',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['configs']),
+    middlewares.validateApiParamsAdmin.checkApiParams(
+        ['corsAllowedOrigins', 'disableTestUserRequests']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']),
     mongoSanitize(),

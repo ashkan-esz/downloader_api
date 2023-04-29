@@ -3,9 +3,23 @@ import jwt from "jsonwebtoken";
 import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
 import {checkTokenBlackListed} from "./authTokenBlackList.js";
+import {getConfigDB_DisableTestUserRequests} from "../../data/db/admin/adminConfigDbMethods.js";
+
 
 let testUserDataCache = null;
-let testUserDataCachDate = 0;
+let testUserDataCacheDate = 0;
+const testUserDataCacheStale = 30 * 60 * 1000;
+
+let disableTestUserRequests = await getConfigDB_DisableTestUserRequests();
+setInterval(async () => {
+    disableTestUserRequests = await getConfigDB_DisableTestUserRequests();
+}, 30 * 60 * 1000); //30 min
+
+export function updateDisableTestUserRequestsMiddleWareData(flag) {
+    disableTestUserRequests = flag;
+}
+
+//----------------------------------------------
 
 export function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
@@ -39,10 +53,10 @@ export function isAuth_refreshToken(req, res, next) {
 
 export async function attachAuthFlag(req, res, next) {
     //handle test user
-    if (req.method === 'GET' && req.query.testUser === 'true') {
-        if (Date.now() - testUserDataCachDate > 30 * 60 * 1000 || testUserDataCache === 'error') {
+    if (!disableTestUserRequests && req.method === 'GET' && req.query.testUser === 'true') {
+        if (Date.now() - testUserDataCacheDate > testUserDataCacheStale || testUserDataCache === 'error') {
             testUserDataCache = await findUser('$$test_user$$', '', {activeSessions: 1});
-            testUserDataCachDate = Date.now();
+            testUserDataCacheDate = Date.now();
         }
         if (testUserDataCache && testUserDataCache !== 'error' && testUserDataCache.activeSessions[0]) {
             let refreshToken = testUserDataCache.activeSessions[0].refreshToken;

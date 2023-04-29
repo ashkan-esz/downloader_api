@@ -204,25 +204,21 @@ const validations = Object.freeze({
             return value;
         }),
 
-    configs: body('configs')
-        .exists().withMessage("Missed parameter configs")
+    corsAllowedOrigins: body('corsAllowedOrigins')
+        .isArray({min: 1, max: 10}).withMessage("corsAllowedOrigins Must be an array with size of [1-10]")
         .custom((value, {req, loc, path}) => {
-            if (!value || Array.isArray(value) || typeof value !== 'object') {
-                throw new Error('Invalid parameter configs :: Object');
-            }
-            let keys = Object.keys(value);
-            for (let i = 0; i < keys.length; i++) {
-                if (!safeFieldsToRead_array.includes(keys[i])) {
-                    throw new Error(`Wrong parameter settings.${keys[i]}`);
-                }
-                if (keys[i] === "corsAllowedOrigins") {
-                    if (!Array.isArray(value[keys[i]])) {
-                        throw new Error(`Invalid parameter configs.${keys[i]} :: Array(String)`);
-                    }
+            for (let i = 0; i < value.length; i++) {
+                if (!value[i] || typeof value[i] !== 'string') {
+                    throw new Error("corsAllowedOrigins Must be an array of String");
                 }
             }
             return value;
-        })
+        }),
+
+    disableTestUserRequests: body('disableTestUserRequests')
+        .isBoolean().withMessage("Invalid parameter disableTestUserRequests :: Boolean")
+        .toBoolean(),
+
 });
 
 export function checkApiParams(apiParams) {
