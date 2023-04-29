@@ -1,12 +1,19 @@
 import config from "../config/index.js";
+import {getServerConfigsDb} from "../config/configsDb.js";
 import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
-import {getCpuStatus} from "../utils/serverStatus.js";
+import {getCpuAverageLoad, getMemoryStatus} from "../utils/serverStatus.js";
 
 const crawlerStatus = {
-    disable: config.crawler.disable,
+    disabledData: {
+        isEnvDisabled: config.crawler.disable,
+        isDbDisabled: false,
+        isDbDisabled_temporary: false,
+        dbDisableDuration: 0,
+        dbDisableStart: 0,
+    },
     crawlId: '',
     isCrawling: false,
     isCrawlCycle: false,
@@ -38,7 +45,7 @@ const crawlerStatus = {
         pauseDuration: config.crawler.pauseDurationLimit,
     },
     limits: {
-        memory: {value: crawlerMemoryLimit.toFixed(0), limit: config.crawler.totalMemory},
+        memory: {value: 0, limit: crawlerMemoryLimit.toFixed(0), total: config.crawler.totalMemory},
         cpu: {value: 0, limit: config.crawler.cpuLimit.toFixed(0)},
         imageOperations: {value: 0, limit: 0},
         trailerUpload: {value: 0, limit: 0},
@@ -61,9 +68,17 @@ const crawlerLog = () => ({
 });
 
 setInterval(() => {
-    getCpuStatus(false).then(res => {
-        crawlerStatus.limits.cpu.value = res.loadAvg
+    crawlerStatus.limits.cpu.value = getCpuAverageLoad();
+    getMemoryStatus(false).then(res => {
+        crawlerStatus.limits.memory.value = res.used.toFixed(0);
     });
+    let configsDb = getServerConfigsDb();
+    if (configsDb) {
+        crawlerStatus.disabledData.isDbDisabled =  configsDb.disableCrawler;
+        crawlerStatus.disabledData.isDbDisabled_temporary =  configsDb.crawlerDisabled;
+        crawlerStatus.disabledData.dbDisableDuration = configsDb.disableCrawlerForDuration;
+        crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
+    }
 }, 1000);
 
 export function getCrawlerStatusObj() {
@@ -176,8 +191,8 @@ export async function updateCrawlerStatus_sourceEnd(lastPages) {
         lastPages: lastPages,
     });
 
-    crawlerStatus.crawlingSource = null;
     await saveCrawlerLog(crawlerLog());
+    crawlerStatus.crawlingSource = null;
 }
 
 
@@ -198,6 +213,7 @@ export function checkForceStopCrawler() {
 
 export function saveCrawlerPause(reason, isManualPause = false, manualPauseDuration = 0) {
     if (crawlerStatus.pauseData.isPaused) {
+        crawlerStatus.pauseData.pauseReason = reason;
         return "crawler is already paused";
     }
     if (isManualPause) {
@@ -227,7 +243,7 @@ export function removeCrawlerPause(handleManual = false, force = false) {
     if (force) {
         crawlerStatus.forceResume = true;
     }
-    const pauseDuration = (Date.now() - crawlerStatus.pauseData.pausedFrom) / 1000;
+    const pauseDuration = (Date.now() - crawlerStatus.pauseData.pausedFrom) / (60 * 1000);
     crawlerStatus.pauseData.isPaused = false;
     crawlerStatus.pauseData.pauseReason = '';
     crawlerStatus.totalPausedDuration += pauseDuration;
@@ -286,22 +302,22 @@ export async function updateCrawlerStatus_crawlerEnd(endTime, crawlDuration) {
     crawlerStatus.endTime = endTime;
     crawlerStatus.duration = crawlDuration;
     crawlerStatus.isCrawling = false;
-    crawlerStatus.isCrawlCycle = false;
-    crawlerStatus.isManualStart = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.crawlerState = 'ok';
     await saveCrawlerLog(crawlerLog());
+    crawlerStatus.isCrawlCycle = false;
+    crawlerStatus.isManualStart = false;
 }
 
 export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
     crawlerStatus.endTime = new Date();
     crawlerStatus.duration = getDatesBetween(new Date(), crawlerStatus.startTime).minutes;
     crawlerStatus.isCrawling = false;
-    crawlerStatus.isCrawlCycle = false;
-    crawlerStatus.isManualStart = false;
     crawlerStatus.crawlingSource = null;
     crawlerStatus.error = true;
     crawlerStatus.errorMessage = errorMessage;
     crawlerStatus.crawlerState = 'error';
     await saveCrawlerLog(crawlerLog());
+    crawlerStatus.isCrawlCycle = false;
+    crawlerStatus.isManualStart = false;
 }

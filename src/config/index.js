@@ -13,7 +13,7 @@ export default Object.freeze({
         totalMemory: Number(process.env.CRAWLER_TOTAL_MEMORY || 512),
         memoryLimit: Number(process.env.CRAWLER_MEMORY_LIMIT || 0),
         cpuLimit: Number(process.env.CRAWLER_CPU_LIMIT || 95),
-        pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 30),
+        pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 10),
     }),
     disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
     databaseURL: process.env.DATABASE_URL,
