@@ -29,6 +29,11 @@ const crawlerStatus = {
     crawlMode: 0,
     pageNumber: 0,
     pageCount: 0,
+    sourcePage: {
+        url: '',
+        state: '',
+        stateTime: 0,
+    },
     pageLinks: [],
     pauseData: {
         isPaused: false,
@@ -74,8 +79,8 @@ setInterval(() => {
     });
     let configsDb = getServerConfigsDb();
     if (configsDb) {
-        crawlerStatus.disabledData.isDbDisabled =  configsDb.disableCrawler;
-        crawlerStatus.disabledData.isDbDisabled_temporary =  configsDb.crawlerDisabled;
+        crawlerStatus.disabledData.isDbDisabled = configsDb.disableCrawler;
+        crawlerStatus.disabledData.isDbDisabled_temporary = configsDb.crawlerDisabled;
         crawlerStatus.disabledData.dbDisableDuration = configsDb.disableCrawlerForDuration;
         crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
     }
@@ -89,6 +94,23 @@ export function getCrawlerStatusObj() {
 //-----------------------------------------
 
 export const linkStateMessages = Object.freeze({
+    start: 'start',
+    sourcePage: Object.freeze({
+        start: 'start',
+        fetchingStart: 'fetching start',
+        retryAxiosCookie: 'fetching, retry with axios and cookies',
+        retryOnNotFound: 'fetching, retry with not found error',
+        retryUnEscapedCharacters: 'fetching, retry on unEscaped characters url',
+        fromCache: 'fetching page data from google cache',
+        fetchingEnd: 'fetching end',
+    }),
+    gettingPageData: Object.freeze({
+        gettingPageData: 'getting page data',
+        retryAxiosCookie: 'getting page data, retry with axios and cookies',
+        retryOnNotFound: 'getting page data, retry with not found error',
+        retryUnEscapedCharacters: 'getting page data, retry on unEscaped characters url',
+        fromCache: 'getting page data from google cache',
+    }),
     addFileSize: 'adding file size to downloadLinks info',
     checkingDB: 'checking db',
     newTitle: Object.freeze({
@@ -133,7 +155,7 @@ export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
             url: pageLink,
             pageNumber: pageNumber,
             time: new Date(),
-            state: 'getting page data',
+            state: linkStateMessages.start,
             stateTime: new Date()
         });
     }
@@ -151,6 +173,21 @@ export function changePageLinkStateFromCrawlerStatus(pageLink, state) {
 export function removePageLinkToCrawlerStatus(pageLink) {
     pageLink = getDecodedLink(pageLink);
     crawlerStatus.pageLinks = crawlerStatus.pageLinks.filter(item => item.url !== pageLink);
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+export function changeSourcePageFromCrawlerStatus(pageLink, state) {
+    pageLink = getDecodedLink(pageLink);
+    crawlerStatus.sourcePage.url = pageLink;
+    if (pageLink) {
+        crawlerStatus.sourcePage.state = state;
+        crawlerStatus.sourcePage.stateTime = new Date();
+    } else {
+        crawlerStatus.sourcePage.state = '';
+        crawlerStatus.sourcePage.stateTime = 0;
+    }
 }
 
 //-----------------------------------------
