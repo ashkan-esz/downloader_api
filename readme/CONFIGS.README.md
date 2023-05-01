@@ -9,6 +9,8 @@ dbConfigs = {
     disableCrawlerStart: Date, //default value: 0
     crawlerDisabled: Boolean, //default value: false
     disableCrawler: Boolean, //default value: false
+    developmentFaze: Boolean, //default value: false
+    developmentFazeStart: Date, //default value: 0
 }
 ```
 

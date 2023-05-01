@@ -8,6 +8,7 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cors from "./api/middlewares/cors.js";
+import developmentFaze from "./api/middlewares/developmentFaze.js";
 import {loadAgenda} from './loaders/index.js';
 import {saveError} from "./error/saveError.js";
 //--------------------------------------
@@ -36,6 +37,7 @@ app.use(rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     max: 600 // limit each IP to 600 requests per windowMs
 }));
+app.use(developmentFaze);
 //--------------------------------------
 //--------------------------------------
 

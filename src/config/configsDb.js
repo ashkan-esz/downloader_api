@@ -1,6 +1,7 @@
-import {getServerConfigs} from "../data/db/admin/adminConfigDbMethods.js";
+import {getServerConfigs, updateServerConfigs_internalUsage} from "../data/db/admin/adminConfigDbMethods.js";
 import {updateCorsAllowedOriginsMiddleWareData} from "../api/middlewares/cors.js";
 import {updateDisableTestUserRequestsMiddleWareData} from "../api/middlewares/isAuth.js";
+import {updateDevelopmentFazeMiddleWareData} from "../api/middlewares/developmentFaze.js";
 
 
 var configsDB = Object.freeze(await getServerConfigs());
@@ -23,17 +24,18 @@ export async function updateServerConfigsDb() {
     configsDB = Object.freeze(await getServerConfigs());
     updateCorsAllowedOriginsMiddleWareData(configsDB.corsAllowedOrigins);
     updateDisableTestUserRequestsMiddleWareData(configsDB.disableTestUserRequests);
-    handleUpdateStuff();
+    updateDevelopmentFazeMiddleWareData(configsDB.developmentFaze);
+    await handleUpdateStuff(false);
 }
 
 //----------------------------------------------------
 //----------------------------------------------------
 
 setInterval(async () => {
-    handleUpdateStuff();
+    await handleUpdateStuff();
 }, 60 * 1000); //1 min
 
-function handleUpdateStuff() {
+async function handleUpdateStuff(saveChangesToDB = true) {
     //enable crawler
     if (configsDB.crawlerDisabled) {
         let disableCrawlerStartPlusDuration = new Date(configsDB.disableCrawlerStart);
@@ -43,6 +45,9 @@ function handleUpdateStuff() {
             configsDB.disableCrawlerForDuration = 0;
             configsDB.disableCrawlerStart = 0;
             configsDB.crawlerDisabled = false;
+            if (saveChangesToDB) {
+                await updateServerConfigs_internalUsage(configsDB);
+            }
         }
     }
 }
@@ -63,15 +68,13 @@ export const defaultConfigsDb = Object.freeze({
     disableCrawlerStart: 0,
     crawlerDisabled: false,
     disableCrawler: false,
+    developmentFaze: false,
+    developmentFazeStart: 0,
 });
 
-export const safeFieldsToEdit_array = ['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration', 'disableCrawler'];
-export const safeFieldsToRead_array = ['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration', 'disableCrawlerStart', 'crawlerDisabled', 'disableCrawler'];
-export const safeFieldsToRead = Object.freeze({
-    corsAllowedOrigins: 1,
-    disableTestUserRequests: 1,
-    disableCrawlerForDuration: 1,
-    disableCrawlerStart: 1,
-    crawlerDisabled: 1,
-    disableCrawler: 1,
-});
+export const safeFieldsToEdit_array = Object.freeze(['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration', 'disableCrawler', 'developmentFaze']);
+export const safeFieldsToRead_array = Object.freeze(Object.keys(defaultConfigsDb).filter(item => item !== 'title'));
+export const safeFieldsToRead = Object.freeze(safeFieldsToRead_array.reduce((obj, item) => {
+    obj[item] = 1
+    return obj;
+}, {}));

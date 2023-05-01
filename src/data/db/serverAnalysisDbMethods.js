@@ -373,7 +373,7 @@ export async function saveCrawlerWarning(message) {
                 }
             });
 
-            if (updateResult.modifiedCount === 0) {
+            if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new warning
                 await collection.updateOne({
                     _id: bucket[0]._id,

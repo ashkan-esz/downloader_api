@@ -227,6 +227,10 @@ const validations = Object.freeze({
         .isBoolean().withMessage("Invalid parameter disableCrawler :: Boolean")
         .toBoolean(),
 
+    developmentFaze: body('developmentFaze')
+        .isBoolean().withMessage("Invalid parameter developmentFaze :: Boolean")
+        .toBoolean(),
+
 });
 
 export function checkApiParams(apiParams) {

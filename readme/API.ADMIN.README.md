@@ -158,12 +158,7 @@ Query parameters:
 ### PUT /admin/configs/update
 > update configs of the server
 
-> editable configs: [ <br />
-> 'corsAllowedOrigins', <br />
-> 'disableTestUserRequests', <br />
-> 'disableCrawlerForDuration' <br />
-> 'disableCrawler' <br />
-> ]
+> editable configs: [safeFieldsToEdit_array](../src/config/configsDb.js).
 
 <br />
 
