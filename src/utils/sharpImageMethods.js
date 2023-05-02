@@ -1,12 +1,10 @@
 import config from "../config/index.js";
-import axios from "axios";
 import sharp from "sharp";
-import {CookieJar} from "tough-cookie";
-import {wrapper} from "axios-cookiejar-support";
-import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
+import {saveError} from "../error/saveError.js";
 import {updateImageOperationsLimit} from "../crawlers/crawlerStatus.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
+import {downloadImage} from "../crawlers/axiosUtils.js";
 
 export const imageOperationsConcurrency = 100;
 export const saveWarningTimeout = 60 * 1000; //60s
@@ -123,27 +121,6 @@ export async function getImageThumbnail(inputImage, downloadFile = false) {
         if (error.message !== 'Input buffer contains unsupported image format') {
             saveError(error);
         }
-        return null;
-    }
-}
-
-async function downloadImage(url, retryCounter = 0) {
-    try {
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        return await client.get(url, {
-            responseType: "arraybuffer",
-            responseEncoding: "binary"
-        });
-    } catch (error) {
-        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
-            decodeURIComponent(url) === url && retryCounter < 1) {
-            retryCounter++;
-            let fileName = url.replace(/\/$/, '').split('/').pop();
-            url = url.replace(fileName, encodeURIComponent(fileName));
-            return await downloadImage(url, retryCounter);
-        }
-        saveErrorIfNeeded(error);
         return null;
     }
 }

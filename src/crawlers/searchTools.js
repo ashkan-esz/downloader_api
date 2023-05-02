@@ -7,6 +7,7 @@ import {check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
 import {getDecodedLink, getSeasonEpisode} from "./utils.js";
+import {getResponseWithCookie} from "./axiosUtils.js";
 import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import * as Sentry from "@sentry/node";
@@ -19,8 +20,6 @@ import {
     removePageLinkToCrawlerStatus,
     updatePageNumberCrawlerStatus
 } from "./crawlerStatus.js";
-import {CookieJar} from 'tough-cookie';
-import {wrapper} from "axios-cookiejar-support";
 import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
 
 axiosRetry(axios, {
@@ -261,13 +260,8 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     }
                     let sourcesObject = await getAxiosSourcesObject();
                     let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName].cookies : [];
-                    const jar = new CookieJar();
-                    const client = wrapper(axios.create({jar}));
-                    let response = await client.get(url, {
-                        headers: {
-                            Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
-                        }
-                    });
+                    const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
+                    let response = await getResponseWithCookie(url, cookie);
                     responseUrl = response.request.res.responseUrl;
                     if (response.data.includes('<title>Security Check ...</title>') && pageType === 'movieDataPage') {
                         $ = null;

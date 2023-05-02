@@ -15,8 +15,7 @@ import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
-import {CookieJar} from "tough-cookie";
-import {wrapper} from "axios-cookiejar-support";
+import {getArrayBufferResponse, getFileSize} from "../crawlers/axiosUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {updateTrailerUploadLimit} from "../crawlers/crawlerStatus.js";
 import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
@@ -111,12 +110,7 @@ export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPerson
         }
         let fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
         let fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        let response = await client.get(originalUrl, {
-            responseType: "arraybuffer",
-            responseEncoding: "binary"
-        });
+        let response = await getArrayBufferResponse(originalUrl);
         let dataBuffer = await compressImage(response.data);
 
         const params = {
@@ -187,15 +181,8 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
                 };
             }
         }
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        let response = await client.get(originalUrl, {
-            responseType: "arraybuffer",
-            responseEncoding: "binary",
-            headers: {
-                Cookie: cookie,
-            }
-        });
+
+        let response = await getArrayBufferResponse(originalUrl, cookie);
         const params = {
             ContentType: response.headers["content-type"],
             ContentLength: response.data.length.toString(),
@@ -255,12 +242,7 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, retr
 
         let fileName = getFileName(title, type, year, '', 'jpg');
         let fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        let response = await client.get(originalUrl, {
-            responseType: "arraybuffer",
-            responseEncoding: "binary"
-        });
+        let response = await getArrayBufferResponse(originalUrl);
         let dataBuffer = await compressImage(response.data);
 
         const params = {
@@ -874,28 +856,4 @@ function getFileName(title, titleType, year, extra, fileType) {
         fileName = fileName.replace(('-' + year), '');
     }
     return fileName;
-}
-
-async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
-    try {
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        let response = await client.head(url);
-        return Number(response.headers['content-length']) || 0;
-    } catch (error) {
-        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
-            decodeURIComponent(url) === url && retryCounter < 1) {
-            retryCounter++;
-            let fileName = url.replace(/\/$/, '').split('/').pop();
-            url = url.replace(fileName, encodeURIComponent(fileName));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter);
-        }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 1000)));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter);
-        }
-        saveErrorIfNeeded(error);
-        return 0;
-    }
 }

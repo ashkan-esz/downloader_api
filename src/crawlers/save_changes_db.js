@@ -3,13 +3,14 @@ import {deleteTrailerFromS3} from "../data/cloudStorage.js";
 import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/staffAndCharacters/personCharacter.js";
 import {handleSiteSeasonEpisodeUpdate, getTotalDuration, getSeasonEpisode} from "./seasonEpisode.js";
-import {getFileSize, handleSubUpdates} from "./subUpdates.js";
+import {handleSubUpdates} from "./subUpdates.js";
 import {getMovieModel} from "../models/movie.js";
 import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
 import {getDatesBetween} from "./utils.js";
+import {getFileSize} from "./axiosUtils.js";
 import {
     changePageLinkStateFromCrawlerStatus,
     linkStateMessages,

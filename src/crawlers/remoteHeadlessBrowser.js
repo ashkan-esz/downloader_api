@@ -1,10 +1,9 @@
 import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
-import {CookieJar} from 'tough-cookie';
-import {wrapper} from 'axios-cookiejar-support';
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils.js"
+import {getResponseWithCookie} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 
 let remoteBrowsers = config.remoteBrowser.map(item => {
@@ -258,15 +257,9 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
             return result;
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
+        const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
         let timeout = sourceAuthStatus === 'login-cookie' ? 6000 : 3000;
-        const jar = new CookieJar();
-        const client = wrapper(axios.create({jar}));
-        let response = await client.get(url, {
-            timeout: timeout,
-            headers: {
-                Cookie: sourceCookies.map(item => item.name + '=' + item.value + ';').join(' '),
-            }
-        });
+        let response = await getResponseWithCookie(url, cookie, timeout);
         let $ = cheerio.load(response.data);
         let links = $('a');
         result.pageContent = response.data;

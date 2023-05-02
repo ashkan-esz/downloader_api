@@ -1,4 +1,3 @@
-import axios from "axios";
 import {getOMDBApiData, getOMDBApiFields} from "./omdbApi.js";
 import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi.js";
 import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi.js";
@@ -7,9 +6,8 @@ import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisod
 import {sortPosters} from "../subUpdates.js";
 import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
+import {getFileSize} from "../axiosUtils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
-import {CookieJar} from "tough-cookie";
-import {wrapper} from "axios-cookiejar-support";
 import {changePageLinkStateFromCrawlerStatus, linkStateMessages} from "../crawlerStatus.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
@@ -255,10 +253,7 @@ async function checkBetterS3Poster(prevPosters, sourceName, newPosterUrl, prevS3
             }
         }
         if (newPosterSize === 0) {
-            const jar = new CookieJar();
-            const client = wrapper(axios.create({jar}));
-            let response = await client.head(newPosterUrl);
-            newPosterSize = Number(response.headers['content-length']) || 0;
+            newPosterSize = await getFileSize(newPosterUrl);
         }
         if (newPosterSize > 0) {
             let diff = ((newPosterSize - prevS3Poster.size) / prevS3Poster.size) * 100;

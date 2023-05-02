@@ -1,11 +1,9 @@
-import axios from "axios";
 import * as Sentry from "@sentry/node";
-import {wrapper} from 'axios-cookiejar-support';
-import {CookieJar} from 'tough-cookie';
 import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils.js";
+import {getResponseUrl} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
@@ -46,10 +44,7 @@ async function checkSourcesUrl(sourcesUrls) {
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {
-                    const jar = new CookieJar();
-                    const client = wrapper(axios.create({jar}));
-                    let response = await client.get(homePageLink);
-                    responseUrl = response.request.res.responseUrl;
+                    responseUrl = await getResponseUrl(homePageLink);
                 }
                 if (!responseUrl) {
                     continue;
@@ -59,10 +54,7 @@ async function checkSourcesUrl(sourcesUrls) {
                     let temp = homePageLink.replace(/\/$/, '').split('/').pop();
                     let url = homePageLink.replace(temp, encodeURIComponent(temp));
                     try {
-                        const jar = new CookieJar();
-                        const client = wrapper(axios.create({jar}));
-                        let response = await client.get(url);
-                        responseUrl = response.request.res.responseUrl;
+                        responseUrl = await getResponseUrl(url);
                     } catch (error2) {
                         error2.isAxiosError = true;
                         error2.url = homePageLink;
@@ -100,20 +92,14 @@ export async function checkUrlWork(sourceName, sourceUrl) {
             if (pageData && pageData.pageContent) {
                 responseUrl = pageData.responseUrl;
             } else {
-                const jar = new CookieJar();
-                const client = wrapper(axios.create({jar}));
-                let response = await client.get(homePageLink);
-                responseUrl = response.request.res.responseUrl;
+                responseUrl = await getResponseUrl(homePageLink);
             }
         } catch (error) {
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 let temp = homePageLink.replace(/\/$/, '').split('/').pop();
                 let url = homePageLink.replace(temp, encodeURIComponent(temp));
                 try {
-                    const jar = new CookieJar();
-                    const client = wrapper(axios.create({jar}));
-                    let response = await client.get(url);
-                    responseUrl = response.request.res.responseUrl;
+                    responseUrl = await getResponseUrl(url);
                 } catch (error2) {
                     error2.isAxiosError = true;
                     error2.url = homePageLink;

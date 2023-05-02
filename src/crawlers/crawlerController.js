@@ -13,7 +13,7 @@ import * as Sentry from "@sentry/node";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 
-export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.85)) - 15;
+export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.85)) - 20;
 
 let manualPauseStart = 0;
 let manualPauseDuration = 0;
