@@ -262,7 +262,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
         titleModel.awards = imdbData.awards || '';
         titleModel.genres = imdbData.genres
             ? imdbData.genres.toLowerCase().split(',')
-                .map(item => item.trim().replace(/\s+/g, '-'))
+                .map(item => item.trim().replace(/\s+/g, '-').replace('sports', 'sport'))
                 .filter(item => item !== 'n/a' && item !== 'anime')
             : [];
         if (!type.includes('anime') && imdbData.genres?.toLowerCase().includes('anime')) {

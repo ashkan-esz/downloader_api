@@ -128,7 +128,7 @@ export function getOMDBApiFields(data, type) {
             summary_en: (data.Plot) ? data.Plot.replace(/<p>|<\/p>|<b>|<\/b>/g, '').trim().replace('N/A', '').replace(/([.…])+$/, '') : '',
             genres: data.Genre
                 ? data.Genre.toLowerCase().split(',')
-                    .map(value => value.trim().replace(/\s+/g, '-'))
+                    .map(value => value.trim().replace(/\s+/g, '-').replace('sports', 'sport'))
                     .filter(item => item !== 'n/a' && item !== 'anime')
                 : [],
             isAnime: (data.Genre?.toLowerCase().includes('anime')),
