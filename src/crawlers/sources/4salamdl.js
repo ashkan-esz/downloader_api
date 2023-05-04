@@ -123,6 +123,8 @@ function fixYear($) {
 function fixWrongYear(title, type, year) {
     if (title === 'room 104' && type === 'serial') {
         return '2017'; // 2019 --> 2017
+    } else if (title === 'the walking dead' && type === 'serial') {
+        return '2010'; // 2019 --> 2010
     }
     return year;
 }

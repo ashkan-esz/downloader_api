@@ -76,7 +76,6 @@ function getEditedTitle(title) {
         .replace('ookami', 'okami')
         .replace('apple', 'aplle')
         .replace('douchuu', 'dochu')
-        .replace('yuusha', 'yusha')
         .replace('oukoku', 'okoku')
         .replace('suizou wo tabetai', 'suizo o tabetai')
         .replace(' wo ', ' o ')
@@ -266,13 +265,12 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, year
         }
     }
 
+    const normalizeRegex = /\s+|precent|movie|eiga|gekijouban/gi;
+
     return (
         matchYear &&
         (
-            title.replace(/precent|\s+/g, '') === apiTitle.replace(/precent|\s+/g, '') ||
-            title === apiTitle.replace(' movie', '') ||
-            title === apiTitle.replace('eiga ', '') ||
-            title === apiTitle.replace('gekijouban ', '') ||
+            title.replace(normalizeRegex, '') === apiTitle.replace(normalizeRegex, '') ||
             title.replace('uu', 'u') === apiTitle.replace('uu', 'u') ||
             (originalTitle.includes('the movie:') && title.replace('the movie', '').replace(/\s\s+/g, ' ') === apiTitle) ||
             alternateTitles.includes(apiTitle.replace('uu', 'u')) ||
