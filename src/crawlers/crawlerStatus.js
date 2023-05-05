@@ -54,7 +54,18 @@ const crawlerStatus = {
         cpu: {value: 0, limit: config.crawler.cpuLimit.toFixed(0)},
         imageOperations: {value: 0, limit: 0},
         trailerUpload: {value: 0, limit: 0},
-    }
+    },
+    domainChangeHandler: {
+        isActive: false,
+        startTime: 0,
+        endTime: 0,
+        duration: 0,
+        state: '',
+        stateTime: 0,
+        error: false,
+        errorMessage: '',
+        sources: [], //sourceName, url, checked, changed, crawled, errorMessage
+    },
 };
 
 const crawlerLog = () => ({
@@ -70,6 +81,14 @@ const crawlerLog = () => ({
     error: crawlerStatus.error,
     errorMessage: crawlerStatus.errorMessage,
     forceStop: crawlerStatus.forceStop,
+    domainChangeHandler: {
+        startTime: crawlerStatus.domainChangeHandler.startTime,
+        endTime: crawlerStatus.domainChangeHandler.endTime,
+        duration: crawlerStatus.domainChangeHandler.duration,
+        state: crawlerStatus.domainChangeHandler.state,
+        error: crawlerStatus.domainChangeHandler.error,
+        errorMessage: crawlerStatus.domainChangeHandler.errorMessage,
+    }
 });
 
 setInterval(() => {
@@ -140,6 +159,13 @@ export const linkStateMessages = Object.freeze({
         uploadingYoutubeTrailerToS3: 'update title: uploading youtube trailer to s3',
         addingRelatedTitles: 'update title: adding related titles',
     }),
+    domainChangeHandler: Object.freeze({
+        start: 'start',
+        checkingUrls: 'checking sources urls',
+        retryAxios: 'checking sources urls (retry with axios)',
+        crawlingSources: 'crawling sources',
+        end: 'end',
+    }),
 });
 
 export function updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber) {
@@ -202,36 +228,6 @@ export function updateTrailerUploadLimit(number, limit) {
     crawlerStatus.limits.trailerUpload.value = number;
     crawlerStatus.limits.trailerUpload.limit = limit;
 }
-
-//-----------------------------------------
-//-----------------------------------------
-
-export function checkIsCrawling() {
-    return crawlerStatus.isCrawling;
-}
-
-export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
-    crawlerStatus.crawlingSource = {
-        name: sourceName,
-        startTime: new Date(),
-        crawlMode: crawlMode,
-        pausedDuration: 0,
-    }
-    await saveCrawlerLog(crawlerLog());
-}
-
-export async function updateCrawlerStatus_sourceEnd(lastPages) {
-    crawlerStatus.crawledSources.push({
-        ...crawlerStatus.crawlingSource,
-        endTime: new Date(),
-        duration: getDatesBetween(new Date(), crawlerStatus.crawlingSource.startTime).minutes,
-        lastPages: lastPages,
-    });
-
-    await saveCrawlerLog(crawlerLog());
-    crawlerStatus.crawlingSource = null;
-}
-
 
 //-----------------------------------------
 //-----------------------------------------
@@ -332,6 +328,7 @@ export async function updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, 
     crawlerStatus.crawlerState = 'ok';
     crawlerStatus.forceResume = false;
     crawlerStatus.forceStop = false;
+    resetDomainChangeHandlerStatusData();
     await saveCrawlerLog(crawlerLog());
 }
 
@@ -357,4 +354,89 @@ export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
     await saveCrawlerLog(crawlerLog());
     crawlerStatus.isCrawlCycle = false;
     crawlerStatus.isManualStart = false;
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+export function checkIsCrawling() {
+    return crawlerStatus.isCrawling;
+}
+
+export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
+    crawlerStatus.crawlingSource = {
+        name: sourceName,
+        startTime: new Date(),
+        crawlMode: crawlMode,
+        pausedDuration: 0,
+    }
+    await saveCrawlerLog(crawlerLog());
+}
+
+export async function updateCrawlerStatus_sourceEnd(lastPages) {
+    crawlerStatus.crawledSources.push({
+        ...crawlerStatus.crawlingSource,
+        endTime: new Date(),
+        duration: getDatesBetween(new Date(), crawlerStatus.crawlingSource.startTime).minutes,
+        lastPages: lastPages,
+    });
+
+    await saveCrawlerLog(crawlerLog());
+    crawlerStatus.crawlingSource = null;
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+export async function updateCrawlerStatus_domainChangeHandlerStart() {
+    crawlerStatus.domainChangeHandler.isActive = true;
+    crawlerStatus.domainChangeHandler.startTime = new Date();
+    crawlerStatus.domainChangeHandler.state = linkStateMessages.domainChangeHandler.start;
+    crawlerStatus.domainChangeHandler.stateTime = new Date();
+
+    await saveCrawlerLog(crawlerLog());
+}
+
+export async function updateCrawlerStatus_domainChangeHandlerEnd() {
+    const duration = getDatesBetween(new Date(), crawlerStatus.domainChangeHandler.startTime).minutes;
+    crawlerStatus.domainChangeHandler.isActive = false;
+    crawlerStatus.domainChangeHandler.endTime = new Date();
+    crawlerStatus.domainChangeHandler.duration = duration;
+    crawlerStatus.domainChangeHandler.state = linkStateMessages.domainChangeHandler.end;
+    crawlerStatus.domainChangeHandler.stateTime = new Date();
+
+    await saveCrawlerLog(crawlerLog());
+    resetDomainChangeHandlerStatusData();
+    return duration;
+}
+
+export async function updateCrawlerStatus_domainChangeHandlerCrashed(errorMessage) {
+    const duration = getDatesBetween(new Date(), crawlerStatus.domainChangeHandler.startTime).minutes;
+    crawlerStatus.domainChangeHandler.isActive = false;
+    crawlerStatus.domainChangeHandler.endTime = new Date();
+    crawlerStatus.domainChangeHandler.duration = duration;
+    crawlerStatus.domainChangeHandler.error = true;
+    crawlerStatus.domainChangeHandler.errorMessage = errorMessage;
+
+    await saveCrawlerLog(crawlerLog());
+    resetDomainChangeHandlerStatusData();
+    return duration;
+}
+
+function resetDomainChangeHandlerStatusData() {
+    crawlerStatus.domainChangeHandler.isActive = false;
+    crawlerStatus.domainChangeHandler.startTime = 0;
+    crawlerStatus.domainChangeHandler.endTime = 0;
+    crawlerStatus.domainChangeHandler.duration = 0;
+    crawlerStatus.domainChangeHandler.state = '';
+    crawlerStatus.domainChangeHandler.stateTime = 0;
+    crawlerStatus.domainChangeHandler.error = false;
+    crawlerStatus.domainChangeHandler.errorMessage = '';
+    crawlerStatus.domainChangeHandler.sources = [];
+}
+
+export function changeDomainChangeHandlerState(sources, state) {
+    crawlerStatus.domainChangeHandler.sources = sources;
+    crawlerStatus.domainChangeHandler.state = state;
+    crawlerStatus.domainChangeHandler.stateTime = new Date();
 }

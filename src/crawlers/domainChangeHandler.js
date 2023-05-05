@@ -7,19 +7,31 @@ import {getResponseUrl} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {
+    changeDomainChangeHandlerState, linkStateMessages,
+    updateCrawlerStatus_domainChangeHandlerCrashed,
+    updateCrawlerStatus_domainChangeHandlerEnd,
+    updateCrawlerStatus_domainChangeHandlerStart
+} from "./crawlerStatus.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
     try {
+        await updateCrawlerStatus_domainChangeHandlerStart();
         let pageCounter_time = sourcesObj.pageCounter_time;
         delete sourcesObj._id;
         delete sourcesObj.title;
         delete sourcesObj.pageCounter_time;
         let sourcesUrls = Object.keys(sourcesObj).map(sourceName => ({
             sourceName: sourceName,
-            url: sourcesObj[sourceName].movie_url
+            url: sourcesObj[sourceName].movie_url,
+            checked: false,
+            changed: false,
+            crawled: false,
+            errorMessage: '',
         }));
 
+        changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls);
         let changedSources = await checkSourcesUrl(sourcesUrls);
 
         if (changedSources.length > 0) {
@@ -28,8 +40,10 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
             await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources);
             Sentry.captureMessage('source domain changed');
         }
+        return await updateCrawlerStatus_domainChangeHandlerEnd();
     } catch (error) {
         await saveError(error);
+        return await updateCrawlerStatus_domainChangeHandlerCrashed(error.message || '');
     }
 }
 
@@ -39,13 +53,16 @@ async function checkSourcesUrl(sourcesUrls) {
         for (let i = 0; i < sourcesUrls.length; i++) {
             let responseUrl;
             let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
+            changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
             try {
                 let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {
+                    changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.retryAxios + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
                     responseUrl = await getResponseUrl(homePageLink);
                 }
+                sourcesUrls[i].checked = true;
                 if (!responseUrl) {
                     continue;
                 }
@@ -55,16 +72,21 @@ async function checkSourcesUrl(sourcesUrls) {
                     let url = homePageLink.replace(temp, encodeURIComponent(temp));
                     try {
                         responseUrl = await getResponseUrl(url);
+                        sourcesUrls[i].checked = true;
                     } catch (error2) {
                         error2.isAxiosError = true;
                         error2.url = homePageLink;
                         error2.url2 = url;
                         error2.filePath = 'domainChangeHandler';
                         await saveError(error2);
+                        sourcesUrls[i].checked = true;
+                        sourcesUrls[i].errorMessage = error2.message || '';
                         continue;
                     }
                 } else {
                     await saveError(error);
+                    sourcesUrls[i].checked = true;
+                    sourcesUrls[i].errorMessage = error.message || '';
                     continue;
                 }
             }
@@ -73,6 +95,7 @@ async function checkSourcesUrl(sourcesUrls) {
 
             if (sourcesUrls[i].url !== newUrl) {//changed
                 sourcesUrls[i].url = newUrl;
+                sourcesUrls[i].changed = true;
                 changedSources.push(sourcesUrls[i]);
             }
         }
@@ -141,7 +164,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
             let startTime = new Date();
             let sourceName = changedSources[i].sourceName;
             Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl start)`);
-
+            changeDomainChangeHandlerState(changedSources, linkStateMessages.domainChangeHandler.crawlingSources + ` || ${sourceName}`);
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
                 const sourceCookies = sourcesObj[sourceName].cookies;
@@ -171,6 +194,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
                     await updateSourcesObjDB(updateSourceField);
                 }
             }
+            changedSources[i].crawled = true;
 
             Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
         } catch (error) {

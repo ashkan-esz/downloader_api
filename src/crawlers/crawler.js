@@ -176,14 +176,15 @@ export async function crawler(sourceName, {
             }
         }
 
+        let domainChangeDuration = 0;
         if (handleDomainChangeOnly || handleDomainChange) {
-            await domainChangeHandler(sourcesObj, fullyCrawledSources);
+            domainChangeDuration = await domainChangeHandler(sourcesObj, fullyCrawledSources);
         }
 
-        let endTime = new Date();
-        let crawlDuration = getDatesBetween(endTime, startTime).minutes;
+        const endTime = new Date();
+        const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
-        let message = `crawling done in : ${crawlDuration}min`;
+        let message = `crawling done in : ${crawlDuration}min, (domainChangeHandler: ${domainChangeDuration}min)`;
         Sentry.captureMessage(message);
         flushCachedData();
         return {
