@@ -5,6 +5,7 @@ import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
 import {getCpuAverageLoad, getMemoryStatus} from "../utils/serverStatus.js";
+import {remoteBrowsers} from "./remoteHeadlessBrowser.js";
 
 const crawlerStatus = {
     disabledData: {
@@ -66,6 +67,7 @@ const crawlerStatus = {
         errorMessage: '',
         sources: [], //sourceName, url, checked, changed, crawled, errorMessage
     },
+    remoteBrowsers: [],
 };
 
 const crawlerLog = () => ({
@@ -103,6 +105,11 @@ setInterval(() => {
         crawlerStatus.disabledData.dbDisableDuration = configsDb.disableCrawlerForDuration;
         crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
     }
+    crawlerStatus.remoteBrowsers = remoteBrowsers.map(item => {
+        let temp = {...item};
+        delete temp.password;
+        return temp;
+    });
 }, 1000);
 
 export function getCrawlerStatusObj() {

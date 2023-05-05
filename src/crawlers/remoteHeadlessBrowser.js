@@ -6,9 +6,10 @@ import {getDecodedLink} from "./utils.js"
 import {getResponseWithCookie} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 
-let remoteBrowsers = config.remoteBrowser.map(item => {
+export const remoteBrowsers = config.remoteBrowser.map(item => {
     item.password = encodeURIComponent(item.password);
     item.apiCallCount = 0;
+    item.urls = [];
     item.sourcesData = [];
     item.disabledTime = 0;
     item.disabled = false;
@@ -78,6 +79,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         }
 
         selectedBrowser.apiCallCount++;
+        selectedBrowser.urls.push(decodedUrl);
         let sourceCookies = sourcesObject
             ? sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
             : "";
@@ -89,6 +91,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
             },
         );
         selectedBrowser.apiCallCount--;
+        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
 
         let data = response.data;
         if (!data || !data.pageContent || data.error) {
@@ -157,6 +160,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         }
 
         selectedBrowser.apiCallCount++;
+        selectedBrowser.urls.push(decodedUrl);
         let response = await axios.get(
             `${selectedBrowser.endpoint}/youtube/getDownloadLink/?password=${selectedBrowser.password}&youtubeUrl=${youtubeUrl}`,
             {
@@ -164,6 +168,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
             },
         );
         selectedBrowser.apiCallCount--;
+        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
 
         let data = response.data;
         if (!data || data.error) {
@@ -193,6 +198,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         error.message === "timeout of 70000ms exceeded"
     )) {
         selectedBrowser.apiCallCount--;
+        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
         if (sourceName) {
             addSourceErrorToBrowserServer(selectedBrowser, sourceName);
         }
@@ -213,6 +219,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             if (selectedBrowser && error.response && error.response.status === 404) {
                 //remote server got deactivated or removed from server
                 selectedBrowser.apiCallCount--;
+                selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
                 if (selectedBrowser.disabled) {
                     return "retry";
                 }
