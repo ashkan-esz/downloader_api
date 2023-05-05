@@ -1,4 +1,5 @@
 import mongodb from "mongodb";
+import {LRUCache} from 'lru-cache';
 import getCollection, {getSession} from "../mongoDB.js";
 import * as moviesDbMethods from "./moviesDbMethods.js";
 import * as lookupDbMethods from "./lookupDbMethods.js";
@@ -6,6 +7,14 @@ import {saveError} from "../../error/saveError.js";
 import {userStats} from "../../models/movie.js";
 import {userStats_character} from "../../models/character.js";
 import {userStats_staff} from "../../models/person.js";
+
+const cache = new LRUCache({
+    max: 500,
+    maxSize: 5000,
+    sizeCalculation: (value, key) => {
+        return 1
+    },
+});
 
 const bucketSizePerArray = 1000;
 const transactionRetryDelay = 100;
@@ -214,25 +223,15 @@ export async function addUserStatDB(collectionName, userId, statType, id, opts =
         // full :  T     T    F   F
         // --> insert on 105
 
-        let firstBucketWithSpace = await collection.find({
-            // bucket with empty space
-            userId: new mongodb.ObjectId(userId),
-            [statCounterField]: {$lt: bucketSizePerArray},
-            [statCounterFull]: false,
-        }, {
-            projection: {
-                pageNumber: 1,
-                [statCounterField]: 1,
-            }
-        }).sort({pageNumber: 1}).limit(1).toArray();
+        let firstBucketWithSpace = await getFirstBucketWithSpace(collection, userId, statCounterField, statCounterFull);
 
-        if (firstBucketWithSpace.length > 0) {
+        if (firstBucketWithSpace) {
             let updateField = {};
-            if (firstBucketWithSpace[0][statCounterField] === bucketSizePerArray - 1) {
+            if (firstBucketWithSpace[statCounterField] === bucketSizePerArray - 1) {
                 updateField[statCounterFull] = true;
             }
             let updateResult = await collection.updateOne({
-                _id: firstBucketWithSpace[0]._id,
+                _id: firstBucketWithSpace._id,
             }, {
                 $push: {
                     [statType]: {
@@ -245,10 +244,30 @@ export async function addUserStatDB(collectionName, userId, statType, id, opts =
                 },
                 $set: updateField,
             }, opts);
+
+            //update cache value
+            const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
+            let cacheResult = cache.get(cacheKey);
+            if (cacheResult) {
+                cacheResult[statCounterField]++;
+                cache.set(cacheKey, cacheResult);
+            }
+
+            const cacheKey2 = 'bucketWithSpace' + userId.toString() + statCounterField;
+            let cacheResult2 = cache.get(cacheKey2);
+            if (cacheResult2) {
+                cacheResult2[statCounterField]++;
+                if (cacheResult2[statCounterField] < bucketSizePerArray) {
+                    cache.set(cacheKey2, cacheResult2);
+                } else {
+                    cache.delete(cacheKey2);
+                }
+            }
+
         } else {
             //need new bucket
             let lastBucket = await getLastBucket(collection, userId, statCounterField, opts);
-            let nextBucketNumber = lastBucket.length > 0 ? lastBucket[0].pageNumber + 1 : 1;
+            let nextBucketNumber = lastBucket ? lastBucket.pageNumber + 1 : 1;
             const statsObject = createUserStatsObject(userId, nextBucketNumber);
             statsObject[statType] = [new mongodb.ObjectId(id)];
             statsObject[statCounterField] = 1;
@@ -333,6 +352,22 @@ export async function removeUserStatDB(collectionName, userId, statType, id, opt
         if (updateResult.modifiedCount === 0) {
             return 'notfound';
         }
+
+        //update cache value
+        const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
+        let cacheResult = cache.get(cacheKey);
+        if (cacheResult) {
+            cacheResult[statCounterField]--;
+            cache.set(cacheKey, cacheResult);
+        }
+
+        const cacheKey2 = 'bucketWithSpace' + userId.toString() + statCounterField;
+        let cacheResult2 = cache.get(cacheKey2);
+        if (cacheResult2) {
+            cacheResult2[statCounterField]--;
+            cache.set(cacheKey2, cacheResult2);
+        }
+
         return 'ok';
     } catch (error) {
         saveError(error);
@@ -369,9 +404,11 @@ export async function getUserStatsListDB(userId, statType, skip, limit, projecti
         let bucketNumberSkip = 0;
         if (skip > bucketSizePerArray) {
             let lastBucket = await getLastBucket(collection, userId, statCounterField);
-            lastBucketNumber = lastBucket[0].pageNumber;
-            let lastBucketItemsCount = lastBucket[0][statCounterField];
-            skip -= lastBucketItemsCount;
+            if (lastBucket) {
+                lastBucketNumber = lastBucket.pageNumber;
+                let lastBucketItemsCount = lastBucket[statCounterField];
+                skip -= lastBucketItemsCount;
+            }
             bucketNumberSkip = Math.floor(skip / bucketSizePerArray) + 1;
             skip = skip % bucketSizePerArray;
         }
@@ -453,8 +490,40 @@ export function userStatsList_addFieldsPipeline(stats, statType, id) {
     return addStatFieldsArray;
 }
 
-export async function getLastBucket(collection, userId, statCounterField, opts = {}) {
-    return await collection.find({
+async function getFirstBucketWithSpace(collection, userId, statCounterField, statCounterFull) {
+    const cacheKey = 'bucketWithSpace' + userId.toString() + statCounterField;
+    let cacheResult = cache.get(cacheKey);
+    if (cacheResult) {
+        return cacheResult;
+    }
+
+    let firstBucketWithSpace = await collection.find({
+        // bucket with empty space
+        userId: new mongodb.ObjectId(userId),
+        [statCounterField]: {$lt: bucketSizePerArray},
+        [statCounterFull]: false,
+    }, {
+        projection: {
+            pageNumber: 1,
+            [statCounterField]: 1,
+        }
+    }).sort({pageNumber: 1}).limit(1).toArray();
+
+    firstBucketWithSpace = firstBucketWithSpace[0] ?? null;
+    if (firstBucketWithSpace) {
+        cache.set(cacheKey, firstBucketWithSpace);
+    }
+    return firstBucketWithSpace;
+}
+
+async function getLastBucket(collection, userId, statCounterField, opts = {}) {
+    const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
+    let cacheResult = cache.get(cacheKey);
+    if (cacheResult) {
+        return cacheResult;
+    }
+
+    let result = await collection.find({
             userId: new mongodb.ObjectId(userId),
             [statCounterField]: {$ne: 0}
         },
@@ -465,4 +534,10 @@ export async function getLastBucket(collection, userId, statCounterField, opts =
         .sort({pageNumber: -1})
         .limit(1)
         .toArray();
+
+    result = result[0] ?? null;
+    if (result) {
+        cache.set(cacheKey, result);
+    }
+    return result;
 }
