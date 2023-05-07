@@ -34,6 +34,8 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                     .map(item => {
                         if (item === ' ') {
                             item = ':?' + item;
+                        } else {
+                            item = item + '\\\'?';
                         }
                         return item;
                     })
