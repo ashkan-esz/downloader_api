@@ -193,7 +193,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         error.url = url;
         error.filePath = 'remoteHeadlessBrowser';
     }
-    if (selectedBrowser && error.message === "timeout of 50000ms exceeded") {
+    if (selectedBrowser && (error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
         selectedBrowser.apiCallCount--;
         selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
         if (sourceName) {
@@ -227,10 +227,10 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             await new Promise(resolve => setTimeout(resolve, 3000));
             return "retry";
         } catch (err) {
+            selectedBrowser.apiCallCount--;
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
             if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
                 //remote server got deactivated or removed from server
-                selectedBrowser.apiCallCount--;
-                selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
                 if (selectedBrowser.disabled) {
                     return "retry";
                 }
@@ -248,6 +248,8 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             }
         }
     }
+    selectedBrowser.apiCallCount--;
+    selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
     await saveError(error);
     return "return null";
 }
