@@ -124,6 +124,7 @@ export const linkStateMessages = Object.freeze({
     sourcePage: Object.freeze({
         start: 'start',
         fetchingStart: 'fetching start',
+        fetchingStart_axios: 'fetching start (axios)',
         retryAxiosCookie: 'fetching, retry with axios and cookies',
         retryOnNotFound: 'fetching, retry with not found error',
         retryUnEscapedCharacters: 'fetching, retry on unEscaped characters url',
@@ -132,6 +133,7 @@ export const linkStateMessages = Object.freeze({
     }),
     gettingPageData: Object.freeze({
         gettingPageData: 'getting page data',
+        gettingPageData_axios: 'getting page data (axios)',
         retryAxiosCookie: 'getting page data, retry with axios and cookies',
         retryOnNotFound: 'getting page data, retry with not found error',
         retryUnEscapedCharacters: 'getting page data, retry on unEscaped characters url',

@@ -231,11 +231,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
             await pauseCrawler();
             let pageData = null;
             if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
-                if (pageType === 'sourcePage') {
-                    changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart);
-                } else {
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData);
-                }
+                saveLinksStatus(pageLink, pageType, 'fetchingStart');
                 pageData = await getPageData(url, sourceConfig.sourceName, sourceConfig.sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
@@ -254,14 +250,22 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     links = [];
                 } else {
                     if (pageType === 'sourcePage') {
-                        changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryAxiosCookie);
+                        if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart_axios);
+                        } else {
+                            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryAxiosCookie);
+                        }
                     } else {
-                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryAxiosCookie);
+                        if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData_axios);
+                        } else {
+                            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryAxiosCookie);
+                        }
                     }
                     let sourcesObject = await getAxiosSourcesObject();
                     let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName].cookies : [];
                     const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
-                    let response = await getResponseWithCookie(url, cookie);
+                    let response = await getResponseWithCookie(url, cookie, 10 * 1000);
                     responseUrl = response.request.res.responseUrl;
                     if (response.data.includes('<title>Security Check ...</title>') && pageType === 'movieDataPage') {
                         $ = null;
@@ -284,11 +288,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 retryCounter < 1) {
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
                 retryCounter++;
-                if (pageType === 'sourcePage') {
-                    changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryOnNotFound);
-                } else {
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryOnNotFound);
-                }
+                saveLinksStatus(pageLink, pageType, 'retryOnNotFound');
                 return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
             }
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
@@ -296,11 +296,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     let temp = url.replace(/\/$/, '').split('/').pop();
                     if (temp) {
                         url = url.replace(temp, encodeURIComponent(temp));
-                        if (pageType === 'sourcePage') {
-                            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryUnEscapedCharacters);
-                        } else {
-                            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryUnEscapedCharacters);
-                        }
+                        saveLinksStatus(pageLink, pageType, 'retryUnEscapedCharacters');
                         return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
                     }
                 }
@@ -309,14 +305,27 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 error.filePath = 'searchTools';
                 await saveError(error);
             } else {
+                if (error.message === 'timeout of 10000ms exceeded') {
+                    if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
+                        error.isAxiosError2 = true;
+                        error.url = url;
+                        error.filePath = 'searchTools > getLinks';
+                    } else {
+                        //sometimes error object is read-only
+                        let temp = error;
+                        error = new Error(temp.message);
+                        Object.assign(error, temp);
+                        error.stack0 = temp.stack;
+                        error.message0 = temp.message;
+                        error.isAxiosError2 = true;
+                        error.url = url;
+                        error.filePath = 'searchTools > getLinks';
+                    }
+                }
                 if (!sourceLinkData) {
                     addSourceToAxiosBlackList(sourceConfig.sourceName);
                 }
-                if (pageType === 'sourcePage') {
-                    changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fromCache);
-                } else {
-                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.fromCache);
-                }
+                saveLinksStatus(pageLink, pageType, 'fromCache');
                 let cacheResult = await getFromGoogleCache(url);
                 $ = cacheResult.$;
                 links = cacheResult.links;
@@ -426,6 +435,37 @@ function freeAxiosBlackListSources() {
             axiosBlackListSources[i].errorCounter = 0;
             axiosBlackListSources[i].lastErrorTime = 0;
             axiosBlackListSources[i].isBlocked = false;
+        }
+    }
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+function saveLinksStatus(pageLink, pageType, state) {
+    if (state === 'fetchingStart') {
+        if (pageType === 'sourcePage') {
+            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart);
+        } else {
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData);
+        }
+    } else if (state === 'retryOnNotFound') {
+        if (pageType === 'sourcePage') {
+            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryOnNotFound);
+        } else {
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryOnNotFound);
+        }
+    } else if (state === 'retryUnEscapedCharacters') {
+        if (pageType === 'sourcePage') {
+            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryUnEscapedCharacters);
+        } else {
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryUnEscapedCharacters);
+        }
+    } else if (state === 'fromCache') {
+        if (pageType === 'sourcePage') {
+            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fromCache);
+        } else {
+            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.fromCache);
         }
     }
 }

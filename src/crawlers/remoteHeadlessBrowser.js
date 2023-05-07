@@ -87,7 +87,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         let response = await axios.get(
             `${selectedBrowser.endpoint}/headlessBrowser/?password=${selectedBrowser.password}&url=${url}&cookieOnly=${cookieOnly}` + sourceCookies,
             {
-                timeout: 70 * 1000, //70s timeout
+                timeout: 50 * 1000, //50s timeout
             },
         );
         selectedBrowser.apiCallCount--;
@@ -195,7 +195,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
     }
     if (selectedBrowser && (
         (error.response && error.response.status >= 500) ||
-        error.message === "timeout of 70000ms exceeded"
+        error.message === "timeout of 50000ms exceeded"
     )) {
         selectedBrowser.apiCallCount--;
         selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
@@ -342,7 +342,7 @@ function addSourceErrorToBrowserServer(selectedBrowser, sourceName) {
     if (sourceData) {
         sourceData.errorCounter++;
         sourceData.lastErrorTime = Date.now();
-        if (sourceData.errorCounter >= 10) {
+        if (sourceData.errorCounter >= 5) {
             sourceData.isBlocked = true;
         }
     } else {
