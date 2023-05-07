@@ -126,6 +126,28 @@ router.get('/serverLogs',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/googleCacheCalls/history/:startTime/:endTime/:skip/:limit
+router.get('/googleCacheCalls/history/:startTime/:endTime/:skip/:limit',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getGoogleCacheCallsInTimes);
+
+//admin/googleCacheCalls/remove/:id
+router.put('/googleCacheCalls/remove/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeGoogleCacheCalls);
+
+//admin/googleCacheCalls
+router.get('/googleCacheCalls',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getGoogleCacheCalls);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 //admin/configs/update
 router.put('/configs/update',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

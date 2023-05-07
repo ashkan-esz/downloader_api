@@ -103,11 +103,8 @@ export async function getUserCountsInTimes(startTime, endTime, skip, limit) {
 
 export async function saveCrawlerLog(crawlerLog) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {yearAndMonth, bucket, collection} = await getCollectionAndBucket();
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
@@ -193,9 +190,7 @@ export async function getCrawlerLogsInTimes(startTime, endTime, skip, limit) {
 
 export async function saveServerLog(logMessage) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {now, yearAndMonth, bucket, collection} = await getCollectionAndBucket();
 
         let newServerLog = {
             message: logMessage,
@@ -203,7 +198,6 @@ export async function saveServerLog(logMessage) {
             id: uuidv4(),
         };
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             //new serverLog
             await collection.updateOne({
@@ -311,18 +305,15 @@ export async function getCurrentServerLogs() {
 
 export async function removeServerLogById(id) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {bucket, collection} = await getCollectionAndBucket();
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
                 'serverLogs.id': id,
             }, {
                 $pull: {
-                    'serverLogs.id': id,
+                    serverLogs: {id: id},
                 }
             });
 
@@ -344,9 +335,7 @@ export async function removeServerLogById(id) {
 
 export async function saveCrawlerWarning(message) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {now, yearAndMonth, bucket, collection} = await getCollectionAndBucket();
 
         let newWarning = {
             message: message,
@@ -357,7 +346,6 @@ export async function saveCrawlerWarning(message) {
             id: uuidv4(),
         };
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
@@ -399,11 +387,8 @@ export async function saveCrawlerWarning(message) {
 
 export async function resolveCrawlerWarning(message) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {bucket, collection} = await getCollectionAndBucket();
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
@@ -431,11 +416,8 @@ export async function resolveCrawlerWarning(message) {
 
 export async function resolveCrawlerWarningById(id) {
     try {
-        let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let {bucket, collection} = await getCollectionAndBucket();
 
-        let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
         if (bucket.length > 0) {
             let updateResult = await collection.updateOne({
                 _id: bucket[0]._id,
@@ -548,6 +530,171 @@ export async function getCrawlerCurrentWarnings() {
 //-----------------------------------------
 //-----------------------------------------
 
+export async function saveGoogleCacheCall(url) {
+    try {
+        let {now, yearAndMonth, bucket, collection} = await getCollectionAndBucket();
+
+        let newGoogleCacheCall = {
+            url: url,
+            date: now,
+            count: 1,
+            id: uuidv4(),
+        };
+
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+                'googleCacheCalls.url': url,
+            }, {
+                $set: {
+                    'googleCacheCalls.$.date': now,
+                },
+                $inc: {
+                    'googleCacheCalls.$.count': 1,
+                }
+            });
+
+            if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
+                //new cache call
+                await collection.updateOne({
+                    _id: bucket[0]._id,
+                }, {
+                    $push: {
+                        googleCacheCalls: newGoogleCacheCall,
+                    }
+                });
+            }
+        } else {
+            //create new bucket
+            let newBucket = getNewBucket(yearAndMonth);
+            newBucket.googleCacheCalls.push(newGoogleCacheCall);
+            await collection.insertOne(newBucket);
+        }
+
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getGoogleCacheCallsInTimes(startTime, endTime, skip, limit) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+
+        let aggregationPipeline = [
+            {
+                $match: {
+                    'googleCacheCalls.date': {$gte: startTime, $lte: endTime},
+                }
+            },
+            {
+                $unwind: '$googleCacheCalls',
+            },
+            {
+                $match: {
+                    'googleCacheCalls.date': {$gte: startTime, $lte: endTime},
+                }
+            },
+            {
+                $sort: {
+                    'googleCacheCalls.date': 1
+                }
+            },
+            {
+                $skip: skip,
+            },
+            {
+                $limit: limit,
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$googleCacheCalls",
+                }
+            },
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getCurrentGoogleCacheCalls() {
+    try {
+        let collection = await getCollection('serverAnalysis');
+        const now = new Date();
+        const yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+        let aggregationPipeline = [
+            {
+                $match: {
+                    yearAndMonth: yearAndMonth,
+                }
+            },
+            {
+                $limit: 1,
+            },
+            {
+                $unwind: '$googleCacheCalls',
+            },
+            {
+                $sort: {
+                    'googleCacheCalls.count': -1,
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$googleCacheCalls",
+                }
+            },
+        ];
+
+        return await collection.aggregate(aggregationPipeline).toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeGoogleCacheCallsById(id) {
+    try {
+        let {bucket, collection} = await getCollectionAndBucket();
+
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+            }, {
+                $pull: {
+                    googleCacheCalls: {id: id},
+                }
+            });
+
+            if (updateResult.modifiedCount === 0) {
+                return "not found";
+            }
+        } else {
+            return "not found";
+        }
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------
+//-----------------------------------------
+
+async function getCollectionAndBucket() {
+    let collection = await getCollection('serverAnalysis');
+    let now = new Date();
+    let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
+
+    let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
+    return {now, yearAndMonth, bucket, collection};
+}
+
 function getNewBucket(yearAndMonth) {
     return ({
         yearAndMonth: yearAndMonth,
@@ -555,5 +702,6 @@ function getNewBucket(yearAndMonth) {
         crawlerLogs: [],
         serverLogs: [],
         warnings: [],
+        googleCacheCalls: [],
     });
 }

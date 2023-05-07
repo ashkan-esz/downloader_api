@@ -22,6 +22,9 @@
 - [GET admin/serverLogs/history/[startTime]/[endTime]/[skip]/[limit]](#get-adminserverlogshistorystarttimeendtimeskiplimit)
 - [GET admin/serverLogs](#get-adminserverlogs)
 - [PUT admin/serverLogs/remove/[id]](#put-adminserverlogsremoveid)
+- [GET admin/googleCacheCalls/history/[startTime]/[endTime]/[skip]/[limit]](#get-admingooglecachecallshistorystarttimeendtimeskiplimit)
+- [GET admin/googleCacheCalls](#get-admingooglecachecalls)
+- [PUT admin/googleCacheCalls/remove/[id]](#put-admingooglecachecallsremoveid)
 - [GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerwarningshistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/sources](#get-admincrawlersources)
 - [PUT admin/crawler/warnings/resolve/[id]](#put-admincrawlerwarningsresolveid)
@@ -111,6 +114,21 @@ Query parameters:
 
 ### PUT admin/serverLogs/remove/[id]
 > remove server log.
+
+<br />
+
+### GET admin/googleCacheCalls/history/[startTime]/[endTime]/[skip]/[limit]
+> return history of google cache calls.
+
+<br />
+
+### GET admin/googleCacheCalls
+> return google cache calls.
+
+<br />
+
+### PUT admin/googleCacheCalls/remove/[id]
+> remove google cache call.
 
 <br />
 

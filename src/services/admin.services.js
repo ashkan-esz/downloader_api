@@ -144,6 +144,34 @@ export async function removeServerLog(id) {
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function getGoogleCacheCallsHistory(startTime, endTime, skip, limit) {
+    let result = await serverAnalysisDbMethods.getGoogleCacheCallsInTimes(startTime, endTime, skip, limit);
+    if (result === "error") {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getGoogleCacheCalls() {
+    let result = await serverAnalysisDbMethods.getCurrentGoogleCacheCalls();
+    if (result === "error") {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function removeGoogleCacheCalls(id) {
+    let result = await serverAnalysisDbMethods.removeGoogleCacheCallsById(id);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
 export async function editSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,

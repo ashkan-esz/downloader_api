@@ -2,12 +2,11 @@ import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
 import {getDecodedLink} from "./utils.js";
-import * as Sentry from "@sentry/node";
 import {saveError} from "../error/saveError.js";
+import {saveGoogleCacheCall} from "../data/db/serverAnalysisDbMethods.js";
 
 let callCounter = 0;
 let error429Time = 0;
-let googleCacheUrls = [];
 
 export async function getFromGoogleCache(url, retryCounter = 0) {
     try {
@@ -23,17 +22,8 @@ export async function getFromGoogleCache(url, retryCounter = 0) {
         let decodedLink = getDecodedLink(url);
         if (config.nodeEnv === 'dev') {
             console.log('google cache: ', decodedLink);
-        } else {
-            googleCacheUrls.push({url: decodedLink, time: new Date()});
-            if (googleCacheUrls.length >= 20) {
-                Sentry.withScope(function (scope) {
-                    scope.setExtra('urls', googleCacheUrls);
-                    scope.setLevel('info');
-                    Sentry.captureMessage(`google cache: ${decodedLink}, ${new Date()}`);
-                });
-                googleCacheUrls = [];
-            }
         }
+        await saveGoogleCacheCall(decodedLink);
         let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
         let webCacheUrl = cacheUrl + decodedLink;
         let response = await axios.get(webCacheUrl);
