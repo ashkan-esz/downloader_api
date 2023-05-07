@@ -1,9 +1,9 @@
 import * as cloudStorage from "../data/cloudStorage.js";
 import {sortTrailers} from "./subUpdates.js";
 
-export async function uploadTitlePosterAndAddToTitleModel(titleModel, posterUrl, updateFields = null) {
+export async function uploadTitlePosterAndAddToTitleModel(titleModel, posterUrl, updateFields = null, forceUpload = false) {
     if (posterUrl && !posterUrl.includes('/icon/') && !posterUrl.includes('nopicture.')) {
-        let s3Poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, posterUrl);
+        let s3Poster = await cloudStorage.uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, posterUrl, 0, forceUpload);
         if (s3Poster) {
             if (updateFields) {
                 addS3PosterToTitleModel(updateFields, s3Poster);

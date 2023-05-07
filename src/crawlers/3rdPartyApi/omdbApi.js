@@ -138,7 +138,7 @@ export function getOMDBApiFields(data, type) {
             year: data.Year.split(/[-–]/g)[0],
             updateFields: {
                 imdbID: data.imdbID,
-                rawTitle: data.Title.trim(),
+                rawTitle: data.Title.trim().replace(/^["']|["']$/g, ''),
                 duration: data.Runtime || '0 min',
                 totalSeasons: (type.includes('movie')) ? 0 : Number(data.totalSeasons),
                 rated: data.Rated,

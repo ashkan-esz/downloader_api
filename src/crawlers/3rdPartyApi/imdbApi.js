@@ -440,6 +440,7 @@ async function handleApiCall(url) {
 }
 
 function createTitleObj(title, rawTitle, originalTitle, imdbYear) {
+    rawTitle = rawTitle.replace(/^["']|["']$/g, '');
     let titleObj = {
         title: utils.replaceSpecialCharacters(title.toLowerCase()),
         rawTitle: rawTitle,

@@ -102,7 +102,7 @@ export function getTvMazeApiFields(data) {
             updateFields: {
                 imdbID: data.externals.imdb || '',
                 tvmazeID: Number(data.id) || 0,
-                rawTitle: data.name.trim(),
+                rawTitle: data.name.trim().replace(/^["']|["']$/g, ''),
                 premiered: data.premiered || '',
                 year: data.premiered ? data.premiered.split(/[-–]/g)[0] : '',
                 duration: data.runtime ? data.runtime + ' min' :

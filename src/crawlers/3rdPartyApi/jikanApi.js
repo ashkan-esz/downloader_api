@@ -142,7 +142,7 @@ export function getJikanApiFields(data) {
             youtubeTrailer: data.trailer.url,
             updateFields: {
                 jikanID: data.mal_id,
-                rawTitle: data.titleObj.rawTitle,
+                rawTitle: data.titleObj.rawTitle.replace(/^["']|["']$/g, ''),
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
                 animeType: data.animeType,
@@ -218,7 +218,7 @@ function getRelatedTitles(data) {
                     _id: '',
                     jikanID: entry[j].mal_id,
                     title: utils.replaceSpecialCharacters(entry[j].name.toLowerCase()),
-                    rawTitle: entry[j].name,
+                    rawTitle: entry[j].name.replace(/^["']|["']$/g, ''),
                     relation: relation,
                 });
             }
@@ -244,7 +244,7 @@ function getModifiedJikanApiData(allTitles, fullData) {
 function getTitleObjFromJikanData(allTitles) {
     let titleObj = {
         title: allTitles.apiTitle_simple,
-        rawTitle: allTitles.apiTitle,
+        rawTitle: allTitles.apiTitle.replace(/^["']|["']$/g, ''),
         alternateTitles: [],
         titleSynonyms: allTitles.titleSynonyms,
     }
@@ -458,13 +458,14 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
                 jikanID: 1,
                 castUpdateDate: 1,
                 endYear: 1,
+                poster_s3: 1,
                 trailer_s3: 1,
             });
             if (titleDataFromDB) {
-                let saveRank = rank;
+                const saveRank = rank;
                 updatePromiseQueue.add(() => update_comingSoon_topAiring_Title(titleDataFromDB, comingSoon_topAiring_titles[i], mode, saveRank));
             } else {
-                let saveRank = rank;
+                const saveRank = rank;
                 insertPromiseQueue.add(() => insert_comingSoon_topAiring_Title(comingSoon_topAiring_titles[i], mode, saveRank));
             }
         }
@@ -535,9 +536,11 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         }
     }
 
-    if (titleDataFromDB.posters.length === 0) {
-        let imageUrl = getImageUrl(semiJikanData);
+    const imageUrl = getImageUrl(semiJikanData);
+    if (imageUrl && titleDataFromDB.posters.length === 0) {
         await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields);
+    } else if (imageUrl && titleDataFromDB.posters.length === 1 && (!titleDataFromDB.poster_s3 || titleDataFromDB.poster_s3.originalUrl !== imageUrl)) {
+        await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields, true);
     }
 
     if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
