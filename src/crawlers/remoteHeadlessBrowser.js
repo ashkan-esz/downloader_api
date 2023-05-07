@@ -193,10 +193,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         error.url = url;
         error.filePath = 'remoteHeadlessBrowser';
     }
-    if (selectedBrowser && (
-        (error.response && error.response.status >= 500) ||
-        error.message === "timeout of 50000ms exceeded"
-    )) {
+    if (selectedBrowser && error.message === "timeout of 50000ms exceeded") {
         selectedBrowser.apiCallCount--;
         selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
         if (sourceName) {
@@ -212,11 +209,25 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         await new Promise(resolve => setTimeout(resolve, 3000));
         return "retry";
     }
-    if (selectedBrowser && error.response && error.response.status === 404) {
+    if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
         try {
             let r = await axios.get(selectedBrowser.endpoint);
+            selectedBrowser.apiCallCount--;
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
+            if (sourceName) {
+                addSourceErrorToBrowserServer(selectedBrowser, sourceName);
+            }
+            if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
+                error.url = url;
+                error.browserServer = selectedBrowser.endpoint;
+                error.prevUsedBrowsers = prevUsedBrowsers;
+                await saveError(error);
+            }
+            prevUsedBrowsers.push(selectedBrowser.endpoint);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            return "retry";
         } catch (err) {
-            if (selectedBrowser && error.response && error.response.status === 404) {
+            if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
                 //remote server got deactivated or removed from server
                 selectedBrowser.apiCallCount--;
                 selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));

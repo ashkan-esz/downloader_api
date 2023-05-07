@@ -40,6 +40,7 @@ axiosRetry(axios, {
         error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 500 &&
+            error.response.status !== 503 &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
             error.response.status !== 403 &&
