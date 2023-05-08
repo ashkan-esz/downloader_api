@@ -5,7 +5,6 @@ import * as utils from "../utils.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import {getMovieModel} from "../../models/movie.js";
 import PQueue from 'p-queue';
-import * as Sentry from "@sentry/node";
 import {saveError} from "../../error/saveError.js";
 import {
     addS3TrailerToTitleModel,
@@ -397,12 +396,11 @@ async function handleApiCall(url) {
                     data.errorMessage.includes('Invalid API Key')
                 )) {
                 selectedApiKey.reachedMax = true;
+                const warningMessages = getCrawlerWarningMessages(selectedApiKey.apikey);
                 if (data.errorMessage.includes('Invalid API Key')) {
-                    const warningMessages = getCrawlerWarningMessages(selectedApiKey.apikey);
-                    Sentry.captureMessage(warningMessages.invalidImdb);
                     await saveCrawlerWarning(warningMessages.invalidImdb);
                 } else {
-                    Sentry.captureMessage(`reached imdb api maximum daily usage`);
+                    await saveCrawlerWarning(warningMessages.maxUsageImdb);
                 }
                 //get next active api key
                 selectedApiKey = imdbApiKey.filter(item => !item.reachedMax).sort((a, b) => a.callCounter - b.callCounter)[0];
@@ -435,7 +433,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    Sentry.captureMessage(`lots of imdb api call: ${url}`);
+    await saveCrawlerWarning(getCrawlerWarningMessages(url).lotsOfApiCallImdb);
     return null;
 }
 
