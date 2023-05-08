@@ -5,6 +5,8 @@ import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils.js"
 import {getResponseWithCookie} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
+import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 
 export const remoteBrowsers = config.remoteBrowser.map(item => {
     item.password = encodeURIComponent(item.password);
@@ -199,30 +201,22 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         if (sourceName) {
             addSourceErrorToBrowserServer(selectedBrowser, sourceName);
         }
-        if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
-            error.url = url;
-            error.browserServer = selectedBrowser.endpoint;
-            error.prevUsedBrowsers = prevUsedBrowsers;
-            await saveError(error);
-        }
+        await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers);
         prevUsedBrowsers.push(selectedBrowser.endpoint);
         await new Promise(resolve => setTimeout(resolve, 3000));
         return "retry";
     }
     if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
         try {
-            let r = await axios.get(selectedBrowser.endpoint);
+            let r = await axios.get(selectedBrowser.endpoint, {
+                timeout: 40 * 1000, //40s timeout
+            });
             selectedBrowser.apiCallCount--;
             selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
             if (sourceName) {
                 addSourceErrorToBrowserServer(selectedBrowser, sourceName);
             }
-            if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
-                error.url = url;
-                error.browserServer = selectedBrowser.endpoint;
-                error.prevUsedBrowsers = prevUsedBrowsers;
-                await saveError(error);
-            }
+            await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
             await new Promise(resolve => setTimeout(resolve, 3000));
             return "retry";
@@ -236,12 +230,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
                 }
                 selectedBrowser.disabled = true;
                 selectedBrowser.disabledTime = Date.now();
-                if (checkErrorNeedToSave(error, selectedBrowser.endpoint)) {
-                    error.url = url;
-                    error.browserServer = selectedBrowser.endpoint;
-                    error.prevUsedBrowsers = prevUsedBrowsers;
-                    await saveError(error);
-                }
+                await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers, true);
                 prevUsedBrowsers.push(selectedBrowser.endpoint);
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 return "retry";
@@ -444,21 +433,43 @@ function reactivateDisabledServers() {
 //---------------------------------------------
 //---------------------------------------------
 
-function checkErrorNeedToSave(error, serverUrl) {
-    let errorMessage = error.message + '|' + error.code + '|' + error.response?.status + '|' + serverUrl;
-    let errDataTime = errorsAndTimes.find(item => item.errorMessage === errorMessage);
-    if (errDataTime) {
-        if (Date.now() - errDataTime.savedTime > 20 * 60 * 1000) {
-            //save errors every 20min, dont save duplicate errors
-            errDataTime.savedTime = Date.now();
-            return true;
+async function checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers, checkingBrowser = false) {
+    if (error.response && error.response.status === 503) {
+        if (checkingBrowser) {
+            const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
+            await saveCrawlerWarning(warningMessages.remoteBrowserNotWorking);
         }
-        return false;
+        return;
+    }
+    if ((error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
+        if (checkingBrowser) {
+            const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
+            await saveCrawlerWarning(warningMessages.remoteBrowserTimeoutError);
+        }
+        return;
+    }
+
+    let errorMessage = error.message + '|' + error.code + '|' + error.response?.status + '|' + selectedBrowser.endpoint;
+    let errDataTime = errorsAndTimes.find(item => item.errorMessage === errorMessage);
+    let needSave = false;
+    if (errDataTime) {
+        if (Date.now() - errDataTime.savedTime > 30 * 60 * 1000) {
+            //save errors every 30min, dont save duplicate errors
+            errDataTime.savedTime = Date.now();
+            needSave = true;
+        }
     } else {
         errorsAndTimes.push({
             errorMessage: errorMessage,
             savedTime: Date.now(),
         });
-        return true;
+        needSave = true;
+    }
+    if (needSave) {
+        error.isAxiosError2 = true;
+        error.url = url;
+        error.browserServer = selectedBrowser.endpoint;
+        error.prevUsedBrowsers = prevUsedBrowsers;
+        await saveError(error);
     }
 }
