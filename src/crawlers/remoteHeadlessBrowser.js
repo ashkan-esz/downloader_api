@@ -201,7 +201,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
         if (sourceName) {
             addSourceErrorToBrowserServer(selectedBrowser, sourceName);
         }
-        await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers);
+        await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
         prevUsedBrowsers.push(selectedBrowser.endpoint);
         await new Promise(resolve => setTimeout(resolve, 3000));
         return "retry";
@@ -216,7 +216,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             if (sourceName) {
                 addSourceErrorToBrowserServer(selectedBrowser, sourceName);
             }
-            await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers);
+            await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
             await new Promise(resolve => setTimeout(resolve, 3000));
             return "retry";
@@ -230,7 +230,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
                 }
                 selectedBrowser.disabled = true;
                 selectedBrowser.disabledTime = Date.now();
-                await checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers, true);
+                await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers, true);
                 prevUsedBrowsers.push(selectedBrowser.endpoint);
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 return "retry";
@@ -433,19 +433,17 @@ function reactivateDisabledServers() {
 //---------------------------------------------
 //---------------------------------------------
 
-async function checkAndSaveErrorIfNeed(error, url, selectedBrowser, prevUsedBrowsers, checkingBrowser = false) {
+async function checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers, checkingBrowser = false) {
     if (error.response && error.response.status === 503) {
-        if (checkingBrowser) {
-            const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
-            await saveCrawlerWarning(warningMessages.remoteBrowserNotWorking);
-        }
+        const baseCall = !checkingBrowser ? ` (${sourceName})` : '';
+        const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
+        await saveCrawlerWarning(warningMessages.remoteBrowserNotWorking + baseCall);
         return;
     }
     if ((error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
-        if (checkingBrowser) {
-            const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
-            await saveCrawlerWarning(warningMessages.remoteBrowserTimeoutError);
-        }
+        const baseCall = !checkingBrowser ? ` (${sourceName})` : '';
+        const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
+        await saveCrawlerWarning(warningMessages.remoteBrowserTimeoutError + baseCall);
         return;
     }
 
