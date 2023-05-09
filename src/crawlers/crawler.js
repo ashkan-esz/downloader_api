@@ -2,7 +2,6 @@ import {getDatesBetween, getDayOfYear} from "./utils.js";
 import {getSourcesObjDB, updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
-import * as Sentry from "@sentry/node";
 import {saveError} from "../error/saveError.js";
 import {flushCachedData} from "../api/middlewares/moviesCache.js";
 import {
@@ -13,7 +12,7 @@ import {
     updateCrawlerStatus_sourceEnd,
     updateCrawlerStatus_sourceStart,
 } from "./crawlerStatus.js";
-import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 
 
@@ -28,8 +27,9 @@ export async function crawlerCycle() {
         }
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
-            Sentry.captureMessage('crawler cycle cancelled : sourcesObj is null');
-            return 'crawler cycle cancelled : sourcesObj is null';
+            const warningMessages = getCrawlerWarningMessages();
+            await saveCrawlerWarning(warningMessages.crawlerCycleCancelled);
+            return warningMessages.crawlerCycleCancelled;
         }
         const sourcesNames = Object.keys(sourcesObj);
         let sourcesArray = getSourcesArray(sourcesObj, 2);
@@ -101,12 +101,12 @@ export async function crawler(sourceName, {
 
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
-            let errorMessage = 'crawling cancelled : sourcesObj is null';
-            await updateCrawlerStatus_crawlerCrashed(errorMessage);
-            Sentry.captureMessage(errorMessage);
+            const warningMessages = getCrawlerWarningMessages();
+            await updateCrawlerStatus_crawlerCrashed(warningMessages.crawlerCancelled);
+            await saveCrawlerWarning(warningMessages.crawlerCancelled);
             return {
                 isError: true,
-                message: errorMessage,
+                message: warningMessages.crawlerCancelled,
             };
         }
 
@@ -122,12 +122,10 @@ export async function crawler(sourceName, {
                     const disabled = sourcesObj[sourcesArray[i].name].disabled;
                     const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        Sentry.captureMessage('Warning: ' + warningMessages.expireCookieSkip);
                         await saveCrawlerWarning(warningMessages.expireCookieSkip);
                         continue;
                     }
                     if (disabled) {
-                        Sentry.captureMessage('Warning: ' + warningMessages.disabledSourceSkip);
                         await saveCrawlerWarning(warningMessages.disabledSourceSkip);
                         continue;
                     }
@@ -152,10 +150,8 @@ export async function crawler(sourceName, {
                     const disabled = sourcesObj[sourceName].disabled;
                     const warningMessages = getCrawlerWarningMessages(sourceName);
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        Sentry.captureMessage('Warning: ' + warningMessages.expireCookieSkip);
                         await saveCrawlerWarning(warningMessages.expireCookieSkip);
                     } else if (disabled) {
-                        Sentry.captureMessage('Warning: ' + warningMessages.disabledSourceSkip);
                         await saveCrawlerWarning(warningMessages.disabledSourceSkip);
                     } else {
                         await resolveCrawlerWarning(warningMessages.expireCookieSkip);
@@ -185,7 +181,7 @@ export async function crawler(sourceName, {
         const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         let message = `crawling done in : ${crawlDuration}min, (domainChangeHandler: ${domainChangeDuration}min)`;
-        Sentry.captureMessage(message);
+        await saveServerLog(message);
         flushCachedData();
         return {
             isError: false,

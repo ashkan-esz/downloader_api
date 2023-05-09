@@ -16,5 +16,7 @@ export function getCrawlerWarningMessages(sourceName = "", newUrl = "") {
         imageOperationsHighWait: `High wait for trailer upload to start (${sourceName})`,
         remoteBrowserNotWorking: `Remote Browser not working: ${sourceName}`,
         remoteBrowserTimeoutError: `Remote Browser timeout error (50s/70s): ${sourceName}`,
+        crawlerCancelled: 'Crawling cancelled : sourcesObj is null',
+        crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
     });
 }

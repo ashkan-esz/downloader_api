@@ -1,11 +1,10 @@
-import * as Sentry from "@sentry/node";
 import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils.js";
 import {getResponseUrl} from "./axiosUtils.js";
 import {saveError} from "../error/saveError.js";
-import {resolveCrawlerWarning, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 import {
     changeDomainChangeHandlerState, linkStateMessages,
@@ -35,10 +34,10 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
         let changedSources = await checkSourcesUrl(sourcesUrls);
 
         if (changedSources.length > 0) {
-            Sentry.captureMessage('start domain change handler');
+            await saveServerLog('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
             await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources);
-            Sentry.captureMessage('source domain changed');
+            await saveServerLog('source domain changed');
         }
         return await updateCrawlerStatus_domainChangeHandlerEnd();
     } catch (error) {
@@ -163,7 +162,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
         try {
             let startTime = new Date();
             let sourceName = changedSources[i].sourceName;
-            Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl start)`);
+            await saveServerLog(`domain change handler: (${sourceName} reCrawl start)`);
             changeDomainChangeHandlerState(changedSources, linkStateMessages.domainChangeHandler.crawlingSources + ` || ${sourceName}`);
             let findSource = sourcesArray.find(item => item.name === sourceName);
             if (findSource) {
@@ -171,10 +170,8 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
                 const disabled = sourcesObj[sourceName].disabled;
                 const warningMessages = getCrawlerWarningMessages(sourceName);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    Sentry.captureMessage('Warning: ' + warningMessages.expireCookieSkip_domainChange);
                     await saveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
                 } else if (disabled) {
-                    Sentry.captureMessage('Warning: ' + warningMessages.disabledSourceSkip_domainChange);
                     await saveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
                 } else {
                     await resolveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
@@ -196,7 +193,7 @@ async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources,
             }
             changedSources[i].crawled = true;
 
-            Sentry.captureMessage(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
+            await saveServerLog(`domain change handler: (${sourceName} reCrawl ended in ${getDatesBetween(new Date(), startTime).minutes} min)`);
         } catch (error) {
             saveError(error);
         }
