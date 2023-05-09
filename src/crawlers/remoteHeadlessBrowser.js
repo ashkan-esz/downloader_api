@@ -118,7 +118,12 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         return data;
     } catch (error) {
         let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName);
+        if (selectedBrowser) {
+            selectedBrowser.apiCallCount--;
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+        }
         if (handleErrorResult === "retry") {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         }
         return null;
@@ -182,7 +187,12 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         return data.res;
     } catch (error) {
         let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, youtubeUrl, prevUsedBrowsers, "");
+        if (selectedBrowser) {
+            selectedBrowser.apiCallCount--;
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+        }
         if (handleErrorResult === "retry") {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers);
         }
         return null;
@@ -191,19 +201,17 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
 
 async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName) {
     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
+        error.isAxiosError2 = true;
         error.isAxiosError = true;
         error.url = url;
         error.filePath = 'remoteHeadlessBrowser';
     }
     if (selectedBrowser && (error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
-        selectedBrowser.apiCallCount--;
-        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
         if (sourceName) {
             addSourceErrorToBrowserServer(selectedBrowser, sourceName);
         }
         await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
         prevUsedBrowsers.push(selectedBrowser.endpoint);
-        await new Promise(resolve => setTimeout(resolve, 3000));
         return "retry";
     }
     if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
@@ -211,18 +219,13 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
             let r = await axios.get(selectedBrowser.endpoint, {
                 timeout: 40 * 1000, //40s timeout
             });
-            selectedBrowser.apiCallCount--;
-            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
             if (sourceName) {
                 addSourceErrorToBrowserServer(selectedBrowser, sourceName);
             }
             await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
-            await new Promise(resolve => setTimeout(resolve, 3000));
             return "retry";
         } catch (err) {
-            selectedBrowser.apiCallCount--;
-            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
             if (selectedBrowser && error.response && (error.response.status === 404 || error.response.status >= 500)) {
                 //remote server got deactivated or removed from server
                 if (selectedBrowser.disabled) {
@@ -232,13 +235,10 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
                 selectedBrowser.disabledTime = Date.now();
                 await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers, true);
                 prevUsedBrowsers.push(selectedBrowser.endpoint);
-                await new Promise(resolve => setTimeout(resolve, 3000));
                 return "retry";
             }
         }
     }
-    selectedBrowser.apiCallCount--;
-    selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== getDecodedLink(url));
     await saveError(error);
     return "return null";
 }
