@@ -21,6 +21,8 @@ import {
     updatePageNumberCrawlerStatus
 } from "./crawlerStatus.js";
 import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
+import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -306,23 +308,6 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 error.filePath = 'searchTools';
                 await saveError(error);
             } else {
-                if (error.message === 'timeout of 10000ms exceeded') {
-                    if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
-                        error.isAxiosError2 = true;
-                        error.url = url;
-                        error.filePath = 'searchTools > getLinks';
-                    } else {
-                        //sometimes error object is read-only
-                        let temp = error;
-                        error = new Error(temp.message);
-                        Object.assign(error, temp);
-                        error.stack0 = temp.stack;
-                        error.message0 = temp.message;
-                        error.isAxiosError2 = true;
-                        error.url = url;
-                        error.filePath = 'searchTools > getLinks';
-                    }
-                }
                 if (!sourceLinkData) {
                     addSourceToAxiosBlackList(sourceConfig.sourceName);
                 }
@@ -331,7 +316,12 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 $ = cacheResult.$;
                 links = cacheResult.links;
                 checkGoogleCache = true;
-                saveErrorIfNeeded(error);
+                if (error.message === 'timeout of 10000ms exceeded') {
+                    const warningMessages = getCrawlerWarningMessages('10s', sourceConfig.sourceName);
+                    await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                } else {
+                    saveErrorIfNeeded(error);
+                }
             }
         }
 
