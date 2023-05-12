@@ -401,9 +401,11 @@ function addSourceToAxiosBlackList(sourceName) {
         if (Date.now() - sourceData.lastErrorTime > 5 * 60 * 1000) {
             //kind of resetting counter
             sourceData.errorCounter = 1;
+            sourceData.totalErrorCounter++;
         }
         if (Date.now() - sourceData.lastErrorTime < 60 * 1000) {
             sourceData.errorCounter++;
+            sourceData.totalErrorCounter++;
         }
         sourceData.lastErrorTime = Date.now();
         if (sourceData.errorCounter >= 10) {
@@ -415,6 +417,7 @@ function addSourceToAxiosBlackList(sourceName) {
             errorCounter: 1,
             lastErrorTime: Date.now(),
             isBlocked: false,
+            totalErrorCounter: 0,
         });
     }
 }

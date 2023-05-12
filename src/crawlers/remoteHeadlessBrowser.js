@@ -291,7 +291,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.response && error.response.status) {
             addSourceToAxiosBlackList(sourceName);
         }
-        if (error.message !== 'timeout of 3000ms exceeded') {
+        if (error.message !== 'timeout of 3000ms exceeded' && error.message !== 'timeout of 6000ms exceeded') {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
                 error.url = url;
@@ -343,6 +343,7 @@ function addSourceErrorToBrowserServer(selectedBrowser, sourceName) {
     let sourceData = selectedBrowser.sourcesData.find(item => item.sourceName === sourceName);
     if (sourceData) {
         sourceData.errorCounter++;
+        sourceData.totalErrorCounter++;
         sourceData.lastErrorTime = Date.now();
         if (sourceData.errorCounter >= 5) {
             sourceData.isBlocked = true;
@@ -353,6 +354,7 @@ function addSourceErrorToBrowserServer(selectedBrowser, sourceName) {
             errorCounter: 1,
             lastErrorTime: Date.now(),
             isBlocked: false,
+            totalErrorCounter: 1,
         });
     }
 }
