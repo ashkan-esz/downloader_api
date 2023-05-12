@@ -199,6 +199,33 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
     }
 }
 
+export async function getAllRemoteBrowsersStatus() {
+    try {
+        let promise = await Promise.allSettled(remoteBrowsers.map(b => axios.get(
+            `${b.endpoint}/serverStatus/?password=${b.password}`,
+            {
+                timeout: 50 * 1000, //50s timeout
+            },
+        )));
+        let result = [];
+        for (let i = 0; i < remoteBrowsers.length; i++) {
+            let data = promise.find(item => item.value?.config?.url.includes(remoteBrowsers[i].endpoint))?.value?.data;
+            if (data) {
+                result.push(data);
+            } else {
+                result.push({
+                    error: true,
+                    endpoint: remoteBrowsers[i].endpoint,
+                });
+            }
+        }
+        return result;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
 async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName) {
     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
         error.isAxiosError2 = true;

@@ -148,3 +148,9 @@ export async function getServerStatus(req, res) {
 
     return res.status(result.responseData.code).json(result.responseData);
 }
+
+export async function getRemoteBrowsersStatus(req, res) {
+    let result = await adminServices.getRemoteBrowsersStatus();
+
+    return res.status(result.responseData.code).json(result.responseData);
+}

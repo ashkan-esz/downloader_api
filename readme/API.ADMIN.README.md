@@ -33,6 +33,7 @@
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
 - [GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisactiveusersstarttimeendtimeskiplimit)
 - [GET /admin/server/status](#get-adminserverstatus)
+- [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
 - [PUT /admin/configs/update](#put-adminconfigsupdate)
 - [GET /admin/configs](#get-adminconfigs)
 
@@ -170,6 +171,11 @@ Query parameters:
 
 ### GET /admin/server/status
 > return resource status of the server
+
+<br />
+
+### GET /admin/remoteBrowsers/status
+> return resource status of the remote browsers
 
 <br />
 

@@ -8,6 +8,7 @@ import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/crawlerController.js";
 import {safeFieldsToEdit_array} from "../config/configsDb.js";
+import {getAllRemoteBrowsersStatus} from "../crawlers/remoteHeadlessBrowser.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -265,6 +266,14 @@ export async function getActiveUsersAnalysis(startTime, endTime, skip, limit) {
 export async function getServerStatus() {
     let result = await getServerResourcesStatus();
     if (result === null) {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getRemoteBrowsersStatus() {
+    let result = await getAllRemoteBrowsersStatus();
+    if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
     return generateServiceResult({data: result}, 200, '');

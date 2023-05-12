@@ -178,4 +178,9 @@ router.get('/server/status',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerStatus);
 
+//admin/remoteBrowsers/status
+router.get('/remoteBrowsers/status',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getRemoteBrowsersStatus);
+
 export default router;
