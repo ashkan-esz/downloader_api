@@ -22,7 +22,7 @@ export async function getServerResourcesStatus() {
             crawlerStatus: getCrawlerStatusObj(),
             cpu: await getCpuStatus(),
             memoryStatus: await getMemoryStatus(),
-            disStatus: await getDiskStatus(),
+            diskStatus: await getDiskStatus(),
         });
     } catch (error) {
         saveError(error);
@@ -84,17 +84,17 @@ export async function getDiskStatus() {
 
     const filesTotalSize = 0;
     const __filename = fileURLToPath(import.meta.url);
-    let disStatus_os = await checkDiskSpace('/' + (__filename.split('/')[1] || ''));
+    let diskStatus_os = await checkDiskSpace('/' + (__filename.split('/')[1] || ''));
 
     return ({
         total: config.diskSpace.totalDiskSpace,
         used: config.diskSpace.defaultUsedDiskSpace + filesTotalSize,
         free: config.diskSpace.totalDiskSpace - (config.diskSpace.defaultUsedDiskSpace + filesTotalSize),
-        disStatus_os: {
-            diskPath: disStatus_os.diskPath,
-            total: disStatus_os.size / (1024 * 1024),
-            used: (disStatus_os.size - disStatus_os.free) / (1024 * 1024),
-            free: disStatus_os.free / (1024 * 1024),
+        diskStatus_os: {
+            diskPath: diskStatus_os.diskPath,
+            total: diskStatus_os.size / (1024 * 1024),
+            used: (diskStatus_os.size - diskStatus_os.free) / (1024 * 1024),
+            free: diskStatus_os.free / (1024 * 1024),
         }
     });
 }
