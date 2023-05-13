@@ -9,9 +9,23 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         notWorking: `Source (${data1}) url not working`,
         domainChange: `Source (${data1}) domain changed to (${data2})`,
         crawlerPauseLimit: `Maximum allowed duration for crawler pause exceeded (${data1}min) (crawler need more resource)`,
-        invalidImdb: `Invalid imdb api key: ${data1}`,
-        maxUsageImdb: `Reached imdb api maximum daily usage: ${data1}`,
-        lotsOfApiCallImdb: `lots of imdb api call: ${data1}`,
+        apiCalls: {
+            imdb: {
+                invalid: `Invalid imdb api key: ${data1}`,
+                maxUsage: `Reached imdb api maximum daily usage: ${data1}`,
+                lotsOfApiCall: `lots of imdb api call`,
+            },
+            omdb: {
+                invalid: `Invalid omdb api key: ${data1}, (${data2})`,
+                moreApiKeyNeeded: 'More omdb api keys are needed',
+            },
+            tvmaze: {
+                lotsOfApiCall: `lots of tvmaze api call`,
+            },
+            jikan: {
+                lotsOfApiCall: `lots of jikan api call`,
+            }
+        },
         trailerUploadHighWait: `High wait for trailer upload to start (${data1})`,
         imageOperationsHighWait: `High wait for trailer upload to start (${data1})`,
         remoteBrowserNotWorking: `Remote Browser not working: ${data1}`,

@@ -1,7 +1,8 @@
 import axios from "axios";
 import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils.js";
 import {getEpisodeModel} from "../../models/episode.js";
-import * as Sentry from "@sentry/node";
+import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 
 
@@ -46,7 +47,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
             }
         }
     }
-    Sentry.captureMessage('lots of tvmaze api call');
+    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
     return null;
 }
 
@@ -150,7 +151,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    Sentry.captureMessage(`lots of tvmaze api call: ${url}`);
+    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
     return null;
 }
 

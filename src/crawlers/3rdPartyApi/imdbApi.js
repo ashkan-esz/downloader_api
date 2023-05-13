@@ -398,9 +398,9 @@ async function handleApiCall(url) {
                 selectedApiKey.reachedMax = true;
                 const warningMessages = getCrawlerWarningMessages(selectedApiKey.apikey);
                 if (data.errorMessage.includes('Invalid API Key')) {
-                    await saveCrawlerWarning(warningMessages.invalidImdb);
+                    await saveCrawlerWarning(warningMessages.apiCalls.imdb.invalid);
                 } else {
-                    await saveCrawlerWarning(warningMessages.maxUsageImdb);
+                    await saveCrawlerWarning(warningMessages.apiCalls.imdb.maxUsage);
                 }
                 //get next active api key
                 selectedApiKey = imdbApiKey.filter(item => !item.reachedMax).sort((a, b) => a.callCounter - b.callCounter)[0];
@@ -433,7 +433,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages(url).lotsOfApiCallImdb);
+    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.imdb.lotsOfApiCall);
     return null;
 }
 

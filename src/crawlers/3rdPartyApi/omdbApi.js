@@ -2,7 +2,8 @@ import config from "../../config/index.js";
 import axios from "axios";
 import {replaceSpecialCharacters, purgeObjFalsyValues, getDatesBetween} from "../utils.js";
 import {getEpisodeModel} from "../../models/episode.js";
-import * as Sentry from "@sentry/node";
+import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 
 const apiKeys = createApiKeys(config.apiKeys.omdbApiKeys);
@@ -293,7 +294,7 @@ async function handle_OMDB_ApiCall(url) {
                     if (config.nodeEnv === 'dev') {
                         console.log('ERROR: more omdb api keys are needed');
                     } else {
-                        Sentry.captureMessage('more omdb api keys are needed');
+                        await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.omdb.moreApiKeyNeeded);
                     }
                     return null;
                 }
@@ -308,7 +309,7 @@ async function handle_OMDB_ApiCall(url) {
                         if (config.nodeEnv === 'dev') {
                             console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                         } else {
-                            Sentry.captureMessage(`Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
+                            await saveCrawlerWarning(getCrawlerWarningMessages(key.apiKey, error.response.data?.Error).apiCalls.omdb.invalid);
                         }
                         key.limit = 0;
                     }

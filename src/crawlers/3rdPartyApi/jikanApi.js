@@ -11,7 +11,8 @@ import {
 } from "../posterAndTrailer.js";
 import PQueue from 'p-queue';
 import isEqual from 'lodash.isequal';
-import * as Sentry from "@sentry/node";
+import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 
 const rateLimitConfig = {
@@ -360,7 +361,7 @@ async function handleApiCall(url, timeoutSec = 0) {
             }
         }
     }
-    Sentry.captureMessage(`lots of jikan api call: ${url}`);
+    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.jikan.lotsOfApiCall);
     return null;
 }
 
