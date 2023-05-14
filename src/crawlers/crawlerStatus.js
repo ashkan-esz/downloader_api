@@ -5,7 +5,8 @@ import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "./utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
 import {getCpuAverageLoad, getMemoryStatus} from "../utils/serverStatus.js";
-import {remoteBrowsers} from "./remoteHeadlessBrowser.js";
+import {blackListSources, remoteBrowsers} from "./remoteHeadlessBrowser.js";
+import {axiosBlackListSources} from "./searchTools.js";
 
 const crawlerStatus = {
     disabledData: {
@@ -68,6 +69,10 @@ const crawlerStatus = {
         sources: [], //sourceName, url, checked, changed, crawled, errorMessage
     },
     remoteBrowsers: [],
+    axiosBlackList: {
+        default: [], //sourceName, errorCounter, lastErrorTime, isBlocked, totalErrorCounter
+        remoteBrowsers: [], //sourceName, lastErrorTime, isBlocked, linksCount
+    },
 };
 
 const crawlerLog = () => ({
@@ -110,6 +115,8 @@ setInterval(() => {
         delete temp.password;
         return temp;
     });
+    crawlerStatus.axiosBlackList.default = axiosBlackListSources;
+    crawlerStatus.axiosBlackList.remoteBrowsers = blackListSources;
 }, 1000);
 
 export function getCrawlerStatusObj() {

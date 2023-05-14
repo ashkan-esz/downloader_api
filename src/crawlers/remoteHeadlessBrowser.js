@@ -24,7 +24,7 @@ export const remoteBrowsers = config.remoteBrowser.map(item => {
 
 let sourcesObject = await getSourcesObjDB();
 let sourcesObject_date = Date.now();
-let blackListSources = [];
+export let blackListSources = [];
 
 let errorsAndTimes = [];
 
@@ -85,7 +85,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         }
 
         selectedBrowser.apiCallCount++;
-        selectedBrowser.urls.push(decodedUrl);
+        selectedBrowser.urls.push({url: decodedUrl, time: Date.now()});
         let sourceCookies = sourcesObject
             ? sourcesObject[sourceName].cookies.map(item => item.name + '=' + item.value + ';').join(' ')
             : "";
@@ -97,7 +97,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
             },
         );
         selectedBrowser.apiCallCount--;
-        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+        selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
 
         let data = response.data;
         if (!data || !data.pageContent || data.error) {
@@ -124,7 +124,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
         let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName);
         if (selectedBrowser) {
             selectedBrowser.apiCallCount--;
-            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
         }
         if (handleErrorResult === "retry") {
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -171,7 +171,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         }
 
         selectedBrowser.apiCallCount++;
-        selectedBrowser.urls.push(decodedUrl);
+        selectedBrowser.urls.push({url: decodedUrl, time: Date.now()});
         let response = await axios.get(
             `${selectedBrowser.endpoint}/youtube/getDownloadLink/?password=${selectedBrowser.password}&youtubeUrl=${youtubeUrl}`,
             {
@@ -179,7 +179,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
             },
         );
         selectedBrowser.apiCallCount--;
-        selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+        selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
 
         let data = response.data;
         if (!data || data.error) {
@@ -193,7 +193,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, youtubeUrl, prevUsedBrowsers, "");
         if (selectedBrowser) {
             selectedBrowser.apiCallCount--;
-            selectedBrowser.urls = selectedBrowser.urls.filter(item => item !== decodedUrl);
+            selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
         }
         if (handleErrorResult === "retry") {
             await new Promise(resolve => setTimeout(resolve, 3000));

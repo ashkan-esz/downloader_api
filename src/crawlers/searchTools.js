@@ -50,7 +50,7 @@ axiosRetry(axios, {
     ),
 });
 
-let axiosBlackListSources = [];
+export let axiosBlackListSources = [];
 
 export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
     let lastPageNumber = 0;
@@ -254,15 +254,15 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 } else {
                     if (pageType === 'sourcePage') {
                         if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
-                            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart_axios);
-                        } else {
                             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryAxiosCookie);
+                        } else {
+                            changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart_axios);
                         }
                     } else {
                         if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
-                            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData_axios);
-                        } else {
                             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryAxiosCookie);
+                        } else {
+                            changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData_axios);
                         }
                     }
                     let sourcesObject = await getAxiosSourcesObject();
@@ -417,7 +417,7 @@ function addSourceToAxiosBlackList(sourceName) {
             errorCounter: 1,
             lastErrorTime: Date.now(),
             isBlocked: false,
-            totalErrorCounter: 0,
+            totalErrorCounter: 1,
         });
     }
 }
