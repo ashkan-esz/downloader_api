@@ -186,8 +186,15 @@ router.get('/remoteBrowsers/status',
 //admin/remoteBrowsers/:mutateType/:id?all=Boolean
 router.put('/remoteBrowsers/:mutateType/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['mutateType','id', 'all']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['mutateType', 'id', 'all']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.mutateRemoteBrowserStatus);
+
+//admin/remoteBrowsers/checkSource/:sourceName/:url
+router.get('/remoteBrowsers/checkSource/:sourceName/:url',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['sourceName_param', 'url']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.checkSourceOnRemoteBrowsers);
 
 export default router;

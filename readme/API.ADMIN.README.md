@@ -7,6 +7,8 @@
 | id         | String, uuid   |                           | true     |
 | mutateType | String         | Enum(`enable`, `disable`) | true     |
 | all        | Boolean        |                           | false    |
+| sourceName | String         |                           | true     |
+| url        | String         |                           | true     |
 
 > they are case-insensitive.
 
@@ -37,6 +39,7 @@
 - [GET /admin/server/status](#get-adminserverstatus)
 - [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
 - [PUT /admin/remotebrowsers/[mutateType]/[id]](#put-adminremotebrowsersmutatetypeid)
+- [GET /admin/remotebrowsers/checkSource/[sourceName]/[url]](#get-adminremotebrowserschecksourcesourcenameurl)
 - [PUT /admin/configs/update](#put-adminconfigsupdate)
 - [GET /admin/configs](#get-adminconfigs)
 
@@ -185,6 +188,11 @@ Query parameters:
 ### PUT /admin/remoteBrowsers/mutateType/[id]
 > enable/disable selected remote browser temporary (enables again on the server restart).<br />
 > also get query parameter `all: Boolean`. 
+
+<br />
+
+### GET /admin/remoteBrowsers/checkSource/[sourceName]/[url]
+> check source works on all remote browsers.
 
 <br />
 

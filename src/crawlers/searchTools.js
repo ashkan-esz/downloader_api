@@ -25,7 +25,7 @@ import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 
 axiosRetry(axios, {
-    retries: 3, // number of retries
+    retries: 2, // number of retries
     shouldResetTimeout: true,
     retryDelay: (retryCount) => {
         return retryCount * 1000; // time interval between retries

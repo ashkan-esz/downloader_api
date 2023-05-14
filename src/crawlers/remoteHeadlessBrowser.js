@@ -230,6 +230,51 @@ export async function getAllRemoteBrowsersStatus() {
     }
 }
 
+export async function checkSourceOnAllRemoteBrowsers(sourceName, url) {
+    try {
+        let result = [];
+        let promiseArray = [];
+        for (let i = 0; i < remoteBrowsers.length; i++) {
+            let promise = axios.get(
+                `${remoteBrowsers[i].endpoint}/headlessBrowser/?password=${remoteBrowsers[i].password}&url=${encodeURIComponent(url)}`,
+                {
+                    timeout: 50 * 1000, //50s timeout
+                },
+            ).then(res => {
+                result.push({
+                    sourceName: sourceName,
+                    url: url,
+                    endpoint: remoteBrowsers[i].endpoint,
+                    error: false,
+                    errorMessage: '',
+                });
+            }).catch(err => {
+                let errorMessage = 'Error';
+                if (err.message && err.message.match(/timeout of .+ exceeded/i)) {
+                    errorMessage = err.message;
+                } else if (err.response && err.response.status >= 500) {
+                    errorMessage = 'RemoteBrowser Internal Error';
+                } else if (err.response && err.response.status === 404) {
+                    errorMessage = 'Url Not Found';
+                }
+                result.push({
+                    sourceName: sourceName,
+                    url: url,
+                    endpoint: remoteBrowsers[i].endpoint,
+                    error: true,
+                    errorMessage: errorMessage,
+                });
+            });
+            promiseArray.push(promise);
+        }
+        await Promise.allSettled(promiseArray);
+        return result;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
 async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName) {
     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
         error.isAxiosError2 = true;

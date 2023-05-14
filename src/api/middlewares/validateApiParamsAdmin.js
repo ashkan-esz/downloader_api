@@ -130,6 +130,12 @@ const validations = Object.freeze({
         .isString().withMessage("sourceName must be String")
         .trim().escape(),
 
+    url: param('url')
+        .exists().withMessage("Missed parameter url")
+        .isString().withMessage("url must be String")
+        .isURL().withMessage("url must be valid Url")
+        .trim(),
+
     sourceName: body('sourceName')
         .exists().withMessage("Missed parameter sourceName")
         .isString().withMessage("sourceName must be String")
