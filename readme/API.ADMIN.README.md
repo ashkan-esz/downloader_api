@@ -1,10 +1,12 @@
 ## API Parameters
 
-| param name | Values         | Description              | Required |
-|------------|----------------|--------------------------|----------|
-| duration   | Number [1-120] | amount of time in minute | true     |
-| force      | Boolean        | amount of time in minute | true     |
-| id         | String, uuid   |                          | true     |
+| param name | Values         | Description               | Required |
+|------------|----------------|---------------------------|----------|
+| duration   | Number [1-120] | amount of time in minute  | true     |
+| force      | Boolean        | amount of time in minute  | true     |
+| id         | String, uuid   |                           | true     |
+| mutateType | String         | Enum(`enable`, `disable`) | true     |
+| all        | Boolean        |                           | false    |
 
 > they are case-insensitive.
 
@@ -34,6 +36,7 @@
 - [GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisactiveusersstarttimeendtimeskiplimit)
 - [GET /admin/server/status](#get-adminserverstatus)
 - [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
+- [PUT /admin/remotebrowsers/[mutateType]/[id]](#put-adminremotebrowsersmutatetypeid)
 - [PUT /admin/configs/update](#put-adminconfigsupdate)
 - [GET /admin/configs](#get-adminconfigs)
 
@@ -176,6 +179,12 @@ Query parameters:
 
 ### GET /admin/remoteBrowsers/status
 > return resource status of the remote browsers
+
+<br />
+
+### PUT /admin/remoteBrowsers/mutateType/[id]
+> enable/disable selected remote browser temporary (enables again on the server restart).<br />
+> also get query parameter `all: Boolean`. 
 
 <br />
 

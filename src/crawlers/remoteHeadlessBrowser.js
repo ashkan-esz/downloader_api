@@ -1,6 +1,7 @@
 import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
+import {v4 as uuidv4} from "uuid";
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils.js"
 import {getResponseWithCookie} from "./axiosUtils.js";
@@ -15,6 +16,9 @@ export const remoteBrowsers = config.remoteBrowser.map(item => {
     item.sourcesData = [];
     item.disabledTime = 0;
     item.disabled = false;
+    item.manualDisabledTime = 0;
+    item.manualDisabled = false;
+    item.bid = uuidv4();
     return item;
 });
 
@@ -54,7 +58,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
             }
 
             let notUsedBrowsers = remoteBrowsers
-                .filter(item => !item.disabled)
+                .filter(item => !item.disabled && !item.manualDisabled)
                 .filter(item => !prevUsedBrowsers.includes(item.endpoint));
             if (notUsedBrowsers.length === 0) {
                 //if there is only 1 browser, retry the same browser
@@ -145,7 +149,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
 
         while (true) {
             let notUsedBrowsers = remoteBrowsers
-                .filter(item => !item.disabled)
+                .filter(item => !item.disabled && !item.manualDisabled)
                 .filter(item => !prevUsedBrowsers.includes(item.endpoint));
             if (notUsedBrowsers.length === 0) {
                 //if there is only 1 browser, retry the same browser
@@ -268,6 +272,38 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
     }
     await saveError(error);
     return "return null";
+}
+
+//--------------------------------------------------
+//--------------------------------------------------
+
+export function manualMutateRemoteBrowser(mutateType, bid, all = false) {
+    if (all === true) {
+        for (let i = 0; i < remoteBrowsers.length; i++) {
+            if (mutateType === 'enable') {
+                remoteBrowsers[i].manualDisabled = false;
+                remoteBrowsers[i].manualDisabledTime = 0;
+            } else {
+                remoteBrowsers[i].manualDisabled = true;
+                remoteBrowsers[i].manualDisabledTime = Date.now();
+            }
+        }
+        return 'ok';
+    } else {
+        for (let i = 0; i < remoteBrowsers.length; i++) {
+            if (remoteBrowsers[i].bid === bid) {
+                if (mutateType === 'enable') {
+                    remoteBrowsers[i].manualDisabled = false;
+                    remoteBrowsers[i].manualDisabledTime = 0;
+                } else {
+                    remoteBrowsers[i].manualDisabled = true;
+                    remoteBrowsers[i].manualDisabledTime = Date.now();
+                }
+                return 'ok';
+            }
+        }
+        return 'not found';
+    }
 }
 
 //--------------------------------------------------

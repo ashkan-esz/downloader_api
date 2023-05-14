@@ -154,3 +154,11 @@ export async function getRemoteBrowsersStatus(req, res) {
 
     return res.status(result.responseData.code).json(result.responseData);
 }
+
+export async function mutateRemoteBrowserStatus(req, res) {
+    let {mutateType, id} = req.params;
+    let {all} = req.query;
+    let result = await adminServices.mutateRemoteBrowserStatus(mutateType, id, all);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}

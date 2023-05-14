@@ -1,6 +1,7 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {isUri} from "valid-url";
-import {safeFieldsToRead_array} from "../../config/configsDb.js";
+
+const mutateType = ['enable', 'disable'];
 
 const validations = Object.freeze({
 
@@ -63,6 +64,10 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter dontUpdateServerDate :: (true|false)')
         .toBoolean(),
 
+    mutateType: param('mutateType')
+        .trim().toLowerCase()
+        .isIn(mutateType).withMessage(`Invalid parameter mutateType :: (${mutateType.join('|')})`),
+
     //--------------------------------------
     //--------------------------------------
 
@@ -102,6 +107,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter handleCastUpdate :: (true|false)')
+        .toBoolean(),
+
+    all: query('all')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter all :: (true|false)')
         .toBoolean(),
 
     //--------------------------------------
