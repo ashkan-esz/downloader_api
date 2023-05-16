@@ -15,7 +15,6 @@ export default function (agenda) {
 
             let keys = Object.keys(result);
             const sources = [];
-            const warnings = [];
             for (let i = 0; i < keys.length; i++) {
                 if (['_id', 'title', 'pageCounter_time'].includes(keys[i])) {
                     continue;
@@ -29,7 +28,8 @@ export default function (agenda) {
             for (let i = 0; i < sources.length; i++) {
                 let cookies = sources[i].cookies;
                 if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    warnings.push(getCrawlerWarningMessages(sources[i].sourceName).expireCookie);
+                    const warningMessages = getCrawlerWarningMessages(sources[i].sourceName);
+                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.expireCookie);
                 }
             }
 
@@ -38,18 +38,17 @@ export default function (agenda) {
                 let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
                     const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                     if (checkUrlResult === "error") {
-                        warnings.push(warningMessages.notWorking);
+                        await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
                     } else if (checkUrlResult === "ok") {
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
                     } else if (checkUrlResult !== "ok") {
-                        warnings.push(warningMessages.domainChange);
+                        await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
                     }
                 });
                 promiseArray.push(prom);
             }
             await Promise.allSettled(promiseArray);
-            await Promise.allSettled(warnings.map(w => serverAnalysisDbMethods.saveCrawlerWarning(w)));
             return {status: 'ok'};
         } catch (error) {
             saveError(error);
@@ -57,4 +56,3 @@ export default function (agenda) {
         }
     });
 }
-

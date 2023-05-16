@@ -12,6 +12,7 @@ import {
     updateCrawlerStatus_domainChangeHandlerEnd,
     updateCrawlerStatus_domainChangeHandlerStart
 } from "./crawlerStatus.js";
+import {checkNeedForceStopCrawler} from "./crawlerController.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
@@ -54,6 +55,9 @@ async function checkSourcesUrl(sourcesUrls) {
             let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
             changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
             try {
+                if (checkNeedForceStopCrawler()) {
+                    return [];
+                }
                 let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
