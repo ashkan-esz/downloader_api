@@ -1,5 +1,6 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {isUri} from "valid-url";
+import {serverAnalysisFields} from "../../data/db/serverAnalysisDbMethods.js";
 
 const mutateType = ['enable', 'disable'];
 
@@ -67,6 +68,10 @@ const validations = Object.freeze({
     mutateType: param('mutateType')
         .trim().toLowerCase()
         .isIn(mutateType).withMessage(`Invalid parameter mutateType :: (${mutateType.join('|')})`),
+
+    serverAnalysisFieldName: param('serverAnalysisFieldName')
+        .trim()
+        .isIn(serverAnalysisFields).withMessage(`Invalid parameter serverAnalysisFieldName :: (${serverAnalysisFields.join('|')})`),
 
     //--------------------------------------
     //--------------------------------------

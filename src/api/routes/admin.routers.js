@@ -52,36 +52,37 @@ router.get('/crawler/status',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerStatus);
 
-//admin/crawler/history/:startTime/:endTime/:skip/:limit
-router.get('/crawler/history/:startTime/:endTime/:skip/:limit',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlingHistory);
+//---------------------------------------------------
+//---------------------------------------------------
 
-//admin/crawler/warnings/history/:startTime/:endTime/:skip/:limit
-router.get('/crawler/warnings/history/:startTime/:endTime/:skip/:limit',
+//admin/analysis/:serverAnalysisFieldName/:startTime/:endTime/:skip/:limit
+router.get('/analysis/:serverAnalysisFieldName/:startTime/:endTime/:skip/:limit',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName', 'startTime', 'endTime', 'skip', 'limit']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerWarningsHistory);
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerAnalysisInTimes);
+
+//admin/analysis/currentMonth/:serverAnalysisFieldName
+router.get('/analysis/currentMonth/:serverAnalysisFieldName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerAnalysisCurrentMonth);
+
+//admin/analysis/resolve/:serverAnalysisFieldName/:id
+router.put('/analysis/resolve/:serverAnalysisFieldName/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName', 'id']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveServerAnalysis);
+
+//---------------------------------------------------
+//---------------------------------------------------
 
 //admin/crawler/sources
 router.get('/crawler/sources',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerSources);
-
-//admin/crawler/warnings/resolve/:id
-router.put('/crawler/warnings/resolve/:id',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveCrawlerWarning);
-
-//admin/crawler/warnings
-router.get('/crawler/warnings',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerWarnings);
 
 //admin/crawler/editSource/:sourceName
 router.put('/crawler/editSource/:sourceName',
@@ -104,50 +105,6 @@ router.put('/crawler/addSource',
 //---------------------------------------------------
 //---------------------------------------------------
 
-//admin/serverLogs/history/:startTime/:endTime/:skip/:limit
-router.get('/serverLogs/history/:startTime/:endTime/:skip/:limit',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerLogsInTimes);
-
-//admin/serverLogs/remove/:id
-router.put('/serverLogs/remove/:id',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeServerLog);
-
-//admin/serverLogs
-router.get('/serverLogs',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerLogs);
-
-//---------------------------------------------------
-//---------------------------------------------------
-
-//admin/googleCacheCalls/history/:startTime/:endTime/:skip/:limit
-router.get('/googleCacheCalls/history/:startTime/:endTime/:skip/:limit',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getGoogleCacheCallsInTimes);
-
-//admin/googleCacheCalls/remove/:id
-router.put('/googleCacheCalls/remove/:id',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['id']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeGoogleCacheCalls);
-
-//admin/googleCacheCalls
-router.get('/googleCacheCalls',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getGoogleCacheCalls);
-
-//---------------------------------------------------
-//---------------------------------------------------
-
 //admin/configs/update
 router.put('/configs/update',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
@@ -165,13 +122,6 @@ router.get('/configs',
 
 //---------------------------------------------------
 //---------------------------------------------------
-
-//admin/analysis/activeUsers/:startTime/:endTime/:skip/:limit
-router.get('/analysis/activeUsers/:startTime/:endTime/:skip/:limit',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['startTime', 'endTime', 'skip', 'limit']),
-    middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getActiveUsersAnalysis);
 
 //admin/server/status
 router.get('/server/status',
@@ -196,5 +146,6 @@ router.get('/remoteBrowsers/checkSource/:sourceName/:url',
     middlewares.validateApiParamsAdmin.checkApiParams(['sourceName_param', 'url']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.checkSourceOnRemoteBrowsers);
+
 
 export default router;

@@ -1,14 +1,15 @@
 ## API Parameters
 
-| param name | Values         | Description               | Required |
-|------------|----------------|---------------------------|----------|
-| duration   | Number [1-120] | amount of time in minute  | true     |
-| force      | Boolean        | amount of time in minute  | true     |
-| id         | String, uuid   |                           | true     |
-| mutateType | String         | Enum(`enable`, `disable`) | true     |
-| all        | Boolean        |                           | false    |
-| sourceName | String         |                           | true     |
-| url        | String         |                           | true     |
+| param name           | Values         | Description                                                                     | Required |
+|----------------------|----------------|---------------------------------------------------------------------------------|----------|
+| duration             | Number [1-120] | amount of time in minute                                                        | true     |
+| force                | Boolean        | amount of time in minute                                                        | true     |
+| id                   | String, uuid   |                                                                                 | true     |
+| mutateType           | String         | Enum(`enable`, `disable`)                                                       | true     |
+| all                  | Boolean        |                                                                                 | false    |
+| sourceName           | String         |                                                                                 | true     |
+| url                  | String         |                                                                                 | true     |
+| serverAnalysisFields | String         | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls') | true     |
 
 > they are case-insensitive.
 
@@ -22,20 +23,12 @@
 - [PUT /admin/crawler/resume/[force]](#put-admincrawlerresumeforce)
 - [PUT /admin/crawler/stop](#put-admincrawlerstop)
 - [GET /admin/crawler/status](#get-admincrawlerstatus)
-- [GET admin/crawler/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerhistorystarttimeendtimeskiplimit)
-- [GET admin/serverLogs/history/[startTime]/[endTime]/[skip]/[limit]](#get-adminserverlogshistorystarttimeendtimeskiplimit)
-- [GET admin/serverLogs](#get-adminserverlogs)
-- [PUT admin/serverLogs/remove/[id]](#put-adminserverlogsremoveid)
-- [GET admin/googleCacheCalls/history/[startTime]/[endTime]/[skip]/[limit]](#get-admingooglecachecallshistorystarttimeendtimeskiplimit)
-- [GET admin/googleCacheCalls](#get-admingooglecachecalls)
-- [PUT admin/googleCacheCalls/remove/[id]](#put-admingooglecachecallsremoveid)
-- [GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]](#get-admincrawlerwarningshistorystarttimeendtimeskiplimit)
 - [GET admin/crawler/sources](#get-admincrawlersources)
-- [PUT admin/crawler/warnings/resolve/[id]](#put-admincrawlerwarningsresolveid)
-- [GET admin/crawler/warnings](#get-admincrawlerwarnings)
 - [PUT admin/crawler/editSource/[sourceName]](#put-admincrawlereditsourcesourcename)
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
-- [GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisactiveusersstarttimeendtimeskiplimit)
+- [GET admin/analysis/[serverAnalysisFieldName]/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisserveranalysisfieldnamestarttimeendtimeskiplimit)
+- [GET admin/analysis/currentMonth/[serverAnalysisFieldName]](#get-adminanalysiscurrentmonthserveranalysisfieldname)
+- [PUT admin/analysis/resolve/[serverAnalysisFieldName]/[id]](#put-adminanalysisresolveserveranalysisfieldnameid)
 - [GET /admin/server/status](#get-adminserverstatus)
 - [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
 - [PUT /admin/remotebrowsers/[mutateType]/[id]](#put-adminremotebrowsersmutatetypeid)
@@ -99,61 +92,11 @@ Query parameters:
 
 <br />
 
-### GET admin/crawler/history/[startTime]/[endTime]/[skip]/[limit]
-> return history of crawler run in the past.
-
-<br />
-
-### GET admin/crawler/warnings/history/[startTime]/[endTime]/[skip]/[limit]
-> return history of crawler warnings.
-
-<br />
-
-### GET admin/serverLogs/history/[startTime]/[endTime]/[skip]/[limit]
-> return history of server logs.
-
-<br />
-
-### GET admin/serverLogs
-> return server logs.
-
-<br />
-
-### PUT admin/serverLogs/remove/[id]
-> remove server log.
-
-<br />
-
-### GET admin/googleCacheCalls/history/[startTime]/[endTime]/[skip]/[limit]
-> return history of google cache calls.
-
-<br />
-
-### GET admin/googleCacheCalls
-> return google cache calls.
-
-<br />
-
-### PUT admin/googleCacheCalls/remove/[id]
-> remove google cache call.
-
-<br />
 
 ### GET admin/crawler/sources
 > checkWarnings is Boolean.
 > 
 > return sources that get use by crawler.
-
-<br />
-
-### PUT admin/crawler/warnings/resolve/[id]
-> resolve crawler warnings.
-
-<br />
-
-
-### GET admin/crawler/warnings
-> return crawler warnings.
 
 <br />
 
@@ -170,20 +113,34 @@ Query parameters:
 <br />
 
 
-### GET admin/analysis/activeUsers/[startTime]/[endTime]/[skip]/[limit]
-> return number of total/active users in the past.
+### GET admin/analysis/[serverAnalysisFieldName]/[startTime]/[endTime]/[skip]/[limit]
+> return `serverAnalysisFieldName` values through times.
 
 <br />
+
+
+### GET admin/analysis/currentMonth/[serverAnalysisFieldName]
+> return `serverAnalysisFieldName` values on current month.
+
+<br />
+
+### PUT admin/analysis/resolve/[serverAnalysisFieldName]/[id]
+> resolve/remove `serverAnalysisFieldName`.
+
+<br />
+
 
 ### GET /admin/server/status
 > return resource status of the server
 
 <br />
 
+
 ### GET /admin/remoteBrowsers/status
 > return resource status of the remote browsers
 
 <br />
+
 
 ### PUT /admin/remoteBrowsers/mutateType/[id]
 > enable/disable selected remote browser temporary (enables again on the server restart).<br />

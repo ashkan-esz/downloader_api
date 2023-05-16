@@ -57,8 +57,11 @@ export async function getCrawlerStatus() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function getCrawlingHistory(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getCrawlerLogsInTimes(startTime, endTime, skip, limit);
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getServerAnalysisInTimes(fieldName, startTime, endTime, skip, limit) {
+    let result = await serverAnalysisDbMethods.getServerAnalysisInTimesDB(fieldName, startTime, endTime, skip, limit);
     if (result === "error") {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
@@ -67,8 +70,8 @@ export async function getCrawlingHistory(startTime, endTime, skip, limit) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function getCrawlerWarningsHistory(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getCrawlerWarningsInTimes(startTime, endTime, skip, limit);
+export async function getServerAnalysisCurrentMonth(fieldName) {
+    let result = await serverAnalysisDbMethods.getServerAnalysisInCurrentMonthDB(fieldName);
     if (result === "error") {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
@@ -76,6 +79,19 @@ export async function getCrawlerWarningsHistory(startTime, endTime, skip, limit)
     }
     return generateServiceResult({data: result}, 200, '');
 }
+
+export async function resolveServerAnalysis(fieldsName, id) {
+    let result = await serverAnalysisDbMethods.resolveServerAnalysisDB(fieldsName, id);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
 
 export async function getCrawlerSources() {
     let result = await crawlerMethodsDB.getSourcesObjDB();
@@ -96,80 +112,6 @@ export async function getCrawlerSources() {
         delete result[keys[i]];
     }
 
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function getCrawlerWarnings() {
-    let result = await serverAnalysisDbMethods.getCrawlerCurrentWarnings();
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function resolveCrawlerWarning(id) {
-    let result = await serverAnalysisDbMethods.resolveCrawlerWarningById(id);
-    if (result === "error") {
-        return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (result === 'not found') {
-        return generateServiceResult({data: null}, 404, "Not found");
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function getServerLogsHistory(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getServerLogsInTimes(startTime, endTime, skip, limit);
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (result.length === 0) {
-        return generateServiceResult({data: []}, 404, "Not found");
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function getServerLogs() {
-    let result = await serverAnalysisDbMethods.getCurrentServerLogs();
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function removeServerLog(id) {
-    let result = await serverAnalysisDbMethods.removeServerLogById(id);
-    if (result === "error") {
-        return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (result === 'not found') {
-        return generateServiceResult({data: null}, 404, "Not found");
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function getGoogleCacheCallsHistory(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getGoogleCacheCallsInTimes(startTime, endTime, skip, limit);
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (result.length === 0) {
-        return generateServiceResult({data: []}, 404, "Not found");
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function getGoogleCacheCalls() {
-    let result = await serverAnalysisDbMethods.getCurrentGoogleCacheCalls();
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
-
-export async function removeGoogleCacheCalls(id) {
-    let result = await serverAnalysisDbMethods.removeGoogleCacheCallsById(id);
-    if (result === "error") {
-        return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (result === 'not found') {
-        return generateServiceResult({data: null}, 404, "Not found");
-    }
     return generateServiceResult({data: result}, 200, '');
 }
 
@@ -251,17 +193,6 @@ export async function getConfigsDb() {
 
 //---------------------------------------------------
 //---------------------------------------------------
-
-
-export async function getActiveUsersAnalysis(startTime, endTime, skip, limit) {
-    let result = await serverAnalysisDbMethods.getUserCountsInTimes(startTime, endTime, skip, limit);
-    if (result === "error") {
-        return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (result.length === 0) {
-        return generateServiceResult({data: []}, 404, "Not found");
-    }
-    return generateServiceResult({data: result}, 200, '');
-}
 
 export async function getServerStatus() {
     let result = await getServerResourcesStatus();
