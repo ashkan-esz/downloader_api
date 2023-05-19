@@ -62,10 +62,10 @@ router.get('/analysis/:serverAnalysisFieldName/:startTime/:endTime/:skip/:limit'
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerAnalysisInTimes);
 
-//admin/analysis/currentMonth/:serverAnalysisFieldName
-router.get('/analysis/currentMonth/:serverAnalysisFieldName',
+//admin/analysis/currentMonth/:serverAnalysisFieldName/:page
+router.get('/analysis/currentMonth/:serverAnalysisFieldName/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName', 'page']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getServerAnalysisCurrentMonth);
 

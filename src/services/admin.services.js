@@ -70,8 +70,8 @@ export async function getServerAnalysisInTimes(fieldName, startTime, endTime, sk
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function getServerAnalysisCurrentMonth(fieldName) {
-    let result = await serverAnalysisDbMethods.getServerAnalysisInCurrentMonthDB(fieldName);
+export async function getServerAnalysisCurrentMonth(fieldName, page) {
+    let result = await serverAnalysisDbMethods.getServerAnalysisInCurrentMonthDB(fieldName, page);
     if (result === "error") {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {

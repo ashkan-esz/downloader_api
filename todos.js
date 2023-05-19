@@ -1,7 +1,4 @@
 
-//todo : 4. adminPanel: show info and status of remoteBrowsers
-//todo : 4.2 adminPanel: show crawling links of remoteBrowsers
-//todo : 5. remoteBrowser: add api for crawler status
 //todo : 7. remoteBrowser: crawl youtube for trailers
 //todo : 8. reduce size of trailers
 //todo : 9. reduce size of users profile images
@@ -24,11 +21,8 @@
 //todo : 26. add redis and fallback to node-cache
 //todo : 27. add elastic search and fallback to mongo search
 //todo : 28. docker project for better and easier deployment
-//todo : 29. add telegram bot for some system to backup databse
+//todo : 29. add telegram bot for some system to backup database
 //todo : 30. adminPanel: manage bots like movie sources
-//todo : 31. add field 'isManual' to crawler status
-//todo : 32. save links with bad info into db, show warning in adminPanel
-//todo : 34. check for a way to dont check movie links inside source page
 //todo : 35. lower memory consumption for crawler
 //todo : 36. save errors into db, add api to get them
 //todo : 37. adminPanel: show errors
@@ -43,11 +37,9 @@
 //todo : 46. add more staff and characters
 //todo : 47. add landscape posters for movies
 //todo : 48. better trailers api, add field 'trailerDate' to movies data
-//todo : 49. merge things exist in sources configs, less time need to add new source
 //todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
 //todo : 52. change the way of data update to dont change original data object
 //todo : 54. alpha feature: use sql dataBase for userStats
-//todo : 55. save number of latest bucket of userStats to increase performance
 //todo : 57. add documentation for codes
 //todo : 58. add more tests
 //todo : 59. add cli like interface for manual test and check detection functions
@@ -57,13 +49,6 @@
 //todo : 63. adminPanel: add feature to upload new version of apps
 //todo : 64. add api to download latest version of apps
 //todo : 65. add api to check new version exist or update is required
-//todo : 66. add api to get server resources status
-//todo : 67. adminPanel: show server resources status
-//todo : 68. add feature to disable users login/signup/... for a while
-//todo : 69. adminPanel: add (68)
-//todo : 70. merge server config obj (env variables) white the configs come from adminPanel (db)
-//todo : 71. adminPanel: restart server from adminPanel
-//todo : 72. add repairing/development faze to server
 //todo : 73. add feature 'view' to movies
 //todo : 74. add feature: users chats
 //todo : 75. add sql dataBase
@@ -81,31 +66,20 @@
 //todo : 87. organize cronjob times
 //todo : 89. add feature: extract device info from req
 //todo : 91. crawl source completely after changing its url manually on adminPanel
-//todo : 92. add env var to disable testUser requests
 //todo : 94. disable rateLimit for bots requests
-//todo : 95. save warning and errors in db to show in adminPanel
 //todo : 96. crawler: start domainChangeHandler every 30 min
-//todo : 97. crawler: limit number of concurrent trailer download/upload to reduce memory load
-//todo : 98. crawler: delay to start crawler when server in on high load
-//todo : 99. crawler: pause crawler when server gets on high load
-//todo : 99.2 crawler: save pause data and time on crawler logs
-//todo : 100. limit number of concurrent image compression or thumbnail creation for lower cpu load
 //todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
 //todo : 103. add movie source change detection service
 //todo : 104. add title duplication finder service
 //todo : 105. service to update sources auth cookies / notify on expire
 //todo : 106. handle flag 'disable' for bots on admin panel
-//todo : 107. Add feature stop crawler
 //todo : 108. Add thumbnail api and status
 //todo : 109. When/How to add admin account
 //todo : 110. Add api to start preStart script
-//todo : 111. save sentry.captureMessages in both downloader_api and downloader_remoteBrowser to db
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 113. save last crawler run data on sources, better detection for source url not accessible
-//todo : 114. Show info about remote Browsers all and single in adminPanel
 //todo : 115. Add fields username Change and description to crawler sources
-//todo : 116. better solution for cors and auth with cookies
 //todo : 117. remove the usage of page_counter on crawler
 //todo : 120. add redis/memCache, (render/liara/arvanCloud free plan)
 //todo : 121. check youtube trailers size, and possible to reduce size, check imagekit.io, check new language stack
@@ -125,7 +99,5 @@
 //todo : 135. check fastify
 //todo : 136. smart suggestion method
 //todo : 137. fix duplicate titles bug
-//todo : 138. update mongodb driver
-//todo : 139. add size of download links while crawling
 //todo : 140. add graphql
 //todo : 141. add postman

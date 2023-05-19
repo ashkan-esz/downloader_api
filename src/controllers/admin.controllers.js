@@ -44,8 +44,8 @@ export async function getServerAnalysisInTimes(req, res) {
 }
 
 export async function getServerAnalysisCurrentMonth(req, res) {
-    let {serverAnalysisFieldName} = req.params;
-    let result = await adminServices.getServerAnalysisCurrentMonth(serverAnalysisFieldName);
+    let {serverAnalysisFieldName, page} = req.params;
+    let result = await adminServices.getServerAnalysisCurrentMonth(serverAnalysisFieldName, page);
 
     return res.status(result.responseData.code).json(result.responseData);
 }

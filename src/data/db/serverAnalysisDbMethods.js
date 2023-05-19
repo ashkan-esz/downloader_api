@@ -3,6 +3,7 @@ import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
 
 const _maxSaveLogDuration = 1;
+const _pageSize = 24;
 
 export async function removeOldAnalysis() {
     try {
@@ -316,7 +317,7 @@ export async function getServerAnalysisInTimesDB(fieldName, startTime, endTime, 
     }
 }
 
-export async function getServerAnalysisInCurrentMonthDB(fieldName) {
+export async function getServerAnalysisInCurrentMonthDB(fieldName, page) {
     try {
         let collection = await getCollection('serverAnalysis');
         const now = new Date();
@@ -347,12 +348,12 @@ export async function getServerAnalysisInCurrentMonthDB(fieldName) {
                     [`${fieldName}.${sortField}`]: sortValue,
                 }
             },
-            // {
-            //     $skip: skip,
-            // },
-            // {
-            //     $limit: limit,
-            // },
+            {
+                $skip: _pageSize * (page - 1),
+            },
+            {
+                $limit: _pageSize,
+            },
             {
                 $replaceRoot: {
                     newRoot: `$${fieldName}`,

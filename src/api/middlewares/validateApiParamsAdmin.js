@@ -141,6 +141,10 @@ const validations = Object.freeze({
         .isURL().withMessage("url must be valid Url")
         .trim(),
 
+    page: param('page')
+        .trim().blacklist('0').isInt().withMessage('Invalid parameter page :: Number 1 to Infinite')
+        .toInt(),
+
     sourceName: body('sourceName')
         .exists().withMessage("Missed parameter sourceName")
         .isString().withMessage("sourceName must be String")

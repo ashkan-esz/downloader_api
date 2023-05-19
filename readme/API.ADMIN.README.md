@@ -1,15 +1,16 @@
 ## API Parameters
 
-| param name           | Values         | Description                                                                     | Required |
-|----------------------|----------------|---------------------------------------------------------------------------------|----------|
-| duration             | Number [1-120] | amount of time in minute                                                        | true     |
-| force                | Boolean        | amount of time in minute                                                        | true     |
-| id                   | String, uuid   |                                                                                 | true     |
-| mutateType           | String         | Enum(`enable`, `disable`)                                                       | true     |
-| all                  | Boolean        |                                                                                 | false    |
-| sourceName           | String         |                                                                                 | true     |
-| url                  | String         |                                                                                 | true     |
-| serverAnalysisFields | String         | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls') | true     |
+| param name           | Values              | Description                                                                     | Required |
+|----------------------|---------------------|---------------------------------------------------------------------------------|----------|
+| duration             | Number [1-120]      | amount of time in minute                                                        | true     |
+| force                | Boolean             | amount of time in minute                                                        | true     |
+| id                   | String, uuid        |                                                                                 | true     |
+| mutateType           | String              | Enum(`enable`, `disable`)                                                       | true     |
+| all                  | Boolean             |                                                                                 | false    |
+| sourceName           | String              |                                                                                 | true     |
+| url                  | String              |                                                                                 | true     |
+| serverAnalysisFields | String              | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls') | true     |
+| page                 | Number start from 1 |                                                                                 | true     |
 
 > they are case-insensitive.
 
@@ -27,7 +28,7 @@
 - [PUT admin/crawler/editSource/[sourceName]](#put-admincrawlereditsourcesourcename)
 - [PUT admin/crawler/addSource](#put-admincrawleraddsource)
 - [GET admin/analysis/[serverAnalysisFieldName]/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisserveranalysisfieldnamestarttimeendtimeskiplimit)
-- [GET admin/analysis/currentMonth/[serverAnalysisFieldName]](#get-adminanalysiscurrentmonthserveranalysisfieldname)
+- [GET admin/analysis/currentMonth/[serverAnalysisFieldName][page]](#get-adminanalysiscurrentmonthserveranalysisfieldnamepage)
 - [PUT admin/analysis/resolve/[serverAnalysisFieldName]/[id]](#put-adminanalysisresolveserveranalysisfieldnameid)
 - [GET /admin/server/status](#get-adminserverstatus)
 - [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
@@ -119,7 +120,7 @@ Query parameters:
 <br />
 
 
-### GET admin/analysis/currentMonth/[serverAnalysisFieldName]
+### GET admin/analysis/currentMonth/[serverAnalysisFieldName]/[page]
 > return `serverAnalysisFieldName` values on current month.
 
 <br />
