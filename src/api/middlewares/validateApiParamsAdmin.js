@@ -145,6 +145,10 @@ const validations = Object.freeze({
         .trim().blacklist('0').isInt().withMessage('Invalid parameter page :: Number 1 to Infinite')
         .toInt(),
 
+    days: param('days')
+        .trim().blacklist('0').isInt().withMessage('Invalid parameter days :: Number 1 to Infinite')
+        .toInt(),
+
     sourceName: body('sourceName')
         .exists().withMessage("Missed parameter sourceName")
         .isString().withMessage("sourceName must be String")
@@ -258,6 +262,18 @@ const validations = Object.freeze({
     developmentFaze: body('developmentFaze')
         .isBoolean().withMessage("Invalid parameter developmentFaze :: Boolean")
         .toBoolean(),
+
+    ids: body('ids')
+        .exists().withMessage("Missed parameter ids")
+        .isArray({min: 1}).withMessage("ids Must be an not empty array")
+        .custom((value, {req, loc, path}) => {
+            for (let i = 0; i < value.length; i++) {
+                if (!value[i] || typeof value[i] !== 'string') {
+                    throw new Error("ids Must be an array of String");
+                }
+            }
+            return value;
+        }),
 
 });
 

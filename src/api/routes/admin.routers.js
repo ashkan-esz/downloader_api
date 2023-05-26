@@ -76,6 +76,20 @@ router.put('/analysis/resolve/:serverAnalysisFieldName/:id',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveServerAnalysis);
 
+//admin/analysis/resolve/:serverAnalysisFieldName
+router.put('/analysis/resolve/:serverAnalysisFieldName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName', 'ids']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveServerAnalysisByIds);
+
+//admin/analysis/resolve/:serverAnalysisFieldName/lastDays/:days
+router.put('/analysis/resolve/:serverAnalysisFieldName/lastDays/:days',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['serverAnalysisFieldName', 'days']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.resolveServerAnalysisLastDays);
+
 //---------------------------------------------------
 //---------------------------------------------------
 

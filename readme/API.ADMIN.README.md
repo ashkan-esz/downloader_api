@@ -5,12 +5,14 @@
 | duration             | Number [1-120]      | amount of time in minute                                                        | true     |
 | force                | Boolean             | amount of time in minute                                                        | true     |
 | id                   | String, uuid        |                                                                                 | true     |
+| ids                  | Array(String, uuid) |                                                                                 | true     |
 | mutateType           | String              | Enum(`enable`, `disable`)                                                       | true     |
 | all                  | Boolean             |                                                                                 | false    |
 | sourceName           | String              |                                                                                 | true     |
 | url                  | String              |                                                                                 | true     |
 | serverAnalysisFields | String              | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls') | true     |
 | page                 | Number start from 1 |                                                                                 | true     |
+| days                 | Number start from 1 |                                                                                 | true     |
 
 > they are case-insensitive.
 
@@ -30,6 +32,8 @@
 - [GET admin/analysis/[serverAnalysisFieldName]/[startTime]/[endTime]/[skip]/[limit]](#get-adminanalysisserveranalysisfieldnamestarttimeendtimeskiplimit)
 - [GET admin/analysis/currentMonth/[serverAnalysisFieldName][page]](#get-adminanalysiscurrentmonthserveranalysisfieldnamepage)
 - [PUT admin/analysis/resolve/[serverAnalysisFieldName]/[id]](#put-adminanalysisresolveserveranalysisfieldnameid)
+- [PUT admin/analysis/resolve/[serverAnalysisFieldName]](#put-adminanalysisresolveserveranalysisfieldname)
+- [PUT admin/analysis/resolve/[serverAnalysisFieldName]/lastDays/[days]](#put-adminanalysisresolveserveranalysisfieldnamelastdaysdays)
 - [GET /admin/server/status](#get-adminserverstatus)
 - [GET /admin/remotebrowsers/status](#get-adminremotebrowsersstatus)
 - [PUT /admin/remotebrowsers/[mutateType]/[id]](#put-adminremotebrowsersmutatetypeid)
@@ -126,6 +130,17 @@ Query parameters:
 <br />
 
 ### PUT admin/analysis/resolve/[serverAnalysisFieldName]/[id]
+> resolve/remove `serverAnalysisFieldName`.
+
+<br />
+
+### PUT admin/analysis/resolve/[serverAnalysisFieldName]
+> resolve/remove `serverAnalysisFieldName`. <br />
+> receives field `ids` in request body.
+
+<br />
+
+### PUT admin/analysis/resolve/[serverAnalysisFieldName]/lastDays/[days]
 > resolve/remove `serverAnalysisFieldName`.
 
 <br />

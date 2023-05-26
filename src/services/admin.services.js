@@ -90,6 +90,26 @@ export async function resolveServerAnalysis(fieldsName, id) {
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function resolveServerAnalysisByIds(fieldsName, ids) {
+    let result = await serverAnalysisDbMethods.resolveServerAnalysisByIdsDB(fieldsName, ids);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function resolveServerAnalysisLastDays(fieldsName, days) {
+    let result = await serverAnalysisDbMethods.resolveServerAnalysisLastDaysDB(fieldsName, days);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === 'not found') {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 

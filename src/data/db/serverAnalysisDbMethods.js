@@ -323,8 +323,8 @@ export async function getServerAnalysisInCurrentMonthDB(fieldName, page) {
         const now = new Date();
         const yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
 
-        const sortField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : fieldName === "googleCacheCalls" ? 'count' : 'date';
-        const sortValue = fieldName === "googleCacheCalls" ? -1 : 1;
+        const sortField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : 'date';
+        const sortValue = fieldName === "crawlerLogs" ? 1 : -1;
 
         let aggregationPipeline = [
             {
@@ -370,38 +370,115 @@ export async function getServerAnalysisInCurrentMonthDB(fieldName, page) {
 
 export async function resolveServerAnalysisDB(fieldsName, id) {
     try {
-        let {bucket, collection} = await getCollectionAndBucket();
+        let collection = await getCollection('serverAnalysis');
 
-        if (bucket.length > 0) {
-            let updateResult;
-            if (fieldsName === "googleCacheCalls" || fieldsName === "serverLogs") {
-                updateResult = await collection.updateOne({
-                    _id: bucket[0]._id,
-                    [`${fieldsName}.id`]: id,
-                }, {
-                    $pull: {
-                        [fieldsName]: {id: id},
-                    }
-                });
-            } else {
-                updateResult = await collection.updateOne({
-                    _id: bucket[0]._id,
-                    [fieldsName]: {$elemMatch: {id: id, resolved: {$ne: true}}}
-                }, {
-                    $set: {
-                        [`${fieldsName}.$.resolved`]: true,
-                        [`${fieldsName}.$.resolvedDate`]: new Date(),
-                    }
-                });
-            }
-
-            if (updateResult.modifiedCount === 0) {
-                return "not found";
-            }
+        let updateResult;
+        if (fieldsName === "googleCacheCalls" || fieldsName === "serverLogs") {
+            updateResult = await collection.updateOne({
+                [`${fieldsName}.id`]: id,
+            }, {
+                $pull: {
+                    [fieldsName]: {id: id},
+                }
+            });
         } else {
-            return "not found";
+            updateResult = await collection.updateOne({
+                [fieldsName]: {$elemMatch: {id: id, resolved: {$ne: true}}}
+            }, {
+                $set: {
+                    [`${fieldsName}.$.resolved`]: true,
+                    [`${fieldsName}.$.resolvedDate`]: new Date(),
+                }
+            });
         }
 
+        if (updateResult.modifiedCount === 0) {
+            return "not found";
+        }
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function resolveServerAnalysisLastDaysDB(fieldsName, days) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+
+        let daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - days);
+        daysAgo.setHours(0, 0, 0, 0);
+        const matchField = ['crawlerLogs'].includes(fieldsName) ? 'startTime' : 'date';
+
+        let updateResult;
+        if (fieldsName === "googleCacheCalls" || fieldsName === "serverLogs") {
+            updateResult = await collection.updateMany({
+                [`${fieldsName}.${matchField}`]: {$gte: daysAgo},
+            }, {
+                $pull: {
+                    [fieldsName]: {[matchField]: {$gte: daysAgo}},
+                }
+            });
+        } else {
+            updateResult = await collection.updateMany({
+                [fieldsName]: {$elemMatch: {[matchField]: {$gte: daysAgo}, resolved: {$ne: true}}}
+            }, {
+                $set: {
+                    [`${fieldsName}.$[item].resolved`]: true,
+                    [`${fieldsName}.$[item].resolvedDate`]: new Date(),
+                },
+            }, {
+                arrayFilters: [
+                    {
+                        [`item.${matchField}`]: {$gte: daysAgo},
+                        'item.resolved': {$ne: true}
+                    },
+                ],
+            });
+        }
+
+        if (updateResult.modifiedCount === 0) {
+            return "not found";
+        }
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function resolveServerAnalysisByIdsDB(fieldsName, ids) {
+    try {
+        let collection = await getCollection('serverAnalysis');
+
+        let updateResult;
+        if (fieldsName === "googleCacheCalls" || fieldsName === "serverLogs") {
+            updateResult = await collection.updateMany({
+                [`${fieldsName}.id`]: {$in: ids},
+            }, {
+                $pull: {
+                    [fieldsName]: {id: {$in: ids}},
+                }
+            });
+        } else {
+            updateResult = await collection.updateMany({
+                [`${fieldsName}.id`]: {$in: ids},
+            }, {
+                $set: {
+                    [`${fieldsName}.$[item].resolved`]: true,
+                    [`${fieldsName}.$[item].resolvedDate`]: new Date(),
+                },
+            }, {
+                arrayFilters: [
+                    {'item.id': {$in: ids}},
+                ],
+            });
+        }
+
+        if (updateResult.modifiedCount === 0) {
+            return "not found";
+        }
         return 'ok';
     } catch (error) {
         saveError(error);

@@ -57,6 +57,21 @@ export async function resolveServerAnalysis(req, res) {
     return res.status(result.responseData.code).json(result.responseData);
 }
 
+export async function resolveServerAnalysisByIds(req, res) {
+    let {serverAnalysisFieldName} = req.params;
+    let {ids} = req.body;
+    let result = await adminServices.resolveServerAnalysisByIds(serverAnalysisFieldName, ids);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
+export async function resolveServerAnalysisLastDays(req, res) {
+    let {serverAnalysisFieldName, days} = req.params;
+    let result = await adminServices.resolveServerAnalysisLastDays(serverAnalysisFieldName, days);
+
+    return res.status(result.responseData.code).json(result.responseData);
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 
