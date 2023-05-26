@@ -16,8 +16,8 @@ import {
     linkStateMessages,
     removePageLinkToCrawlerStatus
 } from "./crawlerStatus.js";
+import {checkNeedForceStopCrawler, pauseCrawler} from "./crawlerController.js";
 import {saveError} from "../error/saveError.js";
-import {checkNeedForceStopCrawler} from "./crawlerController.js";
 import PQueue from "p-queue";
 
 
@@ -34,6 +34,8 @@ export default async function save(title, type, year, sourceData) {
             cookies
         } = sourceData;
 
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
+        await pauseCrawler();
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
         await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.sourceName, sourceConfig.vpnStatus);
 
@@ -49,6 +51,8 @@ export default async function save(title, type, year, sourceData) {
 
         if (db_data === null) {//new title
             if (downloadLinks.length > 0) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
+                await pauseCrawler();
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.newTitle);
                 if (checkNeedForceStopCrawler()) {
                     removePageLinkToCrawlerStatus(pageLink);
@@ -76,6 +80,8 @@ export default async function save(title, type, year, sourceData) {
             return;
         }
 
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
+        await pauseCrawler();
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updateTitle);
         if (checkNeedForceStopCrawler()) {
             removePageLinkToCrawlerStatus(pageLink);

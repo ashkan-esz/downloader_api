@@ -128,6 +128,7 @@ export function getCrawlerStatusObj() {
 
 export const linkStateMessages = Object.freeze({
     start: 'start',
+    paused: 'paused',
     sourcePage: Object.freeze({
         start: 'start',
         fetchingStart: 'fetching start',

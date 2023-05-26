@@ -37,7 +37,7 @@ setInterval(async () => {
 
 async function handleUpdateStuff(saveChangesToDB = true) {
     //enable crawler
-    if (configsDB.crawlerDisabled) {
+    if (configsDB?.crawlerDisabled) {
         let disableCrawlerStartPlusDuration = new Date(configsDB.disableCrawlerStart);
         disableCrawlerStartPlusDuration.setHours(disableCrawlerStartPlusDuration.getHours() + configsDB.disableCrawlerForDuration);
         let now = new Date();
