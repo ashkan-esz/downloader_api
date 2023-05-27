@@ -34,7 +34,7 @@ export default async function salamdl({movie_url, page_count}) {
     return [p1];
 }
 
-async function search_title(link, i) {
+async function search_title(link, pageNumber) {
     try {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
@@ -43,7 +43,7 @@ async function search_title(link, i) {
             let type = getType(title);
             let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`salamdl/${type}/${i}/${title}  ========>  `);
+                console.log(`salamdl/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (
                 title.includes('ایران') ||
@@ -57,7 +57,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -65,7 +65,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks[0].info === '') {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -73,7 +73,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -93,7 +93,7 @@ async function search_title(link, i) {
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

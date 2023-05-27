@@ -31,7 +31,7 @@ export default async function avamovie({movie_url, serial_url, page_count, seria
     return [p1, p2];
 }
 
-async function search_title(link, i, $, url) {
+async function search_title(link, pageNumber, $, url) {
     try {
         let title = link.attr('title');
         if (
@@ -45,12 +45,12 @@ async function search_title(link, i, $, url) {
                 type = type.replace('movie', 'serial');
             }
             if (config.nodeEnv === 'dev') {
-                console.log(`avamovie/${type}/${i}/${title}  ========>  `);
+                console.log(`avamovie/${type}/${pageNumber}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData, getQualitySample);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData, getQualitySample);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -63,7 +63,7 @@ async function search_title(link, i, $, url) {
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData, getQualitySample);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData, getQualitySample);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -83,7 +83,7 @@ async function search_title(link, i, $, url) {
                         subtitles: [],
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

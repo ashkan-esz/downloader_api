@@ -45,7 +45,7 @@ export function digimovie_checkTitle(text, title, url) {
     );
 }
 
-async function search_title(link, i, $, url) {
+async function search_title(link, pageNumber, $, url) {
     try {
         let text = link.text();
         let title = link.attr('title');
@@ -58,7 +58,7 @@ async function search_title(link, i, $, url) {
             }
             let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`digimoviez/${type}/${i}/${title}  ========>  `);
+                console.log(`digimoviez/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (title.includes('ایران')) {
                 return;
@@ -66,7 +66,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
                     getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
@@ -76,7 +76,7 @@ async function search_title(link, i, $, url) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
                             getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {
@@ -99,7 +99,7 @@ async function search_title(link, i, $, url) {
                         subtitles: [],
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

@@ -10,7 +10,6 @@ import {getDecodedLink, getSeasonEpisode} from "./utils.js";
 import {getResponseWithCookie} from "./axiosUtils.js";
 import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
-import * as Sentry from "@sentry/node";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 import {
     addPageLinkToCrawlerStatus,
@@ -22,7 +21,7 @@ import {
 } from "./crawlerStatus.js";
 import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
-import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 
 axiosRetry(axios, {
     retries: 2, // number of retries
@@ -78,7 +77,7 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                 updatePageNumberCrawlerStatus(i, page_count, concurrencyNumber);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
-                    Sentry.captureMessage(`end of crawling , last page: ${url + i}`);
+                    await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}`);
                     break;
                 }
                 for (let j = 0, _length = links.length; j < _length; j++) {

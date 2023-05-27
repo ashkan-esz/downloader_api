@@ -33,7 +33,7 @@ export default async function bia2anime({movie_url, page_count}) {
     return [p1];
 }
 
-async function search_title(link, i) {
+async function search_title(link, pageNumber) {
     try {
         let text = link.text();
         if (text && text.includes('دانلود') && link.parent().hasClass('postsFooter')) {
@@ -42,7 +42,7 @@ async function search_title(link, i) {
             let pageLink = link.attr('href');
             let type = title.includes('movie') ? 'anime_movie' : 'anime_serial';
             if (config.nodeEnv === 'dev') {
-                console.log(`bia2anime/${type}/${i}/${title}  ========>  `);
+                console.log(`bia2anime/${type}/${pageNumber}/${title}  ========>  `);
             }
             ({title, year} = getTitleAndYear(title, year, type));
             if (title === 'dota dragons blood' && type === 'anime_serial') {
@@ -59,7 +59,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -67,7 +67,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length === 0) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -90,7 +90,7 @@ async function search_title(link, i) {
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

@@ -36,7 +36,7 @@ export default async function film2movie({movie_url, page_count}) {
     return [p1];
 }
 
-async function search_title(link, i) {
+async function search_title(link, pageNumber) {
     try {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
@@ -45,7 +45,7 @@ async function search_title(link, i) {
             let type = getType(title);
             let pageLink = link.attr('href');
             if (config.nodeEnv === 'dev') {
-                console.log(`film2movie/${type}/${i}/${title}  ========>  `);
+                console.log(`film2movie/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (
                 title.includes('تلویزیونی ماه عسل') ||
@@ -73,7 +73,7 @@ async function search_title(link, i) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
@@ -86,7 +86,7 @@ async function search_title(link, i) {
                         downloadLinks[0].link.match(/\.s\d+e\d+\./i) ||
                         downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i))) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -94,7 +94,7 @@ async function search_title(link, i) {
                     }
                     if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -122,7 +122,7 @@ async function search_title(link, i) {
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

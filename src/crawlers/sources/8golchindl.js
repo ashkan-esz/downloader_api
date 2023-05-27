@@ -34,7 +34,7 @@ export default async function golchindl({movie_url, page_count}) {
     return [p1];
 }
 
-async function search_title(link, i, $) {
+async function search_title(link, pageNumber, $) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
@@ -42,7 +42,7 @@ async function search_title(link, i, $) {
             let pageLink = link.attr('href');
             let type = getType(title);
             if (config.nodeEnv === 'dev') {
-                console.log(`golchindl/${type}/${i}/${title}  ========>  `);
+                console.log(`golchindl/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (
                 title.includes('انتخابات') ||
@@ -62,7 +62,7 @@ async function search_title(link, i, $) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
                     null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
@@ -71,7 +71,7 @@ async function search_title(link, i, $) {
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
@@ -81,7 +81,7 @@ async function search_title(link, i, $) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
@@ -109,7 +109,7 @@ async function search_title(link, i, $) {
                         subtitles: [],
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

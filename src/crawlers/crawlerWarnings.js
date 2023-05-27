@@ -33,5 +33,6 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         crawlerCancelled: 'Crawling cancelled : sourcesObj is null',
         crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
         axiosTimeoutError: `Axios timeout error (${data1}): ${data2}`,
+        crawlerBadLink: `Crawler generated badLink (${data1})`,
     });
 }

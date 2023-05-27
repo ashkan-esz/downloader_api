@@ -1,18 +1,18 @@
 ## API Parameters
 
-| param name           | Values              | Description                                                                     | Required |
-|----------------------|---------------------|---------------------------------------------------------------------------------|----------|
-| duration             | Number [1-120]      | amount of time in minute                                                        | true     |
-| force                | Boolean             | amount of time in minute                                                        | true     |
-| id                   | String, uuid        |                                                                                 | true     |
-| ids                  | Array(String, uuid) |                                                                                 | true     |
-| mutateType           | String              | Enum(`enable`, `disable`)                                                       | true     |
-| all                  | Boolean             |                                                                                 | false    |
-| sourceName           | String              |                                                                                 | true     |
-| url                  | String              |                                                                                 | true     |
-| serverAnalysisFields | String              | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls') | true     |
-| page                 | Number start from 1 |                                                                                 | true     |
-| days                 | Number start from 1 |                                                                                 | true     |
+| param name           | Values              | Description                                                                                 | Required |
+|----------------------|---------------------|---------------------------------------------------------------------------------------------|----------|
+| duration             | Number [1-120]      | amount of time in minute                                                                    | true     |
+| force                | Boolean             | amount of time in minute                                                                    | true     |
+| id                   | String, uuid        |                                                                                             | true     |
+| ids                  | Array(String, uuid) |                                                                                             | true     |
+| mutateType           | String              | Enum(`enable`, `disable`)                                                                   | true     |
+| all                  | Boolean             |                                                                                             | false    |
+| sourceName           | String              |                                                                                             | true     |
+| url                  | String              |                                                                                             | true     |
+| serverAnalysisFields | String              | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls', 'badLinks') | true     |
+| page                 | Number start from 1 |                                                                                             | true     |
+| days                 | Number start from 1 |                                                                                             | true     |
 
 > they are case-insensitive.
 

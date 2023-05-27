@@ -35,7 +35,7 @@ export default async function bia2hd({movie_url, serial_url, page_count, serial_
     return [p1, p2];
 }
 
-async function search_title(link, i) {
+async function search_title(link, pageNumber) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
@@ -43,7 +43,7 @@ async function search_title(link, i) {
             let pageLink = link.attr('href');
             let type = getType(title);
             if (config.nodeEnv === 'dev') {
-                console.log(`bia2hd/${type}/${i}/${title}  ========>  `);
+                console.log(`bia2hd/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (title.includes('ایران')) {
                 return;
@@ -51,7 +51,7 @@ async function search_title(link, i) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !checkPersianSerial(title)) {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, i, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -71,7 +71,7 @@ async function search_title(link, i) {
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, pageNumber);
                 }
             }
         }

@@ -19,9 +19,12 @@ import {
 import {checkNeedForceStopCrawler, pauseCrawler} from "./crawlerController.js";
 import {saveError} from "../error/saveError.js";
 import PQueue from "p-queue";
+import {getLinksDoesntMatchLinkRegex} from "./extractors/downloadLinks.js";
+import {saveCrawlerBadLink, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 
 
-export default async function save(title, type, year, sourceData) {
+export default async function save(title, type, year, sourceData, pageNumber) {
     try {
         let {
             sourceConfig,
@@ -33,6 +36,15 @@ export default async function save(title, type, year, sourceData) {
             subtitles,
             cookies
         } = sourceData;
+
+        if (pageNumber === 1) {
+            let badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
+            if (badLinks.length > 0) {
+                await saveCrawlerBadLink(sourceConfig.sourceName, pageLink, badLinks.slice(0, 10));
+                const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                await saveCrawlerWarning(warningMessages.crawlerBadLink);
+            }
+        }
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
         await pauseCrawler();

@@ -1,6 +1,7 @@
 import {v4 as uuidv4} from "uuid";
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
+import {getDecodedLink} from "../../crawlers/utils.js";
 
 const _maxSaveLogDuration = 1;
 const _pageSize = 24;
@@ -174,6 +175,56 @@ export async function saveGoogleCacheCall(url) {
             //create new bucket
             let newBucket = getNewBucket(yearAndMonth);
             newBucket.googleCacheCalls.push(newGoogleCacheCall);
+            await collection.insertOne(newBucket);
+        }
+
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function saveCrawlerBadLink(sourceName, pageLink, links) {
+    try {
+        let {now, yearAndMonth, bucket, collection} = await getCollectionAndBucket();
+
+        let newBadLink = {
+            address: sourceName + '::' + getDecodedLink(pageLink.replace(/\/$/, '').split('/').pop()),
+            links: links,
+            date: now,
+            count: 1,
+            id: uuidv4(),
+        };
+
+        if (bucket.length > 0) {
+            let updateResult = await collection.updateOne({
+                _id: bucket[0]._id,
+                'badLinks.address': newBadLink.address,
+            }, {
+                $set: {
+                    'badLinks.$.links': links,
+                    'badLinks.$.date': now,
+                },
+                $inc: {
+                    'badLinks.$.count': 1,
+                }
+            });
+
+            if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
+                //new
+                await collection.updateOne({
+                    _id: bucket[0]._id,
+                }, {
+                    $push: {
+                        badLinks: newBadLink,
+                    }
+                });
+            }
+        } else {
+            //create new bucket
+            let newBucket = getNewBucket(yearAndMonth);
+            newBucket.badLinks.push(newBadLink);
             await collection.insertOne(newBucket);
         }
 
@@ -506,7 +557,8 @@ function getNewBucket(yearAndMonth) {
         serverLogs: [],
         warnings: [],
         googleCacheCalls: [],
+        badLinks: [],
     });
 }
 
-export const serverAnalysisFields = Object.freeze(['userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls']);
+export const serverAnalysisFields = Object.freeze(['userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls', 'badLinks']);
