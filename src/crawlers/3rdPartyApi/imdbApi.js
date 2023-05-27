@@ -1,7 +1,7 @@
 import config from "../../config/index.js";
 import axios from "axios";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
-import * as utils from "../utils.js";
+import * as utils from "../utils/utils.js";
 import * as cloudStorage from "../../data/cloudStorage.js";
 import {getMovieModel} from "../../models/movie.js";
 import PQueue from 'p-queue';
@@ -12,7 +12,7 @@ import {
     uploadTitlePosterAndAddToTitleModel
 } from "../posterAndTrailer.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 
 let imdbApiKey = [];
 

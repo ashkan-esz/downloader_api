@@ -2,7 +2,7 @@ import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
 import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
-import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 
 
 export default function (agenda) {

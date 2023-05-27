@@ -7,7 +7,7 @@ import {
     replacePersianNumbers,
     sortLinks,
     validateYear,
-} from "../utils.js";
+} from "../utils/utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
 import {summaryExtractor, posterExtractor, trailerExtractor} from "../extractors/index.js";

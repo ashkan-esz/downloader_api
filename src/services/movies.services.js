@@ -7,7 +7,7 @@ import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import {setCache} from "../api/middlewares/moviesCache.js";
 import {dataLevelConfig_staff} from "../models/person.js";
 import {dataLevelConfig_character} from "../models/character.js";
-import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils.js";
+import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils.js";
 import PQueue from 'p-queue';
 import {
     getFollowedStaffTodayBirthday,

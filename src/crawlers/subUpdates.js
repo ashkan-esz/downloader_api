@@ -1,7 +1,7 @@
 import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
 import {handleLatestDataUpdate} from "./latestData.js";
-import {removeDuplicateLinks} from "./utils.js";
-import {getFileSize} from "./axiosUtils.js";
+import {removeDuplicateLinks} from "./utils/utils.js";
+import {getFileSize} from "./utils/axiosUtils.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {saveError} from "../error/saveError.js";
 

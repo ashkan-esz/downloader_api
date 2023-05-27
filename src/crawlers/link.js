@@ -1,4 +1,4 @@
-import {checkBetterQuality} from "./utils.js";
+import {checkBetterQuality} from "./utils/utils.js";
 import {getEpisodeModel_placeholder} from "../models/episode.js";
 
 export function check_format(link, title) {

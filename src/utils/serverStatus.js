@@ -3,7 +3,7 @@ import {fileURLToPath} from "url";
 import os from "os";
 import nou from "node-os-utils";
 import checkDiskSpace from 'check-disk-space';
-import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
+import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 
 nou.options.INTERVAL = 10000;
 

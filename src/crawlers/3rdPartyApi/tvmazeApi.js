@@ -1,8 +1,8 @@
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils.js";
+import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils/utils.js";
 import {getEpisodeModel} from "../../models/episode.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 
 

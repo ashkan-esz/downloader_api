@@ -1,7 +1,7 @@
 import axios from "axios";
 import NodeCache from "node-cache";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
-import * as utils from "../utils.js";
+import * as utils from "../utils/utils.js";
 import {addStaffAndCharacters} from "./staffAndCharacters/personCharacter.js";
 import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
 import {
@@ -12,7 +12,7 @@ import {
 import PQueue from 'p-queue';
 import isEqual from 'lodash.isequal';
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "../crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 
 const rateLimitConfig = {

@@ -1,4 +1,4 @@
-import {getSeasonEpisode} from "../crawlers/utils.js";
+import {getSeasonEpisode} from "../crawlers/utils/utils.js";
 
 export function getWatchOnlineLinksModel(link, info, movieType, sourceName) {
     let season = 0, episode = 0;

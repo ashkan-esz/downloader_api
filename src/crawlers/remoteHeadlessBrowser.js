@@ -3,11 +3,11 @@ import axios from "axios";
 import cheerio from "cheerio";
 import {v4 as uuidv4} from "uuid";
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
-import {getDecodedLink} from "./utils.js"
-import {getResponseWithCookie} from "./axiosUtils.js";
+import {getDecodedLink} from "./utils/utils.js"
+import {getResponseWithCookie} from "./utils/axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 
 export const remoteBrowsers = config.remoteBrowser.map(item => {
     item.password = encodeURIComponent(item.password);

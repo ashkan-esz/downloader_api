@@ -3,7 +3,7 @@ import inquirer from "inquirer";
 import isEqual from 'lodash.isequal';
 import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePages/sourcePagesSample.js";
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
-import {removeDuplicateLinks} from "../utils.js";
+import {removeDuplicateLinks} from "../utils/utils.js";
 import {saveError} from "../../error/saveError.js";
 
 const sourcesMethods = getSourcesMethods();

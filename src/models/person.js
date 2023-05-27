@@ -1,4 +1,4 @@
-import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils.js";
+import {replaceSpecialCharacters, fixJapaneseCharacter} from "../crawlers/utils/utils.js";
 
 export function getPersonModel(
     rawName, gender, about,

@@ -9,19 +9,19 @@ import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jik
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
-import {getDatesBetween} from "./utils.js";
-import {getFileSize} from "./axiosUtils.js";
+import {getDatesBetween} from "./utils/utils.js";
+import {getFileSize} from "./utils/axiosUtils.js";
 import {
     changePageLinkStateFromCrawlerStatus,
     linkStateMessages,
     removePageLinkToCrawlerStatus
-} from "./crawlerStatus.js";
-import {checkNeedForceStopCrawler, pauseCrawler} from "./crawlerController.js";
+} from "./status/crawlerStatus.js";
+import {checkNeedForceStopCrawler, pauseCrawler} from "./status/crawlerController.js";
 import {saveError} from "../error/saveError.js";
 import PQueue from "p-queue";
 import {getLinksDoesntMatchLinkRegex} from "./extractors/downloadLinks.js";
 import {saveCrawlerBadLink, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber) {

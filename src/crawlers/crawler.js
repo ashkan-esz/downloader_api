@@ -1,4 +1,4 @@
-import {getDatesBetween, getDayOfYear} from "./utils.js";
+import {getDatesBetween, getDayOfYear} from "./utils/utils.js";
 import {getSourcesObjDB, updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
@@ -11,9 +11,9 @@ import {
     updateCrawlerStatus_crawlerStart,
     updateCrawlerStatus_sourceEnd,
     updateCrawlerStatus_sourceStart,
-} from "./crawlerStatus.js";
+} from "./status/crawlerStatus.js";
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 
 
 export let _handleCastUpdate = true;

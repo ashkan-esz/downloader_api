@@ -1,18 +1,18 @@
 import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
-import {getDatesBetween} from "./utils.js";
-import {getResponseUrl} from "./axiosUtils.js";
+import {getDatesBetween} from "./utils/utils.js";
+import {getResponseUrl} from "./utils/axiosUtils.js";
 import {saveError} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {
     changeDomainChangeHandlerState, linkStateMessages,
     updateCrawlerStatus_domainChangeHandlerCrashed,
     updateCrawlerStatus_domainChangeHandlerEnd,
     updateCrawlerStatus_domainChangeHandlerStart
-} from "./crawlerStatus.js";
-import {checkNeedForceStopCrawler} from "./crawlerController.js";
+} from "./status/crawlerStatus.js";
+import {checkNeedForceStopCrawler} from "./status/crawlerController.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {

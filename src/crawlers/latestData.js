@@ -1,4 +1,4 @@
-import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils.js";
+import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils/utils.js";
 
 
 export function handleLatestDataUpdate(db_data, latestData, type) {

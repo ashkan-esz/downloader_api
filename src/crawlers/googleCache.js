@@ -1,7 +1,7 @@
 import config from "../config/index.js";
 import axios from "axios";
 import cheerio from "cheerio";
-import {getDecodedLink} from "./utils.js";
+import {getDecodedLink} from "./utils/utils.js";
 import {saveError} from "../error/saveError.js";
 import {saveGoogleCacheCall} from "../data/db/serverAnalysisDbMethods.js";
 

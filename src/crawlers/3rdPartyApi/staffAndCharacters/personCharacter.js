@@ -1,4 +1,4 @@
-import * as utils from "../../utils.js";
+import * as utils from "../../utils/utils.js";
 import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "../jikanApi.js";
 import {getPersonModel} from "../../../models/person.js";
 import {getCharacterModel} from "../../../models/character.js";

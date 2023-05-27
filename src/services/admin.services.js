@@ -4,9 +4,9 @@ import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.js";
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerStatusObj} from "../crawlers/crawlerStatus.js";
+import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
-import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/crawlerController.js";
+import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
 import {safeFieldsToEdit_array} from "../config/configsDb.js";
 import * as RemoteHeadlessBrowserMethods from "../crawlers/remoteHeadlessBrowser.js";
 

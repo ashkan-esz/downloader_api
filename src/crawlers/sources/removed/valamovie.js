@@ -1,6 +1,6 @@
 import config from "../../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../../searchTools.js";
-import {checkDubbed, checkHardSub, removeDuplicateLinks} from "../../utils.js";
+import {checkDubbed, checkHardSub, removeDuplicateLinks} from "../../utils/utils.js";
 import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeEncoderText, purgeSizeText, purgeQualityText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";

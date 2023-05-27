@@ -1,6 +1,6 @@
 import {wordsToNumbers} from "words-to-numbers";
 import * as persianRex from "persian-rex";
-import {replacePersianNumbers, replaceSpecialCharacters} from "./utils.js";
+import {replacePersianNumbers, replaceSpecialCharacters} from "./utils/utils.js";
 import {saveError} from "../error/saveError.js";
 
 

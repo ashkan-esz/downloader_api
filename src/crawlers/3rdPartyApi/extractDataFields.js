@@ -1,4 +1,4 @@
-import {getMonthNumberByMonthName} from "../utils.js";
+import {getMonthNumberByMonthName} from "../utils/utils.js";
 import {japanRegions} from "../../utils/index.js";
 
 const japanRegionNames = japanRegions.prefectureEnNames();

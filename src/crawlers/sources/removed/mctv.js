@@ -5,7 +5,7 @@ import {
     checkDubbed,
     checkHardSub,
     removeDuplicateLinks
-} from "../../utils.js";
+} from "../../utils/utils.js";
 import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeEncoderText, purgeSizeText, purgeQualityText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";

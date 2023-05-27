@@ -1,7 +1,7 @@
 import mongodb from "mongodb";
 import getCollection from "../../mongoDB.js";
 import PQueue from 'p-queue';
-import {removeDuplicateElements} from "../../../crawlers/utils.js";
+import {removeDuplicateElements} from "../../../crawlers/utils/utils.js";
 import {saveError} from "../../../error/saveError.js";
 
 export async function removeMovieSource(sourceName) {

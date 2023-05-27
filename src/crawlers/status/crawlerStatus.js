@@ -1,12 +1,12 @@
-import config from "../config/index.js";
-import {getServerConfigsDb} from "../config/configsDb.js";
+import config from "../../config/index.js";
+import {getServerConfigsDb} from "../../config/configsDb.js";
 import {v4 as uuidv4} from 'uuid';
-import {saveCrawlerLog} from "../data/db/serverAnalysisDbMethods.js";
-import {getDatesBetween, getDecodedLink} from "./utils.js";
+import {saveCrawlerLog} from "../../data/db/serverAnalysisDbMethods.js";
+import {getDatesBetween, getDecodedLink} from "../utils/utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
-import {getCpuAverageLoad, getMemoryStatus} from "../utils/serverStatus.js";
-import {blackListSources, remoteBrowsers} from "./remoteHeadlessBrowser.js";
-import {axiosBlackListSources} from "./searchTools.js";
+import {getCpuAverageLoad, getMemoryStatus} from "../../utils/serverStatus.js";
+import {blackListSources, remoteBrowsers} from "../remoteHeadlessBrowser.js";
+import {axiosBlackListSources} from "../searchTools.js";
 
 const crawlerStatus = {
     disabledData: {

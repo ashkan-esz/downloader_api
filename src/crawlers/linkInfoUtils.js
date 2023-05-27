@@ -1,4 +1,4 @@
-import {checkDubbed, checkHardSub} from "./utils.js";
+import {checkDubbed, checkHardSub} from "./utils/utils.js";
 
 //----------------------------------------
 

@@ -1,7 +1,7 @@
 import {get_OMDB_EpisodesData} from "./3rdPartyApi/omdbApi.js";
 import {getEpisodeModel_placeholder} from "../models/episode.js";
 import {groupSerialLinks, updateSerialLinks} from "./link.js";
-import {replaceSpecialCharacters} from "./utils.js";
+import {replaceSpecialCharacters} from "./utils/utils.js";
 import {wordsToNumbers} from "words-to-numbers";
 
 export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {

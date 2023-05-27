@@ -1,4 +1,4 @@
-import {getDecodedLink, getSeasonEpisode} from "../crawlers/utils.js";
+import {getDecodedLink, getSeasonEpisode} from "../crawlers/utils/utils.js";
 
 export function getSubtitleModel(link, info, movieType, sourceName, direct = true) {
     let season = 0, episode = 0;

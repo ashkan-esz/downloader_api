@@ -7,7 +7,7 @@ import {
     updateSourcePageData_batch
 } from "../samples/sourcePages/sourcePagesSample.js";
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
-import {getSeasonEpisode, removeDuplicateLinks} from "../utils.js";
+import {getSeasonEpisode, removeDuplicateLinks} from "../utils/utils.js";
 import {
     countriesRegex, filterLowResDownloadLinks,
     fixLinkInfoOrder,

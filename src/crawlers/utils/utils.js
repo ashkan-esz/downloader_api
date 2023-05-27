@@ -1,4 +1,4 @@
-import {saveError} from "../error/saveError.js";
+import {saveError} from "../../error/saveError.js";
 
 
 export function replaceSpecialCharacters(input) {

@@ -1,7 +1,7 @@
 import {v4 as uuidv4} from "uuid";
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
-import {getDecodedLink} from "../../crawlers/utils.js";
+import {getDecodedLink} from "../../crawlers/utils/utils.js";
 
 const _maxSaveLogDuration = 1;
 const _pageSize = 24;

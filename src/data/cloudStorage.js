@@ -15,11 +15,11 @@ import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
-import {getArrayBufferResponse, getFileSize} from "../crawlers/axiosUtils.js";
+import {getArrayBufferResponse, getFileSize} from "../crawlers/utils/axiosUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
-import {updateTrailerUploadLimit} from "../crawlers/crawlerStatus.js";
+import {updateTrailerUploadLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 
 
 const s3 = new S3Client({

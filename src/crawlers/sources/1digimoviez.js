@@ -5,7 +5,7 @@ import {
     removeDuplicateLinks,
     getYear,
     getSeasonEpisode
-} from "../utils.js";
+} from "../utils/utils.js";
 import {getTitleAndYear, purgeTitle} from "../movieTitle.js";
 import {
     purgeEncoderText,

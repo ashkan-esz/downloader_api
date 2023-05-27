@@ -1,6 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {validateYear, getType, removeDuplicateLinks, getSeasonEpisode} from "../utils.js";
+import {validateYear, getType, removeDuplicateLinks, getSeasonEpisode} from "../utils/utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     purgeEncoderText,

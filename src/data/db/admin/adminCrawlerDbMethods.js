@@ -1,7 +1,7 @@
 import getCollection from "../../mongoDB.js";
 import {resolveCrawlerWarning} from "../serverAnalysisDbMethods.js";
 import {saveError} from "../../../error/saveError.js";
-import {getCrawlerWarningMessages} from "../../../crawlers/crawlerWarnings.js";
+import {getCrawlerWarningMessages} from "../../../crawlers/status/crawlerWarnings.js";
 
 export async function updateSourceData(sourceName, data) {
     try {

@@ -1,10 +1,10 @@
 import config from "../config/index.js";
 import sharp from "sharp";
 import {saveError} from "../error/saveError.js";
-import {updateImageOperationsLimit} from "../crawlers/crawlerStatus.js";
+import {updateImageOperationsLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
-import {getCrawlerWarningMessages} from "../crawlers/crawlerWarnings.js";
-import {downloadImage} from "../crawlers/axiosUtils.js";
+import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
+import {downloadImage} from "../crawlers/utils/axiosUtils.js";
 
 export const imageOperationsConcurrency = 100;
 export const saveWarningTimeout = 60 * 1000; //60s

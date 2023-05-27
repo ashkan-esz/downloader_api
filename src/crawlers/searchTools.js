@@ -6,8 +6,8 @@ import PQueue from 'p-queue';
 import {check_format} from "./link.js";
 import {getAxiosSourcesObject, getPageData} from "./remoteHeadlessBrowser.js";
 import {getFromGoogleCache} from "./googleCache.js";
-import {getDecodedLink, getSeasonEpisode} from "./utils.js";
-import {getResponseWithCookie} from "./axiosUtils.js";
+import {getDecodedLink, getSeasonEpisode} from "./utils/utils.js";
+import {getResponseWithCookie} from "./utils/axiosUtils.js";
 import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {digimovie_checkTitle} from "./sources/1digimoviez.js";
@@ -18,9 +18,9 @@ import {
     linkStateMessages,
     removePageLinkToCrawlerStatus,
     updatePageNumberCrawlerStatus
-} from "./crawlerStatus.js";
-import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./crawlerController.js";
-import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
+} from "./status/crawlerStatus.js";
+import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./status/crawlerController.js";
+import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 
 axiosRetry(axios, {

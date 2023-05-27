@@ -7,7 +7,7 @@ import {
     checkHardSub,
     checkDubbed,
     removeDuplicateLinks
-} from "../utils.js";
+} from "../utils/utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {fixLinkInfo, fixLinkInfoOrder, purgeQualityText} from "../linkInfoUtils.js";
 import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";

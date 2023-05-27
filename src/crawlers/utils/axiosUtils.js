@@ -1,7 +1,7 @@
 import axios from "axios";
 import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
-import {saveErrorIfNeeded} from "../error/saveError.js";
+import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
     try {

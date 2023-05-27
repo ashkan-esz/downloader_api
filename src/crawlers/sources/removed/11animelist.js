@@ -7,7 +7,7 @@ import {
     removeDuplicateLinks,
     getDecodedLink,
     sortLinks
-} from "../../utils.js";
+} from "../../utils/utils.js";
 import {getTitleAndYear} from "../../movieTitle.js";
 import {purgeSizeText} from "../../linkInfoUtils.js";
 import save from "../../save_changes_db.js";

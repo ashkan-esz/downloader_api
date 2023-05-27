@@ -5,10 +5,10 @@ import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
 import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisode} from "../seasonEpisode.js";
 import {sortPosters} from "../subUpdates.js";
 import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} from "../posterAndTrailer.js";
-import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils.js";
-import {getFileSize} from "../axiosUtils.js";
+import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils/utils.js";
+import {getFileSize} from "../utils/axiosUtils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
-import {changePageLinkStateFromCrawlerStatus, linkStateMessages} from "../crawlerStatus.js";
+import {changePageLinkStateFromCrawlerStatus, linkStateMessages} from "../status/crawlerStatus.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 

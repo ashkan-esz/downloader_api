@@ -1,5 +1,5 @@
-import config from "../config/index.js";
-import {getCpuAverageLoad, getMemoryStatus} from "../utils/serverStatus.js";
+import config from "../../config/index.js";
+import {getCpuAverageLoad, getMemoryStatus} from "../../utils/serverStatus.js";
 import {
     checkForceResume,
     checkForceStopCrawler,
@@ -9,7 +9,7 @@ import {
     saveCrawlerPause
 } from "./crawlerStatus.js";
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
-import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
+import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 
 
 export const crawlerMemoryLimit = (config.crawler.memoryLimit || (config.crawler.totalMemory * 0.85)) - 20;
