@@ -16,7 +16,7 @@ export default function (agenda) {
             let keys = Object.keys(result);
             const sources = [];
             for (let i = 0; i < keys.length; i++) {
-                if (['_id', 'title', 'pageCounter_time'].includes(keys[i])) {
+                if (['_id', 'title'].includes(keys[i])) {
                     continue;
                 }
                 sources.push({

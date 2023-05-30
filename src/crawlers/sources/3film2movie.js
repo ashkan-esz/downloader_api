@@ -30,9 +30,9 @@ export const sourceConfig = Object.freeze({
 });
 let prevTitles = [];
 
-export default async function film2movie({movie_url, page_count}) {
+export default async function film2movie({movie_url}, pageCount) {
     prevTitles = [];
-    let p1 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
+    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
     return [p1];
 }
 

@@ -51,15 +51,15 @@ axiosRetry(axios, {
 
 export let axiosBlackListSources = [];
 
-export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
+export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
     let lastPageNumber = 0;
     try {
-        if (!url || page_count === 0) {
+        if (!url || pageCount === 0) {
             return lastPageNumber;
         }
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, page_count);
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, pageCount);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
-        for (let i = 1; i <= page_count; i++) {
+        for (let i = 1; (pageCount === null || i <= pageCount); i++) {
             if (checkNeedForceStopCrawler()) {
                 break;
             }
@@ -74,10 +74,10 @@ export async function wrapper_module(sourceConfig, url, page_count, searchCB) {
                     pageTitle
                 } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage');
                 changeSourcePageFromCrawlerStatus(url + `${i}`, linkStateMessages.sourcePage.fetchingEnd);
-                updatePageNumberCrawlerStatus(i, page_count, concurrencyNumber);
+                updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
-                    await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}`);
+                    await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}/${pageCount}`);
                     break;
                 }
                 for (let j = 0, _length = links.length; j < _length; j++) {
@@ -384,7 +384,7 @@ async function getConcurrencyNumber(sourceName, needHeadlessBrowser, pageCount) 
             ? 9
             : 12;
     }
-    if (pageCount < 3 && await checkServerIsIdle()) {
+    if (pageCount !== null && pageCount < 3 && await checkServerIsIdle()) {
         //use higher concurrency when mode is 0 and server is idle
         concurrencyNumber += 2;
     }

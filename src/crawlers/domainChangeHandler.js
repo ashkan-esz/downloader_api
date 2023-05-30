@@ -18,10 +18,8 @@ import {checkNeedForceStopCrawler} from "./status/crawlerController.js";
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
     try {
         await updateCrawlerStatus_domainChangeHandlerStart();
-        let pageCounter_time = sourcesObj.pageCounter_time;
         delete sourcesObj._id;
         delete sourcesObj.title;
-        delete sourcesObj.pageCounter_time;
         let sourcesUrls = Object.keys(sourcesObj).map(sourceName => ({
             sourceName: sourceName,
             url: sourcesObj[sourceName].movie_url,
@@ -37,7 +35,7 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
         if (changedSources.length > 0) {
             await saveServerLog('start domain change handler');
             updateSourceFields(sourcesObj, sourcesUrls);
-            await updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources);
+            await updateDownloadLinks(sourcesObj, changedSources, fullyCrawledSources);
             await saveServerLog('source domain changed');
         }
         return await updateCrawlerStatus_domainChangeHandlerEnd();
@@ -160,8 +158,8 @@ function updateSourceFields(sourcesObject, sourcesUrls) {
     }
 }
 
-async function updateDownloadLinks(sourcesObj, pageCounter_time, changedSources, fullyCrawledSources) {
-    let sourcesArray = getSourcesArray(sourcesObj, 2, pageCounter_time);
+async function updateDownloadLinks(sourcesObj, changedSources, fullyCrawledSources) {
+    let sourcesArray = getSourcesArray(sourcesObj, 2);
     for (let i = 0; i < changedSources.length; i++) {
         try {
             let startTime = new Date();

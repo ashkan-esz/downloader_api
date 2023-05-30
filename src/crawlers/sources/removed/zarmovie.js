@@ -15,9 +15,9 @@ const sourceName = "zarmovie";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
 
-export default async function zarmovie({movie_url, serial_url, page_count, serial_page_count}) {
-    // await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, serial_page_count, search_title);
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, page_count, search_title);
+export default async function zarmovie({movie_url, serial_url}, pageCount) {
+    // await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, pageCount, search_title);
+    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, pageCount, search_title);
 }
 
 async function search_title(link, i) {

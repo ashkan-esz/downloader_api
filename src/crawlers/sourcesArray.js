@@ -22,76 +22,50 @@ export function getSourcesMethods() {
     });
 }
 
-export function getSourcesArray(sourcesObj, crawlMode, pageCounter_time = '') {
-    let pageCounterTime = new Date((pageCounter_time || sourcesObj.pageCounter_time));
-    let now = new Date();
-    let daysElapsed = (now.getTime() - pageCounterTime.getTime()) / (24 * 3600 * 1000);
+export function getSourcesArray(sourcesObj, crawlMode) {
+    const pageCount = crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : null;
 
     return [
         {
             name: 'digimoviez',
             starter: () => {
-                return digimoviez.default({
-                    ...sourcesObj.digimoviez,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.digimoviez.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.digimoviez.serial_page_count + daysElapsed / 3,
-                })
+                return digimoviez.default(sourcesObj.digimoviez, pageCount);
             },
         },
         {
             name: 'film2movie',
             starter: () => {
-                return film2movie.default({
-                    ...sourcesObj.film2movie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.film2movie.page_count + daysElapsed,
-                });
+                return film2movie.default(sourcesObj.film2movie, pageCount);
             }
         },
         {
             name: 'salamdl',
             starter: () => {
-                return salamdl.default({
-                    ...sourcesObj.salamdl,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.salamdl.page_count + daysElapsed,
-                });
+                return salamdl.default(sourcesObj.salamdl, pageCount);
             }
         },
         {
             name: 'avamovie',
             starter: () => {
-                return avamovie.default({
-                    ...sourcesObj.avamovie,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.avamovie.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.avamovie.serial_page_count + daysElapsed / 3,
-                });
+                return avamovie.default(sourcesObj.avamovie, pageCount);
             }
         },
         {
             name: 'bia2hd',
             starter: () => {
-                return bia2hd.default({
-                    ...sourcesObj.bia2hd,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.bia2hd.page_count + daysElapsed,
-                    serial_page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 5 : sourcesObj.bia2hd.serial_page_count + daysElapsed / 3,
-                });
+                return bia2hd.default(sourcesObj.bia2hd, pageCount);
             }
         },
         {
             name: 'golchindl',
             starter: () => {
-                return golchindl.default({
-                    ...sourcesObj.golchindl,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 30 : sourcesObj.golchindl.page_count + daysElapsed,
-                });
+                return golchindl.default(sourcesObj.golchindl, pageCount);
             }
         },
         {
             name: 'bia2anime',
             starter: () => {
-                return bia2anime.default({
-                    ...sourcesObj.bia2anime,
-                    page_count: crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : sourcesObj.bia2anime.page_count + daysElapsed,
-                });
+                return bia2anime.default(sourcesObj.bia2anime, pageCount);
             }
         },
     ];
@@ -101,14 +75,11 @@ export const sourcesObj = () => {
     let now = new Date();
     let obj = {
         title: "sources",
-        pageCounter_time: now,
     };
     for (let i = 0; i < sourcesNames.length; i++) {
         obj[sourcesNames[i]] = {
             movie_url: "",
-            page_count: 0,
             serial_url: "",
-            serial_page_count: 0,
             crawlCycle: 0,
             disabled: true,
             cookies: [],

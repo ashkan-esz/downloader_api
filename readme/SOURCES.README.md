@@ -6,12 +6,9 @@
 
 {
     title: "sources",
-    pageCounter_time: Date,
     [sourceName]: {
         movie_url: "https://example.com/page/",
         serial_url: "https://example.com/serie/page/", //if needed
-        page_count: Number,
-        serial_page_count: Number, //if needed
         lastCrawlDate: Date,
         crawlCycle: Number, // 0 means no cycle
         cookies: Array({
@@ -29,12 +26,9 @@
 for example ::
 {
     title: "sources",
-    pageCounter_time: '2021-09-17T23:06:48.443+00:00',
     digimoviez: {
         movie_url: "https://digimovie.vip/page/",
         serial_url: "https://digimovie.vip/serie/page/",
-        page_count: 419,
-        serial_page_count: 66,
         lastCrawlDate: 2022-09-14T18:37:22.403Z,
         crawlCycle: 3,
         cookies: [],
@@ -45,7 +39,6 @@ for example ::
     },
     film2movie: {
         movie_url: "https://www.film2movie.asia/page/",
-        page_count: 1488,
         lastCrawlDate: 2022-09-10T18:37:22.403Z,
         crawlCycle: 0,
         cookies: [],

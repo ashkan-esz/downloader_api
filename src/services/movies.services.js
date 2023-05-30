@@ -334,7 +334,6 @@ export async function getMovieSources(routeUrl) {
 
     delete result._id;
     delete result.title;
-    delete result.pageCounter_time;
     let sourcesUrls = Object.keys(result).map(sourceName => ({
         sourceName: sourceName,
         url: result[sourceName].movie_url.replace('/page/', '')

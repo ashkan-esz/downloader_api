@@ -122,7 +122,7 @@ export async function getCrawlerSources() {
     let keys = Object.keys(result);
     result.sources = [];
     for (let i = 0; i < keys.length; i++) {
-        if (['_id', 'title', 'pageCounter_time'].includes(keys[i])) {
+        if (['_id', 'title'].includes(keys[i])) {
             continue;
         }
         result.sources.push({
@@ -135,12 +135,10 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
+export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,
-        page_count,
         serial_url,
-        serial_page_count,
         crawlCycle,
         disabled,
         cookies
@@ -153,12 +151,10 @@ export async function editSource(sourceName, movie_url, page_count, serial_url, 
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function addSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies) {
+export async function addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.addSourceDB(sourceName, {
         movie_url,
-        page_count,
         serial_url,
-        serial_page_count,
         crawlCycle,
         disabled,
         cookies

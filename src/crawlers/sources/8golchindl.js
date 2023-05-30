@@ -29,8 +29,8 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function golchindl({movie_url, page_count}) {
-    let p1 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
+export default async function golchindl({movie_url}, pageCount) {
+    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
     return [p1];
 }
 

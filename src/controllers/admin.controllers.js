@@ -82,15 +82,15 @@ export async function getCrawlerSources(req, res) {
 }
 
 export async function editSource(req, res) {
-    let {movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies} = req.body;
-    let result = await adminServices.editSource(req.params.sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies);
+    let {movie_url, serial_url, crawlCycle, disabled, cookies} = req.body;
+    let result = await adminServices.editSource(req.params.sourceName, movie_url, serial_url, crawlCycle, disabled, cookies);
 
     return res.status(result.responseData.code).json(result.responseData);
 }
 
 export async function addSource(req, res) {
-    let {sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies} = req.body;
-    let result = await adminServices.addSource(sourceName, movie_url, page_count, serial_url, serial_page_count, crawlCycle, disabled, cookies);
+    let {sourceName, movie_url, serial_url, crawlCycle, disabled, cookies} = req.body;
+    let result = await adminServices.addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies);
 
     return res.status(result.responseData.code).json(result.responseData);
 }

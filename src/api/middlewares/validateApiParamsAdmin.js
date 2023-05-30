@@ -183,16 +183,6 @@ const validations = Object.freeze({
         .trim()
         .replace('empty', ''),
 
-    page_count: body('page_count')
-        .exists().withMessage("Missed parameter page_count")
-        .isInt({min: 0}).withMessage("page_count must be Number starting from 0")
-        .toInt(),
-
-    serial_page_count: body('serial_page_count')
-        .exists().withMessage("Missed parameter serial_page_count")
-        .isInt({min: 0}).withMessage("serial_page_count must be Number starting from 0")
-        .toInt(),
-
     crawlCycle: body('crawlCycle')
         .exists().withMessage("Missed parameter crawlCycle")
         .isInt({min: 0}).withMessage("crawlCycle must be Number starting from 0")

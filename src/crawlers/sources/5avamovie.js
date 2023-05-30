@@ -25,9 +25,9 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function avamovie({movie_url, serial_url, page_count, serial_page_count}) {
-    let p1 = await wrapper_module(sourceConfig, serial_url, serial_page_count, search_title);
-    let p2 = await wrapper_module(sourceConfig, movie_url, page_count, search_title);
+export default async function avamovie({movie_url, serial_url}, pageCount) {
+    let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title);
+    let p2 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
     return [p1, p2];
 }
 
