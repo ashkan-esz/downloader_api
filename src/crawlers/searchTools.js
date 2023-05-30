@@ -77,7 +77,13 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
                 updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
-                    await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}/${pageCount}`);
+                    if (i !== 2 || pageCount !== 1) {
+                        await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}/${pageCount}`);
+                    }
+                    if (i === 1 || (pageCount && i < pageCount)) {
+                        const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName, i);
+                        await saveCrawlerWarning(warningMessages.sourceLastPage);
+                    }
                     break;
                 }
                 for (let j = 0, _length = links.length; j < _length; j++) {
