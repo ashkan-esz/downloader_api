@@ -506,12 +506,13 @@ function fixInfoDubAndSub(info) {
         .replace(/ENG\.Dub(bed)?/i, 'dubbed(english)')
         .replace(/dubbed(\.HardSub)?\.dubbed(?=(\.|$))/i, 'dubbed')
         //softSub
+        .replace(/soft?sub/gi, 'SoftSub')
         .replace(/(?<!(\.|^))SoftSub/, '.SoftSub')
         .replace(/\.(SoftSu|Sof)\.SoftSub/i, '.SoftSub')
         .replace(/[-.]softsub/i, '.SoftSub')
         .replace(/\.((Soft\.Sub)|(Sub\.Soft))/i, '.SoftSub')
         .replace(/\.(SotSub|SoftSuv)/i, '.SoftSub')
-        .replace(/SoftSub(\.SoftSub)+/gi, 'SoftSub')
+        .replace(/Soft?Sub(\.SoftSub)+/gi, 'SoftSub')
         .replace(/\.NOT\.SUB(BED)?(\.SoftSub)?/i, '')
         .replace(/\.NOT\.SoftSubSub/i, '')
         //hardSub
