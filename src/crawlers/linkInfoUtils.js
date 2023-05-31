@@ -160,6 +160,7 @@ export function purgeQualityText(qualityText) {
         .replace('فارسی', '')
         .replace('چسبیده', '')
         .replace('هاردساب', '')
+        .replace('سافت ساب', '')
         .replace('پخش آنلاین', '')
         .replace('بدون سانسور', '')
         .replace('سانسور شده', 'Censored')
@@ -379,7 +380,7 @@ function handleMultiEpisode(linkHref, info) {
     return info;
 }
 
-function addDubAndSub(lowCaseLinkHref, info) {
+export function addDubAndSub(lowCaseLinkHref, info) {
     if (lowCaseLinkHref.includes('dual.audio.jpn.eng')) {
         info += '.dubbed(japanese-english)';
     } else if (lowCaseLinkHref.includes('dual.audio.hindi.english')) {

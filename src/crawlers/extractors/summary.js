@@ -75,6 +75,14 @@ export function getPersianSummary($, title, year) {
             }
         }
 
+        //anime20
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
+            const text = $($div[i]).text();
+            if (text && $($($div[i]).children())[0]?.name === 'h4' && text.includes('خلاصه')) {
+                return purgePersianSummary(text, title, year);
+            }
+        }
+
         return '';
     } catch (error) {
         saveError(error);
@@ -142,7 +150,7 @@ function purgePersianSummary(persianSummary, title, year) {
         .trim();
 }
 
-export async function comparePrevSummaryWithNewMethod(sourceName = null, updateMode = false, autoUpdateIfNeed = false) {
+export async function comparePrevSummaryWithNewMethod(sourceName = null, updateMode = true, autoUpdateIfNeed = false) {
     let stats = {
         total: 0,
         checked: 0,
@@ -173,27 +181,47 @@ export async function comparePrevSummaryWithNewMethod(sourceName = null, updateM
                         console.log(`------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`);
                     }
                     stats.checked++;
-                    let {persianSummary, pageContent, title, year} = sourcePages[j];
+                    let {
+                        persianSummary,
+                        pageContent,
+                        title,
+                        year,
+                        sourceName: sName,
+                        fileIndex,
+                        type,
+                        pageLink
+                    } = sourcePages[j];
                     let $ = cheerio.load(pageContent);
                     const newPersianSummary = getPersianSummary($, title, year);
+                    if (newPersianSummary.length === 0) {
+                        console.log(`--- empty summary (${title}) (year:${year}): `, fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
+                    } else if (newPersianSummary.length > 1600) {
+                        console.log(`--- suspicious summary (${title}) (year:${year}): `, fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
+                        console.log(newPersianSummary);
+                    }
 
                     if (persianSummary !== newPersianSummary) {
-                        let {sourceName: sName, fileIndex, title, type, pageLink} = sourcePages[j];
                         console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
-                        const diff = Diff.diffChars(persianSummary, newPersianSummary);
+                        let diff = [];
                         let diffs = [];
-                        let t = persianSummary;
-                        diff.forEach((part) => {
-                            if (part.added) {
-                                let p = chalk.green(part.value);
-                                t = t.replace(part.value, p)
-                                diffs.push(p);
-                            } else if (part.removed) {
-                                let p = chalk.red(part.value);
-                                t = t.replace(part.value, p)
-                                diffs.push(p);
-                            }
-                        });
+                        let t = '';
+                        if (persianSummary.length < 1600 && newPersianSummary.length < 1600) {
+                            diff = Diff.diffChars(persianSummary, newPersianSummary);
+                            diffs = [];
+                            t = persianSummary;
+                            diff.forEach((part) => {
+                                if (part.added) {
+                                    let p = chalk.green(part.value);
+                                    t = t.replace(part.value, p)
+                                    diffs.push(p);
+                                } else if (part.removed) {
+                                    let p = chalk.red(part.value);
+                                    t = t.replace(part.value, p)
+                                    diffs.push(p);
+                                }
+                            });
+                        }
+
                         console.log({
                             ps1: persianSummary,
                             ps2: newPersianSummary,

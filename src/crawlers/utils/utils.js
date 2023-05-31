@@ -243,27 +243,28 @@ export function getSeasonEpisode(input, isLinkInput = false) {
         }
 
         if ((season === 1 || season === "01") && !episode) {
-            const epMatch = input.match(/\bep(\d+)\b/g) || input.match(/(?<=_)ep\d+(?=_)/g);
+            const epMatch = input.match(/\bep(\d+)\b/g) || input.match(/(?<=_)ep\d+(?=_)/g) || input.match(/(?<=\s)episode\s\d+(?=\.)/g);
             if (epMatch && epMatch.length === 1) {
                 season = '1';
-                episode = epMatch[0].replace('ep', '');
+                episode = epMatch[0].replace('episode ', '').replace('ep', '');
             }
         }
 
         if ((season === 1 || season === "01") && (episode === 0 || episode === "")) {
             const decodeLink = getDecodedLink(input);
-            if (input !== decodeLink) {
-                const seMatch = decodeLink.match(/s\d+\s*([-.])\s*e?\d+/gi);
-                if (seMatch) {
-                    const se = seMatch.pop().split(/[-.]/);
+            const seMatch = decodeLink.match(/s\d+\s*([-.])\s*e?\d+/gi);
+            if (seMatch) {
+                let temp = seMatch.pop();
+                if (!decodeLink.includes(temp + 'p')) {
+                    const se = temp.split(/[-.]/);
                     season = se[0].toLowerCase().replace('s', '').trim();
                     episode = se[1].toLowerCase().replace('e', '').trim();
-                } else {
-                    const episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[]/gi);
-                    if (episodeMatch && episodeMatch.length === 1) {
-                        season = '1';
-                        episode = episodeMatch[0].match(/\d+/)[0];
-                    }
+                }
+            } else {
+                const episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[]/gi);
+                if (episodeMatch && episodeMatch.length === 1) {
+                    season = '1';
+                    episode = episodeMatch[0].match(/\d+/)[0];
                 }
             }
         }

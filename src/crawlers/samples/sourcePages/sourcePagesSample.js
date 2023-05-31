@@ -38,13 +38,13 @@ export async function saveSourcePageSample(pageContent, sourceData, title, type,
             persianSummary: sourceData.persianSummary,
         };
 
-        let dataFileIndex = await getDataFileIndex(pathToFiles, sourceData.sourceName, sourceData.pageLink);
+        let dataFileIndex = await getDataFileIndex(pathToFiles, sourceData.sourceConfig.sourceName, sourceData.pageLink);
         if (dataFileIndex.exist) {
             if (replace) {
-                await updateSampleData(pathToFiles, sourceData.sourceName, sourceData.pageLink, data, dataFileIndex.index, updateFieldNames);
+                await updateSampleData(pathToFiles, sourceData.sourceConfig.sourceName, sourceData.pageLink, data, dataFileIndex.index, updateFieldNames);
             }
         } else {
-            await saveNewSampleData(pathToFiles, sourceData.sourceName, data, dataFileIndex.index);
+            await saveNewSampleData(pathToFiles, sourceData.sourceConfig.sourceName, data, dataFileIndex.index);
         }
 
         isFileOpen = false;

@@ -112,7 +112,7 @@ function purgeTrailer(url, sourceName, quality, vpnStatus) {
     });
 }
 
-export async function comparePrevTrailerWithNewMethod(sourceName = null, updateMode = false, autoUpdateIfNeed = false) {
+export async function comparePrevTrailerWithNewMethod(sourceName = null, updateMode = true, autoUpdateIfNeed = false) {
     let stats = {
         total: 0,
         checked: 0,

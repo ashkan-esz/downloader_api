@@ -89,7 +89,7 @@ function purgePoster(poster) {
         .replace(/-\d\d\d+x\d\d\d+(?=\.)/g, '');
 }
 
-export async function comparePrevPosterWithNewMethod(sourceName = null, updateMode = false, autoUpdateIfNeed = false) {
+export async function comparePrevPosterWithNewMethod(sourceName = null, updateMode = true, autoUpdateIfNeed = false) {
     let stats = {
         total: 0,
         checked: 0,
@@ -120,12 +120,23 @@ export async function comparePrevPosterWithNewMethod(sourceName = null, updateMo
                         console.log(`------------- START OF [${sources[i]}] -fileIndex:${lastFileIndex} -----------`);
                     }
                     stats.checked++;
-                    let {sourceName: sName, poster, pageContent} = sourcePages[j];
+                    let {
+                        sourceName: sName,
+                        poster,
+                        pageContent,
+                        fileIndex,
+                        title,
+                        type,
+                        year,
+                        pageLink
+                    } = sourcePages[j];
                     let $ = cheerio.load(pageContent);
                     const newPoster = getPoster($, sName);
+                    if (!newPoster) {
+                        console.log(`--- empty poster (${title}) (year:${year}): `, fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
+                    }
 
                     if (poster !== newPoster) {
-                        let {sourceName: sName, fileIndex, title, type, pageLink} = sourcePages[j];
                         console.log(sName, '|', fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
                         const diff = Diff.diffChars(poster, newPoster);
                         let diffs = [];
