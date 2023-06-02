@@ -50,12 +50,22 @@ export function getPoster($, sourceName) {
             return "";
         }
 
+        if (sourceName === 'anime20') {
+            for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
+                const parent = $img[i].parent.name;
+                if (parent === 'p' || parent === 'div') {
+                    const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                    return src.match(badPosterRegex) ? '' : purgePoster(src);
+                }
+            }
+        }
+
         //digimoviez|avamovie|salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
             const parent = $img[i].parent;
             if (parent.name === 'a') {
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                if (src.includes('uploads')) {
+                if (src.includes('uploads') && !src.includes('/logo') && !src.endsWith('.gif')) {
                     return src.match(badPosterRegex) ? '' : purgePoster(src);
                 }
             }
