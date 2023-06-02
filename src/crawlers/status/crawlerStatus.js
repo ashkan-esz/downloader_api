@@ -98,7 +98,7 @@ const crawlerLog = () => ({
     }
 });
 
-setInterval(() => {
+setInterval(async () => {
     crawlerStatus.limits.cpu.value = getCpuAverageLoad();
     getMemoryStatus(false).then(res => {
         crawlerStatus.limits.memory.value = res.used.toFixed(0);
@@ -115,6 +115,7 @@ setInterval(() => {
         delete temp.password;
         return temp;
     });
+    await import('../searchTools.js'); //wait for axiosBlackListSources initialization
     crawlerStatus.axiosBlackList.default = axiosBlackListSources;
     crawlerStatus.axiosBlackList.remoteBrowsers = blackListSources;
 }, 1000);

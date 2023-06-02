@@ -116,7 +116,7 @@ export async function getConfigDB_DisableTestUserRequests() {
         return !!result?.disableTestUserRequests;
     } catch (error) {
         saveError(error);
-        return [];
+        return false;
     }
 }
 
@@ -131,6 +131,6 @@ export async function getConfigDB_DevelopmentFaze() {
         return !!result?.developmentFaze;
     } catch (error) {
         saveError(error);
-        return [];
+        return false;
     }
 }

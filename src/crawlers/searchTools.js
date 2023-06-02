@@ -49,7 +49,7 @@ axiosRetry(axios, {
     ),
 });
 
-export let axiosBlackListSources = [];
+export const axiosBlackListSources = [];
 
 export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
     let lastPageNumber = 0;

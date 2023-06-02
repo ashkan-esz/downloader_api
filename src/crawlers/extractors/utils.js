@@ -22,8 +22,7 @@ export function getFixedGenres(genres) {
         if (!genres) {
             return [];
         }
-        return genres.toLowerCase().split(',')
-            .map(item => item.toLowerCase().trim().replace(/\s+/g, '-').replace('sports', 'sport'))
+        return genres.map(item => item.toLowerCase().trim().replace(/\s+/g, '-').replace('sports', 'sport'))
             .filter(item => item !== 'n/a' && item !== 'anime');
     } catch (error) {
         saveError(error);
