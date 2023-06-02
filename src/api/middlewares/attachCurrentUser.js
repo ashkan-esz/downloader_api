@@ -4,7 +4,8 @@ export default async function attachCurrentUser(req, res, next) {
     if (!req.isAuth && req.authCode) {
         return res.status(req.authCode).json({
             code: req.authCode,
-            errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token'
+            errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token',
+            isGuest: false,
         });
     }
     let userData = await findUserById(req.jwtUserData.userId);
@@ -13,12 +14,14 @@ export default async function attachCurrentUser(req, res, next) {
             data: null,
             code: 500,
             errorMessage: 'Server error, try again later',
+            isGuest: false,
         });
     } else if (!userData) {
         return res.status(401).json({
             data: null,
             code: 401,
             errorMessage: 'Cannot find userId',
+            isGuest: false,
         });
     }
     req.userData = userData;

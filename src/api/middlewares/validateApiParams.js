@@ -529,7 +529,8 @@ export function apiParams_sendError(req, res, next) {
         return res.status(400).json({
             data: null,
             code: 400,
-            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(', ')
+            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(', '),
+            isGuest: false,
         });
     }
     return next();

@@ -1,6 +1,7 @@
 import {validationResult} from 'express-validator';
 import {getClientIp} from 'request-ip';
 import {usersServices} from '../services/index.js';
+import {sendResponse} from "./controllerUtils.js";
 
 
 export async function signup(req, res) {
@@ -9,19 +10,20 @@ export async function signup(req, res) {
         return res.status(400).json({
             data: null,
             code: 400,
-            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
+            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
+            isGuest: false,
         });
     }
 
     const ip = getClientIp(req) || '';
     let {username, password, email, deviceInfo} = req.body;
     const host = req.protocol + '://' + req.get('host');
-    let signupResult = await usersServices.signup(username, email, password, deviceInfo, ip, req.fingerprint, host);
-    if (signupResult.refreshToken) {
+    let result = await usersServices.signup(username, email, password, deviceInfo, ip, req.fingerprint, host);
+    if (result.refreshToken) {
         if (req.query.noCookie === 'true') {
-            signupResult.responseData.refreshToken = signupResult.refreshToken;
+            result.responseData.refreshToken = result.refreshToken;
         } else {
-            res.cookie('refreshToken', signupResult.refreshToken, {
+            res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
@@ -29,7 +31,7 @@ export async function signup(req, res) {
         }
     }
 
-    return res.status(signupResult.responseData.code).json(signupResult.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function login(req, res) {
@@ -39,18 +41,19 @@ export async function login(req, res) {
         return res.status(400).json({
             data: null,
             code: 400,
-            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
+            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
+            isGuest: false,
         });
     }
 
     const ip = getClientIp(req) || '';
     let {username_email, password, deviceInfo} = req.body;
-    let loginResult = await usersServices.login(username_email, password, deviceInfo, ip, req.fingerprint, isAdminLogin);
-    if (loginResult.refreshToken) {
+    let result = await usersServices.login(username_email, password, deviceInfo, ip, req.fingerprint, isAdminLogin);
+    if (result.refreshToken) {
         if (req.query.noCookie === 'true') {
-            loginResult.responseData.refreshToken = loginResult.refreshToken;
+            result.responseData.refreshToken = result.refreshToken;
         } else {
-            res.cookie('refreshToken', loginResult.refreshToken, {
+            res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
@@ -58,7 +61,7 @@ export async function login(req, res) {
         }
     }
 
-    return res.status(loginResult.responseData.code).json(loginResult.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function getToken(req, res) {
@@ -68,18 +71,19 @@ export async function getToken(req, res) {
         return res.status(400).json({
             data: null,
             code: 400,
-            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , ')
+            errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
+            isGuest: false,
         });
     }
 
     let deviceInfo = req.body.deviceInfo;
     const ip = getClientIp(req) || '';
-    let getTokenResult = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken, isAdminLogin);
-    if (getTokenResult.refreshToken) {
+    let result = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken, isAdminLogin);
+    if (result.refreshToken) {
         if (req.query.noCookie === 'true') {
-            getTokenResult.responseData.refreshToken = getTokenResult.refreshToken;
+            result.responseData.refreshToken = result.refreshToken;
         } else {
-            res.cookie('refreshToken', getTokenResult.refreshToken, {
+            res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
@@ -87,12 +91,12 @@ export async function getToken(req, res) {
         }
     }
 
-    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function logout(req, res) {
-    let getTokenResult = await usersServices.logout(req.jwtUserData, req.refreshToken, req.accessToken);
-    if (getTokenResult.responseData.code >= 200 && getTokenResult.responseData.code < 300) {
+    let result = await usersServices.logout(req.jwtUserData, req.refreshToken, req.accessToken);
+    if (result.responseData.code >= 200 && result.responseData.code < 300) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
             secure: true,
@@ -102,64 +106,55 @@ export async function logout(req, res) {
         });
     }
 
-    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function forceLogout(req, res) {
-    let getTokenResult = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
-
-    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
+    let result = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
+    return sendResponse(req, res, result);
 }
 
 export async function forceLogoutAll(req, res) {
-    let getTokenResult = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
-
-    return res.status(getTokenResult.responseData.code).json(getTokenResult.responseData);
+    let result = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
+    return sendResponse(req, res, result);
 }
 
 export async function getUserProfile(req, res) {
     let result = await usersServices.getUserProfile(req.userData, req.refreshToken);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function getUserActiveSessions(req, res) {
     let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function sendVerifyEmail(req, res) {
     const host = req.protocol + '://' + req.get('host');
-    let verifyResult = await usersServices.sendVerifyEmail(req.userData, host);
-
-    return res.status(verifyResult.responseData.code).json(verifyResult.responseData);
+    let result = await usersServices.sendVerifyEmail(req.userData, host);
+    return sendResponse(req, res, result);
 }
 
 export async function verifyEmail(req, res) {
-    let verifyResult = await usersServices.verifyEmail(req.params.token);
-
-    return res.status(verifyResult.responseData.code).json(verifyResult.responseData);
+    let result = await usersServices.verifyEmail(req.params.token);
+    return sendResponse(req, res, result);
 }
 
 export async function uploadProfileImage(req, res) {
-    let uploadProfileResult = await usersServices.uploadProfileImage(req.jwtUserData, req.file);
-
-    return res.status(uploadProfileResult.responseData.code).json(uploadProfileResult.responseData);
+    let result = await usersServices.uploadProfileImage(req.jwtUserData, req.file);
+    return sendResponse(req, res, result);
 }
 
 export async function removeProfileImage(req, res) {
     let fileName = req.params.filename;
-    let removeProfileResult = await usersServices.removeProfileImage(req.jwtUserData, fileName);
-
-    return res.status(removeProfileResult.responseData.code).json(removeProfileResult.responseData);
+    let result = await usersServices.removeProfileImage(req.jwtUserData, fileName);
+    return sendResponse(req, res, result);
 }
 
 export async function setFavoriteGenres(req, res) {
     let genres = removeDuplicateElements(req.params.genres);
-    let updateResult = await usersServices.setFavoriteGenres(req.jwtUserData, genres);
-
-    return res.status(updateResult.responseData.code).json(updateResult.responseData);
+    let result = await usersServices.setFavoriteGenres(req.jwtUserData, genres);
+    return sendResponse(req, res, result);
 }
 
 //----------------------------
@@ -167,26 +162,22 @@ export async function setFavoriteGenres(req, res) {
 
 export async function getAllUserSettings(req, res) {
     let result = await usersServices.getAllUserSettings(req.jwtUserData);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function getUserSettings(req, res) {
     let result = await usersServices.getUserSettings(req.jwtUserData, req.params.settingName);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function changeUserSettings(req, res) {
     let result = await usersServices.changeUserSettings(req.jwtUserData, req.body.settings, req.params.settingName);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 export async function computeUserStats(req, res) {
     let result = await usersServices.computeUserStats(req.jwtUserData);
-
-    return res.status(result.responseData.code).json(result.responseData);
+    return sendResponse(req, res, result);
 }
 
 //----------------------------

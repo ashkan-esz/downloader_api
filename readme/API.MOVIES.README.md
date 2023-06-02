@@ -22,8 +22,6 @@
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
-**Note: use query parameter `testUser=true` to see result of api call on get methods (do not use this parameter in production).**
-
 
 # API Resources
 - [GET /movies/news/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewstypesdatalevelimdbscoresmalscorespage)
@@ -63,9 +61,9 @@
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/news/serial-anime_serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/news/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/news/serial/high/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/news/serial-anime_serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/news/serial-anime_serial/medium/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/news/serial/high/0-10/0-10/1
 </details>
 <br />
 
@@ -77,7 +75,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1
 </details>
 <br />
 
@@ -89,9 +87,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/updates/serial-anime_serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/updates/movie-anime_serial/medium/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/updates/serial/high/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/updates/serial-anime_serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/updates/movie-anime_serial/medium/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/updates/serial/high/0-10/0-10/1
 </details>
 <br />
 
@@ -103,7 +101,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/updatesWithDate/2022-08-25T13:02:05Z/serial-anime_serial/low/0-10/0-10/1
 </details>
 <br />
 
@@ -115,9 +113,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/topsByLikes/serial-anime_serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/topsByLikes/anime_serial/medium/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/topsByLikes/movie/high/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/topsByLikes/serial-anime_serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/topsByLikes/anime_serial/medium/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/topsByLikes/movie/high/0-10/0-10/1
 </details>
 <br />
 
@@ -129,9 +127,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/trailers/serial-anime_serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/trailers/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/trailers/serial-movie/high/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/trailers/serial-anime_serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/trailers/serial-anime_serial/medium/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/trailers/serial-movie/high/0-10/0-10/1
 </details>
 <br />
 
@@ -143,9 +141,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/medium/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/sortedMovies/comingSoon/serial-anime_serial/high/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/sortedMovies/animeTopAiring/serial-anime_serial/medium/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/sortedMovies/comingSoon/serial-anime_serial/high/0-10/0-10/1
 </details>
 <br />
 
@@ -159,9 +157,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/seriesOfDay/0/serial-anime_serial/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/seriesOfDay/1/serial-anime_serial/6-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/seriesOfDay/6/serial-anime_serial/0-10/0-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/seriesOfDay/0/serial-anime_serial/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/seriesOfDay/1/serial-anime_serial/6-10/0-10/1
+- https://download-node-api.onrender.com/movies/seriesOfDay/6/serial-anime_serial/0-10/0-10/1
 </details>
 <br />
 
@@ -173,9 +171,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/multiple/status/movie-serial/low/0-10/0-10/3/1?testUser=true
-- https://download-node-api.onrender.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1?testUser=true
-- https://download-node-api.onrender.com/movies/multiple/status/serial/high/0-10/0-10/6/1?testUser=true
+- https://download-node-api.onrender.com/movies/multiple/status/movie-serial/low/0-10/0-10/3/1
+- https://download-node-api.onrender.com/movies/multiple/status/anime_movie-anime_serial/low/0-10/0-10/6/1
+- https://download-node-api.onrender.com/movies/multiple/status/serial/high/0-10/0-10/6/1
 </details>
 <br />
 
@@ -188,9 +186,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/attack/low/1?testUser=true
-- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/mikasa/medium/1?testUser=true
-- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/mikasa/high/1?&testUser=true
+- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/attack/low/1
+- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/mikasa/medium/1
+- https://download-node-api.onrender.com/movies/searchMovieStaffCharacter/mikasa/high/1
 </details>
 <br />
 
@@ -221,8 +219,8 @@ Query params (filters):
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchStaffAndCharacter/low/1?age=15-20&testUser=true
-- https://download-node-api.onrender.com/movies/searchStaffAndCharacter/low/1?age=15-20&name=mikasa&testUser=true
+- https://download-node-api.onrender.com/movies/searchStaffAndCharacter/low/1?age=15-20
+- https://download-node-api.onrender.com/movies/searchStaffAndCharacter/low/1?age=15-20&name=mikasa
 </details>
 <br />
 
@@ -251,8 +249,8 @@ Query params (filters):
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchStaff/low/1?age=15-20&testUser=true
-- https://download-node-api.onrender.com/movies/searchStaff/low/1?name=osamu&testUser=true
+- https://download-node-api.onrender.com/movies/searchStaff/low/1?age=15-20
+- https://download-node-api.onrender.com/movies/searchStaff/low/1?name=osamu
 </details>
 <br />
 
@@ -281,8 +279,8 @@ Query params (filters):
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchCharacter/low/1?age=15-20&testUser=true
-- https://download-node-api.onrender.com/movies/searchCharacter/low/1?age=15-20&name=mikasa&testUser=true
+- https://download-node-api.onrender.com/movies/searchCharacter/low/1?age=15-20
+- https://download-node-api.onrender.com/movies/searchCharacter/low/1?age=15-20&name=mikasa
 </details>
 <br />
 
@@ -318,12 +316,12 @@ Query params (filters):
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&testUser=true
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action&testUser=true
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action&subtitle=true&testUser=true
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2010-2020&country=germany&testUser=true
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2010-2020&movieLang=spanish&testUser=true
-- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2021-2023&numberOfSeason=1&testUser=true
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2014-2020&title=attack20%on20%titan&genres=action&subtitle=true
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2010-2020&country=germany
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2010-2020&movieLang=spanish
+- https://download-node-api.onrender.com/movies/searchMovie/low/1?years=2021-2023&numberOfSeason=1
 </details>
 <br />
 
@@ -349,8 +347,8 @@ Query params (filters/flags):
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?testUser=true
-- https://download-node-api.onrender.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?embedDownloadLinksConfig=true&testUser=true
+- https://download-node-api.onrender.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low
+- https://download-node-api.onrender.com/movies/searchbyid/6162e1b5d4998d86d10891f4/low?embedDownloadLinksConfig=true
 </details>
 <br />
 
@@ -362,7 +360,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/staff/searchById/626b956d20fd53af87dc9cad?testUser=true
+- https://download-node-api.onrender.com/movies/staff/searchById/626b956d20fd53af87dc9cad
 </details>
 <br />
 
@@ -374,7 +372,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/characters/searchById/619a2ee6b1d34100166fd94d?testUser=true
+- https://download-node-api.onrender.com/movies/characters/searchById/619a2ee6b1d34100166fd94d
 </details>
 <br />
 
@@ -388,7 +386,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/status/genres?testUser=true
+- https://download-node-api.onrender.com/movies/status/genres
 </details>
 <br />
 
@@ -400,7 +398,7 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/status/movieSources?testUser=true
+- https://download-node-api.onrender.com/movies/status/movieSources
 </details>
 <br />
 
@@ -412,9 +410,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/genres/action/movie-serial/low/0-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/genres/sci_fi/serial/medium/5-10/0-10/1?testUser=true
-- https://download-node-api.onrender.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1?testUser=true
+- https://download-node-api.onrender.com/movies/genres/action/movie-serial/low/0-10/0-10/1
+- https://download-node-api.onrender.com/movies/genres/sci_fi/serial/medium/5-10/0-10/1
+- https://download-node-api.onrender.com/movies/genres/action-comedy/anime_movie-anime_serial/low/0-10/6-10/1
 </details>
 <br />
 <br />
@@ -434,9 +432,9 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/userStatsList/like_movie/low/1?testUser=true
-- https://download-node-api.onrender.com/movies/userStatsList/follow_movie/low/1?testUser=true
-- https://download-node-api.onrender.com/movies/userStatsList/save/low/1?testUser=true
+- https://download-node-api.onrender.com/movies/userStatsList/like_movie/low/1
+- https://download-node-api.onrender.com/movies/userStatsList/follow_movie/low/1
+- https://download-node-api.onrender.com/movies/userStatsList/save/low/1
 </details>
 <br />
 
@@ -453,10 +451,10 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/birthday/staff/low/1?testUser=true
-- https://download-node-api.onrender.com/movies/birthday/staff/low/1?followedOnly=true&testUser=true
-- https://download-node-api.onrender.com/movies/birthday/characters/low/1?testUser=true
-- https://download-node-api.onrender.com/movies/birthday/characters/high/1?testUser=true
+- https://download-node-api.onrender.com/movies/birthday/staff/low/1
+- https://download-node-api.onrender.com/movies/birthday/staff/low/1?followedOnly=true
+- https://download-node-api.onrender.com/movies/birthday/characters/low/1
+- https://download-node-api.onrender.com/movies/birthday/characters/high/1
 </details>
 <br />
 
@@ -498,8 +496,8 @@ Examples
 Examples
 </summary>
 
-- https://download-node-api.onrender.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa&japaneseNames=Kimetsu20%no20%Yaiba&testUser=true
-- https://download-node-api.onrender.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa&testUser=true
+- https://download-node-api.onrender.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa&japaneseNames=Kimetsu20%no20%Yaiba
+- https://download-node-api.onrender.com/movies/animeEnglishName?japaneseNames=kimi20%no20%na20%wa
 </details>
 <br />
 

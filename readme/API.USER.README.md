@@ -19,7 +19,6 @@
 
 > they are case-insensitive.
 
-**Note: use query parameter `testUser=true` to see result of api call on get methods (do not use this parameter in production).**
 
 # API Resources
 
@@ -224,14 +223,14 @@ Future<String> logInUser(String userName, String password) async {
 ### GET /users/myProfile
 > return users profile data. ([profile schema](SCHEMA.README.md#Profile))
 
-Example: https://download-node-api.onrender.com/users/myProfile?testUser=true
+Example: https://download-node-api.onrender.com/users/myProfile
 
 <br/>
 
 ### GET /users/activeSessions
 > return users current session and other active sections. ([session schema](SCHEMA.README.md#Session))
 
-Example: https://download-node-api.onrender.com/users/activeSessions?testUser=true
+Example: https://download-node-api.onrender.com/users/activeSessions
 
 <br/>
 
@@ -242,7 +241,7 @@ Example: https://download-node-api.onrender.com/users/activeSessions?testUser=tr
 >
 > **NOTE: limited to 2 call per minute**
 
-Example: https://download-node-api.onrender.com/users/sendVerifyEmail?testUser=true
+Example: https://download-node-api.onrender.com/users/sendVerifyEmail
 
 <br/>
 
@@ -251,7 +250,7 @@ Example: https://download-node-api.onrender.com/users/sendVerifyEmail?testUser=t
 > 
 > **NOTE: limited to 2 call per minute**
 
-Example: https://download-node-api.onrender.com/users/verifyEmail/tokkkkken?testUser=true
+Example: https://download-node-api.onrender.com/users/verifyEmail/tokkkkken
 
 <br/>
 

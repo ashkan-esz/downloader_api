@@ -9,6 +9,7 @@ export async function uploadProfileImage(req, res, next) {
             data: null,
             code: 500,
             errorMessage: errorMessage.serverError,
+            isGuest: false,
         });
     }
     if (!userData) {
@@ -16,6 +17,7 @@ export async function uploadProfileImage(req, res, next) {
             data: null,
             code: 404,
             errorMessage: errorMessage.userNotFound,
+            isGuest: false,
         });
     }
     if (userData.profileImageCounter > 19) {
@@ -23,6 +25,7 @@ export async function uploadProfileImage(req, res, next) {
             data: null,
             code: 409,
             errorMessage: errorMessage.exceedProfileImage,
+            isGuest: false,
         });
     }
     next();

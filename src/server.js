@@ -65,6 +65,7 @@ app.use(function (req, res) {
         errorMessage: 'url: ' + req.originalUrl + ' not found',
         code: 404,
         sentryErrorId: res.sentry,
+        isGuest: false,
     });
 });
 
@@ -78,6 +79,7 @@ app.use((err, req, res, next) => {
         errorMessage: (fileError || corsError) ? err.message : err.code || 'Internal Server Error',
         code: (fileError || corsError) ? 400 : 500,
         sentryErrorId: res.sentry,
+        isGuest: false,
     });
 });
 

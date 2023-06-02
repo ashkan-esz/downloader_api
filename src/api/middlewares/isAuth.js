@@ -22,39 +22,9 @@ export function updateDisableTestUserRequestsMiddleWareData(flag) {
 //----------------------------------------------
 //----------------------------------------------
 
-export function isAuth_refreshToken(req, res, next) {
-    req.isAuth = false;
-    let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
-    if (!refreshToken) {
-        return res.status(401).json({
-            code: 401,
-            errorMessage: 'Unauthorized'
-        });
-    }
-    try {
-        let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
-        if (refreshTokenVerifyResult) {
-            req.refreshToken = refreshToken;
-            req.jwtUserData = refreshTokenVerifyResult;
-            req.isAuth = true;
-            return next();
-        } else {
-            return res.status(403).json({
-                code: 403,
-                errorMessage: 'Invalid token'
-            });
-        }
-    } catch (error) {
-        return res.status(403).json({
-            code: 403,
-            errorMessage: 'Invalid token'
-        });
-    }
-}
-
-export async function attachAuthFlag(req, res, next) {
+async function handleGuestMode(req, res, next) {
     //handle test user
-    if (!disableTestUserRequests && req.method === 'GET' && req.query.testUser === 'true') {
+    if (!disableTestUserRequests && req.method === 'GET') {
         if (Date.now() - testUserDataCacheDate > testUserDataCacheStale || testUserDataCache === 'error') {
             testUserDataCache = await findUser('$$test_user$$', '', {activeSessions: 1});
             testUserDataCacheDate = Date.now();
@@ -67,28 +37,67 @@ export async function attachAuthFlag(req, res, next) {
                 req.refreshToken = refreshToken;
                 req.jwtUserData = refreshTokenVerifyResult;
                 req.isAuth = true;
-                req.isTestUser = true;
+                req.isGuest = true;
                 return next();
             }
         }
     }
-    req.isTestUser = false;
+    return next();
+}
 
+//----------------------------------------------
+//----------------------------------------------
+
+export function isAuth_refreshToken(req, res, next) {
+    req.isAuth = false;
+    let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
+    if (!refreshToken) {
+        return res.status(401).json({
+            code: 401,
+            errorMessage: 'Unauthorized',
+            isGuest: false,
+        });
+    }
+    try {
+        let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
+        if (refreshTokenVerifyResult) {
+            req.refreshToken = refreshToken;
+            req.jwtUserData = refreshTokenVerifyResult;
+            req.isAuth = true;
+            return next();
+        } else {
+            return res.status(403).json({
+                code: 403,
+                errorMessage: 'Invalid token',
+                isGuest: false,
+            });
+        }
+    } catch (error) {
+        return res.status(403).json({
+            code: 403,
+            errorMessage: 'Invalid token',
+            isGuest: false,
+        });
+    }
+}
+
+export async function attachAuthFlag(req, res, next) {
+    req.isGuest = false;
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
     if (!refreshToken) {
         req.authCode = 401;
-        return next();
+        return handleGuestMode(req, res, next);
     }
     if (checkTokenBlackListed(refreshToken)) {
         req.authCode = 401;
-        return next();
+        return handleGuestMode(req, res, next);
     }
     const authHeader = req.headers['authorization'];
     let accessToken = authHeader && authHeader.split(' ')[1];
     if (!accessToken) {
         req.authCode = 401;
-        return next();
+        return handleGuestMode(req, res, next);
     }
     try {
         let accessTokenVerifyResult = jwt.verify(accessToken, config.jwt.accessTokenSecret);
@@ -100,9 +109,11 @@ export async function attachAuthFlag(req, res, next) {
             req.isAuth = true;
         } else {
             req.authCode = 403;
+            return handleGuestMode(req, res, next);
         }
     } catch (error) {
         req.authCode = 403;
+        return handleGuestMode(req, res, next);
     }
     return next();
 }
@@ -112,6 +123,7 @@ export function blockAuthorized(req, res, next) {
         return res.status(403).json({
             code: 403,
             errorMessage: 'Logout first',
+            isGuest: false,
         });
     }
     return next();
@@ -122,7 +134,8 @@ export function blockUnAuthorized(req, res, next) {
         return res.status(req.authCode).json({
             data: null,
             code: req.authCode,
-            errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token'
+            errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token',
+            isGuest: false,
         });
     }
     return next();
@@ -145,6 +158,7 @@ export function checkUserRolePermission(roles) {
             return res.status(403).json({
                 code: 403,
                 errorMessage: `Forbidden, ([${roles.join(',')}]) roles only`,
+                isGuest: false,
             });
         }
         return next();

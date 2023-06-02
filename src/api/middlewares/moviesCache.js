@@ -27,7 +27,7 @@ export function setCache(key, value, duration = null) {
 }
 
 export default function moviesCache(req, res, next) {
-    let key = req.url.replace(/\?testUser=(true|false)$/i, '');
+    let key = req.url;
     let cacheResult = myCache.get(key);
     if (cacheResult) {
         res.json(cacheResult);
