@@ -13,6 +13,7 @@ import {
 } from "../posterAndTrailer.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
+import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
 
 let imdbApiKey = [];
 
@@ -256,14 +257,10 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
             }
         }
         titleModel.duration = imdbData.runtimeMins ? imdbData.runtimeMins + ' min' : '0 min';
-        titleModel.summary.english = imdbData.plot ? imdbData.plot.replace(/([.…])+$/, '') : '';
+        titleModel.summary.english = getFixedSummary(imdbData.plot);
         titleModel.summary.english_source = 'imdb';
         titleModel.awards = imdbData.awards || '';
-        titleModel.genres = imdbData.genres
-            ? imdbData.genres.toLowerCase().split(',')
-                .map(item => item.trim().replace(/\s+/g, '-').replace('sports', 'sport'))
-                .filter(item => item !== 'n/a' && item !== 'anime')
-            : [];
+        titleModel.genres = imdbData.genres ? getFixedGenres(imdbData.genres.split(',')) : [];
         if (!type.includes('anime') && imdbData.genres?.toLowerCase().includes('anime')) {
             titleModel.type = 'anime_' + type;
         }

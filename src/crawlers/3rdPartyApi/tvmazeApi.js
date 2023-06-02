@@ -4,6 +4,7 @@ import {getEpisodeModel} from "../../models/episode.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
+import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
 
 
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, premiered, type, canReTry = true) {
@@ -96,8 +97,8 @@ export function getTvMazeApiFields(data) {
             cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
-            summary_en: data.summary ? data.summary.replace(/<p>|<\/p>|<b>|<\/b>/g, '').replace(/([.…])+$/, '').trim() : '',
-            genres: data.genres.map(value => value.toLowerCase().trim().replace(/\s+/g, '-').replace('sports', 'sport')).filter(item => item !== 'n/a' && item !== 'anime') || [],
+            summary_en: getFixedSummary(data.summary),
+            genres: getFixedGenres(data.genres),
             isAnimation: (data.type.toLowerCase() === 'animation'),
             isAnime: (data.genres?.includes('anime') || data.genres?.includes('Anime')),
             updateFields: {

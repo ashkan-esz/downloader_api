@@ -14,6 +14,7 @@ import isEqual from 'lodash.isequal';
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
+import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
 
 const rateLimitConfig = {
     minuteLimit: 60,
@@ -135,8 +136,8 @@ export function getJikanApiFields(data) {
         let apiFields = {
             jikanID: data.mal_id,
             jikanRelatedTitles: getRelatedTitles(data),
-            summary_en: data.synopsis ? data.synopsis.replace('[Written by MAL Rewrite]', '').replace(/([.…])+$/, '').trim() : '',
-            genres: data.genres.map(item => item.name.toLowerCase().trim().replace(/\s+/g, '-').replace('sports', 'sport')).filter(item => item !== 'n/a' && item !== 'anime') || [],
+            summary_en: getFixedSummary(data.synopsis),
+            genres: getFixedGenres(data.genres.map(item => item.name)),
             status: data.status.toLowerCase().includes('finished') ? 'ended' : 'running',
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
             myAnimeListScore: Number(data.score) || 0,
