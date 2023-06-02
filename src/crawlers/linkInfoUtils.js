@@ -25,7 +25,7 @@ export const encodersRegex = new RegExp([
     /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo/,
-    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX/,
+    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
@@ -232,8 +232,7 @@ export function fixLinkInfo(info, linkHref, type) {
 
     info = info
         .replace(/(^|\.)x256\./, (res) => res.replace('256', '265'))
-        .replace('.10bir.', '.10bit.')
-        .replace('.10bt.', '.10bit.')
+        .replace(/\.(10bir|10bt|1bit)\./, '.10bit.')
         .replace('.x265p.', '.x265.')
         .replace('1080x264', '1080p')
         .replace('1080x265', '1080p.x265')
@@ -548,7 +547,7 @@ export function getCleanLinkInfo(info) {
         .replace('x 265', 'x265')
         .replace('.6C.', '.6CH.')
         .replace('6CHx264', '6CH')
-        .replace(/10B?itr?/i, '10bit')
+        .replace(/10?B?itr?/i, '10bit')
         .replace('.HDR10Plus', '.HDR10')
         .replace(/\.10\.Bit/i, '.10bit')
         .replace(/\.(H264|HEVC|mkv|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
