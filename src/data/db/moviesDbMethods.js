@@ -216,6 +216,7 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
             {
                 $sort: {
                     year: -1,
+                    trailerDate: -1,
                     add_date: -1,
                 }
             },

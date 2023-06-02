@@ -8,12 +8,13 @@ import {saveError} from "../error/saveError.js";
 export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
     try {
         let posterChange = await handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus);
-        let trailerChange = handleTrailerUpdate(db_data, trailers);
+        let {trailerChange, newTrailer} = handleTrailerUpdate(db_data, trailers);
         let {latestDataChange, PrimaryLatestDataChange} = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
         return {
             posterChange,
             trailerChange,
+            newTrailer,
             latestDataChange,
             PrimaryLatestDataChange,
         };
@@ -22,6 +23,7 @@ export async function handleSubUpdates(db_data, poster, trailers, titleModel, ty
         return {
             posterChange: false,
             trailerChange: false,
+            newTrailer: false,
             latestDataChange: false,
             PrimaryLatestDataChange: false,
         };
@@ -153,10 +155,11 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
 }
 
 function handleTrailerUpdate(db_data, site_trailers) {
-    let trailersChanged = false;
+    let trailerChange = false;
+    let newTrailer = false;
     if (db_data.trailers === null && site_trailers.length > 0) {
         db_data.trailers = site_trailers;
-        return true;
+        return {trailerChange: true, newTrailer: true};
     }
     for (let i = 0; i < site_trailers.length; i++) {
         let trailer_exist = false;
@@ -164,11 +167,11 @@ function handleTrailerUpdate(db_data, site_trailers) {
             if (site_trailers[i].info === db_data.trailers[j].info) {//this trailer exist
                 if (site_trailers[i].url !== db_data.trailers[j].url) { //replace link
                     db_data.trailers[j].url = site_trailers[i].url;
-                    trailersChanged = true;
+                    trailerChange = true;
                 }
                 if (site_trailers[i].vpnStatus !== db_data.trailers[j].vpnStatus) { //replace vpnStatus
                     db_data.trailers[j].vpnStatus = site_trailers[i].vpnStatus;
-                    trailersChanged = true;
+                    trailerChange = true;
                 }
                 trailer_exist = true;
                 break;
@@ -176,7 +179,8 @@ function handleTrailerUpdate(db_data, site_trailers) {
         }
         if (!trailer_exist) { //new trailer
             db_data.trailers.push(site_trailers[i]);
-            trailersChanged = true;
+            trailerChange = true;
+            newTrailer = true;
         }
     }
     if (db_data.trailers !== null) {
@@ -185,10 +189,10 @@ function handleTrailerUpdate(db_data, site_trailers) {
         db_data.trailers = sortTrailers(db_data.trailers);
         let newSort = db_data.trailers.map(item => item.url).join(',');
         if (prevSort !== newSort) {
-            trailersChanged = true;
+            trailerChange = true;
         }
     }
-    return trailersChanged;
+    return {trailerChange, newTrailer};
 }
 
 export function sortPosters(posters) {

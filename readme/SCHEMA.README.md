@@ -189,6 +189,7 @@ dataLevel = {
             info: String,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         }),
+        trailerDate: Date,
         insert_date: Date,
         update_date: Date,
         nextEpisode: null || {

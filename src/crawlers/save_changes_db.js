@@ -296,6 +296,9 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         }
         if (subUpdates.trailerChange || updateFields.trailer_s3) {
             updateFields.trailers = db_data.trailers;
+            if (subUpdates.newTrailer) {
+                updateFields.trailerDate = Date.now();
+            }
         }
 
         if (subUpdates.latestDataChange) {

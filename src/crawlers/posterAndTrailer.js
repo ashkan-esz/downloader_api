@@ -57,6 +57,7 @@ export function addS3TrailerToTitleModel(titleModel, s3Trailer, prevTrailers = n
             vpnStatus: s3Trailer.vpnStatus,
         });
         titleModel.trailers = sortTrailers(trailers);
+        titleModel.trailerDate = Date.now();
     }
     return titleModel;
 }

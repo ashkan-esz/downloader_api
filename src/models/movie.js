@@ -51,6 +51,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             english_source: '',
         },
         trailers: trailers.length > 0 ? trailers : null, // [{'url,info,vpnStatus'}]
+        trailerDate: trailers.length > 0 ? Date.now() : 0,
         subtitles: groupSubtitles(subtitles),
         latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink
         status: type.includes('movie') ? 'ended' : 'unknown',
@@ -219,6 +220,7 @@ export const dataLevelConfig = Object.freeze({
         userStats: userStats_projection.medium,
         genres: 1,
         trailers: 1,
+        trailerDate: 1,
         latestData: 1,
         insert_date: 1,
         update_date: 1,
