@@ -121,3 +121,12 @@ export async function checkSourceOnRemoteBrowsers(req, res) {
     let result = await adminServices.checkSourceOnRemoteBrowsers(sourceName, url);
     return sendResponse(req, res, result);
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function setMessage(req, res) {
+    let {message, date} = req.body;
+    let result = await adminServices.setMessage(message, date);
+    return sendResponse(req, res, result);
+}

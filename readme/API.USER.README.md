@@ -363,6 +363,7 @@ let r = await axios.post('BASE_URL/users/uploadProfileImage', data, {
 # API
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [utils api docs](API.UTILS.README.md).
 - Open [schema](SCHEMA.README.md).
 - Open [error messages docs](ERRORMESSAGE.README.md).
 - Open [configs schema](CONFIGS.README.md).

@@ -49,6 +49,7 @@ await loadAgenda();
 app.use('/admin', routes.adminRouters);
 app.use('/movies', routes.moviesRouters);
 app.use('/users', routes.usersRouters);
+app.use('/utils', routes.utilsRouters);
 
 
 app.use(Sentry.Handlers.errorHandler({

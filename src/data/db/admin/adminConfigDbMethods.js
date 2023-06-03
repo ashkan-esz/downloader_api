@@ -134,3 +134,47 @@ export async function getConfigDB_DevelopmentFaze() {
         return false;
     }
 }
+
+//----------------------------------------------------
+//----------------------------------------------------
+
+export async function setMessageDB(message, date) {
+    try {
+        let collection = await getCollection('configs');
+        let result = await collection.updateOne({title: 'message'}, {
+            $set: {
+                message: message,
+                date: date,
+            }
+        });
+        if (result.matchedCount === 0 && result.modifiedCount === 0) {
+            await collection.insertOne({
+                title: 'message',
+                message: message,
+                date: date,
+            });
+        }
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getMessageDB() {
+    try {
+        let collection = await getCollection('configs');
+        return await collection.findOne({title: 'message', date: {$gte: new Date()}}, {
+            projection: {
+                _id: 0,
+                title: 0,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//----------------------------------------------------
+//----------------------------------------------------

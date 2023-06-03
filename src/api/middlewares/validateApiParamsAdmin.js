@@ -265,6 +265,27 @@ const validations = Object.freeze({
             return value;
         }),
 
+    message: body('message')
+        .exists().withMessage("Missed parameter message")
+        .isString().withMessage("message must be String")
+        .trim().escape(),
+
+    date: body('date')
+        .custom((value) => {
+            try {
+                let temp = new Date(value);
+                if (temp === 'Invalid Date') {
+                    throw new Error('Invalid parameter date :: (Date String | Time in milliseconds)');
+                } else {
+                    return value;
+                }
+            } catch (error) {
+                throw new Error('Invalid parameter date :: (Date String | Time in milliseconds)');
+            }
+        })
+        .customSanitizer(value => {
+            return new Date(value);
+        }),
 });
 
 export function checkApiParams(apiParams) {

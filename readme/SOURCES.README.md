@@ -62,5 +62,6 @@ for example ::
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [utils api docs](API.UTILS.README.md).
 - Open [schema](SCHEMA.README.md).
 - Open [configs schema](CONFIGS.README.md).

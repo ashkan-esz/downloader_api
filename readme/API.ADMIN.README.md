@@ -13,6 +13,8 @@
 | serverAnalysisFields | String              | Enum('userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls', 'badLinks') | true     |
 | page                 | Number start from 1 |                                                                                             | true     |
 | days                 | Number start from 1 |                                                                                             | true     |
+| message              | String              |                                                                                             | true     |
+| date                 | Date                |                                                                                             | true     |
 
 > they are case-insensitive.
 
@@ -40,6 +42,7 @@
 - [GET /admin/remotebrowsers/checkSource/[sourceName]/[url]](#get-adminremotebrowserschecksourcesourcenameurl)
 - [PUT /admin/configs/update](#put-adminconfigsupdate)
 - [GET /admin/configs](#get-adminconfigs)
+- [PUT /admin/setMessage](#put-adminsetmessage)
 
 <br />
 <br />
@@ -181,9 +184,16 @@ Query parameters:
 
 <br />
 
+### PUT /admin/setMessage
+> set message that all users see when open app. <br />
+> receives `message` and `date` in request body. `date` is the expiration date
+
+<br />
+
 # API
 - Open [user api docs](API.USER.README.md).
 - Open [movie api docs](API.MOVIES.README.md).
+- Open [utils api docs](API.UTILS.README.md).
 - Open [schema](SCHEMA.README.md).
 - Open [error messages docs](ERRORMESSAGE.README.md).
 - Open [configs schema](CONFIGS.README.md).

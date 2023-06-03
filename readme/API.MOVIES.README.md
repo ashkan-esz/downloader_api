@@ -505,6 +505,7 @@ Examples
 # API
 - Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
+- Open [utils api docs](API.UTILS.README.md).
 - Open [schema](SCHEMA.README.md).
 - Open [error messages docs](ERRORMESSAGE.README.md).
 - Open [configs schema](CONFIGS.README.md).

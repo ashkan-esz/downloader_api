@@ -161,5 +161,16 @@ router.get('/remoteBrowsers/checkSource/:sourceName/:url',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.checkSourceOnRemoteBrowsers);
 
+//---------------------------------------------------
+//---------------------------------------------------
+
+//admin/setMessage
+router.put('/setMessage',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['message', 'date']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    mongoSanitize(),
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.setMessage);
+
 
 export default router;

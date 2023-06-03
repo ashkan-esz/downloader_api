@@ -243,3 +243,14 @@ export async function checkSourceOnRemoteBrowsers(sourceName, url) {
     }
     return generateServiceResult({data: result}, 200, '');
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function setMessage(message, date) {
+    let result = await adminConfigDbMethods.setMessageDB(message, date);
+    if (result === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}

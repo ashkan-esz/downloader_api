@@ -28,6 +28,7 @@ export const errorMessage = Object.freeze({
     mscNotFound: 'Movie/Staff/Character not found',
     scNotFound: 'Staff/Character not found',
     botNotFound: 'Bot not found',
+    messageNotFound: 'Message not found',
     configsDbNotFound: 'Configs from database not found',
     cantRemoveCurrentOrigin: 'Cannot remove current origin from corsAllowedOrigins',
     //----------------------
