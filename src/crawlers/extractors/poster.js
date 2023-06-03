@@ -66,7 +66,9 @@ export function getPoster($, sourceName) {
             if (parent.name === 'a') {
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 if (src.includes('uploads') && !src.includes('/logo') && !src.endsWith('.gif')) {
-                    return src.match(badPosterRegex) ? '' : purgePoster(src);
+                    if (!src.match(badPosterRegex)) {
+                        return purgePoster(src);
+                    }
                 }
             }
         }
@@ -74,7 +76,7 @@ export function getPoster($, sourceName) {
         //salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
             const parent = $img[i].parent.name;
-            if (parent === 'p' || parent === 'div') {
+            if (parent === 'p' || parent === 'div'|| parent === 'strong'|| parent === 'span') {
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 return src.match(badPosterRegex) ? '' : purgePoster(src);
             }

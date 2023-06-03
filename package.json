@@ -14,6 +14,7 @@
     "test": "NODE_ENV=dev node manualTest.js",
     "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 manualTest.js",
     "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc manualTest.js",
+    "cli": "node src/test/cli.js",
     "test_manual": "node src/test/manual/index.js",
     "test_jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test_jest_coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage && open ./coverage/lcov-report/index.html",
