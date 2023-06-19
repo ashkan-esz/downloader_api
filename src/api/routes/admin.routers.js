@@ -172,5 +172,30 @@ router.put('/setMessage',
     mongoSanitize(),
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.setMessage);
 
+//---------------------------------------------------
+//---------------------------------------------------
+
+//admin/addNewAppVersion
+router.post('/addNewAppVersion',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['appData']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']),
+    middlewares.uploadAppFile,
+    mongoSanitize(),
+    adminControllers.addNewAppVersion);
+
+//admin/removeAppVersion/:vid
+router.put('/removeAppVersion/:vid',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['vid']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    mongoSanitize(),
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeAppVersion);
+
+//admin/appVersions
+router.get('/appVersions',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getAppVersion);
 
 export default router;

@@ -20,6 +20,7 @@ import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {updateTrailerUploadLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
+import {getDecodedLink} from "../crawlers/utils/utils.js";
 
 
 const s3 = new S3Client({
@@ -45,7 +46,7 @@ const bucketNamePrefix = config.cloudStorage.bucketNamePrefix;
 const defaultProfileUrl = `https://${bucketNamePrefix}serverstatic.${bucketsEndpointSuffix}/defaultProfile.png`;
 export const defaultProfileImage = (await getFileSize(defaultProfileUrl)) > 0 ? defaultProfileUrl : '';
 
-export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image'].map(item => bucketNamePrefix + item));
+export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image', 'download-app'].map(item => bucketNamePrefix + item));
 
 export const bucketNamesObject = Object.freeze({
     staticFiles: bucketNamePrefix + 'serverstatic',
@@ -54,6 +55,7 @@ export const bucketNamesObject = Object.freeze({
     poster: bucketNamePrefix + 'poster',
     downloadTrailer: bucketNamePrefix + 'download-trailer',
     profileImage: bucketNamePrefix + 'profile-image',
+    downloadApp: bucketNamePrefix + 'download-app'
 });
 
 export function getS3Client() {
@@ -595,11 +597,23 @@ export async function checkTitleTrailerExist(title, type, year, retryCounter = 0
 //------------------------------------------
 
 export async function removeProfileImageFromS3(fileName, retryCounter = 0) {
+    fileName = getDecodedLink(fileName);
     let result = await deleteFileFromS3(bucketNamesObject.profileImage, fileName);
     if (result === 'error' && retryCounter < 2) {
         retryCounter++;
         await new Promise((resolve => setTimeout(resolve, 200)));
         return await removeProfileImageFromS3(fileName, retryCounter);
+    }
+    return result;
+}
+
+export async function removeAppFileFromS3(fileName, retryCounter = 0) {
+    fileName = getDecodedLink(fileName);
+    let result = await deleteFileFromS3(bucketNamesObject.downloadApp, fileName);
+    if (result === 'error' && retryCounter < 2) {
+        retryCounter++;
+        await new Promise((resolve => setTimeout(resolve, 200)));
+        return await removeAppFileFromS3(fileName, retryCounter);
     }
     return result;
 }

@@ -28,6 +28,7 @@ errorMesages = {
     alreadyExist: "Already exist",
     fileTooLarge: "File too large",
     notSupportedImage: "Not an supported format image! Please upload an jpg/jpeg/png image",
+    notSupportedAppFile: "Not an supported format app! Please upload an application file",
 }
 ```
 

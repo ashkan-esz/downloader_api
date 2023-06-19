@@ -130,3 +130,24 @@ export async function setMessage(req, res) {
     let result = await adminServices.setMessage(message, date);
     return sendResponse(req, res, result);
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function addNewAppVersion(req, res) {
+    let result = await adminServices.addNewAppVersion(req.query.appData, req.file, req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
+export async function removeAppVersion(req, res) {
+    let result = await adminServices.removeAppVersion(req.params.vid);
+    return sendResponse(req, res, result);
+}
+
+export async function getAppVersion(req, res) {
+    let result = await adminServices.getAppVersion();
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

@@ -15,6 +15,7 @@
 | days                 | Number start from 1 |                                                                                             | true     |
 | message              | String              |                                                                                             | true     |
 | date                 | Date                |                                                                                             | true     |
+| vid                  | String, uuid        |                                                                                             | true     |
 
 > they are case-insensitive.
 
@@ -43,6 +44,9 @@
 - [PUT /admin/configs/update](#put-adminconfigsupdate)
 - [GET /admin/configs](#get-adminconfigs)
 - [PUT /admin/setMessage](#put-adminsetmessage)
+- [POST /admin/addNewAppVersion](#post-adminaddnewappversion)
+- [PUT /admin/removeAppVersion/[vid]](#put-adminremoveappversionvid)
+- [GET /admin/appVersions](#get-adminappversions)
 
 <br />
 <br />
@@ -189,6 +193,26 @@ Query parameters:
 > receives `message` and `date` in request body. `date` is the expiration date
 
 <br />
+
+
+### POST /admin/addNewAppVersion
+> add new app version. <br />
+> receive `appData` as query parameter. (`appData`: [newAppDataFields](../src/data/db/admin/adminConfigDbMethods.js)) . <br />
+> receive (`appFile`: File Buffer) in request body. <br />
+
+<br />
+
+
+### PUT /admin/removeAppVersion/[vid]
+> remove app version by its vid.
+
+<br />
+
+### GET /admin/appVersions
+> get all apps versions.
+
+<br />
+
 
 # API
 - Open [user api docs](API.USER.README.md).

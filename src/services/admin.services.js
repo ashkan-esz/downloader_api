@@ -9,6 +9,10 @@ import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
 import {safeFieldsToEdit_array} from "../config/configsDb.js";
 import * as RemoteHeadlessBrowserMethods from "../crawlers/remoteHeadlessBrowser.js";
+import {createHash} from "node:crypto";
+import {saveError} from "../error/saveError.js";
+import {removeAppFileFromS3} from "../data/cloudStorage.js";
+import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -254,3 +258,68 @@ export async function setMessage(message, date) {
     }
     return generateServiceResult({data: result}, 200, '');
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function addNewAppVersion(appData, appFileData, userData) {
+    try {
+        if (!appFileData) {
+            return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
+        }
+
+        let response = await getArrayBufferResponse(appFileData.location);
+        appData.fileData = {
+            url: appFileData.location,
+            size: Number(response.data.length),
+            sha256checksum: createHash('sha256').update(response.data).digest('hex'),
+            addDate: new Date(),
+        };
+        let result = await adminConfigDbMethods.addNewAppVersionDB(appData, userData);
+        if (result === 'error') {
+            const fileName = appFileData.location.split('/').pop();
+            await removeAppFileFromS3(fileName);
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
+        } else if (result === 'already exists') {
+            return generateServiceResult({data: null}, 409, errorMessage.alreadyExist);
+        }
+        return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        if (appFileData && appFileData.location) {
+            const fileName = appFileData.location.split('/').pop();
+            await removeAppFileFromS3(fileName);
+        }
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+}
+
+export async function removeAppVersion(vid) {
+    try {
+        let result = await adminConfigDbMethods.removeAppVersionDB(vid);
+        if (result === 'error') {
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
+        } else if (result === 'not found') {
+            return generateServiceResult({data: null}, 500, errorMessage.appNotFound);
+        }
+        const fileName = result.fileData.url.split('/').pop();
+        await removeAppFileFromS3(fileName);
+        return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+}
+
+export async function getAppVersion() {
+    let result = await adminConfigDbMethods.getAppVersionDB();
+    if (result === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.appNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

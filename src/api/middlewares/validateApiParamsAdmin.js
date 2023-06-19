@@ -1,6 +1,7 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {isUri} from "valid-url";
 import {serverAnalysisFields} from "../../data/db/serverAnalysisDbMethods.js";
+import {compareAppVersions, newAppDataFields} from "../../data/db/admin/adminConfigDbMethods.js";
 
 const mutateType = ['enable', 'disable'];
 
@@ -73,6 +74,10 @@ const validations = Object.freeze({
         .trim()
         .isIn(serverAnalysisFields).withMessage(`Invalid parameter serverAnalysisFieldName :: (${serverAnalysisFields.join('|')})`),
 
+    vid: param('vid')
+        .isString().withMessage('Invalid parameter vid :: String')
+        .trim(),
+
     //--------------------------------------
     //--------------------------------------
 
@@ -121,6 +126,44 @@ const validations = Object.freeze({
         })
         .isBoolean().withMessage('Invalid parameter all :: (true|false)')
         .toBoolean(),
+
+    appData: query('appData')
+        .exists().withMessage('AppData cannot be empty')
+        .custom((value, {req, loc, path}) => {
+            if (!value || Array.isArray(value) || typeof value !== 'object') {
+                throw new Error('Invalid parameter appData :: Object');
+            }
+
+            let keys = Object.keys(value);
+            for (let i = 0; i < newAppDataFields.length; i++) {
+                if (value[newAppDataFields[i]] === undefined) {
+                    throw new Error(`Missed parameter appData.${newAppDataFields[i]}`);
+                }
+                if (value[newAppDataFields[i]] === "" && newAppDataFields[i] !== 'versionName' && newAppDataFields[i] !== 'description') {
+                    throw new Error(`Parameter appData.${newAppDataFields[i]} cannot be empty`);
+                }
+            }
+
+            for (let i = 0; i < keys.length; i++) {
+                if (!newAppDataFields.includes(keys[i])) {
+                    throw new Error(`Wrong parameter appData.${keys[i]}`);
+                }
+                if (keys[i] === 'version' && !value[keys[i]].match(/^\d\d?\.\d\d?\.\d\d?$/)) {
+                    throw new Error(`Invalid parameter appData.version :: (\\d\\d?\\.\\d\\d?\\.\\d\\d?)`);
+                } else if (keys[i] === 'minVersion' && !value[keys[i]].match(/^\d\d?\.\d\d?\.\d\d?$/)) {
+                    throw new Error(`Invalid parameter appData.minVersion :: (\\d\\d?\\.\\d\\d?\\.\\d\\d?)`);
+                } else {
+                    if (typeof value[keys[i]] !== 'string') {
+                        throw new Error(`Invalid parameter appData.${keys[i]} :: String`);
+                    }
+                }
+            }
+            if (compareAppVersions(value.minVersion, value.version) === 1) {
+                throw new Error('Parameter appData.minVersion cannot be higher than appData.version');
+            }
+
+            return value;
+        }),
 
     //--------------------------------------
     //--------------------------------------
