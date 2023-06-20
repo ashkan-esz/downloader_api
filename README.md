@@ -119,6 +119,7 @@ To run this project, you will need to add the following environment variables to
 ## Clients
 - [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter)
 - [downloader_app](https://github.com/ashkan-esz/downloader_app) (React Native)
+- [movietracker_bot](https://github.com/amir-7979/movietracker_bot) (Telegram Bot)
 
 ## Contributing
 

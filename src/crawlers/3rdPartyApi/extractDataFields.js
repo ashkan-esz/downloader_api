@@ -123,7 +123,7 @@ function getGenderFromJikanData(jikanData) {
             : gender === 'he' ? 'male' : '';
     }
     if (!gender) {
-        let name = jikanData.name;
+        let name = jikanData.name.replace('*', '');
         let heroineRegex = new RegExp(name + ' is one of the main heroines', 'i');
         let womanRegex = new RegExp(name + ' is a .{3,15} woman', 'i');
         if (jikanData.about.match(heroineRegex) || jikanData.about.match(womanRegex)) {

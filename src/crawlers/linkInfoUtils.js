@@ -25,7 +25,7 @@ export const encodersRegex = new RegExp([
     /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo/,
-    /|Teamx265|mTEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle/,
+    /|Teamx265|[Mm]TEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([

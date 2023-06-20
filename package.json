@@ -23,9 +23,9 @@
     "upload_sourceamp": "sentry-cli releases files 1 upload-sourcemaps bundle.js"
   },
   "dependencies": {
-    "@aws-sdk/abort-controller": "^3.162.0",
-    "@aws-sdk/client-s3": "^3.165.0",
-    "@aws-sdk/lib-storage": "^3.183.0",
+    "@aws-sdk/abort-controller": "^3.347.0",
+    "@aws-sdk/client-s3": "^3.354.0",
+    "@aws-sdk/lib-storage": "^3.354.0",
     "@mongodb-js/zstd": "^1.1.0",
     "@sentry/node": "^7.12.1",
     "@sentry/tracing": "^7.12.1",
@@ -66,7 +66,7 @@
     "persian-rex": "^2.3.3",
     "redis": "^4.6.6",
     "request-ip": "^3.3.0",
-    "sharp": "^0.32.0",
+    "sharp": "^0.32.1",
     "tough-cookie": "^4.1.2",
     "uuid": "^9.0.0",
     "valid-url": "^1.0.9",
