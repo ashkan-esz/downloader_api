@@ -13,7 +13,7 @@ const multerStorage = multerS3({
     },
     key: function (req, file, cb) {
         let type = file.originalname.split('.').pop();
-        cb(null, `${req.query.appData.appName}@${req.query.appData.version}.${type}`);
+        cb(null, `${req.query.appData.appName}-${req.query.appData.os}@${req.query.appData.version}.${type}`);
     }
 });
 

@@ -287,11 +287,20 @@ export async function removeAppVersionDB(vid) {
     }
 }
 
-export async function getAppVersionDB() {
+export async function getAppVersionDB(publicCall = false) {
     try {
         let collection = await getCollection('configs');
-        let result = await collection.findOne({title: 'apps'});
-        if (result && result.apps) {
+        let result = publicCall
+            ? await collection.findOne({title: 'apps'}, {
+                projection: {
+                    _id: 0,
+                    'apps.versions.uploaderId': 0,
+                    'apps.versions.uploaderRole': 0,
+                    'apps.versions.vid': 0,
+                }
+            })
+            : await collection.findOne({title: 'apps'});
+        if (result && result.apps && !publicCall) {
             let users = [];
             for (let i = 0; i < result.apps.length; i++) {
                 let versions = result.apps[i].versions;
