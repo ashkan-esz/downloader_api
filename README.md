@@ -64,7 +64,7 @@ To run this project, you will need to add the following environment variables to
 | **`PORT`**                             | server port                                                                                                                    | `false`  | 3000          |
 | **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                               | `true`   |               |
 | **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)            | `true`   |               |
-| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                                 | `false`  | 3             |
+| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                                 | `false`  | 7             |
 | **`DATABASE_URL`**                     | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                           | `true`   |               |
 | **`REDIS_URL`**                        | redis url                                                                                                                      | `true`   |               |
 | **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |

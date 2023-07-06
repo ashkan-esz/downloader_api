@@ -1,11 +1,12 @@
 import {findUserById} from "../../data/db/usersDbMethods.js";
 import {errorMessage} from "../../services/serviceUtils.js";
+import * as adminConfigDbMethods from "../../data/db/admin/adminConfigDbMethods.js";
 
 
 export async function uploadProfileImage(req, res, next) {
     let userData = await findUserById(req.jwtUserData.userId, {profileImageCounter: 1});
     if (userData === 'error') {
-        return res.status(409).json({
+        return res.status(500).json({
             data: null,
             code: 500,
             errorMessage: errorMessage.serverError,
@@ -28,5 +29,30 @@ export async function uploadProfileImage(req, res, next) {
             isGuest: false,
         });
     }
+    next();
+}
+
+export async function uploadAppVersion(req, res, next) {
+    const result = await adminConfigDbMethods.getAppVersionDB(true);
+    if (result === 'error') {
+        return res.status(500).json({
+            data: null,
+            code: 500,
+            errorMessage: errorMessage.serverError,
+            isGuest: false,
+        });
+    }
+
+    const appData = req.query.appData;
+    const app = result.find(app => app.appName === appData.appName && app.os === appData.os);
+    if (app && app.versions.find(v => v.version === appData.version)) {
+        return res.status(409).json({
+            data: null,
+            code: 409,
+            errorMessage: errorMessage.alreadyExist,
+            isGuest: false,
+        });
+    }
+
     next();
 }

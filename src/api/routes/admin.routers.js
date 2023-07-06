@@ -181,6 +181,7 @@ router.post('/addNewAppVersion',
     middlewares.validateApiParamsAdmin.checkApiParams(['appData']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']),
+    middlewares.userPermission.uploadAppVersion,
     middlewares.uploadAppFile,
     mongoSanitize(),
     adminControllers.addNewAppVersion);

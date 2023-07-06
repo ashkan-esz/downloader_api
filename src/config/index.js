@@ -54,7 +54,7 @@ function getRemoteBrowsers() {
     while (true) {
         let endpoint = process.env[`REMOTE_BROWSER_ENDPOINT${i}`];
         let password = process.env[`REMOTE_BROWSER_PASSWORD${i}`];
-        let tabsCount = process.env[`REMOTE_BROWSER_TABS_COUNT${i}`] || 3;
+        let tabsCount = process.env[`REMOTE_BROWSER_TABS_COUNT${i}`] || 7;
         if (!endpoint || !password) {
             break;
         }
