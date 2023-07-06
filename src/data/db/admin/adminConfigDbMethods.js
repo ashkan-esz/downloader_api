@@ -4,6 +4,7 @@ import {saveError} from "../../../error/saveError.js";
 import {safeFieldsToRead, safeFieldsToRead_array, updateServerConfigsDb} from "../../../config/configsDb.js";
 import {v4 as uuidv4} from "uuid";
 import {findUserById} from "../usersDbMethods.js";
+import {removeAppFileFromS3} from "../../cloudStorage.js";
 
 
 export async function getServerConfigs() {
@@ -230,7 +231,13 @@ export async function addNewAppVersionDB(appData, userData) {
                 findApp.minVersion = appData.minVersion;
             }
             findApp.versions.push(newAppData.versions[0]);
-            findApp.versions = findApp.versions.sort((a, b) => compareAppVersions(a.version, b.version) === -1 ? 1 : -1).slice(0, 5);
+            findApp.versions = findApp.versions.sort((a, b) => compareAppVersions(a.version, b.version) === -1 ? 1 : -1);
+            const outdatedVersions = findApp.versions.slice(5);
+            for (let i = 0; i < outdatedVersions.length; i++) {
+                const fileName = outdatedVersions[i].fileData.url.split('/').pop();
+                await removeAppFileFromS3(fileName);
+            }
+            findApp.versions = findApp.versions.slice(0, 5);
         }
 
         await collection.updateOne({title: 'apps'}, {
