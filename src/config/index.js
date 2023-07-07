@@ -10,7 +10,7 @@ export default Object.freeze({
         concurrency: process.env.CRAWLER_CONCURRENCY,
         disable: process.env.DISABLE_CRAWLER === 'true',
         pauseOnHighLoad: process.env.PAUSE_CRAWLER_ON_HIGH_LOAD !== 'false',
-        totalMemory: Number(process.env.CRAWLER_TOTAL_MEMORY || 512),
+        totalMemory: Number(process.env.CRAWLER_TOTAL_MEMORY || 1024),
         memoryLimit: Number(process.env.CRAWLER_MEMORY_LIMIT || 0),
         cpuLimit: Number(process.env.CRAWLER_CPU_LIMIT || 95),
         pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 10),
@@ -43,7 +43,7 @@ export default Object.freeze({
     }),
     corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),
     diskSpace: Object.freeze({
-        totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 500),
+        totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 1024),
         defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
     }),
 });
