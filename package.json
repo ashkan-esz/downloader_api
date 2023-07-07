@@ -8,12 +8,12 @@
   "type": "module",
   "scripts": {
     "pre_start": "NODE_ENV=production node src/preStart.js",
-    "start": "NODE_ENV=production node --optimize_for_size --max_old_space_size=460 --gc_interval=100 src/server.js",
-    "start_limited_ram_traceGcc": "node --optimize_for_size --max_old_space_size=300 --gc_interval=100 --trace_gc src/server.js",
+    "start": "NODE_ENV=production node --max_old_space_size=1024 src/server.js",
+    "start_limited_ram_traceGcc": "node --max_old_space_size=512 --trace_gc src/server.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config src/server.js",
     "test": "NODE_ENV=dev node manualTest.js",
-    "test_limited_ram": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 manualTest.js",
-    "test_limited_ram_traceGcc": "NODE_ENV=dev node --optimize_for_size --max_old_space_size=250 --gc_interval=100 --trace_gc manualTest.js",
+    "test_limited_ram": "NODE_ENV=dev node --max_old_space_size=512 manualTest.js",
+    "test_limited_ram_traceGcc": "NODE_ENV=dev node --max_old_space_size=512 --trace_gc manualTest.js",
     "cli": "node src/test/cli.js",
     "test_manual": "node src/test/manual/index.js",
     "test_jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
@@ -72,13 +72,13 @@
     "valid-url": "^1.0.9",
     "words-to-numbers": "^1.5.1",
     "ytdl-core": "^4.11.4",
-    "zipson": "^0.2.12"
+    "zipson": "^0.2.12",
+    "diff": "^5.1.0"
   },
   "devDependencies": {
     "@sentry/webpack-plugin": "^1.19.0",
     "@types/node": "^18.7.16",
     "chalk": "^5.2.0",
-    "diff": "^5.1.0",
     "jest": "^29.0.2",
     "nodemon": "^2.0.19"
   }

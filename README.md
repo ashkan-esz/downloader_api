@@ -45,7 +45,7 @@ you can run npm script `npm run pre_start` to create buckes automatically.
 
 Set the rest of environment variables, like `CLOUAD_STORAGE_ENDPOINT`.
 
-if you have more than 500mb of ram (which you should have) change `--max_old_space_size` and `--gc_interval` values in start script.
+if you have more than 1024mb of ram (which you should have) change `--max_old_space_size` values in start script (or use docker!).
 
 start npm script `npm run start` and boom server is working.
 
