@@ -191,6 +191,7 @@ export const dataLevelConfig = Object.freeze({
         year: 1,
         premiered: 1,
         posters: 1,
+        poster_s3: 1,
         genres: 1,
         summary: 1,
         rating: 1,

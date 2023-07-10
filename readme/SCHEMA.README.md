@@ -126,6 +126,14 @@ dataLevel = {
         year: String,
         premiered: String,
         posters: Array(#POSTER),
+        poster_s3: null || {
+        url: String,
+        originalUrl: String,
+        originalSize: Int,
+        size: Int,
+        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+        thumbnail: String,
+        },
         genres: Array(String),
         summary: {
             english: String,
