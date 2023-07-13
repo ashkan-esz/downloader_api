@@ -65,7 +65,28 @@ services:
       retries: 3
       start_period: 20s
 
+  telegrambot:
+    image: ashkanaz2828/python-telegrambot-docker
+    network_mode: host
+    depends_on:
+      - api
+    env_file: ./telegrambot.env
+    environment:
+      - SERVER_ADDRESS=http://localhost:3000
+    volumes:
+      - telegrambot
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 150M
+        reservations:
+          memory: 50M
+    restart: always
+
 
 volumes:
   redis:
+    driver: local
+  telegrambot:
     driver: local

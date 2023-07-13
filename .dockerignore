@@ -8,7 +8,7 @@ build
 .gitignore
 test.html
 test.js
-.env
+*.env
 .cache
 coverage
 src/crawlers/samples/**/*.zip
