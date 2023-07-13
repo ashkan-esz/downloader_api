@@ -17,7 +17,10 @@ export default Object.freeze({
     }),
     disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
     databaseURL: process.env.DATABASE_URL,
-    REDIS_URL: process.env.REDIS_URL,
+    redis: Object({
+        url: process.env.REDIS_URL,
+        password: process.env.REDIS_PASSWORD,
+    }),
     sentryDns: process.env.SENTRY_DNS,
     apiKeys: Object.freeze({
         imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],

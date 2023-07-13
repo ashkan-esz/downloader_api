@@ -67,6 +67,7 @@ To run this project, you will need to add the following environment variables to
 | **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                                 | `false`  | 7             |
 | **`DATABASE_URL`**                     | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                           | `true`   |               |
 | **`REDIS_URL`**                        | redis url                                                                                                                      | `true`   |               |
+| **`REDIS_PASSWORD`**                   | redis password                                                                                                                 | `true`   |               |
 | **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en)                                                  | `true`   |               |
 | **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                                      | `true`   |               |

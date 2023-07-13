@@ -9,14 +9,13 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      #target: "prod"
       network: host
     env_file: ./.env
     volumes:
       - .:/usr/app
     environment:
       NODE_ENV: production
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://127.0.0.1:6379
 #    ports:
 #      - "3000:3000"
     deploy:
@@ -35,3 +34,38 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+
+  redis:
+    image: "redis:alpine"
+    network_mode: host
+    env_file: ./.env
+    environment:
+      - ALLOW_EMPTY_PASSWORD=no
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+      - USE_OPTIMIZATION=true
+#    ports:
+#      - "6379:6379"
+    volumes:
+      - redis:/data
+    entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 200mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD"
+    deploy:
+      resources:
+        limits:
+          cpus: 0.3
+          memory: 210M
+        reservations:
+          cpus: 0.05
+          memory: 50M
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 1m30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+
+volumes:
+  redis:
+    driver: local

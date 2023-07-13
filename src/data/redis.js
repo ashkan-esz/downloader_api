@@ -1,15 +1,12 @@
+import config from "../config/index.js";
 import {createClient} from "redis";
 import {saveError} from "../error/saveError.js";
 
-const url = process.env.REDIS_URL;
-
 const client = createClient({
-    url: url,
+    url: config.redis.url,
+    password: config.redis.password,
 });
-
-if (url) {
-    await client.connect();
-}
+await client.connect();
 
 client.on('error', err => {
     console.log('Redis Server Error', err);
@@ -19,9 +16,6 @@ client.on('error', err => {
 export default client;
 
 export async function getRedis(key) {
-    if (!url) {
-        return null;
-    }
     try {
         return JSON.parse(await client.get(key));
     } catch (error) {
@@ -31,9 +25,6 @@ export async function getRedis(key) {
 }
 
 export async function setRedis(key, value) {
-    if (!url) {
-        return 'error';
-    }
     try {
         return await client.set(key, JSON.stringify(value));
     } catch (error) {
