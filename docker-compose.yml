@@ -29,7 +29,7 @@ services:
           memory: 300M
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      test: [ "CMD", "node", "healthcheck.js" ]
       interval: 1m30s
       timeout: 10s
       retries: 3
