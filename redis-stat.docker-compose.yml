@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  redis-stat:
+    container_name: redis-stat
+    network_mode: host
+    env_file: ./.env
+    hostname: redis-stat
+    image: insready/redis-stat:latest
+    command: --server localhost:6379 --auth ${REDIS_PASSWORD}
+  #    ports:
+  #      - "8080:63790"
+    deploy:
+      resources:
+        limits:
+          cpus: 0.3
+          memory: 300M

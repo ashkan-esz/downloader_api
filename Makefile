@@ -18,3 +18,6 @@ up-prod:
 
 down:
 	docker-compose down
+
+redis-stat:
+	docker-compose -f ./redis-stat.docker-compose.yml up --build
