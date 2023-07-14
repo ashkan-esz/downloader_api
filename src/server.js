@@ -5,7 +5,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cors from "./api/middlewares/cors.js";
 import developmentFaze from "./api/middlewares/developmentFaze.js";
@@ -32,7 +31,6 @@ app.use(bodyParser.urlencoded({extended: false, limit: '10mb'}));
 app.use(bodyParser.json({limit: '10mb'}));
 app.use(cookieParser());
 app.use(cors);
-app.use(compression());
 app.use(rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     max: 600 // limit each IP to 600 requests per windowMs
