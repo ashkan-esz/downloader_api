@@ -8,7 +8,6 @@ import uploadAppFile from './uploadAppFile.js';
 import * as userPermission from './userPermission.js';
 import * as validateApiParams from './validateApiParams.js';
 import * as validateApiParamsAdmin from './validateApiParamsAdmin.js';
-import * as authTokenBlackList from './authTokenBlackList.js';
 
 
 export default {
@@ -22,5 +21,4 @@ export default {
     userPermission,
     validateApiParams,
     validateApiParamsAdmin,
-    authTokenBlackList,
 }

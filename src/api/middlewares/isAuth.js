@@ -2,8 +2,8 @@ import config from "../../config/index.js";
 import jwt from "jsonwebtoken";
 import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
-import {checkTokenBlackListed} from "./authTokenBlackList.js";
 import {getConfigDB_DisableTestUserRequests} from "../../data/db/admin/adminConfigDbMethods.js";
+import {redisKeyExist} from "../../data/redis.js";
 
 
 let testUserDataCache = null;
@@ -89,7 +89,7 @@ export async function attachAuthFlag(req, res, next) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }
-    if (checkTokenBlackListed(refreshToken)) {
+    if (await redisKeyExist('jwtKey:' + refreshToken)) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }

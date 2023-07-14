@@ -5,7 +5,6 @@ import * as bcrypt from "bcrypt";
 import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
-import {addToBlackList} from "../api/middlewares/authTokenBlackList.js";
 import {saveError} from "../error/saveError.js";
 import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
@@ -13,6 +12,7 @@ import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 import countries from "i18n-iso-countries";
+import {setRedis} from "../data/redis.js";
 
 //if (data.changedPasswordAfter(decoded.iat)) {
 // 			return res.status(401).json({
@@ -162,7 +162,7 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
             let decodedJwt = jwt.decode(prevAccessToken);
             if (decodedJwt) {
                 let jwtExpireLeft = (decodedJwt.exp * 1000 - Date.now()) / 1000;
-                addToBlackList(device.refreshToken, 'logout', jwtExpireLeft);
+                await setRedis('jwtKey:' + device.refreshToken, 'logout', jwtExpireLeft);
             }
         } catch (error2) {
             saveError(error2);
@@ -183,7 +183,7 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
             return generateServiceResult({}, 403, errorMessage.invalidDeviceId);
         }
         let device = result.activeSessions.find(item => item.deviceId === deviceId);
-        addToBlackList(device.refreshToken, 'logout', null);
+        await setRedis('jwtKey:' + device.refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
         let restOfSessions = result.activeSessions.filter(item => item.refreshToken !== prevRefreshToken && item.deviceId !== deviceId);
         return generateServiceResult({activeSessions: restOfSessions}, 200, '');
     } catch (error) {
@@ -203,7 +203,7 @@ export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
         let activeSessions = result.activeSessions;
         for (let i = 0; i < activeSessions.length; i++) {
             if (activeSessions[i].refreshToken !== prevRefreshToken) {
-                addToBlackList(activeSessions[i].refreshToken, 'logout', null);
+                await setRedis('jwtKey:' + activeSessions[i].refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
             }
         }
         return generateServiceResult({activeSessions: []}, 200, '');

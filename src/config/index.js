@@ -42,6 +42,7 @@ export default Object.freeze({
         accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
         refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
         accessTokenExpire: '1h',
+        accessTokenExpireSeconds: 60 * 60,
         refreshTokenExpire: '180d',
     }),
     corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),

@@ -15,6 +15,15 @@ client.on('error', err => {
 
 export default client;
 
+export async function redisKeyExist(key) {
+    try {
+        return (await client.exists(key)) === 1;
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
+}
+
 export async function getRedis(key) {
     try {
         return JSON.parse(await client.get(key));
@@ -24,9 +33,13 @@ export async function getRedis(key) {
     }
 }
 
-export async function setRedis(key, value) {
+export async function setRedis(key, value, duration = null) {
     try {
-        return await client.set(key, JSON.stringify(value));
+        if (duration) {
+            return await client.set(key, JSON.stringify(value), {EX: duration});
+        } else {
+            return await client.set(key, JSON.stringify(value));
+        }
     } catch (error) {
         saveError(error);
         return 'error';
