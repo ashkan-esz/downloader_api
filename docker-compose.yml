@@ -84,6 +84,14 @@ services:
           memory: 50M
     restart: always
 
+  nginx:
+    network_mode: host
+    build: ./nginx
+#    ports:
+#      - '8080:8080'
+    depends_on:
+      - api
+      - telegrambot
 
 volumes:
   redis:
