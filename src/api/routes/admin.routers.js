@@ -15,7 +15,8 @@ router.post('/login',
 //admin/getToken
 router.put('/getToken',
     middlewares.auth.isAuth_refreshToken, middlewares.validation.getTokenValidation,
-    mongoSanitize(), usersControllers.getToken);
+    mongoSanitize(),
+    middlewares.auth.addFingerPrint(), usersControllers.getToken);
 
 //---------------------------------------------------
 //---------------------------------------------------

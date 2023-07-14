@@ -78,7 +78,7 @@ export async function getToken(req, res) {
 
     let deviceInfo = req.body.deviceInfo;
     const ip = getClientIp(req) || '';
-    let result = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.refreshToken, isAdminLogin);
+    let result = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.fingerprint, req.refreshToken, isAdminLogin);
     if (result.refreshToken) {
         if (req.query.noCookie === 'true') {
             result.responseData.refreshToken = result.refreshToken;

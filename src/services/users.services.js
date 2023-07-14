@@ -6,7 +6,6 @@ import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
-import getIpLocation from "../extraServices/ip/index.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
@@ -40,7 +39,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
             }
         }
 
-        deviceInfo.ipLocation = getRequestLocation(fingerprint, ip);
+        deviceInfo.ipLocation = getRequestLocation(fingerprint);
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
@@ -91,7 +90,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
-            deviceInfo.ipLocation = getRequestLocation(fingerprint, ip);
+            deviceInfo.ipLocation = getRequestLocation(fingerprint);
             let deviceId = uuidv4();
             let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, fingerprint.hash, tokens.refreshToken);
             if (!result) {
@@ -120,7 +119,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
     }
 }
 
-export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken, isAdminLogin) {
+export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRefreshToken, isAdminLogin) {
     try {
         const user = {
             userId: jwtUserData.userId,
@@ -129,7 +128,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, prevRefreshToken, is
             generatedAt: Date.now(),
         };
         const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
-        deviceInfo.ipLocation = ip ? getIpLocation(ip) : '';
+        deviceInfo.ipLocation = getRequestLocation(fingerprint);
         let result = await usersDbMethods.updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
@@ -457,14 +456,17 @@ export async function computeUserStats(jwtUserData) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-function getRequestLocation(fingerprint, ip) {
+function getRequestLocation(fingerprint) {
     try {
         let country = fingerprint.components.geoip.country;
         let city = fingerprint.components.geoip.city;
-        if (!country || !city) {
-            return ip ? getIpLocation(ip) : "";
+        if (!country) {
+            return "";
         }
         country = countries.getName(country, 'en', {select: "official"}) || country;
+        if (!city) {
+            return country;
+        }
         return city + ', ' + country;
     } catch (error) {
         saveError(error);
