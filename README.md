@@ -142,7 +142,7 @@ Give a ⭐️ if you like this project!
 
 ## Extra
 
-This product includes IP2Location LITE data available from http://www.ip2location.com.
+Nothing yet!
 
 ## Author
 

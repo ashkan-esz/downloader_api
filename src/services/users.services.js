@@ -23,8 +23,6 @@ import {setRedis} from "../data/redis.js";
 //todo : forget password
 //todo : edit profile data
 
-//todo : use express-useragent for deviceInfo
-
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
         let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, email: 1});
@@ -39,7 +37,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
             }
         }
 
-        deviceInfo.ipLocation = getRequestLocation(fingerprint);
+        deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
@@ -90,7 +88,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData);
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
-            deviceInfo.ipLocation = getRequestLocation(fingerprint);
+            deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
             let deviceId = uuidv4();
             let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, fingerprint.hash, tokens.refreshToken);
             if (!result) {
@@ -128,7 +126,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
             generatedAt: Date.now(),
         };
         const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
-        deviceInfo.ipLocation = getRequestLocation(fingerprint);
+        deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         let result = await usersDbMethods.updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
@@ -455,6 +453,20 @@ export async function computeUserStats(jwtUserData) {
 
 //---------------------------------------------------------------
 //---------------------------------------------------------------
+
+function fixDeviceInfo(deviceInfo, fingerprint) {
+    if (fingerprint.components.useragent){
+        if (fingerprint.components.useragent.os.family !== "Other"){
+            deviceInfo.os = fingerprint.components.useragent.os.family;
+        }
+        if (fingerprint.components.useragent.device.family !== "Other"){
+            deviceInfo.deviceModel = fingerprint.components.useragent.device.family;
+        }
+    }
+
+    deviceInfo.ipLocation = getRequestLocation(fingerprint);
+    return deviceInfo;
+}
 
 function getRequestLocation(fingerprint) {
     try {
