@@ -130,15 +130,15 @@ export async function setTokenForNewUser(userId, refreshToken) {
     }
 }
 
-export async function setTokenForNewDevice(userId, deviceInfo, deviceId, fingerprint, refreshToken) {
+export async function setTokenForNewDevice(userId, deviceInfo, deviceId, refreshToken) {
     try {
         let collection = await getCollection('users');
-        let newDeviceData = getNewDeviceSession(deviceInfo, deviceId, fingerprint, refreshToken);
+        let newDeviceData = getNewDeviceSession(deviceInfo, deviceId, refreshToken);
         //-------------------------------------------
         //check device already exist
         let deviceExistResult = await collection.findOneAndUpdate({
             _id: userId,
-            'activeSessions.fingerprint': fingerprint,
+            'activeSessions.deviceId': deviceId,
         }, {
             $set: {
                 "activeSessions.$.appName": newDeviceData.appName,
@@ -193,7 +193,7 @@ export async function setTokenForNewDevice(userId, deviceInfo, deviceId, fingerp
 export async function updateUserAuthToken(userId, deviceInfo, refreshToken, prevRefreshToken) {
     try {
         let collection = await getCollection('users');
-        let sessionData = getNewDeviceSession(deviceInfo, '', '', refreshToken);
+        let sessionData = getNewDeviceSession(deviceInfo, '', refreshToken);
         let updateFields = {
             "activeSessions.$[item].appName": sessionData.appName,
             "activeSessions.$[item].appVersion": sessionData.appVersion,

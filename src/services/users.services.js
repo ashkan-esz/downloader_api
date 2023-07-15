@@ -42,8 +42,8 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let deviceId = uuidv4();
-        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId, fingerprint.hash);
+        let deviceId = fingerprint.hash || uuidv4();
+        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId);
         let userId = await usersDbMethods.addUser(userData);
         if (!userId) {
             return generateServiceResult({}, 500, errorMessage.serverError);
@@ -89,8 +89,8 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
             const user = getJwtPayload(userData);
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
             deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
-            let deviceId = uuidv4();
-            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, fingerprint.hash, tokens.refreshToken);
+            let deviceId = fingerprint.hash || uuidv4();
+            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
             if (!result) {
                 return generateServiceResult({}, 500, errorMessage.serverError);
             } else if (result === 'cannot find user') {

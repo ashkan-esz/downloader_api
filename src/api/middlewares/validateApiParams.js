@@ -448,7 +448,7 @@ const validations = Object.freeze({
     //-----------------------------
 
     deviceId: param('deviceId')
-        .isString().withMessage('Invalid parameter deviceId :: String(UUID)')
+        .isString().withMessage('Invalid parameter deviceId :: String | UUID')
         .trim(),
 
     settingName: param('settingName')

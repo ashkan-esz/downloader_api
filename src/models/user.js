@@ -1,7 +1,7 @@
 import {defaultProfileImage} from "../data/cloudStorage.js";
 
 
-export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId, fingerprint) {
+export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId) {
     return {
         username: username.toLowerCase(),
         rawUsername: username,
@@ -16,7 +16,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
         profileImageCounter: 0,
         defaultProfile: defaultProfileImage,
         activeSessions: [
-            getNewDeviceSession(deviceInfo, deviceId, fingerprint, ''),
+            getNewDeviceSession(deviceInfo, deviceId, ''),
         ],
         favoriteGenres: [],
         friends: [],
@@ -32,7 +32,7 @@ export function userModel(username, email, password, emailVerifyToken, emailVeri
     }
 }
 
-export function getNewDeviceSession(deviceInfo, deviceId, fingerprint, refreshToken) {
+export function getNewDeviceSession(deviceInfo, deviceId, refreshToken) {
     let now = new Date();
     return ({
         appName: deviceInfo.appName || '',
@@ -44,7 +44,6 @@ export function getNewDeviceSession(deviceInfo, deviceId, fingerprint, refreshTo
         loginDate: now,
         lastUseDate: now,
         refreshToken: refreshToken || '',
-        fingerprint: fingerprint || '',
     });
 }
 

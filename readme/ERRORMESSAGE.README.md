@@ -80,7 +80,7 @@ queryParamErrors = {
     seasons: "Invalid parameter seasons :: (\d+ | \d+-\d+)",
     numberOfSeason: "Invalid parameter numberOfSeason :: (\d+ | \d+-\d+)",
     japaneseNames: "Invalid parameter japaneseNames :: (array of string, {min:1, max:20})",
-    deviceId: "Invalid parameter deviceId :: String(UUID)",
+    deviceId: "Invalid parameter deviceId :: String | UUID",
     remove: "Invalid parameter remove :: (true|false)",
     followedOnly: "Invalid parameter followedOnly :: (true|false)",
     dontUpdateServerDate: "Invalid parameter dontUpdateServerDate :: (true|false)",
