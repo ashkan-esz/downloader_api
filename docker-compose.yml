@@ -100,6 +100,22 @@ services:
           memory: 50M
     restart: unless-stopped
 
+  website:
+    image: ashkanaz2828/downloader_website
+    network_mode: host
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_BASE_URL=http://localhost:8080/api
+    deploy:
+      resources:
+        limits:
+          cpus: 0.2
+          memory: 300M
+        reservations:
+          memory: 50M
+    restart: unless-stopped
+
   nginx:
     network_mode: host
     build: ./nginx
@@ -109,6 +125,7 @@ services:
       - api
       - telegrambot
       - adminpanel
+      - website
 
 volumes:
   redis:
