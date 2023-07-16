@@ -16,6 +16,14 @@ services:
     environment:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
+      REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
+      REMOTE_BROWSER_TABS_COUNT1: 7
+      DISABLE_CRAWLER: 'false'
+      CRAWLER_CONCURRENCY: 15
+      PAUSE_CRAWLER_ON_HIGH_LOAD: 'true'
+      CRAWLER_TOTAL_MEMORY: 1024
+      CRAWLER_PAUSE_DURATION_LIMIT: 10
+      TOTAL_DISK_SPACE: 1024
 #    ports:
 #      - "3000:3000"
     deploy:
@@ -34,7 +42,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
 
   redis:
     image: "redis:alpine"
@@ -64,6 +71,33 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  remoteBrowser:
+    image: ashkanaz2828/downloader_remotebrowser
+    network_mode: host
+    env_file: ./remotebrowser.env
+    environment:
+      - NODE_ENV=development
+      - CRAWLER_BROWSER_TAB_COUNT=5
+      - TOTAL_MEMORY_AMOUNT=1024
+      - TOTAL_DISK_SPACE=2000
+      - SERVER_NAME=remoteBrowser-vps-1
+      - PRINT_ERRORS=true
+      - CRAWLER_PAUSE_DURATION_LIMIT=30
+      - DISABLE_UPLOAD_JOB=false
+      - BLACKHOLE_FILE_SIZE_LIMIT=768
+    deploy:
+      resources:
+        limits:
+          cpus: 0.4
+          memory: 1000M
+        reservations:
+          memory: 300M
+#    volumes:
+#      - ./:/usr/app
+#    ports:
+#      - "5000:5000"
+    restart: always
 
   telegrambot:
     image: ashkanaz2828/python-telegrambot-docker
