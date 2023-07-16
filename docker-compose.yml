@@ -72,7 +72,7 @@ services:
       - api
     env_file: ./telegrambot.env
     environment:
-      - SERVER_ADDRESS=http://localhost:8080
+      - SERVER_ADDRESS=http://localhost:8080/api
     volumes:
       - telegrambot
     deploy:
@@ -84,6 +84,22 @@ services:
           memory: 50M
     restart: always
 
+  adminpanel:
+    image: ashkanaz2828/downloader_adminpanel
+    network_mode: host
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_BASE_URL=http://localhost:8080/api
+    deploy:
+      resources:
+        limits:
+          cpus: 0.2
+          memory: 200M
+        reservations:
+          memory: 50M
+    restart: unless-stopped
+
   nginx:
     network_mode: host
     build: ./nginx
@@ -92,6 +108,7 @@ services:
     depends_on:
       - api
       - telegrambot
+      - adminpanel
 
 volumes:
   redis:
