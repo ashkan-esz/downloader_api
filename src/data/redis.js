@@ -6,7 +6,11 @@ const client = createClient({
     url: config.redis.url,
     password: config.redis.password,
 });
-await client.connect();
+try {
+    await client.connect();
+} catch (e) {
+    saveError(e);
+}
 
 client.on('error', err => {
     console.log('Redis Server Error', err);
@@ -17,6 +21,9 @@ export default client;
 
 export async function redisKeyExist(key) {
     try {
+        if (!client.isReady) {
+            return false;
+        }
         return (await client.exists(key)) === 1;
     } catch (error) {
         saveError(error);
@@ -26,6 +33,9 @@ export async function redisKeyExist(key) {
 
 export async function getRedis(key) {
     try {
+        if (!client.isReady) {
+            return null;
+        }
         return JSON.parse(await client.get(key));
     } catch (error) {
         saveError(error);
@@ -35,6 +45,9 @@ export async function getRedis(key) {
 
 export async function setRedis(key, value, duration = null) {
     try {
+        if (!client.isReady) {
+            return 'error';
+        }
         if (duration) {
             return await client.set(key, JSON.stringify(value), {EX: duration});
         } else {
