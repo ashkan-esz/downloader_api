@@ -142,7 +142,8 @@ Give a ⭐️ if you like this project!
 
 ## Extra
 
-Nothing yet!
+- Change `CMD [ "node", "src/server.js"]` to `CMD [ "node", "src/tracing.js"]` in Dockerfile to enable opentelemetry.
+- Run `make signoz-install` to instakk and start signoz apm dashboard. (http://localhost:3301)
 
 ## Author
 

@@ -25,3 +25,18 @@ redis-stat:
 push-image:
 	docker tag downloader-api ashkanaz2828/downloader_api
 	docker push ashkanaz2828/downloader_api
+
+signoz-install:
+	unzip ./signoz/signoz.zip -d ./signoz
+	cp ./signoz/edit-no-sample.yaml ./signoz/signoz-0.23.0/deploy/docker/clickhouse-setup/docker-compose.yaml
+	cd signoz/signoz-0.23.0/deploy && sh ./install.sh
+
+signoz-stop:
+	cd signoz/signoz-0.23.0/deploy && docker-compose -f docker/clickhouse-setup/docker-compose.yaml stop
+
+signoz-start:
+	cd signoz/signoz-0.23.0/deploy && docker-compose -f docker/clickhouse-setup/docker-compose.yaml up -d
+
+signoz-uninstall:
+	cd signoz/signoz-0.23.0/deploy && docker-compose -f docker/clickhouse-setup/docker-compose.yaml down -v
+	cd ./signoz && sudo rm -rf signoz-0.23.0
