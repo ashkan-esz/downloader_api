@@ -4,7 +4,6 @@ import {saveError} from "../../../error/saveError.js";
 import * as Path from "path";
 import {fileURLToPath} from "url";
 import inquirer from 'inquirer';
-import {stringify, parse} from 'zipson';
 
 const __filename = fileURLToPath(import.meta.url);
 const pathToTitles = Path.dirname(__filename);
@@ -25,7 +24,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
         if (files.includes(`${sourceName}.json`)) {
             const pathToFile = Path.join(pathToTitles, `${sourceName}.json`);
             let titlesFile = await fs.promises.readFile(pathToFile, 'utf8');
-            let titles = parse(titlesFile);
+            let titles = JSON.parse(titlesFile);
             let found = false;
             for (let i = 0; i < titles.length; i++) {
                 if (titles[i].originalTitle === originalTitle) {
@@ -35,7 +34,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                         titles[i].title = title;
                         titles[i].originalType = originalType;
                         titles[i].type = type;
-                        await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
+                        await fs.promises.writeFile(pathToFile, JSON.stringify(titles), 'utf8');
                     }
                     found = true;
                     break;
@@ -48,7 +47,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                     year
                 }
                 titles.push(newSampleTitle);
-                await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
+                await fs.promises.writeFile(pathToFile, JSON.stringify(titles), 'utf8');
             }
         } else {
             //create file
@@ -58,7 +57,7 @@ export async function saveSampleTitle(sourceName, originalTitle, title, original
                 year
             }
             const pathToFile = Path.join(pathToTitles, `${sourceName}.json`);
-            await fs.promises.writeFile(pathToFile, stringify([newSampleTitle]), 'utf8');
+            await fs.promises.writeFile(pathToFile, JSON.stringify([newSampleTitle]), 'utf8');
         }
         isFileOpen = false;
     } catch (error) {
@@ -117,7 +116,7 @@ async function updateMovieData(movieData, newTitle, newYear) {
         isFileOpen = true;
         const pathToFile = Path.join(pathToTitles, `${movieData.sourceName}.json`);
         let titlesFile = await fs.promises.readFile(pathToFile, 'utf8');
-        let titles = parse(titlesFile);
+        let titles = JSON.parse(titlesFile);
 
         for (let i = 0; i < titles.length; i++) {
             if (
@@ -129,7 +128,7 @@ async function updateMovieData(movieData, newTitle, newYear) {
             ) {
                 titles[i].title = newTitle;
                 titles[i].year = newYear;
-                await fs.promises.writeFile(pathToFile, stringify(titles), 'utf8');
+                await fs.promises.writeFile(pathToFile, JSON.stringify(titles), 'utf8');
                 break;
             }
         }
@@ -153,7 +152,7 @@ export async function getSampleTitles(sourceNames = null) {
         for (let i = 0; i < files.length; i++) {
             const pathToFile = Path.join(pathToTitles, files[i]);
             let temp = fs.promises.readFile(pathToFile, 'utf8').then((f) => {
-                let t = parse(f);
+                let t = JSON.parse(f);
                 t = t.map(item => {
                     item.sourceName = files[i].split('.')[0];
                     return item;
