@@ -13,19 +13,19 @@ export const encodersRegex = new RegExp([
     /|Jalucian|muhHD|GAN|AC3|[Ww]orldmkv|AiRLiNE|DEFiNiTE|HazMatt|FiDELiO|AR|monkee|vsenc|BDP|D3FiL3R|watcher|ISRA|[Mm][Kk][Vv][Cc][Aa][Gg][Ee]/,
     /|SaNiG|Frontline|TNTVillage|LordVako|LoRD|titler|rDX|w4f|HighCode|TuGAZx|GCJM|BONE|Qman|Micromkv|d3g|NVEE|AViATOR|GECKOS/,
     /|SUJAIDR|r00t|MovCr|ACOOL|N[Oo]GRP|AAA(UHD)?|DAA|BRSHNKV|HEVCBay|TTL|NBY|KamiKaze|TEPES|MZABI|DEEP|RSG|GOOZ|[Aa][Rr][Ii][Ee][Ss]/,
-    /|Tom[Dd]oc|POIASD|SUECOS|Garshasp|SARTRE|Budgetbits|[Pp]rof?|LiBRARiANS|m2g|FreetheFish|[Nn]ickarad|AnimeRG|TombDoc/,
+    /|Tom[Dd]oc|POIASD|SUECOS|Garshasp|SARTRE|Budgetbits|[Pp]rof?|LiBRARiANS|m2g|FreetheFish|[Nn]ickarad|AnimeRG|TombDoc|EDITH|ETHEL/,
     /|FRISKY|3dg|SAMPA|Vyndros|ANONA911|Natty|GetSchwifty|Obey|GSFTX|RONIN|UNK|Bandi|QxR|Paso7[27]|Slinece|SPARKS|PCOK|orenji/,
-    /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV/,
+    /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV|BRISK/,
     /|[Aa]pekat|LION|imSamir|KIMO?|Telly|TeamMCU|Grashasp|YOGI|HDSTAr|ViZNU|DREDD|TM[VK]|MHB|EXT|ION10|SECRECY|[RH]?TM|HORiZON/,
     /|Bollycine|InSaNe|ESubs|Lover|FC|COALiTiON|RUSTED|LCK|iExTv|[Ff]2[MmNn]|SH0W|GECK|AMIABLE|KatmovieHD|REM|PRiME|NEZU|TFP|DON/,
-    /|SMAHAWUG|CRiSC|STRONTiUM|BdC|HDC|LAZY|FraMeSToR|BAM|Felony|SECTOR7|CADAVER|YOL0W|Replica|KaKa|SPRiNTER|Sprinter|Rapta/,
+    /|SMAHAWUG|CRiSC|STRONTiUM|BdC|HDC|LAZY|FraMeSToR|BAM|Felony|SECTOR7|CADAVER|YOL0W|Replica|KaKa|SPRiNTER|Sprinter|Rapta|REWARD/,
     /|ROVERS|EPSiLON|SAPHiRE|DEFLATE|BRMP|HET|BLOW|DDR|HDL|HAiKU|CiNEFiLE|SNG|FLAME|[Ii][Ff][Tt]|[Tt][Bb][Ss]|EGEN|TOMMY|Tommy|AvoHD|MRN/,
-    /|PLUTONiUM|TiTAN|JiO|SKGTV|QPEL|NM|HV|VETO|YST|SHeRiF|C1NEM4|AN0NYM0US|CROOKS|ALTEREGO|SiNNERS|FiCO|mSD|PoOlLa|MAX|GETiT/,
+    /|PLUTONiUM|TiTAN|JiO|SKGTV|QPEL|NM|HV|VETO|YST|SHeRiF|C1NEM4|AN0NYM0US|CROOKS|ALTEREGO|SiNNERS|FiCO|mSD|PoOlLa|MAX|GETiT|IFR/,
     /|ALLiANCE|DiAMOND|Team-x265|PECULATE|TIMECUT|MRCS|NAISU|PMV|SCENI|Atmos|PSYCHD|DEMAND|GOPISAHI|MkHub|VFX|[Xx][Ll][Ff]|RBX|DSNP|VIU/,
     /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
-    /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo/,
-    /|Teamx265|[Mm]TEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP/,
+    /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo|GDL/,
+    /|Teamx265|[Mm]TEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP|XEBEC|IC/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
@@ -139,7 +139,7 @@ const findSpecialRegex2 = /(?<=%20)(Special|OVA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
 
 export function purgeQualityText(qualityText) {
     return qualityText
-        .replace(/ /g, ' ')
+        .replace(/[ ;]/g, ' ')
         .replace(/\s\s+/g, ' ')
         .replace('دانلود', '')
         .replace('فیلم', '')
@@ -238,7 +238,7 @@ export function fixLinkInfo(info, linkHref, type) {
         .replace('1080x265', '1080p.x265')
         .replace(/bl?ue?rayR?L?/i, 'BluRay')
         .replace(/WEB-?DLR/i, 'WEB-DL')
-        .replace(/WEB\.DL/i, 'WEB-DL')
+        .replace(/WEB\.DL/gi, 'WEB-DL')
         .replace(/WEB\.?D(?!L)/i, 'WEB-DL')
         .replace(/hd-?rip/gi, 'HD-RIP')
         .replace('DL.WEB', 'WEB-DL')
@@ -495,12 +495,13 @@ function fixInfoWrongQualityResolution(info) {
 function fixInfoDubAndSub(info) {
     return info
         //dubbed
-        .replace(/\.(DUBLE|Dobleh|(dubbed\.Sound))/i, '.dubbed')
+        .replace('.Dubbed', '.dubbed')
+        .replace(/\.(DO?UBLE|Dobleh|(dubbed\.Sound))/i, '.dubbed')
         .replace(/(?<!(\.|^))dubbed/, '.dubbed')
         .replace(/dubbed(\.fa)?\.dubbed/i, 'dubbed')
         .replace(/((Sync(\.\d)?)|fa)\.dubbed/i, 'dubbed')
         .replace(/\.FA(rsi)/i, '.dubbed')
-        .replace(/dubbed(\.dubbed)+/gi, 'dubbed')
+        .replace(/dubbed\d*(\.dubbed\d*)+/gi, 'dubbed')
         .replace(/Dual\.Audio\.(SoftSub|dubbed)/i, 'dubbed')
         .replace(/(Dual|Dubbed)\.Audio/i, 'dubbed')
         .replace(/ENG\.Dub(bed)?/i, 'dubbed(english)')
@@ -520,7 +521,8 @@ function fixInfoDubAndSub(info) {
         .replace(/Hard?Sub(\.HardSub)+/gi, 'HardSub')
         .replace('.SoftSub.HardSub', '.SoftSub')
         .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'dubbed')
-        .replace('DUAL.SoftSub', 'SoftSub');
+        .replace('DUAL.SoftSub', 'SoftSub')
+        .replace(/Fa\.(?=(Soft|Hard))/i, '');
 }
 
 function fixInfoCaseSensitiveWords(info) {
@@ -538,8 +540,9 @@ export function getCleanLinkInfo(info) {
         .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0])
         .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0])
         .replace(/[ًًًٌٍَُِ]/g, '')
-        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m)(?=(\.|\[|$))/gi, '')
+        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m|ITSat)(?=(\.|\[|$))/gi, '')
         .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
+        .replace(/([.\-])Fixed/i, '')
         .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
         .replace(/HEVCPSA/i, 'PSA')
         .replace(/\.(x254|x\.?264)/gi, '')
@@ -567,9 +570,11 @@ export function getCleanLinkInfo(info) {
         .replace(/HD-?TV?(?=(\.|$))/i, 'HDTV')
         .replace(/(\.Full)?\.HD\.WEB-DL/i, '.WEB-DL')
         .replace('.BDRip.WEB-DL', '.WEB-DL')
+        .replace('.RED.WEB-DL', '.WEB-DL')
         .replace(new RegExp(`(${releaseRegex.source})(?!(\\.|$))`), res => res + '.')
         .replace(/\d[.-]Part(?=(\.\d\d\d\d?p))/, (res) => res.split(/[.-]/).reverse().join('_'))
         .replace(/\.(2020|(Cut\.)?Exclusive)/gi, '')
+        .replace(/\.I\.C(?=(\.|$))/i, '.IC')
         .replace(new RegExp(`I(${releaseRegex.source})\\.MAX`), (res) => res.replace('I', 'IMAX.').replace('.MAX', ''))
         .replace(new RegExp(`I\\d\\d\\d\\d?p\\.MAX`), (res) => res.replace('I', '').replace('MAX', 'IMAX'))
         .replace(new RegExp(`(${releaseRegex.source})\\d\\d\\d\\d?p`), (res) => res.replace(/\d\d\d\d?p/, (res2) => '.' + res2));

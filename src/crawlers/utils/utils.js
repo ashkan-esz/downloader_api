@@ -200,12 +200,26 @@ export function getSeasonEpisode(input, isLinkInput = false) {
             const case2 = input.match(/\.([se])\d+([se])\d+\./gi);
             if (case2) {
                 [, season, episode] = case2.pop().replace(/^\.|\.$/gi, '').split(/[se]/gi);
+            } else {
+                const case3 = input.match(/(%20)s\d+(%20)?b\d+(%20)/gi);
+                if (case3) {
+                    [, season, episode] = case3.pop().replace(/%20/gi, '').split(/[sb]/gi);
+                }
+            }
+        }
+
+        const editedInput = input.replace(/[-_]|%20/g, '.').replace(/\.\.+/, '.');
+
+        if (season === 0 || episode === 0) {
+            const seasonEpisodeMatch = editedInput.match(/\.s\d\d?\.e?\d\d?\./gi);
+            if (seasonEpisodeMatch) {
+                [season, episode] = seasonEpisodeMatch.pop().replace(/\.s|\.$/gi, '').split('.');
             }
         }
 
         if (season === 0 || episode === 0) {
             const episodeRegex = /(\.\d\d\d\d)*\.e?\d+\.((\d\d\d\d?p|bluray|web-dl|korean|hevc|x264|x265|10bit)\.)*/gi;
-            const episodeMatch = input.replace(/[-_]|%20/g, '.').match(episodeRegex);
+            const episodeMatch = editedInput.match(episodeRegex);
             if (episodeMatch) {
                 const match = episodeMatch.find(item => item.includes('e')) || episodeMatch.pop();
                 episode = match.replace(/^(\.\d{4})*\.e?/i, '').split('.')[0];
@@ -250,7 +264,7 @@ export function getSeasonEpisode(input, isLinkInput = false) {
             }
         }
 
-        if ((season === 1 || season === "01") && (episode === 0 || episode === "")) {
+        if ((season === 1 || season === "01") && (episode === 0 || episode === "00" || episode === "")) {
             const decodeLink = getDecodedLink(input);
             const seMatch = decodeLink.match(/s\d+\s*([-.])\s*e?\d+/gi);
             if (seMatch) {
@@ -265,6 +279,12 @@ export function getSeasonEpisode(input, isLinkInput = false) {
                 if (episodeMatch && episodeMatch.length === 1) {
                     season = '1';
                     episode = episodeMatch[0].match(/\d+/)[0];
+                } else {
+                    const episodeMatch2 = decodeLink.match(/\se\(\d+\)\s/gi);
+                    if (episodeMatch2 && episodeMatch2.length === 1) {
+                        season = '1';
+                        episode = episodeMatch2[0].match(/\d+/)[0];
+                    }
                 }
             }
         }

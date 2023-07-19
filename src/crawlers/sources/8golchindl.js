@@ -407,13 +407,14 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
 
         quality = purgeQualityText(quality)
             .replace(/[\[\]]/g, '.')
-            .replace(/(\.nf)?(\.ss)?\.(((Dub)?Golchi?n\.?dl?n?(\.?fa)?(\.\d)?\d?)|RMTGolchindl|GolchinMusics|Golchuindl)(_\d)?/gi, '')
+            .replace(/(\.nf)?(\.ss)?\.?(((Dub)?Golchi?n\.?dl?n?(\.?fa)?(\.\d+p?)?\d?)|RMTGolchindl|GolchinMusics|Golchuindl)(_\d)?/gi, '')
             .replace(/(\.nf)?(\.ss)?\.(NightMovie|AvaMovie|Sas?ber(Fun)?|ValaMovi?e|DayMovie|Bia2M(ovies)?|MrMovie|(filmb(\.in)?)|MovieBaz[.\s]?tv|Amazon|net|BWBP+|2CH)(_\d)?/gi, '')
-            .replace(/(^|\.)(iT00NZ|BluZilla|BluDragon|264|AAC2|v2|2hd|MA|60FPS|sub|soft|softsub|8bit|not|(Erai\.raws)|MULVAcoded|RubixFa|0SEC|XOR|Zarfilm|proper|XviD|30nama)/gi, '')
+            .replace(/(^|\.)(iT00NZ|BluZilla|BluDragon|264|AAC2|v2|2hd|MA|60FPS|softsub|sub|soft|8bit|not|(Erai\.raws)|MULVAcoded|RubixFa|0SEC|XOR|Zarfilm|proper|XviD|30nama)/gi, '')
             .replace(/(^|\.)((s\d+e\d+)|(episode\.\d+))/i, '')
             .replace('REAL.', '')
             .replace('DD%202.0.H.264monkee', 'monkee')
-            .replace('[AioFilm.com]', '');
+            .replace('[AioFilm.com]', '')
+            .replace('.Anime.20Dubbing', '');
 
         const hardSub = pageHref.match(/softsub|hardsub/gi);
         let info = hardSub ? (quality + '.' + hardSub.pop()) : quality;
