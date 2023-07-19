@@ -4,6 +4,8 @@ import os from "os";
 import nou from "node-os-utils";
 import checkDiskSpace from 'check-disk-space';
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
+import {getJikanCacheSize} from "../crawlers/3rdPartyApi/jikanApi.js";
+import {getUserStatsCacheSize} from "../data/db/userStatsDbMethods.js";
 
 nou.options.INTERVAL = 10000;
 
@@ -95,6 +97,10 @@ export async function getDiskStatus() {
             total: diskStatus_os.size / (1024 * 1024),
             used: (diskStatus_os.size - diskStatus_os.free) / (1024 * 1024),
             free: diskStatus_os.free / (1024 * 1024),
+        },
+        cache:{
+            jikan: getJikanCacheSize(),
+            userStats: getUserStatsCacheSize(),
         }
     });
 }

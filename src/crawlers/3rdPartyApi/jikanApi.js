@@ -1,5 +1,5 @@
 import axios from "axios";
-import NodeCache from "node-cache";
+import {LRUCache} from "lru-cache";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
 import * as utils from "../utils/utils.js";
 import {addStaffAndCharacters} from "./staffAndCharacters/personCharacter.js";
@@ -25,10 +25,22 @@ const rateLimitConfig = {
     second_call: 0,
 };
 
-const jikanCache = new NodeCache({stdTTL: 6 * 60 * 60}); // 6 hour
+const cache = new LRUCache({
+    max: 500,
+    maxSize: 5000,
+    sizeCalculation: (value, key) => {
+        return 1
+    },
+    ttl: 4 * 60 * 60 * 1000, //4 hour
+    ttlResolution: 5 * 1000,
+});
+
+export function getJikanCacheSize() {
+    return {size: cache.size, calculatedSize: cache.calculatedSize, limit: 5000};
+}
 
 export function flushJikanCachedData() {
-    jikanCache.flushAll();
+    cache.clear();
 }
 
 export async function getJikanApiData(title, year, type, jikanID) {
@@ -285,7 +297,7 @@ async function handleRateLimits() {
 }
 
 async function handleApiCall(url, timeoutSec = 0) {
-    let cacheResult = jikanCache.get(url);
+    const cacheResult = cache.get(url);
     if (cacheResult === 'notfound: jikan error') {
         return null;
     }
@@ -324,11 +336,7 @@ async function handleApiCall(url, timeoutSec = 0) {
                     data: response.data.data,
                 }
             }
-            if (url.includes('person') || url.includes('character')) {
-                jikanCache.set(url, data, 30 * 60); // 30 min
-            } else {
-                jikanCache.set(url, data);
-            }
+            cache.set(url, data);
             return data;
         } catch (error) {
             if (error.response && error.response.status === 429) {
@@ -357,7 +365,7 @@ async function handleApiCall(url, timeoutSec = 0) {
                 ) {
                     await saveError(error);
                 }
-                jikanCache.set(url, 'notfound: jikan error');
+                cache.set(url, 'notfound: jikan error');
                 return null;
             }
         }

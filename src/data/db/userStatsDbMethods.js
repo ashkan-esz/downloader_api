@@ -16,6 +16,10 @@ const cache = new LRUCache({
     },
 });
 
+export function getUserStatsCacheSize() {
+    return {size: cache.size, calculatedSize: cache.calculatedSize, limit: 5000};
+}
+
 const bucketSizePerArray = 1000;
 const transactionRetryDelay = 100;
 
