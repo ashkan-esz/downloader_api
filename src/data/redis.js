@@ -19,6 +19,37 @@ client.on('error', err => {
 
 export default client;
 
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function clearRedisRedundantCachedData(retryCounter = 0) {
+    try {
+        if (!client.isReady) {
+            if (retryCounter === 0) {
+                retryCounter++;
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                return await clearRedisRedundantCachedData(retryCounter);
+            }
+            return false;
+        }
+        await Promise.allSettled([
+            client.del('someKey'),
+        ]);
+        return 'ok';
+    } catch (error) {
+        if (retryCounter === 0) {
+            retryCounter++;
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            return await clearRedisRedundantCachedData(retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
 export async function redisKeyExist(key) {
     try {
         if (!client.isReady) {
@@ -44,6 +75,7 @@ export async function getRedis(key) {
 }
 
 export async function setRedis(key, value, duration = null) {
+    //duration: seconds
     try {
         if (!client.isReady) {
             return 'error';

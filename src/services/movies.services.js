@@ -4,7 +4,7 @@ import * as userStatsDbMethods from '../data/db/userStatsDbMethods.js';
 import * as botsDbMethods from '../data/db/botsDbMethods.js';
 import {dataLevelConfig} from "../models/movie.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {setCache} from "../api/middlewares/moviesCache.js";
+import {setRedis} from "../data/redis.js";
 import {dataLevelConfig_staff} from "../models/person.js";
 import {dataLevelConfig_character} from "../models/character.js";
 import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils.js";
@@ -304,7 +304,7 @@ export async function getGenresStatus(routeUrl) {
         return generateServiceResult({data: []}, 404, errorMessage.genresNotFound);
     }
 
-    setCache(routeUrl, {
+    await setRedis(routeUrl, {
         data: genres,
         code: 200,
         errorMessage: '',
@@ -344,7 +344,7 @@ export async function getMovieSources(routeUrl) {
         return generateServiceResult({data: []}, 404, errorMessage.movieSourcesNotFound);
     }
 
-    setCache(routeUrl, {
+    await setRedis(routeUrl, {
         data: sourcesUrls,
         code: 200,
         errorMessage: '',

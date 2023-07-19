@@ -3,7 +3,6 @@ import {getSourcesObjDB, updateSourcesObjDB} from "../data/db/crawlerMethodsDB.j
 import {getSourcesArray} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
-import {flushCachedData} from "../api/middlewares/moviesCache.js";
 import {
     checkIsCrawling,
     updateCrawlerStatus_crawlerCrashed,
@@ -70,8 +69,6 @@ export async function crawlerCycle() {
                 await crawler(sourcesArray[index].name, {crawlMode: 2, isCrawlCycle: true});
             }
         }
-
-        flushCachedData();
     } catch (error) {
         saveError(error);
         return 'error';
@@ -95,7 +92,6 @@ export async function crawler(sourceName, {
                 message: 'another crawling is running',
             };
         }
-        flushCachedData();
         const startTime = new Date();
         await updateCrawlerStatus_crawlerStart(startTime, isCrawlCycle, isManualStart, crawlMode);
 
@@ -182,7 +178,6 @@ export async function crawler(sourceName, {
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         let message = `crawling done in : ${crawlDuration}min, (domainChangeHandler: ${domainChangeDuration}min)`;
         await saveServerLog(message);
-        flushCachedData();
         return {
             isError: false,
             message: message,

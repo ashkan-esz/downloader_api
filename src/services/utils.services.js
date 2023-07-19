@@ -1,6 +1,6 @@
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {setCache} from "../api/middlewares/moviesCache.js";
+import {setRedis} from "../data/redis.js";
 import {compareAppVersions} from "../data/db/admin/adminConfigDbMethods.js";
 
 
@@ -12,7 +12,7 @@ export async function getMessage(routeUrl) {
         return generateServiceResult({data: null}, 404, errorMessage.messageNotFound);
     }
 
-    setCache(routeUrl, {
+    await setRedis(routeUrl, {
         data: result,
         code: 200,
         errorMessage: '',
@@ -35,7 +35,7 @@ export async function getApps(appName, routeUrl) {
         result = result.filter(app => app.appName === appName);
     }
 
-    setCache(routeUrl, {
+    await setRedis(routeUrl, {
         data: result,
         code: 200,
         errorMessage: '',
@@ -65,7 +65,7 @@ export async function checkAppUpdate(appName, os, version, routeUrl) {
         message: result[1].value?.message || '',
     }
 
-    setCache(routeUrl, {
+    await setRedis(routeUrl, {
         data: data,
         code: 200,
         errorMessage: '',
