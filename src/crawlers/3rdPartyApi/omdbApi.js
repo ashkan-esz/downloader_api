@@ -6,6 +6,7 @@ import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
+import PQueue from "p-queue";
 
 const apiKeys = createApiKeys(config.apiKeys.omdbApiKeys);
 
@@ -379,4 +380,37 @@ function createApiKeys(omdbApiKeys) {
             firstCallTime: 0,
         };
     });
+}
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
+export async function checkOmdbApiKeys() {
+    const badKeys = [];
+
+    const promiseQueue = new PQueue({concurrency: 3});
+    for (let i = 0; i < apiKeys.length; i++) {
+        promiseQueue.add(() => axios.get(`https://www.omdbapi.com/?t=attack&apikey=${apiKeys[i].apiKey}`).then(response => {
+            if (
+                response.data.Response === 'False' ||
+                (response.data.Error && response.data.Error.includes('not found'))
+            ) {
+                badKeys.push(response.data.Error);
+            }
+        }).catch(error => {
+            if (
+                (error.response && error.response.data.Error === 'Request limit reached!') ||
+                (error.response && error.response.status === 401)
+            ) {
+                badKeys.push(error.response?.data?.Error);
+            } else {
+                badKeys.push(error.code);
+            }
+        }));
+    }
+    await promiseQueue.onIdle();
+    return {
+        badKeys: badKeys,
+        totalKeys: apiKeys.length
+    }
 }

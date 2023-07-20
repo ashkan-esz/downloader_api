@@ -465,3 +465,40 @@ function createTitleObj(title, rawTitle, originalTitle, imdbYear) {
 
     return {titleObj, imdbYear};
 }
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
+export async function checkImdbApiKeys() {
+    const imdbApiKey = config.apiKeys.imdbApiKey;
+    const badKeys = [];
+
+    for (let i = 0; i < imdbApiKey.length; i++) {
+        try {
+            let response = await axios.get(`https://imdb-api.com/en/API/Top250Movies/${imdbApiKey[i]}`);
+            let data = response.data;
+            if (data.errorMessage &&
+                (
+                    data.errorMessage.includes('Maximum usage') ||
+                    data.errorMessage.includes('Invalid API Key')
+                )) {
+            }
+            if (data.errorMessage) {
+                badKeys.push(data.errorMessage);
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 429) {
+                //too much request
+                await new Promise((resolve => setTimeout(resolve, 1000)));
+                badKeys.push('RateLimit Error');
+            } else {
+                badKeys.push(error.code);
+            }
+        }
+    }
+
+    return {
+        badKeys: badKeys,
+        totalKeys: imdbApiKey.length,
+    };
+}

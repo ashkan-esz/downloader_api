@@ -13,6 +13,8 @@ import {createHash} from "node:crypto";
 import {saveError} from "../error/saveError.js";
 import {removeAppFileFromS3} from "../data/cloudStorage.js";
 import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
+import {checkImdbApiKeys} from "../crawlers/3rdPartyApi/imdbApi.js";
+import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -328,6 +330,23 @@ export async function getAppVersion() {
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.appNotFound);
     }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function check3rdPartApisWorking() {
+    let res = await Promise.allSettled([
+        checkImdbApiKeys(),
+        checkOmdbApiKeys(),
+    ]);
+    let result = [
+        {name: 'imdb', totalKeys: res[0].value.totalKeys, badKeys: res[0].value.badKeys, noKeyNeed: false},
+        {name: 'jikan', totalKeys: 0, badKeys: [], noKeyNeed: true},
+        {name: 'omdb', totalKeys: res[1].value.totalKeys, badKeys: res[1].value.badKeys, noKeyNeed: false},
+        {name: 'tvmaze', totalKeys: 0, badKeys: [], noKeyNeed: true},
+    ];
     return generateServiceResult({data: result}, 200, '');
 }
 

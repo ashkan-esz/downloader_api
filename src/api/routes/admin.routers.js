@@ -200,4 +200,15 @@ router.get('/appVersions',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getAppVersion);
 
+//---------------------------------------------------
+//---------------------------------------------------
+
+//admin/3rdpartyApis/checkWorking
+router.get('/3rdpartyApis/checkWorking',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.check3rdPartApisWorking);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;

@@ -151,3 +151,11 @@ export async function getAppVersion(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function check3rdPartApisWorking(req, res) {
+    let result = await adminServices.check3rdPartApisWorking();
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

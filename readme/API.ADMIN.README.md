@@ -47,6 +47,7 @@
 - [POST /admin/addNewAppVersion](#post-adminaddnewappversion)
 - [PUT /admin/removeAppVersion/[vid]](#put-adminremoveappversionvid)
 - [GET /admin/appVersions](#get-adminappversions)
+- [GET /admin/3rdpartyApis/checkWorking](#get-admin3rdpartyapischeckworking)
 
 <br />
 <br />
@@ -208,8 +209,15 @@ Query parameters:
 
 <br />
 
+
 ### GET /admin/appVersions
 > get all apps versions.
+
+<br />
+
+
+### GET /admin/3rdpartyApis/checkWorking
+> return api keys checking result.
 
 <br />
 

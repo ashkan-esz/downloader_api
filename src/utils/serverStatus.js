@@ -74,6 +74,10 @@ export async function getMemoryStatus(includeAll = true) {
             used: (os.totalmem() - os.freemem()) / (1024 * 1024),
             free: os.freemem() / (1024 * 1024),
         }
+        result.cache = {
+            jikan: getJikanCacheSize(),
+            userStats: getUserStatsCacheSize(),
+        }
     }
     return result;
 }
@@ -98,9 +102,5 @@ export async function getDiskStatus() {
             used: (diskStatus_os.size - diskStatus_os.free) / (1024 * 1024),
             free: diskStatus_os.free / (1024 * 1024),
         },
-        cache:{
-            jikan: getJikanCacheSize(),
-            userStats: getUserStatsCacheSize(),
-        }
     });
 }
