@@ -1,79 +1,76 @@
 import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils/utils.js";
 
+const latestDataKeys = ['season', 'episode', 'quality', 'hardSub', 'dubbed', 'censored', 'subtitle', 'watchOnlineLink'];
 
-export function handleLatestDataUpdate(db_data, latestData, type) {
-    let prevLatestData = db_data.latestData;
-    let latestDataChange = false;
-    let PrimaryLatestDataChange = false;
+export function handleLatestDataUpdate(db_data, type) {
+    const newLatestData = reCreateLatestData(db_data, type);
+    const prevLatestData = db_data.latestData;
+    let latestDataChanged = false;
+    let latestDataUpdate = false;
+    let PrimaryLatestDataUpdate = false;
 
     if (type.includes('serial')) {
-        let updateFlag = false;
-        if (latestData.season > prevLatestData.season) {
-            db_data.latestData.updateReason = 'season';
-            updateFlag = true;
-        } else if (latestData.season === prevLatestData.season && latestData.episode > prevLatestData.episode) {
-            db_data.latestData.updateReason = 'episode';
-            updateFlag = true;
-        } else if (latestData.season === prevLatestData.season && latestData.episode === prevLatestData.episode &&
-            checkBetterQuality(latestData.quality, prevLatestData.quality)) {
+        if (newLatestData.season > prevLatestData.season) {
+            newLatestData.updateReason = 'season';
+            latestDataUpdate = true;
+            PrimaryLatestDataUpdate = true;
+        } else if (newLatestData.season === prevLatestData.season && newLatestData.episode > prevLatestData.episode) {
+            newLatestData.updateReason = 'episode';
+            latestDataUpdate = true;
+            PrimaryLatestDataUpdate = true;
+        } else if (newLatestData.season === prevLatestData.season && newLatestData.episode === prevLatestData.episode &&
+            checkBetterQuality(newLatestData.quality, prevLatestData.quality)) {
             if (db_data.update_date && getDatesBetween(new Date(), db_data.update_date).hours > 2) {
-                db_data.latestData.updateReason = 'quality';
+                newLatestData.updateReason = 'quality';
             }
-            updateFlag = true;
+            latestDataUpdate = true;
+            PrimaryLatestDataUpdate = true;
         }
-
-        if (updateFlag) {
-            db_data.latestData.season = latestData.season;
-            db_data.latestData.episode = latestData.episode;
-            db_data.latestData.quality = latestData.quality;
-            latestDataChange = true;
-            PrimaryLatestDataChange = true;
-        }
-    } else if (checkBetterQuality(latestData.quality, prevLatestData.quality)) {
+    } else if (checkBetterQuality(newLatestData.quality, prevLatestData.quality)) {
         // movie, better quality
-        db_data.latestData.quality = latestData.quality;
-        db_data.latestData.updateReason = 'quality';
-        latestDataChange = true;
-        PrimaryLatestDataChange = true;
+        newLatestData.updateReason = 'quality';
+        latestDataUpdate = true;
+        PrimaryLatestDataUpdate = true;
     }
 
-    if (checkLatestDataFieldChange(prevLatestData.hardSub, latestData.hardSub)) {
-        db_data.latestData.hardSub = latestData.hardSub;
-        latestDataChange = true;
+    if (!latestDataUpdate) {
+        latestDataUpdate = checkLatestDataFieldUpdate(prevLatestData.hardSub, newLatestData.hardSub) ||
+            checkLatestDataFieldUpdate(prevLatestData.dubbed, newLatestData.dubbed) ||
+            checkLatestDataFieldUpdate(prevLatestData.censored, newLatestData.censored) ||
+            checkLatestDataFieldUpdate(prevLatestData.subtitle, newLatestData.subtitle) ||
+            checkLatestDataFieldUpdate(prevLatestData.watchOnlineLink, newLatestData.watchOnlineLink);
     }
 
-    if (checkLatestDataFieldChange(prevLatestData.dubbed, latestData.dubbed)) {
-        db_data.latestData.dubbed = latestData.dubbed;
-        latestDataChange = true;
+    if (latestDataUpdate) {
+        latestDataChanged = true;
+    } else {
+        for (let i = 0; i < latestDataKeys.length; i++) {
+            if (prevLatestData[latestDataKeys[i]] !== newLatestData[latestDataKeys[i]]) {
+                latestDataChanged = true;
+                break;
+            }
+        }
     }
 
-    if (checkLatestDataFieldChange(prevLatestData.censored, latestData.censored)) {
-        db_data.latestData.censored = latestData.censored;
-        latestDataChange = true;
+    if (latestDataChanged) {
+        db_data.latestData = newLatestData;
     }
 
-    if (checkLatestDataFieldChange(prevLatestData.subtitle, latestData.subtitle)) {
-        db_data.latestData.subtitle = latestData.subtitle;
-        latestDataChange = true;
-    }
-
-    if (checkLatestDataFieldChange(prevLatestData.watchOnlineLink, latestData.watchOnlineLink)) {
-        db_data.latestData.watchOnlineLink = latestData.watchOnlineLink;
-        latestDataChange = true;
-    }
-
-    return {latestDataChange, PrimaryLatestDataChange};
+    return {latestDataChanged, latestDataUpdate, PrimaryLatestDataUpdate};
 }
 
-function checkLatestDataFieldChange(prevField, currentField) {
-    if (prevField === currentField) {
-        return false;
+export function reCreateLatestData(db_data, type) {
+    let subtitles = db_data.subtitles.map(s => s.links).flat(1);
+    if (type.includes('movie')) {
+        let links = db_data.qualities.map(e => e.links).flat(1);
+        let watchOnlineLinks = db_data.qualities.map(e => e.watchOnlineLinks).flat(1);
+        return getLatestData(links, watchOnlineLinks, subtitles, type);
+    } else {
+        let episodes = db_data.seasons.map(s => s.episodes).flat(1);
+        let links = episodes.map(e => e.links).flat(1);
+        let watchOnlineLinks = episodes.map(e => e.watchOnlineLinks).flat(1);
+        return getLatestData(links, watchOnlineLinks, subtitles, type);
     }
-
-    let prev_se = getSeasonEpisode(prevField);
-    let current_se = getSeasonEpisode(currentField);
-    return (prev_se.season < current_se.season) ||
-        (prev_se.season === current_se.season && prev_se.episode < current_se.episode);
 }
 
 export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type) {
@@ -166,6 +163,20 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
         subtitle,
         watchOnlineLink: onlineLink
     };
+}
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
+function checkLatestDataFieldUpdate(prevField, currentField) {
+    if (prevField === currentField) {
+        return false;
+    }
+
+    let prev_se = getSeasonEpisode(prevField);
+    let current_se = getSeasonEpisode(currentField);
+    return (prev_se.season < current_se.season) ||
+        (prev_se.season === current_se.season && prev_se.episode < current_se.episode);
 }
 
 function sortLinkWithInfoCheck(links) {

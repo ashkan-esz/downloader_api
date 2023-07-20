@@ -22,6 +22,7 @@ import PQueue from "p-queue";
 import {getLinksDoesntMatchLinkRegex} from "./extractors/downloadLinks.js";
 import {saveCrawlerBadLink, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
+import {handleLatestDataUpdate} from "./latestData.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber) {
@@ -100,7 +101,7 @@ export default async function save(title, type, year, sourceData, pageNumber) {
             return;
         }
         let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink);
-        let subUpdates = await handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceConfig.sourceName, sourceConfig.vpnStatus);
+        let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.sourceName, sourceConfig.vpnStatus);
         await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink);
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
@@ -301,11 +302,16 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
         }
 
-        if (subUpdates.latestDataChange) {
+        //handle latestData updates
+        let {latestDataChanged, latestDataUpdate, PrimaryLatestDataUpdate} = handleLatestDataUpdate(db_data, type);
+        if (latestDataChanged) {
             updateFields.latestData = db_data.latestData;
-            if (subUpdates.PrimaryLatestDataChange && getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
-                updateFields.update_date = new Date();
+            if (updateFields.totalDuration) {
+                updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
             }
+        }
+        if (latestDataUpdate && PrimaryLatestDataUpdate && getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
+            updateFields.update_date = new Date();
         }
 
         let {_handleCastUpdate} = await import("./crawler.js");

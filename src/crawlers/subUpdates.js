@@ -1,22 +1,18 @@
 import {sortPostersOrder, sortTrailersOrder} from "./sourcesArray.js";
-import {handleLatestDataUpdate} from "./latestData.js";
 import {removeDuplicateLinks} from "./utils/utils.js";
 import {getFileSize} from "./utils/axiosUtils.js";
 import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {saveError} from "../error/saveError.js";
 
-export async function handleSubUpdates(db_data, poster, trailers, titleModel, type, sourceName, sourceVpnStatus) {
+export async function handleSubUpdates(db_data, poster, trailers, sourceName, sourceVpnStatus) {
     try {
         let posterChange = await handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus);
         let {trailerChange, newTrailer} = handleTrailerUpdate(db_data, trailers);
-        let {latestDataChange, PrimaryLatestDataChange} = handleLatestDataUpdate(db_data, titleModel.latestData, type);
 
         return {
             posterChange,
             trailerChange,
             newTrailer,
-            latestDataChange,
-            PrimaryLatestDataChange,
         };
     } catch (error) {
         saveError(error);
@@ -24,8 +20,6 @@ export async function handleSubUpdates(db_data, poster, trailers, titleModel, ty
             posterChange: false,
             trailerChange: false,
             newTrailer: false,
-            latestDataChange: false,
-            PrimaryLatestDataChange: false,
         };
     }
 }
