@@ -103,7 +103,7 @@ router.get('/crawler/sources',
 router.put('/crawler/editSource/:sourceName',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParamsAdmin.checkApiParams(
-        ['sourceName_param', 'movie_url', 'serial_url', 'crawlCycle', 'disabled', 'cookies']),
+        ['sourceName_param', 'movie_url', 'serial_url', 'crawlCycle', 'disabled', 'cookies', 'reCrawl']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     mongoSanitize(),
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.editSource);

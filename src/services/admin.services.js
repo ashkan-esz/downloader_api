@@ -139,7 +139,7 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies) {
+export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,
         serial_url,
@@ -152,6 +152,16 @@ export async function editSource(sourceName, movie_url, serial_url, crawlCycle, 
     } else if (result === "notfound") {
         return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
     }
+
+    if (reCrawl) {
+        crawler(sourceName, {
+            crawlMode: 2,
+            isManualStart: true,
+            handleDomainChange: false,
+            handleCastUpdate: false,
+        });
+    }
+
     return generateServiceResult({data: result}, 200, '');
 }
 

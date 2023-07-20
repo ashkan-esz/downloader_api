@@ -72,8 +72,8 @@ export async function getCrawlerSources(req, res) {
 }
 
 export async function editSource(req, res) {
-    let {movie_url, serial_url, crawlCycle, disabled, cookies} = req.body;
-    let result = await adminServices.editSource(req.params.sourceName, movie_url, serial_url, crawlCycle, disabled, cookies);
+    let {movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl} = req.body;
+    let result = await adminServices.editSource(req.params.sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl);
     return sendResponse(req, res, result);
 }
 

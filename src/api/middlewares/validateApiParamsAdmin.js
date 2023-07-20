@@ -236,6 +236,11 @@ const validations = Object.freeze({
         .isBoolean({strict: true}).withMessage("disabled must be Boolean")
         .toBoolean(),
 
+    reCrawl: body('reCrawl')
+        .exists().withMessage("Missed parameter reCrawl")
+        .isBoolean({strict: true}).withMessage("reCrawl must be Boolean")
+        .toBoolean(),
+
     cookies: body('cookies')
         .exists().withMessage("Missed parameter cookies")
         .isArray({max: 10}).withMessage("cookies Must be an array")
