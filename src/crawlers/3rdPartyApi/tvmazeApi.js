@@ -69,7 +69,8 @@ function getEditedTitle(title) {
         .replace('havent', 'haven\'t')
         .replace(' im ', ' i\'m ')
         .replace(' comedy', ' come')
-        .replace(' renai ', ' ren\'ai ');
+        .replace(' renai ', ' ren\'ai ')
+        .replace(/(?<=(^|\s))vol \d/, (res) => res.replace('vol', 'volume'));
 }
 
 async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynonyms, imdbID, premiered) {
@@ -104,7 +105,7 @@ export function getTvMazeApiFields(data) {
             updateFields: {
                 imdbID: data.externals.imdb || '',
                 tvmazeID: Number(data.id) || 0,
-                rawTitle: data.name.trim().replace(/^["']|["']$/g, ''),
+                rawTitle: data.name.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 premiered: data.premiered || '',
                 year: data.premiered ? data.premiered.split(/[-–]/g)[0] : '',
                 duration: data.runtime ? data.runtime + ' min' :
@@ -170,6 +171,9 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premier
     let specialCase2 = title.replace('iya na kao sare nagara opantsu misete moraitai', 'i want you to make a disgusted face and show me your underwear');
     let specialCase3 = title.replace('nounai', 'nonai').replace('love comedy wo', 'rabu kome o');
     let specialCase4 = title.replace('bougyoryoku', 'bogyoryoku');
+
+    title = title.replace(/volume \d/, (res) => res.replace('volume', 'vol'));
+    apiTitle = apiTitle.replace(/volume \d/, (res) => res.replace('volume', 'vol'));
 
     return (
         imdbID && imdbID === data.externals.imdb ||

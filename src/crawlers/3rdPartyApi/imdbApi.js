@@ -363,7 +363,7 @@ async function getTitleDataFromDB(title, year, type) {
 }
 
 async function uploadTrailer(title, year, type, imdbID) {
-    title = utils.replaceSpecialCharacters(title.toLowerCase());
+    title = utils.replaceSpecialCharacters(title.toLowerCase()).replace(/(?<=(^|\s))volume \d/, (res) => res.replace('volume', 'vol'));
     let trailerDataUrl = `https://imdb-api.com/en/API/YouTubeTrailer/$apikey$/${imdbID}`;
     let trailerData = await handleApiCall(trailerDataUrl);
     if (trailerData) {
@@ -435,9 +435,9 @@ async function handleApiCall(url) {
 }
 
 function createTitleObj(title, rawTitle, originalTitle, imdbYear) {
-    rawTitle = rawTitle.replace(/^["']|["']$/g, '');
+    rawTitle = rawTitle.replace(/^["']|["']$/g, '').replace(/(?<=(^|\s))volume \d/i, (res) => res.replace('Volume', 'Vol'));
     let titleObj = {
-        title: utils.replaceSpecialCharacters(title.toLowerCase()),
+        title: utils.replaceSpecialCharacters(title.toLowerCase()).replace(/(?<=(^|\s))volume \d/, (res) => res.replace('volume', 'vol')),
         rawTitle: rawTitle,
         alternateTitles: [rawTitle, originalTitle].filter(value => value && value !== title),
         titleSynonyms: [],

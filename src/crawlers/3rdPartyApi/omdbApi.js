@@ -118,6 +118,7 @@ function getEditedTitle(title) {
         .replace(' renai ', ' ren\'ai ')
         .replace(' zunousen', ' zuno sen')
         .replace(' kusoge', ' kusogee')
+        .replace(/(?<=(^|\s))vol \d/, (res) => res.replace('vol', 'volume'))
         .replace(/\s\s+/g, '')
         .trim();
 }
@@ -137,7 +138,7 @@ export function getOMDBApiFields(data, type) {
             year: data.Year.split(/[-–]/g)[0],
             updateFields: {
                 imdbID: data.imdbID,
-                rawTitle: data.Title.trim().replace(/^["']|["']$/g, ''),
+                rawTitle: data.Title.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 duration: data.Runtime || '0 min',
                 totalSeasons: (type.includes('movie')) ? 0 : Number(data.totalSeasons),
                 rated: data.Rated,
@@ -245,10 +246,10 @@ function getSeasonEpisode_episode(omdbTitle, searchYear, episodes, seasonEpisode
 
 function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) {
     let originalTitle = title;
-    title = replaceSpecialCharacters(originalTitle);
+    title = replaceSpecialCharacters(originalTitle).replace(/volume \d/, (res) => res.replace('volume', 'vol'));
     alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
     titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
-    let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim());
+    let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim()).replace(/volume \d/, (res) => res.replace('volume', 'vol'));
     let apiYear = data.Year.split(/[-–]/g)[0];
     let matchYear = (type.includes('movie') || yearIgnored) ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
     if (!matchYear) {

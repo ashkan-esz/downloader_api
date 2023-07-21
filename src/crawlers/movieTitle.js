@@ -56,7 +56,8 @@ export function getTitleAndYear(title, year, type) {
             .replace('2 the jungle book', 'the jungle book 2')
             .replace('5 transformers the last knight', 'transformers the last knight')
             .replace('6 recep ivedik', 'recep ivedik 6')
-            .replace('5 ice age collision course', 'ice age collision course');
+            .replace('5 ice age collision course', 'ice age collision course')
+            .replace(/(?<=(^|\s))volume \d/, (res) => res.replace('volume', 'vol'));
 
         let yearMatch = title.match(/(?<!(to|of))\s\d\d\d\d$/g);
         if (yearMatch) {

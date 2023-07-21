@@ -123,7 +123,15 @@ async function getJikanSearchResult(title, year) {
         let animeSearchUrl = `https://api.jikan.moe/v4/anime?q=${searchTitle}&limit=10${yearSearch}`.trim();
         data = await handleApiCall(animeSearchUrl);
         data = data?.data;
+    } else if (title.includes('vol ')) {
+        const editTitle = title.replace(/(?<=(^|\s))vol \d/, (res) => res.replace('vol', 'volume'));
+        if (title !== editTitle) {
+            let animeSearchUrl = `https://api.jikan.moe/v4/anime?q=${editTitle}&limit=10${yearSearch}`.trim();
+            data = await handleApiCall(animeSearchUrl);
+            data = data?.data;
+        }
     }
+
     return data;
 }
 
@@ -136,7 +144,8 @@ function checkTitle(title, type, allTitles) {
     } = allTitles;
 
     return (
-        title.replace(/tv|the|precent|\s+/g, '').trim() === apiTitle_simple.replace(/the|tv|precent|\s+/g, '').trim() ||
+        title.replace(/tv|the|precent|\s+/g, '').replace(/volume \d/, (res) => res.replace('volume', 'vol')).trim() ===
+        apiTitle_simple.replace(/the|tv|precent|\s+/g, '').replace(/volume \d/, (res) => res.replace('volume', 'vol')).trim() ||
         title === apiTitleEnglish_simple.replace(/the/gi, '').replace(/\s\s+/g, ' ') ||
         title === apiTitleJapanese ||
         titleSynonyms.includes(title)
@@ -156,7 +165,7 @@ export function getJikanApiFields(data) {
             youtubeTrailer: data.trailer.url,
             updateFields: {
                 jikanID: data.mal_id,
-                rawTitle: data.titleObj.rawTitle.replace(/^["']|["']$/g, ''),
+                rawTitle: data.titleObj.rawTitle.replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
                 animeType: data.animeType,
@@ -258,7 +267,7 @@ function getModifiedJikanApiData(allTitles, fullData) {
 function getTitleObjFromJikanData(allTitles) {
     let titleObj = {
         title: allTitles.apiTitle_simple,
-        rawTitle: allTitles.apiTitle.replace(/^["']|["']$/g, ''),
+        rawTitle: allTitles.apiTitle.replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
         alternateTitles: [],
         titleSynonyms: allTitles.titleSynonyms,
     }
@@ -401,8 +410,11 @@ function getTitlesFromData(fullData) {
     }
 
     apiTitle_simple = apiTitle_simple.replace(/tv/gi, '').replace(/\s\s+/g, ' ').trim();
+    apiTitle_simple = apiTitle_simple.replace(/(?<=(^|\s))volume \d/, (res) => res.replace('volume', 'vol'));
     apiTitle = apiTitle.replace('(TV)', '').replace(/\s\s+/g, ' ').trim();
+    apiTitle = apiTitle.replace(/(?<=(^|\s))volume \d/i, (res) => res.replace('Volume', 'Vol'));
     apiTitleEnglish_simple = apiTitleEnglish_simple.replace(/tv/gi, '').replace(/\s\s+/g, ' ').trim();
+    apiTitleEnglish_simple = apiTitleEnglish_simple.replace(/(?<=(^|\s))volume \d/i, (res) => res.replace('Volume', 'Vol'));
 
     return {
         apiTitle,
