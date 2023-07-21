@@ -16,8 +16,6 @@
 //todo : 21.2 crawler: check sources changes need fixes or need to be disable
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
 //todo : 23. crawler: reCrawl sources after being disable for a while
-//todo : 24. re create field 'latestData' after links remove or source remove
-//todo : 25. lower compression level on response data to reduce cpu usage
 //todo : 26. add redis and fallback to node-cache
 //todo : 27. add elastic search and fallback to mongo search
 //todo : 28. docker project for better and easier deployment
@@ -36,19 +34,11 @@
 //todo : 45. send warnings and errors to admin with telegramBot
 //todo : 46. add more staff and characters
 //todo : 47. add landscape posters for movies
-//todo : 48. better trailers api, add field 'trailerDate' to movies data
 //todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
 //todo : 52. change the way of data update to dont change original data object
 //todo : 54. alpha feature: use sql dataBase for userStats
 //todo : 57. add documentation for codes
 //todo : 58. add more tests
-//todo : 59. add cli like interface for manual test and check detection functions
-//todo : 60. add message api to send and show messages to users
-//todo : 61. adminPanel: add/edit messages that users see (60)
-//todo : 62. add api to upload new version of apps files
-//todo : 63. adminPanel: add feature to upload new version of apps
-//todo : 64. add api to download latest version of apps
-//todo : 65. add api to check new version exist or update is required
 //todo : 73. add feature 'view' to movies
 //todo : 74. add feature: users chats
 //todo : 75. add sql dataBase
@@ -64,9 +54,6 @@
 //todo : 85. add feature: send notification to users
 //todo : 86. add feature: clustering for larger scales
 //todo : 87. organize cronjob times
-//todo : 89. add feature: extract device info from req
-//todo : 91. crawl source completely after changing its url manually on adminPanel
-//todo : 94. disable rateLimit for bots requests
 //todo : 96. crawler: start domainChangeHandler every 30 min
 //todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
@@ -76,11 +63,9 @@
 //todo : 106. handle flag 'disable' for bots on admin panel
 //todo : 108. Add thumbnail api and status
 //todo : 109. When/How to add admin account
-//todo : 110. Add api to start preStart script
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 113. save last crawler run data on sources, better detection for source url not accessible
 //todo : 115. Add fields username Change and description to crawler sources
-//todo : 117. remove the usage of page_counter on crawler
 //todo : 120. add redis/memCache, (render/liara/arvanCloud free plan)
 //todo : 121. check youtube trailers size, and possible to reduce size, check imagekit.io, check new language stack
 //todo : 122. add aniList api
@@ -90,7 +75,6 @@
 //todo : 126. refactor allApiData file
 //todo : 127. add schema validator
 //todo : 128. add schema for models and add related methods to it
-//todo : 129. get new sources for anime
 //todo : 130. add new sources
 //todo : 131. add personality type to user data, and api to find same characters
 //todo : 132. add a mechanism to crawl a site after see bad links
