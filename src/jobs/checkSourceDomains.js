@@ -3,6 +3,7 @@ import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js"
 import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
+import {crawler} from "../crawlers/crawler.js";
 
 
 export default function (agenda) {
@@ -33,6 +34,7 @@ export default function (agenda) {
                 }
             }
 
+            let needToCrawl = false;
             let promiseArray = [];
             for (let i = 0; i < sources.length; i++) {
                 let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
@@ -44,11 +46,19 @@ export default function (agenda) {
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
                     } else if (checkUrlResult !== "ok") {
                         await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
+                        needToCrawl = true;
                     }
                 });
                 promiseArray.push(prom);
             }
             await Promise.allSettled(promiseArray);
+            if (needToCrawl) {
+                await crawler('', {
+                    handleDomainChangeOnly: true,
+                    handleDomainChange: true,
+                    handleCastUpdate: false,
+                });
+            }
             return {status: 'ok'};
         } catch (error) {
             saveError(error);
