@@ -9,9 +9,97 @@ info:
     "name": "Apache 2.0"
     "url": 'http://www.apache.org/licenses/LICENSE-2.0.html'
 "servers":
- - "url": 'http://localhost:3000'
+  - "url": 'http://localhost:3000'
 
 paths:
+  /utils/getMessage:
+    get:
+      tags:
+        - utils
+      summary: Global message
+      description: return the global message set by admin
+      operationId: utils-getMessage
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      data:
+                        $ref: '#/components/schemas/DateString'
+
+  /utils/getApps:
+    get:
+      tags:
+        - utils
+      summary: App Files
+      description: return return apps with their data
+      operationId: utils-getApps
+      parameters:
+        - name: appName
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AppData'
+
+
+  /utils/checkAppUpdate/{appName}/{os}/{version}:
+    get:
+      tags:
+        - utils
+      summary: Check App Update
+      description: check app update exists, also send message
+      operationId: utils-checkAppUpdate
+      parameters:
+        - name: appName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: os
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: \d\d?\.\d\d?\.\d\d?
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/CheckUpdateData'
+
 
 
 
@@ -93,7 +181,7 @@ paths:
               type: array
               items:
                 type: string
-                enum: ['480p', '720p', '1080p', '2160p']
+                enum: [ '480p', '720p', '1080p', '2160p' ]
 
         notificationSettings:
           type: object
@@ -125,7 +213,7 @@ paths:
           $ref: '#/components/schemas/DateString'
         role:
           type: string
-          enum: ['test-user', 'user', 'dev', 'admin']
+          enum: [ 'test-user', 'user', 'dev', 'admin' ]
         thisDevice:
           $ref: '#/components/schemas/Session'
 
@@ -179,14 +267,14 @@ paths:
             year:
               type: string
             premiered:
-               type: string
+              type: string
             posters:
-               type: array
-               items:
-                  $ref: '#/components/schemas/Poster'
+              type: array
+              items:
+                $ref: '#/components/schemas/Poster'
             type:
               type: string
-              enum: ['movie', 'serial', 'anime_movie', 'anime_serial']
+              enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
             rating:
               $ref: '#/components/schemas/Rating'
             latestData:
@@ -203,11 +291,11 @@ paths:
               type: string
             type:
               type: string
-              enum: ['movie', 'serial', 'anime_movie', 'anime_serial']
+              enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
             year:
               type: string
             premiered:
-               type: string
+              type: string
             posters:
               type: array
               items:
@@ -271,7 +359,7 @@ paths:
           properties:
             releaseState:
               type: string
-              enum: ['inTheaters', 'comingSoon', 'waiting', 'done']
+              enum: [ 'inTheaters', 'comingSoon', 'waiting', 'done' ]
             rank:
               $ref: '#/components/schemas/Rank'
             alternateTitles:
@@ -309,7 +397,7 @@ paths:
               description: days of week
             status:
               type: string
-              enum: ['running','ended','unknown']
+              enum: [ 'running','ended','unknown' ]
             boxOfficeData:
               type: object
               properties:
@@ -445,7 +533,7 @@ paths:
                     type: string
                   relation:
                     type: string
-                    enum: ['Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off']
+                    enum: [ 'Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off' ]
             userStats:
               $ref: '#/components/schemas/UserStats'
 
@@ -464,7 +552,7 @@ paths:
           type: string
         updateReason:
           type: string
-          enum: ['season', 'episode', 'quality']
+          enum: [ 'season', 'episode', 'quality' ]
         hardSub:
           type: string
           pattern: /S\d+E\d+/
@@ -488,7 +576,7 @@ paths:
           type: string
         gender:
           type: string
-          enum: ['Male', 'Female']
+          enum: [ 'Male', 'Female' ]
         country:
           type: string
         image:
@@ -515,7 +603,7 @@ paths:
               type: string
 
     UserStats:
-    # movies only
+      # movies only
       type: object
       properties:
         like_movie:
@@ -1059,11 +1147,11 @@ paths:
 
     Gender:
       type: string
-      enum: ['', 'male', 'female', 'sexless']
+      enum: [ '', 'male', 'female', 'sexless' ]
 
     VpnStatus:
       type: string
-      enum: ['vpnOnly', 'noVpn', 'allOK']
+      enum: [ 'vpnOnly', 'noVpn', 'allOK' ]
 
     Session:
       type: object
@@ -1123,3 +1211,80 @@ paths:
       type: array
       items:
         type: string
+
+    ResponseCode:
+      type: object
+      properties:
+        code:
+          type: integer
+        errorMessage:
+          type: string
+        isGuest:
+          type: boolean
+
+    AppData:
+      type: object
+      properties:
+        appName:
+          type: string
+        os:
+          type: string
+        latestVersion:
+          type: string
+          pattern: \d\d?\.\d\d?\.\d\d?
+        latestVersionName:
+          type: string
+        minVersion:
+          type: string
+          pattern: \d\d?\.\d\d?\.\d\d?
+        versions:
+          type: array
+          items:
+            type: object
+            properties:
+              version:
+                type: string
+                pattern: \d\d?\.\d\d?\.\d\d?
+              versionName:
+                type: string
+              fileData:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  size:
+                    type: integer
+                  sha256checksum:
+                    type: string
+
+    CheckUpdateData:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            hasUpdate:
+              type: boolean
+            isForceUpdate:
+              type: boolean
+            minVersion:
+              type: string
+              pattern: \d\d?\.\d\d?\.\d\d?
+            version:
+              type: string
+              pattern: \d\d?\.\d\d?\.\d\d?
+            versionName:
+              type: string
+            fileData:
+              type: object
+              properties:
+                url:
+                  type: string
+                size:
+                  type: integer
+                sha256checksum:
+                  type: string
+            addDate:
+              $ref: '#/components/schemas/DateString'
+            message:
+              type: string

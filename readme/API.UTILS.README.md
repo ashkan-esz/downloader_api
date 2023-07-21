@@ -18,7 +18,7 @@
 
 
 ### GET /utils/getMessage
-> return configs of the server
+> return global message
 
 <br />
 
@@ -32,7 +32,6 @@
 
 ### GET /utils/checkAppUpdate/[appName]/[os]/[version]
 > return apps with their data <br />
-> receive optional query param `appName`.
 
 <br />
 
