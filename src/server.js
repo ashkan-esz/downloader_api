@@ -10,6 +10,8 @@ import cors from "./api/middlewares/cors.js";
 import developmentFaze from "./api/middlewares/developmentFaze.js";
 import {loadAgenda} from './loaders/index.js';
 import {saveError} from "./error/saveError.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerJson from "../docs/swagger.json" assert { type: 'json' };
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -36,6 +38,14 @@ app.use(rateLimit({
     max: 600 // limit each IP to 600 requests per windowMs
 }));
 app.use(developmentFaze);
+app.use("/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerJson, {
+        explorer: true,
+        customCssUrl: "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-newspaper.css",
+    })
+);
+
 //--------------------------------------
 //--------------------------------------
 
