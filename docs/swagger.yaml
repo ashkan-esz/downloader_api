@@ -1,0 +1,1125 @@
+openapi: "3.0.0"
+info:
+  title: Downloader Api
+  description: A webcrawler based movie/anime data provider with rest api
+  version: 1.0.0
+  contact:
+    email: ashkanaz2828@gmail.com
+  license:
+    "name": "Apache 2.0"
+    "url": 'http://www.apache.org/licenses/LICENSE-2.0.html'
+"servers":
+ - "url": 'http://localhost:3000'
+
+paths:
+
+
+
+"components":
+  "schemas":
+    Profile:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: act as userId
+        username:
+          type: string
+        publicName:
+          type: string
+          description: other users see this in general
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        bio:
+          type: string
+        profileImages:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              size:
+                type: integer
+              thumbnail:
+                type: string
+              addDate:
+                $ref: '#/components/schemas/DateString'
+        defaultProfile:
+          type: string
+        favoriteGenres:
+          $ref: '#/components/schemas/StringArray'
+        computed:
+          type: object
+          properties:
+            favoriteGenres:
+              type: array
+              items:
+                type: object
+                properties:
+                  genre:
+                    type: string
+                  count:
+                    type: integer
+                  percent:
+                    type: number
+                    format: float
+                  lastUpdate:
+                    $ref: '#/components/schemas/DateString'
+        movieSettings:
+          type: object
+          properties:
+            includeAnime:
+              type: boolean
+              default: true
+            includeHentai:
+              type: boolean
+              default: false
+        downloadLinksSettings:
+          type: object
+          properties:
+            includeDubbed:
+              type: boolean
+              default: true
+            includeHardSub:
+              type: boolean
+              default: true
+            includeCensored:
+              type: boolean
+              default: true
+            preferredQualities:
+              type: array
+              items:
+                type: string
+                enum: ['480p', '720p', '1080p', '2160p']
+
+        notificationSettings:
+          type: object
+          properties:
+            followMovie:
+              type: boolean
+              default: true
+            followMovie_betterQuality:
+              type: boolean
+              default: true
+            followMovie_subtitle:
+              type: boolean
+              default: true
+            futureList:
+              type: boolean
+              default: true
+            futureList_serialSeasonEnd:
+              type: boolean
+              default: true
+            futureList_subtitle:
+              type: boolean
+              default: true
+            finishedList_spinOffSequel:
+              type: boolean
+              default: true
+        friends:
+          type: array
+        registrationDate:
+          $ref: '#/components/schemas/DateString'
+        role:
+          type: string
+          enum: ['test-user', 'user', 'dev', 'admin']
+        thisDevice:
+          $ref: '#/components/schemas/Session'
+
+    DataLevel:
+      type: object
+      properties:
+        dlink:
+          type: object
+          properties:
+            _id:
+              type: string
+            rawTitle:
+              type: string
+            year:
+              type: string
+            posters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Poster'
+            qualities:
+              type: array
+              items:
+                $ref: '#/components/schemas/Quality'
+            seasons:
+              type: array
+              items:
+                $ref: '#/components/schemas/Season'
+            subtitles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Subtitle'
+            sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  sourceName:
+                    type: string
+                  pageLink:
+                    type: string
+
+        low:
+          type: object
+          properties:
+            _id:
+              type: string
+            title:
+              type: string
+            rawTitle:
+              type: string
+            year:
+              type: string
+            premiered:
+               type: string
+            posters:
+               type: array
+               items:
+                  $ref: '#/components/schemas/Poster'
+            type:
+              type: string
+              enum: ['movie', 'serial', 'anime_movie', 'anime_serial']
+            rating:
+              $ref: '#/components/schemas/Rating'
+            latestData:
+              $ref: '#/components/schemas/LatestData'
+            userStats:
+              $ref: '#/components/schemas/UserStats'
+
+        telbot:
+          type: object
+          properties:
+            _id:
+              type: string
+            rawTitle:
+              type: string
+            type:
+              type: string
+              enum: ['movie', 'serial', 'anime_movie', 'anime_serial']
+            year:
+              type: string
+            premiered:
+               type: string
+            posters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Poster'
+            poster_s3:
+              $ref: '#/components/schemas/Poster_s3'
+            genres:
+              $ref: '#/components/schemas/StringArray'
+            summary:
+              $ref: '#/components/schemas/Summary'
+            rating:
+              $ref: '#/components/schemas/Rating'
+            rated:
+              type: string
+            country:
+              type: string
+            latestData:
+              $ref: '#/components/schemas/LatestData'
+            duration:
+              type: string
+              description: example '60 min'
+            releaseDay:
+              type: string
+              description: days of week
+            actorsAndCharacters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            staff:
+              type: object
+              properties:
+                directors:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+                writers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+                others:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+            seasonEpisode:
+              type: array
+              items:
+                type: object
+                properties:
+                  seasonNumber:
+                    type: integer
+                  episodes:
+                    type: integer
+            insert_date:
+              $ref: '#/components/schemas/DateString'
+            update_date:
+              $ref: '#/components/schemas/DateString'
+
+        medium:
+          type: object
+          description: all fields from low datalevel also exist
+          properties:
+            releaseState:
+              type: string
+              enum: ['inTheaters', 'comingSoon', 'waiting', 'done']
+            rank:
+              $ref: '#/components/schemas/Rank'
+            alternateTitles:
+              $ref: '#/components/schemas/StringArray'
+            summary:
+              $ref: '#/components/schemas/Summary'
+            genres:
+              $ref: '#/components/schemas/StringArray'
+            genresWithImage:
+              type: array
+              items:
+                description: only exist in movies/searchById api
+                type: object
+                properties:
+                  genre:
+                    type: string
+                  poster:
+                    $ref: '#/components/schemas/Poster'
+                  count:
+                    type: integer
+            trailers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Trailer'
+            trailerDate:
+              $ref: '#/components/schemas/DateString'
+            insert_date:
+              $ref: '#/components/schemas/DateString'
+            update_date:
+              $ref: '#/components/schemas/DateString'
+            nextEpisode:
+              $ref: '#/components/schemas/NextEpisode'
+            releaseDay:
+              type: string
+              description: days of week
+            status:
+              type: string
+              enum: ['running','ended','unknown']
+            boxOfficeData:
+              type: object
+              properties:
+                weekend:
+                  type: string
+                gross:
+                  type: string
+                weeks:
+                  type: integer
+            userStats:
+              $ref: '#/components/schemas/UserStats'
+
+        high:
+          description: includes all fields from low and medium
+          type: object
+          properties:
+            titleSynonyms:
+              $ref: '#/components/schemas/StringArray'
+            qualities:
+              description: for movie titles check qualities and check seasons for series titles
+              type: array
+              items:
+                $ref: '#/components/schemas/Quality'
+            seasons:
+              type: array
+              items:
+                $ref: '#/components/schemas/Season'
+            subtitles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Subtitle'
+            sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  sourceName:
+                    type: string
+                  pageLink:
+                    type: string
+            seasonEpisode:
+              type: array
+              items:
+                type: object
+                properties:
+                  seasonNumber:
+                    type: integer
+                  episodes:
+                    type: integer
+            view:
+              type: integer
+            like_month:
+              type: integer
+            view_month:
+              type: integer
+            add_date:
+              $ref: '#/components/schemas/DateString'
+            apiUpdateDate:
+              $ref: '#/components/schemas/DateString'
+            castUpdateDate:
+              $ref: '#/components/schemas/DateString'
+            poster_s3:
+              $ref: '#/components/schemas/Poster_s3'
+            trailer_s3:
+              $ref: '#/components/schemas/Trailer_s3'
+            endYear:
+              type: string
+            officialSite:
+              type: string
+            webChannel:
+              type: string
+            duration:
+              type: string
+              description: example '60 min'
+            totalDuration:
+              type: string
+              description: in format hh:mm example 14:11 === 14 hours and 11 min
+            imdbID:
+              type: string
+            tvmazeID:
+              type: integer
+            jikanID:
+              type: integer
+            totalSeasons:
+              type: integer
+            boxOffice:
+              type: string
+            rated:
+              type: string
+            movieLang:
+              type: string
+            country:
+              type: string
+            actorsAndCharacters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            staff:
+              type: object
+              properties:
+                directors:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+                writers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+                others:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Actor_and_Character'
+            awards:
+              type: string
+            animeType:
+              type: string
+            animeSource:
+              type: string
+            animeSeason:
+              type: string
+            relatedTitles:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  jikanID:
+                    type: integer
+                  title:
+                    type: string
+                  rawTitle:
+                    type: string
+                  relation:
+                    type: string
+                    enum: ['Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off']
+            userStats:
+              $ref: '#/components/schemas/UserStats'
+
+        info:
+          type: object
+          description: all data exist in high execpt 'seasons' and 'qualities' and 'subtitles'
+
+    LatestData:
+      type: object
+      properties:
+        season:
+          type: integer
+        episode:
+          type: integer
+        quality:
+          type: string
+        updateReason:
+          type: string
+          enum: ['season', 'episode', 'quality']
+        hardSub:
+          type: string
+          pattern: /S\d+E\d+/
+        dubbed:
+          type: string
+          description: for series 's1e5' shows last episode with hardsub/dubbed/..
+        subtitle:
+          type: string
+          description: for movies 's1e1' means hardsub/dubbed/.. exist
+        censored:
+          type: string
+        watchOnlineLink:
+          type: string
+
+    Actor_and_Character:
+      type: object
+      properties:
+        id:
+          type: object
+        name:
+          type: string
+        gender:
+          type: string
+          enum: ['Male', 'Female']
+        country:
+          type: string
+        image:
+          type: string
+        thumbnail:
+          type: string
+        positions:
+          $ref: '#/components/schemas/StringArray'
+        characterData:
+          type: object
+          properties:
+            id:
+              type: object
+            name:
+              type: string
+            gender:
+              type: string
+              enum: [ 'Male', 'Female' ]
+            image:
+              type: string
+            thumbnail:
+              type: string
+            role:
+              type: string
+
+    UserStats:
+    # movies only
+      type: object
+      properties:
+        like_movie:
+          type: boolean
+        like_movie_count:
+          type: integer
+        dislike_movie:
+          type: boolean
+        dislike_movie_count:
+          type: integer
+        save:
+          type: boolean
+        save_count:
+          type: integer
+        future_list:
+          type: boolean
+        future_list_count:
+          type: integer
+        #below field includes only when (dataLevel == high)
+        follow_movie:
+          type: boolean
+        follow_movie_count:
+          type: integer
+        dropped:
+          type: boolean
+        dropped_count:
+          type: integer
+        finished:
+          type: boolean
+        finished_count:
+          type: integer
+        score:
+          type: number
+          format: float
+        score_count:
+          type: integer
+
+    UserStats_staff:
+      type: object
+      properties:
+        like_staff:
+          type: boolean
+        like_staff_count:
+          type: integer
+        dislike_staff:
+          type: boolean
+        dislike_staff_count:
+          type: integer
+        follow_staff:
+          type: boolean
+        follow_staff_count:
+          type: integer
+
+    UserStats_character:
+      type: object
+      properties:
+        like_character:
+          type: boolean
+        like_character_count:
+          type: integer
+        dislike_character:
+          type: boolean
+        dislike_character_count:
+          type: integer
+
+    Staff:
+      type: object
+      properties:
+        name:
+          type: string
+        rawName:
+          type: string
+        gender:
+          $ref: '#/components/schemas/Gender'
+        about:
+          type: string
+        tvmazePersonID:
+          type: integer
+        jikanPersonID:
+          type: integer
+        country:
+          type: string
+        birthday:
+          type: string
+        deathday:
+          type: string
+        age:
+          type: integer
+        height:
+          type: string
+        weight:
+          type: string
+        hairColor:
+          type: string
+        eyeColor:
+          type: string
+        imageData:
+          type: object
+          properties:
+            url:
+              type: string
+            originalUrl:
+              type: string
+            originalSize:
+              type: string
+            size:
+              type: integer
+            vpnStatus:
+              $ref: '#/components/schemas/VpnStatus'
+            thumbnail:
+              type: string
+        originalImages:
+          $ref: '#/components/schemas/StringArray'
+        credits:
+          type: array
+          items:
+            type: object
+            properties:
+              movieID:
+                type: string
+              movieName:
+                type: string
+              movieType:
+                type: string
+              moviePoster:
+                type: string
+              movieThumbnail:
+                type: string
+              positions:
+                $ref: '#/components/schemas/StringArray'
+              characterID:
+                type: string
+              characterName:
+                type: string
+              characterRole:
+                type: string
+              characterImage:
+                type: string
+              characterThumbnail:
+                type: string
+        insert_date:
+          $ref: '#/components/schemas/DateString'
+        update_date:
+          $ref: '#/components/schemas/DateString'
+        userStats:
+          $ref: '#/components/schemas/UserStats_staff'
+
+    Character:
+      type: object
+      properties:
+        name:
+          type: string
+        rawName:
+          type: string
+        gender:
+          $ref: '#/components/schemas/Gender'
+        about:
+          type: string
+        tvmazePersonID:
+          type: integer
+        jikanPersonID:
+          type: integer
+        country:
+          type: string
+        birthday:
+          type: string
+        deathday:
+          type: string
+        age:
+          type: integer
+        height:
+          type: string
+        weight:
+          type: string
+        hairColor:
+          type: string
+        eyeColor:
+          type: string
+        imageData:
+          type: object
+          properties:
+            url:
+              type: string
+            originalUrl:
+              type: string
+            originalSize:
+              type: string
+            size:
+              type: integer
+            vpnStatus:
+              $ref: '#/components/schemas/VpnStatus'
+            thumbnail:
+              type: string
+        originalImages:
+          $ref: '#/components/schemas/StringArray'
+        credits:
+          type: array
+          items:
+            type: object
+            properties:
+              movieID:
+                type: string
+              movieName:
+                type: string
+              movieType:
+                type: string
+              moviePoster:
+                type: string
+              movieThumbnail:
+                type: string
+              role:
+                type: string
+              actorID:
+                type: string
+              actorName:
+                type: string
+              actorImage:
+                type: string
+              actorThumbnail:
+                type: string
+        insert_date:
+          $ref: '#/components/schemas/DateString'
+        update_date:
+          $ref: '#/components/schemas/DateString'
+        userStats:
+          $ref: '#/components/schemas/UserStats_character'
+
+    Genres:
+      type: array
+      items:
+        type: object
+        properties:
+          genre:
+            type: string
+          poster:
+            $ref: '#/components/schemas/Poster'
+          count:
+            type: integer
+
+    MovieSources:
+      type: array
+      items:
+        type: object
+        properties:
+          sourceName:
+            type: string
+          url:
+            type: string
+
+    MovieSource:
+      type: object
+      properties:
+        movie_url:
+          type: string
+        serial_url:
+          type: string
+          required: false
+        lastCrawlDate:
+          type: string
+          format: date
+        crawlCycle:
+          type: integer
+        cookies:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              value:
+                type: string
+              expire:
+                type: integer
+        disabled:
+          type: boolean
+        disabledDate:
+          $ref: '#/components/schemas/DateString'
+        addDate:
+          $ref: '#/components/schemas/DateString'
+        lastDomainChangeDate:
+          $ref: '#/components/schemas/DateString'
+
+    DbConfigs:
+      type: object
+      properties:
+        corsAllowedOrigins:
+          type: array
+          items:
+            type: string
+            default: [ 'http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:5000', 'http://localhost:5000', 'http://localhost:8080', 'http://localhost:8081' ]
+        disableTestUserRequests:
+          type: boolean
+          default: false
+        disableCrawlerForDuration:
+          type: integer
+          default: 0
+        disableCrawlerStart:
+          $ref: '#/components/schemas/DateString0'
+        crawlerDisabled:
+          type: boolean
+          default: false
+        disableCrawler:
+          type: boolean
+          default: false
+        developmentFaze:
+          type: boolean
+          default: false
+        developmentFazeStart:
+          $ref: '#/components/schemas/DateString0'
+
+    Season:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+        episodes:
+          type: array
+          items:
+            type: object
+            properties:
+              episodeNumber:
+                type: integer
+              title:
+                type: string
+              released:
+                type: string
+              releaseStamp:
+                type: string
+              duration:
+                type: string
+              imdbRating:
+                type: string
+              imdbID:
+                type: string
+              links:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    link:
+                      type: string
+                    info:
+                      type: string
+                    qualitySample:
+                      type: string
+                    sourceName:
+                      type: string
+                    season:
+                      type: integer
+                    episode:
+                      type: integer
+              watchOnlineLinks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    link:
+                      type: string
+                    info:
+                      type: string
+                    sourceName:
+                      type: string
+                    season:
+                      type: integer
+                    episode:
+                      type: integer
+
+    Quality:
+      type: object
+      properties:
+        quality:
+          type: string
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              link:
+                type: string
+              info:
+                type: string
+              qualitySample:
+                type: string
+              sourceName:
+                type: string
+              season:
+                type: integer
+              episode:
+                type: integer
+        watchOnlineLinks:
+          type: array
+          items:
+            type: object
+            properties:
+              link:
+                type: string
+              info:
+                type: string
+              sourceName:
+                type: string
+              season:
+                type: integer
+              episode:
+                type: integer
+
+    Subtitle:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              link:
+                type: string
+              info:
+                type: string
+                description: Episodes(\d\d-\d\d) or AllEpisodesOf(Season \d\d)
+              sourceName:
+                type: string
+              season:
+                type: integer
+              episode:
+                type: integer
+              direct:
+                type: boolean
+
+    Poster:
+      type: object
+      properties:
+        url:
+          type: string
+        info:
+          type: string
+        size:
+          type: integer
+        vpnStatus:
+          $ref: '#/components/schemas/VpnStatus'
+        thumbnail:
+          type: string
+
+    Poster_s3:
+      type: object
+      properties:
+        url:
+          type: string
+        originalUrl:
+          type: string
+        originalSize:
+          type: integer
+        size:
+          type: integer
+        vpnStatus:
+          $ref: '#/components/schemas/VpnStatus'
+        thumbnail:
+          type: string
+
+    Trailer:
+      type: object
+      properties:
+        url:
+          type: string
+        info:
+          type: string
+        vpnStatus:
+          $ref: '#/components/schemas/VpnStatus'
+
+    Trailer_s3:
+      type: object
+      properties:
+        url:
+          type: string
+        originalUrl:
+          type: string
+        size:
+          type: integer
+        vpnStatus:
+          $ref: '#/components/schemas/VpnStatus'
+
+    Rating:
+      type: object
+      properties:
+        imdb:
+          type: integer
+        rottenTomatoes:
+          type: integer
+        metacritic:
+          type: integer
+        myAnimeList:
+          type: integer
+
+    Rank:
+      type: object
+      properties:
+        animeTopComingSoon:
+          type: integer
+        animeTopAiring:
+          type: integer
+        animeSeasonNow:
+          type: integer
+        animeSeasonUpcoming:
+          type: integer
+        comingSoon:
+          type: integer
+        inTheaters:
+          type: integer
+        boxOffice:
+          type: integer
+        top:
+          type: integer
+        popular:
+          type: integer
+
+    NextEpisode:
+      type: object
+      properties:
+        title:
+          type: string
+        season:
+          type: integer
+        episode:
+          type: integer
+        releaseStamp:
+          type: string
+        summary:
+          type: string
+
+    Summary:
+      type: object
+      properties:
+        english:
+          type: string
+        english_source:
+          type: string
+        persian:
+          type: string
+        persian_source:
+          type: string
+
+    Gender:
+      type: string
+      enum: ['', 'male', 'female', 'sexless']
+
+    VpnStatus:
+      type: string
+      enum: ['vpnOnly', 'noVpn', 'allOK']
+
+    Session:
+      type: object
+      properties:
+        appName:
+          type: string
+        appVersion:
+          type: string
+        deviceOs:
+          type: string
+        deviceModel:
+          type: string
+        ipLocation:
+          type: string
+        deviceId:
+          type: string
+          description: unique
+        loginDate:
+          $ref: '#/components/schemas/DateString'
+        lastUseDate:
+          $ref: '#/components/schemas/DateString'
+
+    DeviceInfo:
+      type: object
+      properties:
+        appName:
+          type: string
+        appVersion:
+          type: string
+        os:
+          type: string
+        deviceModel:
+          type: string
+
+    TokensResult:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        accessToken_expire:
+          type: integer
+        username:
+          type: string
+        profileImages:
+          $ref: '#/components/schemas/StringArray'
+
+    DateString:
+      type: string
+      format: date
+
+    DateString0:
+      type: string
+      format: date
+      default: 0
+
+    StringArray:
+      type: array
+      items:
+        type: string

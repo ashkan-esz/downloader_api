@@ -11,7 +11,8 @@ import developmentFaze from "./api/middlewares/developmentFaze.js";
 import {loadAgenda} from './loaders/index.js';
 import {saveError} from "./error/saveError.js";
 import swaggerUi from "swagger-ui-express";
-import swaggerJson from "../docs/swagger.json" assert { type: 'json' };
+import YAML from "yaml";
+import fs from "fs";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -40,9 +41,9 @@ app.use(rateLimit({
 app.use(developmentFaze);
 app.use("/docs",
     swaggerUi.serve,
-    swaggerUi.setup(swaggerJson, {
+    swaggerUi.setup(YAML.parse(fs.readFileSync('./docs/swagger.yaml', 'utf8')), {
         explorer: true,
-        customCssUrl: "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-newspaper.css",
+        // customCssUrl: "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-newspaper.css",
     })
 );
 

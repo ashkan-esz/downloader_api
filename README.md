@@ -110,7 +110,7 @@ To run this project, you will need to add the following environment variables to
 
 ## API Routes
 - Open [swagger docs api](http://localhost:3000/docs). (always updated)
-- Open [swagger docs file](docs/swagger.json). (always updated)
+- Open [swagger docs file](docs/swagger.yaml). (always updated)
 - Open [admin api docs](readme/API.ADMIN.README.md).
 - Open [user api docs](readme/API.USER.README.md).
 - Open [movie api docs](readme/API.MOVIES.README.md).
