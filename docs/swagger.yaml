@@ -1,7 +1,17 @@
 openapi: "3.0.0"
 info:
   title: Downloader Api
-  description: A webcrawler based movie/anime data provider with rest api
+  description: <p> A webcrawler based movie/anime data provider with rest api <br/> <br/>
+    Cors enabled for [ <br/>
+    'http://127.0.0.1:3000', <br/>
+    'http://localhost:3000', <br/>
+    'http://127.0.0.1:5000', <br/>
+    'http://localhost:5000', <br/>
+    'http://localhost:7000' <br/>
+    'http://localhost:8080', <br/>
+    'http://localhost:8081', <br/>
+    ]
+    <p/>
   version: 1.0.0
   contact:
     email: ashkanaz2828@gmail.com
@@ -12,6 +22,330 @@ info:
   - "url": 'http://localhost:3000'
 
 paths:
+  /users/signup:
+    post:
+      tags:
+        - users
+      summary: Signup
+      description: <p> Create account, also return `refreshToken`. <br/>
+        <br/>
+         put `accessToken` in each request header. <br/>
+         also send `refreshToken` cookie in each request. <br/> <br/>
+         for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `noCookie=true` parameter in api routes to receive it. <br/> <br/>
+         api routes send code 403 when `accessToken` is invalid or out of date. (getToken again) <br/>
+         api routes send code 401 when `refreshToken` is invalid or out of date or revoked. (must log in again) <br/>
+         `users/getToken` route also generates new refreshToken and must replace the existing on client <br/>
+        <br/>
+        for web browsers <br/>
+        1. Save `accessToken` into a variable. <br/>
+        2. Put `accessToken` in headers for all the requests. <br/> 
+        3. When user `login` or `signup` you will receive `accessToken`. <br/>
+        4. After some time `accessToken` will get invalid and server gives 403 error. <br/>
+        5. After getting 403 error, use `getToken` api to receive new `accessToken` and replace it in client. <br/>
+        6. Along with `accessToken` you receive `accessToken_expire` witch shows the time `accessToken` get invalid. <br/>
+        7. It's better to watch for it before request and call `getToken` to receive new `accessToken` this way you prevent from getting 403 error. <br/>
+        8. If you get 401 error, you should remove and `accessToken` and redirect user to login page. <br/>
+        9. When user is logged in and closes the browser, after opening browser again `accessToken` doesn't exist, so you should call `getToken` api before calling apis. <br/>
+        <br/>
+        for clients without ability to use cookie, like mobile apps <br/>
+        1. add `?noCookie=true` at the end of login/signup/getToken api url. <br/>
+        2. Save `accessToken` and `refreshToken` into variables. <br/>
+        3. `refreshToken` should be saved to client storage secretly. <br/>
+        4. Put `accessToken` and `refreshToken` in headers for all the requests. <br/>
+        5. When user `login` or `signup` you will get `accessToken` and `refreshToken`. <br/>
+        6. After some time `accessToken` will get invalid and server gives 403 error. <br/>
+        7. After getting 403 error, use `getToken` api to receive new `accessToken` and `refreshToken` and replace them in client. <br/>
+        8. Along with `accessToken` you receive `accessToken_expire` witch shows the time `accessToken` get invalid. <br/>
+        9. It's better to watch for it before request and call `getToken` to receive new `accessToken` this way you prevent from getting 403 error. <br/>
+        10. If you get 401 error, you should remove `accessToken` and `refreshToken` redirect user to login page. <br/>
+        11. When user is logged in and closes the browser, after opening browser again `accessToken` and `refreshToken` doesn't exist, so you should call `getToken` api before calling apis.
+        <p/>
+      operationId: users/signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  pattern: ^[a-z|\d_-]+$
+                  minimum: 6
+                  maximum: 50
+                  required: true
+                email:
+                  type: string
+                password:
+                  type: string
+                  description: at least one number and capital letter  and length in range
+                confirmPassword:
+                  type: string
+                deviceInfo:
+                  $ref: '#/components/schemas/DeviceInfo'
+      parameters:
+        - name: noCookie
+          in: query
+          schema:
+            type: boolean
+          required: false
+      responses:
+        201:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: LogIn
+      description: Login account, also return `refreshToken`.
+      operationId: users/login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username_email:
+                  type: string
+                  pattern: ^[a-z|\d_-]+$
+                  minimum: 6
+                  maximum: 50
+                  required: true
+                  description: means user can log in with username or email address
+                password:
+                  type: string
+                  description: at least one number and capital letter and length in range
+                deviceInfo:
+                  $ref: '#/components/schemas/DeviceInfo'
+      parameters:
+        - name: noCookie
+          in: query
+          schema:
+            type: boolean
+          required: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+
+  /users/gettoken:
+    put:
+      tags:
+        - users
+      summary: Get token
+      description: Get new Tokens, also return `refreshToken`.
+      operationId: users/gettoken
+      security:
+        - accessToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceInfo:
+                  $ref: '#/components/schemas/DeviceInfo'
+      parameters:
+        - name: noCookie
+          in: query
+          schema:
+            type: boolean
+          required: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+                type: object
+                properties:
+                  profileImages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        size:
+                          type: integer
+                        thumbnail:
+                          type: string
+                        addDate:
+                          $ref: '#/components/schemas/DateString'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/logout:
+    put:
+      tags:
+        - users
+      summary: Logout
+      description: Logout user, return __accessToken__ as empty string and also reset/remove `refreshToken` cookie if use in browser. in other environments reset `refreshToken` from client after successful logout.
+      operationId: users/logout
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/forceLogout/{deviceId}:
+    put:
+      tags:
+        - users
+      summary: Force Logout
+      description: Logout selected device, return remaining active sessions in field __activeSessions__.
+      operationId: users/forceLogout
+      security:
+        - accessToken: [ ]
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  activeSessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/forceLogoutAll:
+    put:
+      tags:
+        - users
+      summary: Force Logout All
+      description: force logout all session except current session, return __activeSessions__ as empty array.
+      operationId: users/forceLogoutAll
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  activeSessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
   /utils/getMessage:
     get:
       tags:
@@ -65,7 +399,6 @@ paths:
                     items:
                       $ref: '#/components/schemas/AppData'
 
-
   /utils/checkAppUpdate/{appName}/{os}/{version}:
     get:
       tags:
@@ -101,9 +434,20 @@ paths:
                   - $ref: '#/components/schemas/CheckUpdateData'
 
 
-
+security:
+  - accessToken: [ ]
 
 "components":
+  securitySchemes:
+    accessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+
   "schemas":
     Profile:
       type: object
@@ -603,7 +947,7 @@ paths:
               type: string
 
     UserStats:
-      # movies only
+      description: movies only
       type: object
       properties:
         like_movie:
@@ -1179,12 +1523,21 @@ paths:
       properties:
         appName:
           type: string
+          required: true
+          example: downloader_app
         appVersion:
           type: string
+          required: true
+          format: \d\d?\.\d\d?\.\d\d?
+          example: 1.0.2
         os:
           type: string
+          required: true
+          example: IOS
         deviceModel:
           type: string
+          required: true
+          example: Samsung Galaxy A52
 
     TokensResult:
       type: object
@@ -1288,3 +1641,16 @@ paths:
               $ref: '#/components/schemas/DateString'
             message:
               type: string
+
+    SignUpResult:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        accessToken_expire:
+          type: integer
+        username:
+          type: string
+        userId:
+          type: string
+
