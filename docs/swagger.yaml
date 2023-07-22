@@ -25,20 +25,20 @@ paths:
   /users/signup:
     post:
       tags:
-        - users
+        - Users-Auth
       summary: Signup
       description: <p> Create account, also return `refreshToken`. <br/>
         <br/>
-         put `accessToken` in each request header. <br/>
-         also send `refreshToken` cookie in each request. <br/> <br/>
-         for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `noCookie=true` parameter in api routes to receive it. <br/> <br/>
-         api routes send code 403 when `accessToken` is invalid or out of date. (getToken again) <br/>
-         api routes send code 401 when `refreshToken` is invalid or out of date or revoked. (must log in again) <br/>
-         `users/getToken` route also generates new refreshToken and must replace the existing on client <br/>
+        put `accessToken` in each request header. <br/>
+        also send `refreshToken` cookie in each request. <br/> <br/>
+        for mobile phones or situations where cookies are not available, send `refreshToken` into headers and use `noCookie=true` parameter in api routes to receive it. <br/> <br/>
+        api routes send code 403 when `accessToken` is invalid or out of date. (getToken again) <br/>
+        api routes send code 401 when `refreshToken` is invalid or out of date or revoked. (must log in again) <br/>
+        `users/getToken` route also generates new refreshToken and must replace the existing on client <br/>
         <br/>
         for web browsers <br/>
         1. Save `accessToken` into a variable. <br/>
-        2. Put `accessToken` in headers for all the requests. <br/> 
+        2. Put `accessToken` in headers for all the requests. <br/>
         3. When user `login` or `signup` you will receive `accessToken`. <br/>
         4. After some time `accessToken` will get invalid and server gives 403 error. <br/>
         5. After getting 403 error, use `getToken` api to receive new `accessToken` and replace it in client. <br/>
@@ -114,7 +114,7 @@ paths:
   /users/login:
     post:
       tags:
-        - users
+        - Users-Auth
       summary: LogIn
       description: Login account, also return `refreshToken`.
       operationId: users/login
@@ -168,7 +168,7 @@ paths:
   /users/gettoken:
     put:
       tags:
-        - users
+        - Users-Auth
       summary: Get token
       description: Get new Tokens, also return `refreshToken`.
       operationId: users/gettoken
@@ -231,7 +231,7 @@ paths:
   /users/logout:
     put:
       tags:
-        - users
+        - Users-Auth
       summary: Logout
       description: Logout user, return __accessToken__ as empty string and also reset/remove `refreshToken` cookie if use in browser. in other environments reset `refreshToken` from client after successful logout.
       operationId: users/logout
@@ -267,7 +267,7 @@ paths:
   /users/forceLogout/{deviceId}:
     put:
       tags:
-        - users
+        - Users-Auth
       summary: Force Logout
       description: Logout selected device, return remaining active sessions in field __activeSessions__.
       operationId: users/forceLogout
@@ -311,7 +311,7 @@ paths:
   /users/forceLogoutAll:
     put:
       tags:
-        - users
+        - Users-Auth
       summary: Force Logout All
       description: force logout all session except current session, return __activeSessions__ as empty array.
       operationId: users/forceLogoutAll
@@ -346,10 +346,399 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
+  /users/myProfile:
+    get:
+      tags:
+        - Users
+      summary: My Profile
+      description: Return users profile data.
+      operationId: users/myProfile
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/Profile'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/activeSessions:
+    get:
+      tags:
+        - Users
+      summary: Active Sessions
+      description: Return users current session and other active sections.
+      operationId: users/activeSessions
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  thisDevice:
+                    $ref: '#/components/schemas/Session'
+                  activeSessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/sendVerifyEmail:
+    get:
+      tags:
+        - Users
+      summary: Send Verify Email
+      description: <p> send an email with an activation link. the link will expire after 6 hour. <br/>
+        maybe email goes to spam folder. <br/>
+        limited to 2 call per minute
+        <p/>
+      operationId: users/sendVerifyEmail
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/verifyEmail/{token}:
+    get:
+      tags:
+        - Users
+      summary: Verify Email
+      description: <p> > verify given email token. create activation link on server side. <br/>
+        limited to 2 call per minute**
+        <p/>
+      operationId: users/verifyEmail
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/uploadProfileImage:
+    post:
+      tags:
+        - Users
+      summary: Upload Profile Image
+      description: <p>
+        send data as formData and don't forget to set contentType <br/>
+        returns new profileImages array. <br/> <br/>
+        file size limited to `1mb` and accept [`jpg`, `jpeg`, `png`] formats only, (error code 400). <br/>
+        20 profile image per user, (error code 409)
+        <p/>
+      operationId: users/uploadProfileImage
+      security:
+        - accessToken: [ ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profileImage:
+                  type: string
+                  required: true
+                  format: binary
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  profileImages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        size:
+                          type: integer
+                        thumbnail:
+                          type: string
+                        addDate:
+                          $ref: '#/components/schemas/DateString'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/removeProfileImage/{filename}:
+    delete:
+      tags:
+        - Users
+      summary: Remove Profile Image
+      description: Returns new profileImages array
+      operationId: users/removeProfileImage
+      security:
+        - accessToken: [ ]
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  profileImages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        size:
+                          type: integer
+                        thumbnail:
+                          type: string
+                        addDate:
+                          $ref: '#/components/schemas/DateString'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/setFavoriteGenres/{genres}:
+    put:
+      tags:
+        - Users
+      summary: Set Favorite Genres
+      description: Returns new profileImages array, maximum number of genres is 6, (error code 409).
+      operationId: users/setFavoriteGenres
+      security:
+        - accessToken: [ ]
+      parameters:
+        - name: genres
+          in: path
+          required: true
+          description: Array of String joined by '-'
+          example: action-sci_fi-drama
+          schema:
+            type: string
+            description: Array of String joined by '-'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/allUserSettings:
+    get:
+      tags:
+        - Users-Setting
+      summary: Get User Settings
+      description: Returns user settings for movies, downloadLinks and notifications.
+      operationId: users/allUserSettings
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      movieSettings:
+                        $ref: '#/components/schemas/MovieSettings'
+                      downloadLinksSettings:
+                        $ref: '#/components/schemas/DownloadLinksSettings'
+                      notificationSettings:
+                        $ref: '#/components/schemas/NotificationSettings'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/userSettings/{settingName}:
+    get:
+      tags:
+        - Users-Setting
+      summary: Get Specific User Settings
+      description: Returns user settings based on __settingName__.
+      operationId: users/userSetting
+      security:
+        - accessToken: [ ]
+      parameters:
+        - name: settingName
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ 'movie', 'downloadLinks', 'notification' ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/MovieSettings'
+                      - $ref: '#/components/schemas/DownloadLinksSettings'
+                      - $ref: '#/components/schemas/NotificationSettings'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/changeUserSettings/{settingName}:
+    put:
+      tags:
+        - Users-Setting
+      summary: Change Specific User Settings
+      description: Change user settings user settings based on __settingName__.
+      operationId: users/changeUserSettings
+      security:
+        - accessToken: [ ]
+      parameters:
+        - name: settingName
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ 'movie', 'downloadLinks', 'notification' ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                settings:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/MovieSettings'
+                    - $ref: '#/components/schemas/DownloadLinksSettings'
+                    - $ref: '#/components/schemas/NotificationSettings'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/MovieSettings'
+                      - $ref: '#/components/schemas/DownloadLinksSettings'
+                      - $ref: '#/components/schemas/NotificationSettings'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/computeUserStats:
+    put:
+      tags:
+        - Users-Compute
+      summary: Change Specific User Settings
+      description: <p>
+              Returns data based on computeUserStats <br/>
+              limited to 3 call per minute <br/>
+              every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.    
+          <p/>
+      operationId: users/changeUserSettings
+      security:
+        - accessToken: [ ]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      favoriteGenres:
+                        $ref: '#/components/schemas/FavoriteGenres'
+                      lastUpdate:
+                        $ref: '#/components/schemas/DateString'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
   /utils/getMessage:
     get:
       tags:
-        - utils
+        - Utils
       summary: Global message
       description: return the global message set by admin
       operationId: utils-getMessage
@@ -374,7 +763,7 @@ paths:
   /utils/getApps:
     get:
       tags:
-        - utils
+        - Utils
       summary: App Files
       description: return return apps with their data
       operationId: utils-getApps
@@ -402,7 +791,7 @@ paths:
   /utils/checkAppUpdate/{appName}/{os}/{version}:
     get:
       tags:
-        - utils
+        - Utils
       summary: Check App Update
       description: check app update exists, also send message
       operationId: utils-checkAppUpdate
@@ -487,70 +876,13 @@ security:
           type: object
           properties:
             favoriteGenres:
-              type: array
-              items:
-                type: object
-                properties:
-                  genre:
-                    type: string
-                  count:
-                    type: integer
-                  percent:
-                    type: number
-                    format: float
-                  lastUpdate:
-                    $ref: '#/components/schemas/DateString'
+              $ref: '#/components/schemas/FavoriteGenres'
         movieSettings:
-          type: object
-          properties:
-            includeAnime:
-              type: boolean
-              default: true
-            includeHentai:
-              type: boolean
-              default: false
+          $ref: '#/components/schemas/MovieSettings'
         downloadLinksSettings:
-          type: object
-          properties:
-            includeDubbed:
-              type: boolean
-              default: true
-            includeHardSub:
-              type: boolean
-              default: true
-            includeCensored:
-              type: boolean
-              default: true
-            preferredQualities:
-              type: array
-              items:
-                type: string
-                enum: [ '480p', '720p', '1080p', '2160p' ]
-
+          $ref: '#/components/schemas/DownloadLinksSettings'
         notificationSettings:
-          type: object
-          properties:
-            followMovie:
-              type: boolean
-              default: true
-            followMovie_betterQuality:
-              type: boolean
-              default: true
-            followMovie_subtitle:
-              type: boolean
-              default: true
-            futureList:
-              type: boolean
-              default: true
-            futureList_serialSeasonEnd:
-              type: boolean
-              default: true
-            futureList_subtitle:
-              type: boolean
-              default: true
-            finishedList_spinOffSequel:
-              type: boolean
-              default: true
+          $ref: '#/components/schemas/NotificationSettings'
         friends:
           type: array
         registrationDate:
@@ -560,6 +892,74 @@ security:
           enum: [ 'test-user', 'user', 'dev', 'admin' ]
         thisDevice:
           $ref: '#/components/schemas/Session'
+
+    FavoriteGenres:
+      type: array
+      items:
+        type: object
+        properties:
+          genre:
+            type: string
+          count:
+            type: integer
+          percent:
+            type: number
+            format: float
+          lastUpdate:
+            $ref: '#/components/schemas/DateString'
+
+    MovieSettings:
+      type: object
+      properties:
+        includeAnime:
+          type: boolean
+          default: true
+        includeHentai:
+          type: boolean
+          default: false
+
+    DownloadLinksSettings:
+      type: object
+      properties:
+        includeDubbed:
+          type: boolean
+          default: true
+        includeHardSub:
+          type: boolean
+          default: true
+        includeCensored:
+          type: boolean
+          default: true
+        preferredQualities:
+          type: array
+          items:
+            type: string
+            enum: [ '480p', '720p', '1080p', '2160p' ]
+
+    NotificationSettings:
+      type: object
+      properties:
+        followMovie:
+          type: boolean
+          default: true
+        followMovie_betterQuality:
+          type: boolean
+          default: true
+        followMovie_subtitle:
+          type: boolean
+          default: true
+        futureList:
+          type: boolean
+          default: true
+        futureList_serialSeasonEnd:
+          type: boolean
+          default: true
+        futureList_subtitle:
+          type: boolean
+          default: true
+        finishedList_spinOffSequel:
+          type: boolean
+          default: true
 
     DataLevel:
       type: object
