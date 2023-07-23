@@ -708,10 +708,10 @@ paths:
         - Users-Compute
       summary: Change Specific User Settings
       description: <p>
-              Returns data based on computeUserStats <br/>
-              limited to 3 call per minute <br/>
-              every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.    
-          <p/>
+        Returns data based on computeUserStats <br/>
+        limited to 3 call per minute <br/>
+        every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.
+        <p/>
       operationId: users/changeUserSettings
       security:
         - accessToken: [ ]
@@ -822,6 +822,693 @@ paths:
                   - $ref: '#/components/schemas/ResponseCode'
                   - $ref: '#/components/schemas/CheckUpdateData'
 
+  /movies/news/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: New Movies
+      description: Return recent movies (new released movies).
+      operationId: movies-news
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/newsWithDate/{date}/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: New Movies With Date
+      description: Return recent movies (new released movies after [date]).
+      operationId: movies-newsWithDate
+      parameters:
+        - $ref: '#/components/parameters/date'
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/updates/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Update Movies
+      description: Return movies sorted by update date (movies with new episode or higher quality).
+      operationId: movies-updates
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/updatesWithDate/{date}/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Update Movies With Date
+      description: return movies sorted by update date (movies with new episode or higher quality  after [date]).
+      operationId: movies-updateWithDate
+      parameters:
+        - $ref: '#/components/parameters/date'
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/topsByLikes/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Tops By Likes
+      description: Return movies sorted by inApp like count.
+      operationId: movies-topsByLikes
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/trailers/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Trailers
+      description: Return movies with new added trailer.
+      operationId: movies-trailers
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/sortedMovies/{sortBase}/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Sorted Movies
+      description: Return movies sorted by something like 'comingSoon'.
+      operationId: movies-sortedMovies
+      parameters:
+        - $ref: '#/components/parameters/sortBase'
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/seriesOfDay/{dayNumber}/{types}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Series Of Day
+      description: Return series that get release on that day.
+      operationId: movies-seriesOfDay
+      parameters:
+        - $ref: '#/components/parameters/dayNumber'
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/multiple/status/{types}/{dataLevel}/{imdbScores}/{malScores}/{count}/{page}:
+    get:
+      tags:
+        - Movies
+      summary: Multiple Movies
+      description: See yourself!
+      operationId: movies-multi-status
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/count'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      inTheaters:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MovieData'
+                      comingSoon:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MovieData'
+                      news:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MovieData'
+                      update:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MovieData'
+
+  /movies/searchByID/{id}/{dataLevel}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Movie Id
+      description: Return Movie Data
+      operationId: movies-searchMovieById
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/seasons_query'
+        - $ref: '#/components/parameters/episodes_query'
+        - $ref: '#/components/parameters/qualities_query'
+        - name: embedDownloadLinksConfig
+          required: false
+          in: query
+          description: also receive users downloadLinks config, result in slower response
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          $ref: '#/components/responses/Movie_single_200'
+
+  /movies/staff/searchByID/{id}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Staff By Id
+      description: Return Staff Data
+      operationId: movies-searchStaffById
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Staff'
+
+  /movies/characters/searchByID/{id}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Character By Id
+      description: Return Character Data
+      operationId: movies-searchCharacterById
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Character'
+
+  /movies/searchMovieStaffCharacter/{title}/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search All
+      description: idk!!
+      operationId: movies-searchMovieStaffCharacter
+      parameters:
+        - $ref: '#/components/parameters/title'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      movies:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MovieData'
+                      staff:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Staff'
+                      characters:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Character'
+
+  /movies/searchStaffAndCharacter/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Staff And Character
+      description: __dataLevel__ can only be on one ['low', 'medium', 'high']
+      operationId: movies-searchStaffAndCharacter
+      parameters:
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/name_query'
+        - $ref: '#/components/parameters/gender_query'
+        - $ref: '#/components/parameters/country_query'
+        - $ref: '#/components/parameters/hairColor_query'
+        - $ref: '#/components/parameters/eyeColor_query'
+        - $ref: '#/components/parameters/age_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      staff:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Staff'
+                      characters:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Character'
+
+  /movies/searchStaff/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Staff
+      description: __dataLevel__ can only be on one ['low', 'medium', 'high']
+      operationId: movies-searchStaff
+      parameters:
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/name_query'
+        - $ref: '#/components/parameters/gender_query'
+        - $ref: '#/components/parameters/country_query'
+        - $ref: '#/components/parameters/hairColor_query'
+        - $ref: '#/components/parameters/eyeColor_query'
+        - $ref: '#/components/parameters/age_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Staff'
+
+  /movies/searchCharacter/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Character
+      description: __dataLevel__ can only be on one ['low', 'medium', 'high']
+      operationId: movies-searchCharacter
+      parameters:
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/name_query'
+        - $ref: '#/components/parameters/gender_query'
+        - $ref: '#/components/parameters/country_query'
+        - $ref: '#/components/parameters/hairColor_query'
+        - $ref: '#/components/parameters/eyeColor_query'
+        - $ref: '#/components/parameters/age_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Character'
+
+  /movies/searchMovie/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Movie
+      description: ''
+      operationId: movies-searchMovie
+      parameters:
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/country_query'
+        - name: title
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: years
+          required: false
+          in: query
+          schema:
+            type: string
+            pattern: \d+-\d+
+        - name: types
+          required: false
+          in: query
+          schema:
+            type: string
+            #enum: ['serial', 'movie', 'anime_serial', 'anime_movie']
+            example: 'serial-anime_serial'
+        - name: imdbScores
+          required: false
+          in: query
+          schema:
+            type: string
+            pattern: \d-\d
+            default: '0-10'
+        - name: malScores
+          required: false
+          in: query
+          schema:
+            type: string
+            pattern: \d-\d
+            default: '0-10'
+        - name: numberOfSeason
+          required: false
+          in: query
+          schema:
+            type: string
+            pattern: \d+(-\d+)?
+            default: '0-10'
+        - name: genres
+          required: false
+          in: query
+          description: Array of String joined by '-'
+          example: action-sci_fi-drama
+          schema:
+            type: string
+            description: Array of String joined by '-'
+        - name: movieLang
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: dubbed
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: hardSub
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: censored
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: subtitle
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: watchOnlineLink
+          required: false
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/genres/{genres}/{types}/{dataLevel}/{imdbScores}/{malScores}/{page}:
+    get:
+      tags:
+        - Movies-Search
+      summary: Search Genres
+      description: Return array of movies match with searching genres.
+      operationId: movies-searchGenres
+      parameters:
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/page'
+        - name: genres
+          required: false
+          in: query
+          description: Array of String joined by '-'
+          example: action-sci_fi-drama
+          schema:
+            type: string
+            description: Array of String joined by '-'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/status/genres:
+    get:
+      tags:
+        - Movies-Status
+      summary: Status Of Genres
+      description: Returns all available genres with their count.
+      operationId: movies-status-genres
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        genre:
+                          type: string
+                        poster:
+                          $ref: '#/components/schemas/Poster'
+                        count:
+                          type: integer
+
+  /movies/status/movieSources:
+    get:
+      tags:
+        - Movies-Status
+      summary: Status Of Movie Sources
+      description: Returns movie sources with latest url.
+      operationId: movies-status-movieSources
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MovieSources'
+
+  /movies/addUserStats/{statType}/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove Movie/Staff/Character From List
+      description: .
+      operationId: movies-addUserStats
+      parameters:
+        - $ref: '#/components/parameters/statType'
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/remove_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/userStatsList/{statType}/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-UserStats
+      summary: User Stats List
+      description: Return array of movies/staff/character.
+      operationId: movies-userStatsList
+      parameters:
+        - $ref: '#/components/parameters/statType'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/MovieData'
+                      - $ref: '#/components/schemas/Staff'
+                      - $ref: '#/components/schemas/Character'
+
+  /movies/birthday/{staffOrCharacters}/{dataLevel}/{page}:
+    get:
+      tags:
+        - Birthday
+      summary: Birthday List
+      description: Return array of staff/character.
+      operationId: movies-birthday
+      parameters:
+        - $ref: '#/components/parameters/staffOrCharacters'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/followedOnly_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/Staff'
+                        - $ref: '#/components/schemas/Character'
+
+  /movies/bots/{botId}/{moviesRequestName}/{types}/{dataLevel}/{imdbScores/{malScores}:
+    get:
+      tags:
+        - Bots
+      summary: Bots Api
+      description: <p>
+        return movies based on the date that saved in server, send 404 error when no new movie or updates exist. <br/>
+        send maximum 24 item . <br/>
+        limited to 5 call per minute
+        </p>
+      operationId: movies-bots
+      parameters:
+        - $ref: '#/components/parameters/botId'
+        - $ref: '#/components/parameters/moviesRequestName'
+        - $ref: '#/components/parameters/types'
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/imdbScores'
+        - $ref: '#/components/parameters/malScores'
+        - $ref: '#/components/parameters/dontUpdateServerDate_query'
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/animeEnglishName:
+    get:
+      tags:
+        - Others
+      summary: Anime English Name
+      description: Return english names of anime based on japanese name.
+      operationId: movies-animeEnglishName
+      parameters:
+        - name: japaneseNames
+          required: true
+          in: query
+          description: exmaple japaneseNames=name1&japaneseNames=name2...
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        japaneseName:
+                          type: string
+                        englishName:
+                          type: string
+
 
 security:
   - accessToken: [ ]
@@ -833,9 +1520,234 @@ security:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    sortBase:
+      name: sortBase
+      required: true
+      in: path
+      schema:
+        type: string
+        enum: [ 'animeTopComingSoon', 'animeTopAiring', 'animeSeasonNow', 'animeSeasonUpcoming', 'comingSoon', 'inTheaters', 'boxOffice', 'top', 'popular' ]
+        default: 'animeTopComingSoon'
+    date:
+      name: date
+      required: true
+      in: path
+      schema:
+        type: string
+        format: date
+    types:
+      name: types
+      required: true
+      in: path
+      schema:
+        type: string
+        default: 'serial-movie-anime_serial-anime_movie'
+    dataLevel:
+      name: dataLevel
+      required: true
+      in: path
+      schema:
+        allOf:
+          - $ref: '#/components/schemas/DataLevels'
+          - default: 'low'
+    imdbScores:
+      name: imdbScores
+      required: true
+      in: path
+      schema:
+        type: string
+        pattern: \d-\d
+        default: '0-10'
+    malScores:
+      name: malScores
+      required: true
+      in: path
+      schema:
+        type: string
+        pattern: \d-\d
+        default: '0-10'
+    page:
+      name: page
+      required: true
+      in: path
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    dayNumber:
+      name: dayNumber
+      required: true
+      in: path
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 6
+        default: 1
+    count:
+      name: count
+      required: true
+      in: path
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    title:
+      name: title
+      required: true
+      in: path
+      schema:
+        type: string
+    statType:
+      name: statType
+      required: true
+      in: path
+      description: values with no suffix (_staff or _character) only works for movies
+      schema:
+        type: string
+        enum: [ 'like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character', 'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score' ]
+    id:
+      name: id
+      required: true
+      in: path
+      schema:
+        type: string
+    staffOrCharacters:
+      name: staffOrCharacters
+      required: true
+      in: path
+      schema:
+        type: string
+        enum: [ 'staff', 'characters' ]
+        default: staff
+    botId:
+      name: botId
+      required: true
+      in: path
+      schema:
+        type: string
+    moviesRequestName:
+      name: moviesRequestName
+      required: true
+      in: path
+      schema:
+        type: string
+        enum: [ 'news', 'updates', 'newsAndUpdates' ]
+        default: 'news'
+    remove_query:
+      name: remove
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: false
+    followedOnly_query:
+      name: followedOnly
+      required: false
+      in: query
+      description: only works for staff
+      schema:
+        type: boolean
+        default: false
+    dontUpdateServerDate_query:
+      name: dontUpdateServerDate
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: false
+    seasons_query:
+      name: seasons
+      required: false
+      in: query
+      schema:
+        type: string
+        pattern: \d+(-\d+)?
+    episodes_query:
+      name: episodes
+      required: false
+      in: query
+      description: only works when dataLevel is one of ([dlink, high]) and season is single
+      schema:
+        type: string
+        pattern: \d+(-\d+)?
+    qualities_query:
+      name: qualities
+      required: false
+      in: query
+      schema:
+        type: string
+        example: 1080p-720p
+    name_query:
+      name: name
+      required: false
+      in: query
+      schema:
+        type: string
+    gender_query:
+      name: gender
+      required: false
+      in: query
+      schema:
+        type: string
+        enum: [ 'male', 'female', 'sexless' ]
+    country_query:
+      name: country
+      required: false
+      in: query
+      schema:
+        type: string
+    hairColor_query:
+      name: hairColor
+      required: false
+      in: query
+      schema:
+        type: string
+    eyeColor_query:
+      name: eyeColor
+      required: false
+      in: query
+      schema:
+        type: string
+    age_query:
+      name: age
+      required: false
+      in: query
+      schema:
+        type: string
+        pattern: \d+(-\d+)?
+        example: 25-40
+
+
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
+
+    Movies_200:
+      description: Ok
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ResponseCode'
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieData'
+
+    Movie_single_200:
+      description: Ok
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ResponseCode'
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/MovieData'
 
   "schemas":
     Profile:
@@ -961,329 +1873,350 @@ security:
           type: boolean
           default: true
 
-    DataLevel:
+    MovieData:
+      oneOf:
+        - $ref: '#/components/schemas/DataLevel_dlink'
+        - $ref: '#/components/schemas/DataLevel_low'
+        - $ref: '#/components/schemas/DataLevel_telbot'
+        - $ref: '#/components/schemas/DataLevel_medium'
+        - $ref: '#/components/schemas/DataLevel_high'
+        - $ref: '#/components/schemas/DataLevel_info'
+
+    DataLevel_dlink:
       type: object
       properties:
-        dlink:
-          type: object
-          properties:
-            _id:
-              type: string
-            rawTitle:
-              type: string
-            year:
-              type: string
-            posters:
-              type: array
-              items:
-                $ref: '#/components/schemas/Poster'
-            qualities:
-              type: array
-              items:
-                $ref: '#/components/schemas/Quality'
-            seasons:
-              type: array
-              items:
-                $ref: '#/components/schemas/Season'
-            subtitles:
-              type: array
-              items:
-                $ref: '#/components/schemas/Subtitle'
-            sources:
-              type: array
-              items:
-                type: object
-                properties:
-                  sourceName:
-                    type: string
-                  pageLink:
-                    type: string
+        _id:
+          type: string
+        rawTitle:
+          type: string
+        year:
+          type: string
+        posters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Poster'
+        qualities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quality'
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Season'
+        subtitles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subtitle'
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              sourceName:
+                type: string
+              pageLink:
+                type: string
 
-        low:
-          type: object
-          properties:
-            _id:
-              type: string
-            title:
-              type: string
-            rawTitle:
-              type: string
-            year:
-              type: string
-            premiered:
-              type: string
-            posters:
-              type: array
-              items:
-                $ref: '#/components/schemas/Poster'
-            type:
-              type: string
-              enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
-            rating:
-              $ref: '#/components/schemas/Rating'
-            latestData:
-              $ref: '#/components/schemas/LatestData'
-            userStats:
-              $ref: '#/components/schemas/UserStats'
+    DataLevel_low:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        rawTitle:
+          type: string
+        year:
+          type: string
+        premiered:
+          type: string
+        posters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Poster'
+        type:
+          type: string
+          enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
+        rating:
+          $ref: '#/components/schemas/Rating'
+        latestData:
+          $ref: '#/components/schemas/LatestData'
+        userStats:
+          $ref: '#/components/schemas/UserStats'
 
-        telbot:
+    DataLevel_telbot:
+      type: object
+      properties:
+        _id:
+          type: string
+        rawTitle:
+          type: string
+        type:
+          type: string
+          enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
+        year:
+          type: string
+        premiered:
+          type: string
+        posters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Poster'
+        poster_s3:
+          $ref: '#/components/schemas/Poster_s3'
+        genres:
+          $ref: '#/components/schemas/StringArray'
+        summary:
+          $ref: '#/components/schemas/Summary'
+        rating:
+          $ref: '#/components/schemas/Rating'
+        rated:
+          type: string
+        country:
+          type: string
+        latestData:
+          $ref: '#/components/schemas/LatestData'
+        duration:
+          type: string
+          description: example '60 min'
+        releaseDay:
+          type: string
+          description: days of week
+        actorsAndCharacters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor_and_Character'
+        staff:
           type: object
           properties:
-            _id:
-              type: string
-            rawTitle:
-              type: string
-            type:
-              type: string
-              enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
-            year:
-              type: string
-            premiered:
-              type: string
-            posters:
-              type: array
-              items:
-                $ref: '#/components/schemas/Poster'
-            poster_s3:
-              $ref: '#/components/schemas/Poster_s3'
-            genres:
-              $ref: '#/components/schemas/StringArray'
-            summary:
-              $ref: '#/components/schemas/Summary'
-            rating:
-              $ref: '#/components/schemas/Rating'
-            rated:
-              type: string
-            country:
-              type: string
-            latestData:
-              $ref: '#/components/schemas/LatestData'
-            duration:
-              type: string
-              description: example '60 min'
-            releaseDay:
-              type: string
-              description: days of week
-            actorsAndCharacters:
+            directors:
               type: array
               items:
                 $ref: '#/components/schemas/Actor_and_Character'
-            staff:
-              type: object
-              properties:
-                directors:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-                writers:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-                others:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-            seasonEpisode:
-              type: array
-              items:
-                type: object
-                properties:
-                  seasonNumber:
-                    type: integer
-                  episodes:
-                    type: integer
-            insert_date:
-              $ref: '#/components/schemas/DateString'
-            update_date:
-              $ref: '#/components/schemas/DateString'
-
-        medium:
-          type: object
-          description: all fields from low datalevel also exist
-          properties:
-            releaseState:
-              type: string
-              enum: [ 'inTheaters', 'comingSoon', 'waiting', 'done' ]
-            rank:
-              $ref: '#/components/schemas/Rank'
-            alternateTitles:
-              $ref: '#/components/schemas/StringArray'
-            summary:
-              $ref: '#/components/schemas/Summary'
-            genres:
-              $ref: '#/components/schemas/StringArray'
-            genresWithImage:
-              type: array
-              items:
-                description: only exist in movies/searchById api
-                type: object
-                properties:
-                  genre:
-                    type: string
-                  poster:
-                    $ref: '#/components/schemas/Poster'
-                  count:
-                    type: integer
-            trailers:
-              type: array
-              items:
-                $ref: '#/components/schemas/Trailer'
-            trailerDate:
-              $ref: '#/components/schemas/DateString'
-            insert_date:
-              $ref: '#/components/schemas/DateString'
-            update_date:
-              $ref: '#/components/schemas/DateString'
-            nextEpisode:
-              $ref: '#/components/schemas/NextEpisode'
-            releaseDay:
-              type: string
-              description: days of week
-            status:
-              type: string
-              enum: [ 'running','ended','unknown' ]
-            boxOfficeData:
-              type: object
-              properties:
-                weekend:
-                  type: string
-                gross:
-                  type: string
-                weeks:
-                  type: integer
-            userStats:
-              $ref: '#/components/schemas/UserStats'
-
-        high:
-          description: includes all fields from low and medium
-          type: object
-          properties:
-            titleSynonyms:
-              $ref: '#/components/schemas/StringArray'
-            qualities:
-              description: for movie titles check qualities and check seasons for series titles
-              type: array
-              items:
-                $ref: '#/components/schemas/Quality'
-            seasons:
-              type: array
-              items:
-                $ref: '#/components/schemas/Season'
-            subtitles:
-              type: array
-              items:
-                $ref: '#/components/schemas/Subtitle'
-            sources:
-              type: array
-              items:
-                type: object
-                properties:
-                  sourceName:
-                    type: string
-                  pageLink:
-                    type: string
-            seasonEpisode:
-              type: array
-              items:
-                type: object
-                properties:
-                  seasonNumber:
-                    type: integer
-                  episodes:
-                    type: integer
-            view:
-              type: integer
-            like_month:
-              type: integer
-            view_month:
-              type: integer
-            add_date:
-              $ref: '#/components/schemas/DateString'
-            apiUpdateDate:
-              $ref: '#/components/schemas/DateString'
-            castUpdateDate:
-              $ref: '#/components/schemas/DateString'
-            poster_s3:
-              $ref: '#/components/schemas/Poster_s3'
-            trailer_s3:
-              $ref: '#/components/schemas/Trailer_s3'
-            endYear:
-              type: string
-            officialSite:
-              type: string
-            webChannel:
-              type: string
-            duration:
-              type: string
-              description: example '60 min'
-            totalDuration:
-              type: string
-              description: in format hh:mm example 14:11 === 14 hours and 11 min
-            imdbID:
-              type: string
-            tvmazeID:
-              type: integer
-            jikanID:
-              type: integer
-            totalSeasons:
-              type: integer
-            boxOffice:
-              type: string
-            rated:
-              type: string
-            movieLang:
-              type: string
-            country:
-              type: string
-            actorsAndCharacters:
+            writers:
               type: array
               items:
                 $ref: '#/components/schemas/Actor_and_Character'
-            staff:
-              type: object
-              properties:
-                directors:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-                writers:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-                others:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Actor_and_Character'
-            awards:
-              type: string
-            animeType:
-              type: string
-            animeSource:
-              type: string
-            animeSeason:
-              type: string
-            relatedTitles:
+            others:
               type: array
               items:
-                type: object
-                properties:
-                  _id:
-                    type: string
-                  jikanID:
-                    type: integer
-                  title:
-                    type: string
-                  rawTitle:
-                    type: string
-                  relation:
-                    type: string
-                    enum: [ 'Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off' ]
-            userStats:
-              $ref: '#/components/schemas/UserStats'
+                $ref: '#/components/schemas/Actor_and_Character'
+        seasonEpisode:
+          type: array
+          items:
+            type: object
+            properties:
+              seasonNumber:
+                type: integer
+              episodes:
+                type: integer
+        insert_date:
+          $ref: '#/components/schemas/DateString'
+        update_date:
+          $ref: '#/components/schemas/DateString'
 
-        info:
+    DataLevel_medium:
+      allOf:
+        - $ref: '#/components/schemas/DataLevel_low'
+      type: object
+      properties:
+        releaseState:
+          type: string
+          enum: [ 'inTheaters', 'comingSoon', 'waiting', 'done' ]
+        rank:
+          $ref: '#/components/schemas/Rank'
+        alternateTitles:
+          $ref: '#/components/schemas/StringArray'
+        summary:
+          $ref: '#/components/schemas/Summary'
+        genres:
+          $ref: '#/components/schemas/StringArray'
+        genresWithImage:
+          type: array
+          items:
+            description: only exist in movies/searchById api
+            type: object
+            properties:
+              genre:
+                type: string
+              poster:
+                $ref: '#/components/schemas/Poster'
+              count:
+                type: integer
+        trailers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trailer'
+        trailerDate:
+          $ref: '#/components/schemas/DateString'
+        insert_date:
+          $ref: '#/components/schemas/DateString'
+        update_date:
+          $ref: '#/components/schemas/DateString'
+        nextEpisode:
+          $ref: '#/components/schemas/NextEpisode'
+        releaseDay:
+          type: string
+          description: days of week
+        status:
+          type: string
+          enum: [ 'running','ended','unknown' ]
+        boxOfficeData:
           type: object
-          description: all data exist in high execpt 'seasons' and 'qualities' and 'subtitles'
+          properties:
+            weekend:
+              type: string
+            gross:
+              type: string
+            weeks:
+              type: integer
+        userStats:
+          $ref: '#/components/schemas/UserStats'
+
+    DataLevel_high:
+      allOf:
+        - $ref: '#/components/schemas/DataLevel_medium'
+      type: object
+      properties:
+        titleSynonyms:
+          $ref: '#/components/schemas/StringArray'
+        qualities:
+          description: for movie titles check qualities and check seasons for series titles
+          type: array
+          items:
+            $ref: '#/components/schemas/Quality'
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Season'
+        subtitles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subtitle'
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              sourceName:
+                type: string
+              pageLink:
+                type: string
+        seasonEpisode:
+          type: array
+          items:
+            type: object
+            properties:
+              seasonNumber:
+                type: integer
+              episodes:
+                type: integer
+        view:
+          type: integer
+        like_month:
+          type: integer
+        view_month:
+          type: integer
+        add_date:
+          $ref: '#/components/schemas/DateString'
+        apiUpdateDate:
+          $ref: '#/components/schemas/DateString'
+        castUpdateDate:
+          $ref: '#/components/schemas/DateString'
+        poster_s3:
+          $ref: '#/components/schemas/Poster_s3'
+        trailer_s3:
+          $ref: '#/components/schemas/Trailer_s3'
+        endYear:
+          type: string
+        officialSite:
+          type: string
+        webChannel:
+          type: string
+        duration:
+          type: string
+          description: example '60 min'
+        totalDuration:
+          type: string
+          description: in format hh:mm example 14:11 === 14 hours and 11 min
+        imdbID:
+          type: string
+        tvmazeID:
+          type: integer
+        jikanID:
+          type: integer
+        totalSeasons:
+          type: integer
+        boxOffice:
+          type: string
+        rated:
+          type: string
+        movieLang:
+          type: string
+        country:
+          type: string
+        actorsAndCharacters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor_and_Character'
+        staff:
+          type: object
+          properties:
+            directors:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            writers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            others:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+        awards:
+          type: string
+        animeType:
+          type: string
+        animeSource:
+          type: string
+        animeSeason:
+          type: string
+        relatedTitles:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              jikanID:
+                type: integer
+              title:
+                type: string
+              rawTitle:
+                type: string
+              relation:
+                type: string
+                enum: [ 'Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off' ]
+        userStats:
+          $ref: '#/components/schemas/UserStats'
+
+    DataLevel_info:
+      allOf:
+        - $ref: '#/components/schemas/DataLevel_high'
+      not:
+        type: object
+        properties:
+          seasons:
+            type: array
+          qualities:
+            type: array
+          subtitles:
+            type: array
+
+    DataLevels:
+      type: string
+      enum: [ 'dlink', 'low', 'telbot', 'medium', 'high', 'info' ]
 
     LatestData:
       type: object
