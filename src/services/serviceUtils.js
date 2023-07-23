@@ -42,6 +42,7 @@ export const errorMessage = Object.freeze({
     invalidDeviceId: 'Invalid deviceId',
     //----------------------
     userPassNotMatch: 'Username and password do not match',
+    oldPassNotMatch: 'Old password does not match',
     //----------------------
     badRequestBody: 'Incorrect request body',
     //----------------------

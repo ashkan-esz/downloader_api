@@ -61,6 +61,28 @@ export default function (agenda) {
         }
     });
 
+    agenda.define("update password", {concurrency: 50}, async (job) => {
+        try {
+            let {email} = job.attrs.data;
+            const mailOptions = {
+                from: 'downloaderapi@gmail.com',
+                to: email,
+                subject: 'Password Changed',
+                text: `Your password has been changed`,
+                html: `
+                <div>
+                    <p>Your password has been changed<p/>
+                </div>
+                `,
+            };
+            let result = await transporter.sendMail(mailOptions);
+            return {delivered: 1, status: 'ok'};
+        } catch (error) {
+            saveError(error);
+            return {delivered: 0, status: 'error'};
+        }
+    });
+
     agenda.define("verify email", {concurrency: 50}, async (job) => {
         try {
             let {email, rawUsername, emailVerifyToken, host} = job.attrs.data;

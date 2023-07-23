@@ -419,6 +419,45 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
+  /users/updatePassword:
+    put:
+      tags:
+        - Users
+      summary: Update Password
+      description: Update User Password.
+      operationId: users/updatePassword
+      security:
+        - accessToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                  description: at least one number and capital letter and length in range [8-50]
+                newPassword:
+                  type: string
+                  description: at least one number and capital letter and length in range [8-50]
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
   /users/activeSessions:
     get:
       tags:

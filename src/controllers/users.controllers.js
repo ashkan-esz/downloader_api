@@ -130,6 +130,18 @@ export async function editProfile(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function updatePassword(req, res) {
+    const {oldPassword, newPassword} = req.body;
+    let result = await usersServices.updatePassword(req.jwtUserData, oldPassword, newPassword);
+    return sendResponse(req, res, result);
+}
+
+// export async function resetPassword(req, res) {
+//     const {email} = req.body;
+//     let result = await usersServices.resetPassword(email);
+//     return sendResponse(req, res, result);
+// }
+
 export async function getUserActiveSessions(req, res) {
     let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
     return sendResponse(req, res, result);

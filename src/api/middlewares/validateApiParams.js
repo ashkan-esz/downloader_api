@@ -543,6 +543,30 @@ const validations = Object.freeze({
         .isEmail().withMessage("Email is in wrong format")
         .trim().escape().normalizeEmail({gmail_remove_dots: false}),
 
+    oldPassword_body: body('oldPassword')
+        .exists().withMessage("OldPassword cannot be empty")
+        .isString().withMessage("OldPassword must be String")
+        .trim().escape(),
+
+    newPassword_body: body('newPassword')
+        .exists().withMessage("newPassword cannot be empty")
+        .isString().withMessage("newPassword must be String")
+        .isLength({min: 8}).withMessage("newPassword length must be more than 8")
+        .isLength({max: 50}).withMessage("newPassword length must be less than 50")
+        .matches('[0-9]').withMessage("newPassword must contain a number")
+        .matches('[A-Z]').withMessage("newPassword must contain an uppercase")
+        .custom((value, {req, loc, path}) => {
+            if (value === req.body.oldPassword) {
+                // trow error if password is equal with username
+                throw new Error("newPassword cannot be equal with oldPassword");
+            } else if (value.includes(' ')) {
+                throw new Error("newPassword cannot have space");
+            } else {
+                return value;
+            }
+        })
+        .trim().escape(),
+
 });
 
 

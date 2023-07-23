@@ -46,15 +46,12 @@
 //todo : 78. add feature 'comments' to movies
 //todo : 79. add filter for 'hentai' and 'pornography' on api results
 //todo : 80. add feature: share movies between users
-//todo : 81. add api for changing user information
-//todo : 81.2 add api for changing password
 //todo : 81.2 add api for forget password
 //todo : 83. add api to check for new episode release on movies that user follow
 //todo : 84. add api to check for relatedTitles that user follow
 //todo : 85. add feature: send notification to users
 //todo : 86. add feature: clustering for larger scales
 //todo : 87. organize cronjob times
-//todo : 96. crawler: start domainChangeHandler every 30 min
 //todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
 //todo : 103. add movie source change detection service
@@ -84,4 +81,3 @@
 //todo : 136. smart suggestion method
 //todo : 137. fix duplicate titles bug
 //todo : 140. add graphql
-//todo : 141. add postman

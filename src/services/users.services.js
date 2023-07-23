@@ -21,7 +21,6 @@ import {setRedis} from "../data/redis.js";
 
 //todo : remove account
 //todo : forget password
-//todo : edit profile data
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
@@ -271,6 +270,51 @@ export async function editProfile(jwtUserData, username, publicName, bio, email)
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
+
+export async function updatePassword(jwtUserData, oldPassword, newPassword) {
+    try {
+        let findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {password: 1, email: 1});
+        if (findUserResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!findUserResult) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+
+        if (await bcrypt.compare(oldPassword, findUserResult.password)) {
+            const hashedPassword = await bcrypt.hash(newPassword, 12);
+            const updateResult = await usersDbMethods.updateUserByID(jwtUserData.userId, {
+                password: hashedPassword,
+            });
+            if (updateResult === 'error') {
+                return generateServiceResult({}, 500, errorMessage.serverError);
+            } else if (updateResult === 'notfound') {
+                return generateServiceResult({}, 404, errorMessage.userNotFound);
+            }
+
+            if (findUserResult.email) {
+                agenda.schedule('in 4 seconds', 'update password', {
+                    email: findUserResult.email,
+                });
+            }
+
+            return generateServiceResult({}, 200, '');
+        } else {
+            return generateServiceResult({}, 403, errorMessage.oldPassNotMatch);
+        }
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+// export async function resetPassword(email) {
+//     try {
+//
+//     } catch (error) {
+//         saveError(error);
+//         return generateServiceResult({}, 500, errorMessage.serverError);
+//     }
+// }
 
 export async function getUserActiveSessions(userData, refreshToken) {
     try {

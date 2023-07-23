@@ -43,6 +43,21 @@ router.post('/editProfile',
     mongoSanitize(),
     usersControllers.editProfile);
 
+//users/updatePassword
+router.put('/updatePassword',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['oldPassword_body', 'newPassword_body']),
+    middlewares.validateApiParams.apiParams_sendError,
+    mongoSanitize(),
+    usersControllers.updatePassword);
+
+// //users/resetPassword
+// router.put('/resetPassword',
+//     middlewares.validateApiParams.checkApiParams(['email_body']),
+//     middlewares.validateApiParams.apiParams_sendError,
+//     mongoSanitize(),
+//     usersControllers.resetPassword);
+
 //users/activeSessions
 router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserActiveSessions);
 
