@@ -124,6 +124,12 @@ export async function getUserProfile(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function editProfile(req, res) {
+    const {username, publicName, bio, email} = req.body;
+    let result = await usersServices.editProfile(req.jwtUserData, username, publicName, bio, email);
+    return sendResponse(req, res, result);
+}
+
 export async function getUserActiveSessions(req, res) {
     let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
     return sendResponse(req, res, result);

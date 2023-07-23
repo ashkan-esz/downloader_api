@@ -1,5 +1,6 @@
 import {defaultProfileImage} from "../data/cloudStorage.js";
 
+export const editableUserDataFields = Object.freeze(['username', 'publicName', 'email', 'bio']);
 
 export function userModel(username, email, password, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId) {
     return {

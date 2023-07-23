@@ -509,6 +509,40 @@ const validations = Object.freeze({
             }
             return value;
         }),
+
+    username_body: body('username')
+        .exists().withMessage("Username cannot be empty")
+        .isString().withMessage("Username must be string")
+        .isLength({min: 6}).withMessage("Username length must be more than 6")
+        .isLength({max: 50}).withMessage("Username length must be less than 50")
+        .custom((value, {req, loc, path}) => {
+            if (!value.toString().match(/^[a-z|\d_-]+$/gi)) {
+                // trow error if password is equal with username
+                throw new Error("Only a-z, 0-9, and underscores are allowed for username");
+            } else {
+                return value;
+            }
+        })
+        .trim().escape(),
+
+    publicName_body: body('publicName')
+        .exists().withMessage("PublicName cannot be empty")
+        .isString().withMessage("PublicName must be string")
+        .isLength({min: 6}).withMessage("PublicName length must be more than 6")
+        .isLength({max: 50}).withMessage("PublicName length must be less than 50")
+        .trim().escape(),
+
+    bio_body: body('bio')
+        .isString().withMessage("Bio must be string")
+        .isLength({max: 100}).withMessage("Bio length must be less than 100")
+        .trim().escape(),
+
+    email_body: body('email')
+        .exists().withMessage("Email cannot be empty")
+        .isString().withMessage("Email must be string")
+        .isEmail().withMessage("Email is in wrong format")
+        .trim().escape().normalizeEmail({gmail_remove_dots: false}),
+
 });
 
 

@@ -228,6 +228,50 @@ export async function getUserProfile(userData, refreshToken) {
     }
 }
 
+export async function editProfile(jwtUserData, username, publicName, bio, email) {
+    try {
+        let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, publicName: 1, email: 1});
+        if (findUserResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (findUserResult && findUserResult._id.toString() !== jwtUserData.userId.toString()) {
+            if (findUserResult.username === username.toLowerCase()) {
+                return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
+            }
+            if (findUserResult.email === email) {
+                return generateServiceResult({}, 403, errorMessage.emailAlreadyExist);
+            }
+        }
+
+        let updateFields = {
+            bio: bio,
+        };
+        if (username !== findUserResult.username) {
+            updateFields.username = username.toLowerCase();
+            updateFields.rawUsername = username;
+        }
+        if (email !== findUserResult.email) {
+            updateFields.email = email;
+            updateFields.emailVerified = false;
+            updateFields.emailVerifyToken = '';
+            updateFields.emailVerifyToken_expire = 0;
+        }
+        if (publicName !== findUserResult.publicName) {
+            updateFields.publicName = publicName;
+        }
+
+        let result = await usersDbMethods.updateUserByID(jwtUserData.userId, updateFields);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (result === 'notfound') {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
 export async function getUserActiveSessions(userData, refreshToken) {
     try {
         let thisDevice = userData.activeSessions.find(item => item.refreshToken === refreshToken);
@@ -455,11 +499,11 @@ export async function computeUserStats(jwtUserData) {
 //---------------------------------------------------------------
 
 function fixDeviceInfo(deviceInfo, fingerprint) {
-    if (fingerprint.components.useragent){
-        if (fingerprint.components.useragent.os.family !== "Other"){
+    if (fingerprint.components.useragent) {
+        if (fingerprint.components.useragent.os.family !== "Other") {
             deviceInfo.os = fingerprint.components.useragent.os.family;
         }
-        if (fingerprint.components.useragent.device.family !== "Other"){
+        if (fingerprint.components.useragent.device.family !== "Other") {
             deviceInfo.deviceModel = fingerprint.components.useragent.device.family;
         }
     }

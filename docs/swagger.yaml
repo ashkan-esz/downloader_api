@@ -373,6 +373,52 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
+  /users/editProfile:
+    post:
+      tags:
+        - Users
+      summary: Edit Profile
+      description: Edit profile data.
+      operationId: users/editProfile
+      security:
+        - accessToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  required: true
+                publicName:
+                  type: string
+                  description: other users see this in general
+                  required: true
+                email:
+                  type: string
+                  required: true
+                bio:
+                  type: string
+                  required: true
+                  description: can be empty
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        404:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseCode'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
   /users/activeSessions:
     get:
       tags:
@@ -1316,8 +1362,8 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - name: genres
-          required: false
-          in: query
+          required: true
+          in: path
           description: Array of String joined by '-'
           example: action-sci_fi-drama
           schema:
