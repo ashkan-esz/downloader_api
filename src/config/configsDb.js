@@ -57,15 +57,7 @@ async function handleUpdateStuff(saveChangesToDB = true) {
 
 export const defaultConfigsDb = Object.freeze({
     title: 'server configs',
-    corsAllowedOrigins: Object.freeze([
-        'http://127.0.0.1:3000',
-        'http://localhost:3000',
-        'http://127.0.0.1:5000',
-        'http://localhost:5000',
-        'http://localhost:7000',
-        'http://localhost:8080',
-        'http://localhost:8081',
-    ]),
+    corsAllowedOrigins: Object.freeze([]),
     disableTestUserRequests: false,
     disableCrawlerForDuration: 0,
     disableCrawlerStart: 0,

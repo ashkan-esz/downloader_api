@@ -45,7 +45,7 @@ export default Object.freeze({
         accessTokenExpireSeconds: 60 * 60,
         refreshTokenExpire: '180d',
     }),
-    corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---'),
+    corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "").split('---').map(item => item.trim()),
     diskSpace: Object.freeze({
         totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 1024),
         defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
