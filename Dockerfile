@@ -18,7 +18,7 @@ RUN apk add --no-cache --update nodejs npm
 COPY --from=build /usr/app /
 
 EXPOSE 3000
-#CMD [ "node", "src/server.js"]
-CMD [ "node", "src/tracing.js"]
+CMD [ "node", "src/server.js"]
+#CMD [ "node", "src/tracing.js"]
 
 #HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1
