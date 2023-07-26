@@ -19,3 +19,4 @@ manualTest.js
 manualTest.http
 .db
 signoz
+nginx

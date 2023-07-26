@@ -24,16 +24,17 @@ services:
       CRAWLER_TOTAL_MEMORY: 1024
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
+      CORS_ALLOWED_ORIGINS: https://movietracker.mom --- https://admin.movietracker.mom
 #    ports:
 #      - "3000:3000"
     deploy:
       resources:
         #also check --max_old_space_size in Dockerfile
         limits:
-          cpus: 0.5
+          cpus: "0.5"
           memory: 1224M
         reservations:
-          cpus: 0.2
+          cpus: "0.2"
           memory: 300M
     restart: always
     healthcheck:
@@ -59,10 +60,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 0.3
+          cpus: "0.3"
           memory: 210M
         reservations:
-          cpus: 0.05
+          cpus: "0.05"
           memory: 50M
     restart: always
     healthcheck:
@@ -89,7 +90,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 0.4
+          cpus: "0.4"
           memory: 1000M
         reservations:
           memory: 300M
@@ -106,13 +107,13 @@ services:
       - api
     env_file: ./telegrambot.env
     environment:
-      - SERVER_ADDRESS=http://localhost:8080/api
+      - SERVER_ADDRESS=https://api.movietracker.mom
     volumes:
       - telegrambot
     deploy:
       resources:
         limits:
-          cpus: 0.5
+          cpus: "0.5"
           memory: 150M
         reservations:
           memory: 50M
@@ -124,11 +125,11 @@ services:
     depends_on:
       - api
     environment:
-      - REACT_APP_BASE_URL=http://localhost:8080/api
+      - REACT_APP_BASE_URL=https://api.movietracker.mom
     deploy:
       resources:
         limits:
-          cpus: 0.2
+          cpus: "0.2"
           memory: 200M
         reservations:
           memory: 50M
@@ -140,11 +141,11 @@ services:
     depends_on:
       - api
     environment:
-      - REACT_APP_BASE_URL=http://localhost:8080/api
+      - REACT_APP_BASE_URL=https://api.movietracker.mom
     deploy:
       resources:
         limits:
-          cpus: 0.2
+          cpus: "0.2"
           memory: 300M
         reservations:
           memory: 50M
@@ -154,7 +155,7 @@ services:
     network_mode: host
     build: ./nginx
 #    ports:
-#      - '8080:8080'
+#      - '80:80'
     depends_on:
       - api
       - telegrambot
