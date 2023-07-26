@@ -10,6 +10,7 @@ info:
     "name": "Apache 2.0"
     "url": 'http://www.apache.org/licenses/LICENSE-2.0.html'
 "servers":
+  - "url": 'https://api.movietracker.mom'
   - "url": 'http://localhost:3000'
 
 paths:
