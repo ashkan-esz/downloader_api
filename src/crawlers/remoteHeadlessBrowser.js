@@ -453,7 +453,7 @@ function addSourceErrorToBrowserServer(selectedBrowser, sourceName) {
         sourceData.errorCounter++;
         sourceData.totalErrorCounter++;
         sourceData.lastErrorTime = Date.now();
-        if (sourceData.errorCounter >= 5) {
+        if (sourceData.errorCounter >= 15) {
             sourceData.isBlocked = true;
         }
     } else {
@@ -524,7 +524,7 @@ function addSourceToAxiosBlackList(sourceName) {
 function freeAxiosBlackListSources() {
     for (let i = 0; i < blackListSources.length; i++) {
         //free source after 3 hour
-        blackListSources[i].isBlocked = (Date.now() - blackListSources[i].lastErrorTime) < 3 * 60 * 60 * 1000; //3h
+        blackListSources[i].isBlocked = (Date.now() - blackListSources[i].lastErrorTime) < 2 * 60 * 60 * 1000; //2h
     }
 }
 

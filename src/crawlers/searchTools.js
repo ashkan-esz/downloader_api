@@ -57,7 +57,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
         if (!url || pageCount === 0) {
             return lastPageNumber;
         }
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, pageCount);
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; (pageCount === null || i <= pageCount); i++) {
             if (checkNeedForceStopCrawler()) {
@@ -380,7 +380,7 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
     }
 }
 
-async function getConcurrencyNumber(sourceName, needHeadlessBrowser, pageCount) {
+async function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
     let concurrencyNumber = 0;
     if (config.crawler.concurrency) {
         concurrencyNumber = Number(config.crawler.concurrency);
@@ -390,9 +390,9 @@ async function getConcurrencyNumber(sourceName, needHeadlessBrowser, pageCount) 
             ? 9
             : 12;
     }
-    if (pageCount !== null && pageCount < 3 && await checkServerIsIdle()) {
+    if (await checkServerIsIdle()) {
         //use higher concurrency when mode is 0 and server is idle
-        concurrencyNumber += 2;
+        concurrencyNumber += 3;
     }
     return concurrencyNumber;
 }
