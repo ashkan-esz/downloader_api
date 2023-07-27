@@ -278,7 +278,7 @@ const validations = Object.freeze({
         .isArray({min: 1, max: 10}).withMessage("corsAllowedOrigins Must be an array with size of [1-10]")
         .custom((value, {req, loc, path}) => {
             for (let i = 0; i < value.length; i++) {
-                if (!value[i] || typeof value[i] !== 'string') {
+                if ((!value[i] && value[i] !== '') || typeof value[i] !== 'string') {
                     throw new Error("corsAllowedOrigins Must be an array of String");
                 }
             }

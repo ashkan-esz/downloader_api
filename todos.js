@@ -2,6 +2,7 @@
 //todo : 7. remoteBrowser: crawl youtube for trailers
 //todo : 8. reduce size of trailers
 //todo : 9. reduce size of users profile images
+//todo : 10. use webp format for images save in s3
 //todo : 11. show status of s3 file remover
 //todo : 12. save data and counts s3 file remover in db
 //todo : 13. add api to remove user/staff/character
