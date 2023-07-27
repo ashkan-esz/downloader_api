@@ -385,8 +385,7 @@ async function handleApiCall(url, timeoutSec = 0) {
 
 function getTitlesFromData(fullData) {
     let apiTitle = fullData.title;
-    let yearMatch = apiTitle.match(/\(\d\d\d\d\)/g);
-    yearMatch = yearMatch ? yearMatch.pop() : null;
+    let yearMatch = apiTitle?.match(/\(\d\d\d\d\)/g)?.pop() || null;
     if (yearMatch) {
         apiTitle = apiTitle.replace(yearMatch, '').trim();
     }
