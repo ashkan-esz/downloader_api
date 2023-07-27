@@ -126,6 +126,8 @@ services:
       - api
     environment:
       - REACT_APP_BASE_URL=https://api.movietracker.mom
+#    ports:
+#      - "7070:7070"
     deploy:
       resources:
         limits:
@@ -142,6 +144,8 @@ services:
       - api
     environment:
       - REACT_APP_BASE_URL=https://api.movietracker.mom
+#    ports:
+#      - "9090:9090"
     deploy:
       resources:
         limits:
