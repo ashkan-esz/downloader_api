@@ -33,12 +33,12 @@ function decreaseImageOperationNumber() {
 //------------------------------------------
 //------------------------------------------
 
-export async function compressImage(responseData) {
+export async function compressImage(responseData, activeSize= 1024) {
     await waitForImageOperation();
     try {
         let dataBuffer = responseData;
         // reduce image size if size > 1MB
-        if (responseData.length > 1024 * 1024) {
+        if (responseData.length > activeSize * 1024) {
             let tempQuality = 50 - (Math.ceil(responseData.length / (1024 * 1024)) - 2) * 5;
             let sharpQuality = Math.max(Math.min(35, tempQuality), 10);
             let temp = await sharp(responseData, {failOn: 'error'}).jpeg({

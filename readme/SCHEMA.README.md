@@ -10,6 +10,7 @@ profile = {
     bio: String,
     profileImages: Array({
         url: String,
+        originalSize: Int,
         size: Int,
         thumbnail: String,
         addDate: Date,

@@ -7,9 +7,8 @@ import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
-import {removeProfileImageFromS3} from "../data/cloudStorage.js";
+import {removeProfileImageFromS3, uploadProfileImageToS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
-import {getImageThumbnail} from "../utils/sharpImageMethods.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
 
@@ -380,26 +379,21 @@ export async function uploadProfileImage(jwtUserData, uploadFileData) {
             return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
         }
 
-        let fileData = {
-            url: uploadFileData.location,
-            size: uploadFileData.size,
-            thumbnail: '',
-            addDate: new Date(),
+        const type = uploadFileData.mimetype === 'image/png' ? 'png' : 'jpg';
+        let s3ProfileImage = await uploadProfileImageToS3(jwtUserData.userId, type, uploadFileData.buffer);
+        if (!s3ProfileImage) {
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
         }
-        let thumbnailData = await getImageThumbnail(fileData.url, true);
-        if (thumbnailData) {
-            fileData.thumbnail = thumbnailData.dataURIBase64;
-            fileData.size = thumbnailData.fileSize || uploadFileData.size;
-        }
+        s3ProfileImage.addDate = new Date();
 
-        let userData = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, fileData);
+        let userData = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, s3ProfileImage);
         if (userData === 'error') {
-            const fileName = uploadFileData.location.split('/').pop();
+            const fileName = s3ProfileImage.url.split('/').pop();
             await removeProfileImageFromS3(fileName);
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
         } else if (!userData) {
             //inCase if two image upload in same time
-            const fileName = uploadFileData.location.split('/').pop();
+            const fileName = s3ProfileImage.url.split('/').pop();
             await removeProfileImageFromS3(fileName);
             return generateServiceResult({data: null}, 404, errorMessage.exceedProfileImage);
         }
@@ -411,10 +405,6 @@ export async function uploadProfileImage(jwtUserData, uploadFileData) {
         }, 200, '');
     } catch (error) {
         saveError(error);
-        if (uploadFileData && uploadFileData.location) {
-            const fileName = uploadFileData.location.split('/').pop();
-            await removeProfileImageFromS3(fileName);
-        }
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
 }

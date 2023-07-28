@@ -162,9 +162,53 @@ export async function uploadTitlePosterToS3(title, type, year, originalUrl, forc
     try {
         const fileName = getFileName(title, type, year, '', 'jpg');
         const fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
-        return await uploadImageToS3(bucketNamesObject.poster, fileName, fileUrl, originalUrl,forceUpload);
+        return await uploadImageToS3(bucketNamesObject.poster, fileName, fileUrl, originalUrl, forceUpload);
     } catch (error) {
         saveError(error);
+        return null;
+    }
+}
+
+export async function uploadProfileImageToS3(userId, type, dataBuffer, retryCounter = 0, retryWithSleepCounter = 0) {
+    try {
+        if (!dataBuffer) {
+            return null;
+        }
+
+        const fileName = `user-${userId}-${Date.now()}.${type}`;
+        const fileUrl = `https://${bucketNamesObject.profileImage}.${bucketsEndpointSuffix}/${fileName}`;
+        const compressedDataBuffer = await compressImage(dataBuffer, 512);
+
+        const params = {
+            ContentType: 'image/jpeg',
+            ContentLength: compressedDataBuffer.length.toString(),
+            Bucket: bucketNamesObject.profileImage,
+            Body: compressedDataBuffer,
+            Key: fileName,
+            ACL: 'public-read',
+        };
+        let command = new PutObjectCommand(params);
+        await s3.send(command);
+
+        let thumbnailData = await getImageThumbnail(compressedDataBuffer);
+        return {
+            url: fileUrl,
+            originalSize: Number(dataBuffer.length),
+            size: Number(compressedDataBuffer.length),
+            thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+        };
+    } catch (error) {
+        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 200)));
+            return await uploadProfileImageToS3(userId, type, dataBuffer, retryCounter, retryWithSleepCounter);
+        }
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 1000)));
+            return await uploadProfileImageToS3(userId, type, dataBuffer, retryCounter, retryWithSleepCounter);
+        }
+        saveErrorIfNeeded(error);
         return null;
     }
 }

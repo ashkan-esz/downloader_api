@@ -199,6 +199,8 @@ paths:
                       properties:
                         url:
                           type: string
+                        originalSize:
+                          type: integer
                         size:
                           type: integer
                         thumbnail:
@@ -553,7 +555,7 @@ paths:
       description: <p>
         send data as formData and don't forget to set contentType <br/>
         returns new profileImages array. <br/> <br/>
-        file size limited to `1mb` and accept [`jpg`, `jpeg`, `png`] formats only, (error code 400). <br/>
+        file size limited to `2mb` and accept [`jpg`, `jpeg`, `png`, `webp`] formats only, (error code 400). <br/>
         20 profile image per user, (error code 409)
         <p/>
       operationId: users/uploadProfileImage
@@ -587,6 +589,8 @@ paths:
                       properties:
                         url:
                           type: string
+                        originalSize:
+                          type: integer
                         size:
                           type: integer
                         thumbnail:
@@ -628,6 +632,8 @@ paths:
                       properties:
                         url:
                           type: string
+                        originalSize:
+                          type: integer
                         size:
                           type: integer
                         thumbnail:
@@ -1851,6 +1857,8 @@ security:
             properties:
               url:
                 type: string
+              originalSize:
+                type: integer
               size:
                 type: integer
               thumbnail:
