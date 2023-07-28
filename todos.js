@@ -1,8 +1,5 @@
 
 //todo : 7. remoteBrowser: crawl youtube for trailers
-//todo : 8. reduce size of trailers
-//todo : 9. reduce size of users profile images
-//todo : 10. use webp format for images save in s3
 //todo : 11. show status of s3 file remover
 //todo : 12. save data and counts s3 file remover in db
 //todo : 13. add api to remove user/staff/character
@@ -19,7 +16,6 @@
 //todo : 23. crawler: reCrawl sources after being disable for a while
 //todo : 26. add redis and fallback to node-cache
 //todo : 27. add elastic search and fallback to mongo search
-//todo : 28. docker project for better and easier deployment
 //todo : 29. add telegram bot for some system to backup database
 //todo : 30. adminPanel: manage bots like movie sources
 //todo : 35. lower memory consumption for crawler
@@ -51,7 +47,6 @@
 //todo : 83. add api to check for new episode release on movies that user follow
 //todo : 84. add api to check for relatedTitles that user follow
 //todo : 85. add feature: send notification to users
-//todo : 86. add feature: clustering for larger scales
 //todo : 87. organize cronjob times
 //todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
@@ -65,7 +60,6 @@
 //todo : 113. save last crawler run data on sources, better detection for source url not accessible
 //todo : 115. Add fields username Change and description to crawler sources
 //todo : 120. add redis/memCache, (render/liara/arvanCloud free plan)
-//todo : 121. check youtube trailers size, and possible to reduce size, check imagekit.io, check new language stack
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
 //todo : 124. add feature: 'like_month' , 'view_month' to movies
@@ -82,3 +76,4 @@
 //todo : 136. smart suggestion method
 //todo : 137. fix duplicate titles bug
 //todo : 140. add graphql
+//todo : 141. add login by telegram
