@@ -138,7 +138,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.checkingPoster);
     if (sitePoster && (db_data.poster_s3 === null || await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingPosterToS3);
-        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, sitePoster, 0, true);
+        let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, sitePoster, true);
         if (s3poster) {
             db_data.poster_s3 = s3poster;
             updateFields.poster_s3 = s3poster;
