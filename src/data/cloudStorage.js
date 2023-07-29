@@ -121,6 +121,9 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
         }
 
         let response = await getArrayBufferResponse(originalUrl, cookie);
+        if (response === null) {
+            return null;
+        }
         const params = {
             ContentType: response.headers["content-type"],
             ContentLength: response.data.length.toString(),
@@ -382,6 +385,9 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
         }
 
         let response = await getArrayBufferResponse(originalUrl);
+        if (response === null) {
+            return null;
+        }
         let dataBuffer = await compressImage(response.data);
 
         const params = {

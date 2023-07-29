@@ -81,7 +81,11 @@ export async function getArrayBufferResponse(url, cookie = null) {
             Cookie: cookie,
         }
     }
-    return await client.get(url, config);
+    let result = await client.get(url, config);
+    if (result.headers['content-type'] === "text/html") {
+        return null;
+    }
+    return result;
 }
 
 export async function getResponseUrl(url) {
