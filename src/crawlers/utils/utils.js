@@ -3,7 +3,7 @@ import {saveError} from "../../error/saveError.js";
 
 export function replaceSpecialCharacters(input) {
     return input
-        .replace(/[;:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
+        .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
         .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
@@ -185,7 +185,7 @@ export function getSeasonEpisode(input, isLinkInput = false) {
 
         let season = 0, episode = 0;
 
-        const case1 = input.match(/s\d+([-.]|%20)*e\d+/gi);
+        const case1 = input.match(/(?<!([a-z]))s\d+([-.]|%20)*e\d+/gi);
         if (case1) {
             const temp = case1.pop();
             const seasonEpisode = temp.replace(/[-.]|%20/g, '');

@@ -540,7 +540,7 @@ export function getCleanLinkInfo(info) {
         .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0])
         .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0])
         .replace(/[ًًًٌٍَُِ]/g, '')
-        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m|ITSat)(?=(\.|\[|$))/gi, '')
+        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m|ITSat|DV)(?=(\.|\[|$))/gi, '')
         .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
         .replace(/([.\-])Fixed/i, '')
         .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
