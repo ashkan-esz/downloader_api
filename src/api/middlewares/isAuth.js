@@ -56,6 +56,7 @@ export function isAuth_refreshToken(req, res, next) {
             code: 401,
             errorMessage: 'Unauthorized',
             isGuest: false,
+            isCacheData: false,
         });
     }
     try {
@@ -70,6 +71,7 @@ export function isAuth_refreshToken(req, res, next) {
                 code: 403,
                 errorMessage: 'Invalid token',
                 isGuest: false,
+                isCacheData: false,
             });
         }
     } catch (error) {
@@ -77,6 +79,7 @@ export function isAuth_refreshToken(req, res, next) {
             code: 403,
             errorMessage: 'Invalid token',
             isGuest: false,
+            isCacheData: false,
         });
     }
 }
@@ -124,6 +127,7 @@ export function blockAuthorized(req, res, next) {
             code: 403,
             errorMessage: 'Logout first',
             isGuest: false,
+            isCacheData: false,
         });
     }
     return next();
@@ -136,6 +140,7 @@ export function blockUnAuthorized(req, res, next) {
             code: req.authCode,
             errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token',
             isGuest: false,
+            isCacheData: false,
         });
     }
     return next();
@@ -159,6 +164,7 @@ export function checkUserRolePermission(roles) {
                 code: 403,
                 errorMessage: `Forbidden, ([${roles.join(',')}]) roles only`,
                 isGuest: false,
+                isCacheData: false,
             });
         }
         return next();

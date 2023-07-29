@@ -6,6 +6,7 @@ export default async function attachCurrentUser(req, res, next) {
             code: req.authCode,
             errorMessage: req.authCode === 401 ? 'Unauthorized' : 'Invalid token',
             isGuest: false,
+            isCacheData: false,
         });
     }
     let userData = await findUserById(req.jwtUserData.userId);
@@ -15,6 +16,7 @@ export default async function attachCurrentUser(req, res, next) {
             code: 500,
             errorMessage: 'Server error, try again later',
             isGuest: false,
+            isCacheData: false,
         });
     } else if (!userData) {
         return res.status(401).json({
@@ -22,6 +24,7 @@ export default async function attachCurrentUser(req, res, next) {
             code: 401,
             errorMessage: 'Cannot find userId',
             isGuest: false,
+            isCacheData: false,
         });
     }
     req.userData = userData;

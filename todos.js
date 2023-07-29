@@ -14,7 +14,6 @@
 //todo : 21.2 crawler: check sources changes need fixes or need to be disable
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
 //todo : 23. crawler: reCrawl sources after being disable for a while
-//todo : 26. add redis and fallback to node-cache
 //todo : 27. add elastic search and fallback to mongo search
 //todo : 29. add telegram bot for some system to backup database
 //todo : 30. adminPanel: manage bots like movie sources
@@ -59,7 +58,6 @@
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 113. save last crawler run data on sources, better detection for source url not accessible
 //todo : 115. Add fields username Change and description to crawler sources
-//todo : 120. add redis/memCache, (render/liara/arvanCloud free plan)
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
 //todo : 124. add feature: 'like_month' , 'view_month' to movies

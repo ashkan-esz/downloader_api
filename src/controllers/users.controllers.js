@@ -12,6 +12,7 @@ export async function signup(req, res) {
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
             isGuest: false,
+            isCacheData: false,
         });
     }
 
@@ -43,6 +44,7 @@ export async function login(req, res) {
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
             isGuest: false,
+            isCacheData: false,
         });
     }
 
@@ -73,6 +75,7 @@ export async function getToken(req, res) {
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(' , '),
             isGuest: false,
+            isCacheData: false,
         });
     }
 

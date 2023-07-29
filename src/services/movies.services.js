@@ -309,7 +309,7 @@ export async function getGenresStatus(routeUrl) {
         code: 200,
         errorMessage: '',
         isGuest: false,
-        cachedData: true,
+        isCacheData: true,
     }, 60 * 60);
 
     return generateServiceResult({data: genres}, 200, '');
@@ -349,7 +349,7 @@ export async function getMovieSources(routeUrl) {
         code: 200,
         errorMessage: '',
         isGuest: false,
-        cachedData: true,
+        isCacheData: true,
     }, 30 * 60);
 
     return generateServiceResult({data: sourcesUrls}, 200, '');

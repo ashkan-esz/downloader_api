@@ -11,6 +11,7 @@ export async function uploadProfileImage(req, res, next) {
             code: 500,
             errorMessage: errorMessage.serverError,
             isGuest: false,
+            isCacheData: false,
         });
     }
     if (!userData) {
@@ -19,6 +20,7 @@ export async function uploadProfileImage(req, res, next) {
             code: 404,
             errorMessage: errorMessage.userNotFound,
             isGuest: false,
+            isCacheData: false,
         });
     }
     if (userData.profileImageCounter > 19) {
@@ -27,6 +29,7 @@ export async function uploadProfileImage(req, res, next) {
             code: 409,
             errorMessage: errorMessage.exceedProfileImage,
             isGuest: false,
+            isCacheData: false,
         });
     }
     next();
@@ -40,6 +43,7 @@ export async function uploadAppVersion(req, res, next) {
             code: 500,
             errorMessage: errorMessage.serverError,
             isGuest: false,
+            isCacheData: false,
         });
     }
 
@@ -51,6 +55,7 @@ export async function uploadAppVersion(req, res, next) {
             code: 409,
             errorMessage: errorMessage.alreadyExist,
             isGuest: false,
+            isCacheData: false,
         });
     }
 

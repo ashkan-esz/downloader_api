@@ -17,7 +17,7 @@ export async function getMessage(routeUrl) {
         code: 200,
         errorMessage: '',
         isGuest: false,
-        cachedData: true,
+        isCacheData: true,
     }, 5 * 60);
 
     return generateServiceResult({data: result}, 200, '');
@@ -40,7 +40,7 @@ export async function getApps(appName, routeUrl) {
         code: 200,
         errorMessage: '',
         isGuest: false,
-        cachedData: true,
+        isCacheData: true,
     }, 5 * 60);
 
     return generateServiceResult({data: result}, 200, '');
@@ -70,7 +70,7 @@ export async function checkAppUpdate(appName, os, version, routeUrl) {
         code: 200,
         errorMessage: '',
         isGuest: false,
-        cachedData: true,
+        isCacheData: true,
     }, 5 * 60);
 
     return generateServiceResult({data: data}, 200, '');

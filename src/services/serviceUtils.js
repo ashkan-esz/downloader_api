@@ -5,6 +5,7 @@ export function generateServiceResult(dataFields, code, errorMessage, extraData 
             ...dataFields,
             code: code,
             errorMessage: errorMessage,
+            isCacheData: false,
         }
     };
 }

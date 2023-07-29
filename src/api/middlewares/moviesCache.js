@@ -20,3 +20,15 @@ export default async function moviesCache(req, res, next) {
         return next();
     }
 }
+
+export async function movieCache_guest(req, res, next) {
+    if (!req.isGuest) {
+        return next();
+    }
+    let cacheResult = await getRedis(req.url);
+    if (cacheResult) {
+        res.json(cacheResult);
+    } else {
+        return next();
+    }
+}

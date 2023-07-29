@@ -355,6 +355,7 @@ export function apiParams_sendError(req, res, next) {
             code: 400,
             errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(', '),
             isGuest: false,
+            isCacheData: false,
         });
     }
     return next();

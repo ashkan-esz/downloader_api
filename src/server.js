@@ -76,6 +76,7 @@ app.use(function (req, res) {
         code: 404,
         sentryErrorId: res.sentry,
         isGuest: false,
+        isCacheData: false,
     });
 });
 
@@ -90,6 +91,7 @@ app.use((err, req, res, next) => {
         code: (fileError || corsError) ? 400 : 500,
         sentryErrorId: res.sentry,
         isGuest: false,
+        isCacheData: false,
     });
 });
 

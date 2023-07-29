@@ -18,5 +18,6 @@ export default function developmentFazeMiddleWare(req, res, next) {
         errorMessage: 'Server Is In Maintenance Mode, Wait...',
         code: 503,
         isGuest: false,
+        isCacheData: false,
     });
 }
