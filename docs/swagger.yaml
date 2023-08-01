@@ -2658,6 +2658,8 @@ security:
               type: string
             rawUsername:
               type: string
+        description:
+          type: string
 
 
     DbConfigs:

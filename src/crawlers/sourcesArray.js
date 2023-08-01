@@ -97,6 +97,7 @@ export const sourcesObj = () => {
             lastDomainChangeDate: 0,
             lastConfigUpdateDate: 0,
             userData: null,
+            description: '',
         }
     }
     return obj;

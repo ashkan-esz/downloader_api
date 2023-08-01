@@ -127,13 +127,14 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, userData) {
+export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, description, userData) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,
         serial_url,
         crawlCycle,
         disabled,
-        cookies
+        cookies,
+        description,
     }, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);

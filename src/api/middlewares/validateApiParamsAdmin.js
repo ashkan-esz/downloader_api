@@ -226,6 +226,11 @@ const validations = Object.freeze({
         .trim()
         .replace('empty', ''),
 
+    description: body('description')
+        .exists().withMessage("Missed parameter description")
+        .isString().withMessage("description must be String")
+        .trim().escape(),
+
     crawlCycle: body('crawlCycle')
         .exists().withMessage("Missed parameter crawlCycle")
         .isInt({min: 0}).withMessage("crawlCycle must be Number starting from 0")
