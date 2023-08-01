@@ -82,7 +82,7 @@ app.use(function (req, res) {
 
 app.use((err, req, res, next) => {
     const fileError = (err.message === 'File too large' || (err.message && err.message.includes('Not an supported format')));
-    const corsError = err.message === "Not allowed by CORS";
+    const corsError = err.message && err.message.includes('Not allowed by CORS');
     if (!fileError && !corsError) {
         saveError(err);
     }

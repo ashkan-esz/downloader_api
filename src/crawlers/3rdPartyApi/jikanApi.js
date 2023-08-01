@@ -389,7 +389,7 @@ function getTitlesFromData(fullData) {
     if (yearMatch) {
         apiTitle = apiTitle.replace(yearMatch, '').trim();
     }
-    let apiTitle_simple = utils.replaceSpecialCharacters(apiTitle.toLowerCase());
+    let apiTitle_simple = utils.replaceSpecialCharacters(apiTitle?.toLowerCase() || '');
     let apiTitleEnglish = (fullData.title_english || '').replace(/-....+-/g, '');
     let apiTitleEnglish_simple = utils.replaceSpecialCharacters(apiTitleEnglish.toLowerCase());
     let japaneseTitle = (fullData.title_japanese || '').toLowerCase();

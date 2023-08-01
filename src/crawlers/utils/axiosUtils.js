@@ -43,6 +43,9 @@ export async function downloadImage(url, retryCounter = 0) {
         }
         return response;
     } catch (error) {
+        if (error.response?.statusText === "Forbidden") {
+            return null;
+        }
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(url) === url && retryCounter < 1) {
             retryCounter++;

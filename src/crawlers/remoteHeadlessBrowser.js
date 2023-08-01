@@ -375,7 +375,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
         const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
-        let timeout = sourceAuthStatus === 'login-cookie' ? 6000 : 3000;
+        let timeout = sourceAuthStatus === 'login-cookie' ? 7000 : 4000;
         let response = await getResponseWithCookie(url, cookie, timeout);
         let $ = cheerio.load(response.data);
         let links = $('a');
@@ -399,7 +399,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.response && error.response.status) {
             addSourceToAxiosBlackList(sourceName);
         }
-        if (error.message !== 'timeout of 3000ms exceeded' && error.message !== 'timeout of 6000ms exceeded') {
+        if (error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded') {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
                 error.url = url;
