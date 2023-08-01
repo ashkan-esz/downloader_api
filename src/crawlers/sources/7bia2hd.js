@@ -80,6 +80,39 @@ async function search_title(link, pageNumber) {
     }
 }
 
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+    try {
+        title = title.toLowerCase();
+        let year;
+        ({title, year} = getTitleAndYear(title, year, type));
+
+        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+        if (pageSearchResult) {
+            let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
+            if (!year) {
+                year = fixYear($2, type);
+            }
+            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+            downloadLinks = handleLinksExtraStuff(downloadLinks);
+
+            let sourceData = {
+                sourceConfig,
+                pageLink,
+                downloadLinks,
+                watchOnlineLinks: getWatchOnlineLinks($2, type, pageLink),
+                persianSummary: summaryExtractor.getPersianSummary($2, title, year),
+                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                subtitles: getSubtitles($2, type, pageLink),
+                cookies
+            };
+            await save(title, type, year, sourceData, pageNumber);
+        }
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 function fixYear($, type) {
     try {
         let state = 0;

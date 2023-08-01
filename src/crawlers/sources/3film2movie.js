@@ -131,6 +131,61 @@ async function search_title(link, pageNumber) {
     }
 }
 
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+    try {
+        title = title.toLowerCase();
+        let year;
+        ({title, year} = getTitleAndYear(title, year, type));
+
+        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+        if (pageSearchResult) {
+            let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
+            if ($2('.category')?.text().includes('انیمه') && !type.includes('anime')) {
+                type = 'anime_' + type;
+            }
+            if (!year) {
+                year = fixYear($2);
+            }
+            if (type.includes('movie') && downloadLinks.length > 0 && (
+                downloadLinks[0].link.match(/\.s\d+e\d+\./i) ||
+                downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p\./i))) {
+                type = type.replace('movie', 'serial');
+                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                if (!pageSearchResult) {
+                    return;
+                }
+                ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            }
+            if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
+                type = type.replace('serial', 'movie');
+                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                if (!pageSearchResult) {
+                    return;
+                }
+                ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            }
+
+            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+            downloadLinks = handleLinksExtraStuff(downloadLinks);
+
+            let sourceData = {
+                sourceConfig,
+                pageLink,
+                downloadLinks,
+                watchOnlineLinks: [],
+                persianSummary: summaryExtractor.getPersianSummary($2, title, year),
+                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                subtitles: getSubtitles($2, type, pageLink),
+                cookies
+            };
+            await save(title, type, year, sourceData, pageNumber);
+        }
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 function fixYear($) {
     try {
         const postInfo = $('.postinfo');

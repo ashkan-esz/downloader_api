@@ -108,6 +108,52 @@ async function search_title(link, pageNumber, $, url) {
     }
 }
 
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+    try {
+        title = title.toLowerCase();
+        let year;
+        ({title, year} = getTitleAndYear(title, year, type));
+
+        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+            getQualitySample, linkCheck, true);
+
+        if (pageSearchResult) {
+            let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
+            if (!year) {
+                ({title, year} = fixTitleAndYear(title, year, type, pageLink, downloadLinks, $2));
+            }
+            if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
+                type = type.replace('movie', 'serial');
+                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                    getQualitySample, linkCheck, true);
+
+                if (!pageSearchResult) {
+                    return;
+                }
+                ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            }
+            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+            const qualitySampleLinks = downloadLinks.map(item => item.qualitySample).filter(item => item);
+            downloadLinks = downloadLinks.filter(item => !qualitySampleLinks.includes(item.link));
+
+            let sourceData = {
+                sourceConfig,
+                pageLink,
+                downloadLinks,
+                watchOnlineLinks: [],
+                persianSummary: summaryExtractor.getPersianSummary($2, title, year),
+                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                subtitles: [],
+                cookies
+            };
+            await save(title, type, year, sourceData, pageNumber);
+        }
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
     try {
         const titleHeader = $2('.head_meta');

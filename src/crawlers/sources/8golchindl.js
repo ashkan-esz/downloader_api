@@ -118,6 +118,66 @@ async function search_title(link, pageNumber, $) {
     }
 }
 
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, isCollection = false, isCeremony = false) {
+    try {
+        title = title.toLowerCase();
+        let year;
+        ({title, year} = getTitleAndYear(title, year, type));
+
+        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+            null, null, false,
+            extraSearchMatch, extraSearch_getFileData);
+        if (pageSearchResult) {
+            let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
+            type = fixAnimeType($2, type);
+            if (type.includes('serial') && downloadLinks.length > 0 &&
+                downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
+                type = type.replace('serial', 'movie');
+                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                    null, null, false,
+                    extraSearchMatch, extraSearch_getFileData);
+                if (!pageSearchResult) {
+                    return;
+                }
+                ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            }
+            if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
+                type = type.replace('movie', 'serial');
+                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                    null, null, false,
+                    extraSearchMatch, extraSearch_getFileData);
+                if (!pageSearchResult) {
+                    return;
+                }
+                ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            }
+            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+            downloadLinks = handleLinksExtraStuff(downloadLinks);
+            if (isCollection) {
+                title += ' collection';
+                addTitleNameToInfo(downloadLinks, title, year);
+            } else if (isCeremony) {
+                addTitleNameToInfo(downloadLinks, title, year);
+            }
+
+            let sourceData = {
+                sourceConfig,
+                pageLink,
+                downloadLinks,
+                watchOnlineLinks: [],
+                persianSummary: summaryExtractor.getPersianSummary($2, title, year),
+                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                subtitles: [],
+                cookies
+            };
+            await save(title, type, year, sourceData, pageNumber);
+        }
+    } catch (error) {
+        await saveError(error);
+    }
+}
+
 function fixYear($, link) {
     try {
         const linkNodeParent = link.parent().parent().parent().parent().next().next().next();
