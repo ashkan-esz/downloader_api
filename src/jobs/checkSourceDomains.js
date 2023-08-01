@@ -4,6 +4,7 @@ import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {crawler} from "../crawlers/crawler.js";
+import {updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
 
 
 export default function (agenda) {
@@ -41,9 +42,11 @@ export default function (agenda) {
                     const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                     if (checkUrlResult === "error") {
                         await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
+                        await updateSourceResponseStatus(sources[i].sourceName, false);
                     } else if (checkUrlResult === "ok") {
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
+                        await updateSourceResponseStatus(sources[i].sourceName, true);
                     } else if (checkUrlResult !== "ok") {
                         await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
                         needToCrawl = true;

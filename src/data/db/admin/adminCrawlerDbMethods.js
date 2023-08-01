@@ -87,3 +87,41 @@ export async function addSourceDB(sourceName, data) {
         return 'error';
     }
 }
+
+export async function updateSourceResponseStatus(sourceName, isResponsible) {
+    try {
+        let collection = await getCollection('sources');
+        let sourceData = await collection.findOne({title: 'sources'}, {
+            projection: {
+                _id: 0,
+                [sourceName]: 1,
+            }
+        });
+        if (!sourceData || !sourceData[sourceName]) {
+            return 'notfound';
+        }
+
+        sourceData = sourceData[sourceName];
+        sourceData.status.lastCheck = new Date();
+
+        if (isResponsible) {
+            //source activated
+            sourceData.status.notRespondingFrom = 0;
+        } else {
+            if (sourceData.status.notRespondingFrom === 0) {
+                //source Deactivated
+                sourceData.status.notRespondingFrom = new Date();
+            }
+        }
+
+        await collection.updateOne({title: 'sources'}, {
+            $set: {
+                [sourceName]: sourceData,
+            }
+        });
+        return sourceData;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

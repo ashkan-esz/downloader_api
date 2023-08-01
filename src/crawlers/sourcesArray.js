@@ -98,6 +98,10 @@ export const sourcesObj = () => {
             lastConfigUpdateDate: 0,
             userData: null,
             description: '',
+            status: {
+                notRespondingFrom: 0,
+                lastCheck: 0,
+            }
         }
     }
     return obj;

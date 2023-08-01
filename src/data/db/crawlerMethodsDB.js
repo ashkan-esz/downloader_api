@@ -197,7 +197,7 @@ export async function removeByIdDB(collectionName, id) {
 //-----------------------------------
 //-----------------------------------
 
-export async function getSourcesObjDB(adminCall) {
+export async function getSourcesObjDB(adminCall = false) {
     try {
         let collection = await getCollection('sources');
         let result = await collection.findOne({title: 'sources'});

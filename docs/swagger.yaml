@@ -2660,6 +2660,13 @@ security:
               type: string
         description:
           type: string
+        status:
+          type: object
+          properties:
+            notRespondingFrom:
+              $ref: '#/components/schemas/DateString'
+            lastCheck:
+              $ref: '#/components/schemas/DateString'
 
 
     DbConfigs:

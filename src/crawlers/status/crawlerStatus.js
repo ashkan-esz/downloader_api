@@ -110,6 +110,7 @@ setInterval(async () => {
         crawlerStatus.disabledData.dbDisableDuration = configsDb.disableCrawlerForDuration;
         crawlerStatus.disabledData.dbDisableStart = configsDb.disableCrawlerStart;
     }
+    await import("../remoteHeadlessBrowser.js");
     crawlerStatus.remoteBrowsers = remoteBrowsers.map(item => {
         let temp = {...item};
         delete temp.password;
