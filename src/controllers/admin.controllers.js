@@ -12,6 +12,12 @@ export async function getCrawlerStatus(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function crawlUrl(req, res) {
+    let {sourceName, url, title, type} = req.body;
+    let result = await adminServices.crawlUrl(sourceName, url, title, type);
+    return sendResponse(req, res, result);
+}
+
 export async function manualPauseCrawler(req, res) {
     let {duration} = req.params;
     let result = await adminServices.manualPauseCrawler(duration);

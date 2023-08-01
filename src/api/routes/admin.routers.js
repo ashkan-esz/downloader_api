@@ -53,6 +53,13 @@ router.get('/crawler/status',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCrawlerStatus);
 
+//admin/crawler/crawlUrl
+router.put('/crawler/crawlUrl',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['sourceName', 'url_body', 'title', 'type']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.crawlUrl);
+
 //---------------------------------------------------
 //---------------------------------------------------
 

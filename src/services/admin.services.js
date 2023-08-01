@@ -15,6 +15,7 @@ import {removeAppFileFromS3} from "../data/cloudStorage.js";
 import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 import {checkImdbApiKeys} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
+import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -61,6 +62,28 @@ export async function getCrawlerStatus() {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     }
     return generateServiceResult({data: result}, 200, '');
+}
+
+export async function crawlUrl(sourceName, url, title, type) {
+    let sourceMethods = getSourcesMethods();
+    if (!sourcesNames.includes(sourceName)) {
+        return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
+    }
+    let result = await sourceMethods[sourceName].handlePageCrawler(url, title, type);
+    if (result === 'error') {
+        return generateServiceResult({
+            data: {
+                isError: true,
+                message: '',
+            }
+        }, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({
+        data: {
+            isError: false,
+            message: 'number of founded download links: ' + result,
+        }
+    }, 200, '');
 }
 
 //---------------------------------------------------

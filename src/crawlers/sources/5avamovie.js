@@ -132,9 +132,12 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
                 cookies
             };
             await save(title, type, year, sourceData, pageNumber);
+            return downloadLinks.length;
         }
+        return 0;
     } catch (error) {
         saveError(error);
+        return 'error';
     }
 }
 

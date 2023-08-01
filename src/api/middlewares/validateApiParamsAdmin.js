@@ -3,6 +3,7 @@ import {isUri} from "valid-url";
 import {serverAnalysisFields} from "../../data/db/serverAnalysisDbMethods.js";
 import {compareAppVersions, newAppDataFields} from "../../data/db/admin/adminConfigDbMethods.js";
 
+const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const mutateType = ['enable', 'disable'];
 
 const validations = Object.freeze({
@@ -195,7 +196,7 @@ const validations = Object.freeze({
     sourceName: body('sourceName')
         .exists().withMessage("Missed parameter sourceName")
         .isString().withMessage("sourceName must be String")
-        .trim().escape(),
+        .trim().toLowerCase().escape(),
 
     movie_url: body('movie_url')
         .exists().withMessage("Missed parameter movie_url")
@@ -226,10 +227,33 @@ const validations = Object.freeze({
         .trim()
         .replace('empty', ''),
 
+    url_body: body('url')
+        .exists().withMessage("Missed parameter url")
+        .isString().withMessage("url must be String")
+        .custom((value, {req, loc, path}) => {
+            if (!isUri(value.toString()) || value.toString().match(/[?/]page[/=]$/gi)) {
+                throw new Error("url must be a valid url without page section");
+            } else {
+                return value;
+            }
+        })
+        .trim(),
+
     description: body('description')
         .exists().withMessage("Missed parameter description")
         .isString().withMessage("description must be String")
         .trim().escape(),
+
+    title: body('title')
+        .exists().withMessage("Missed parameter title")
+        .isString().withMessage("title must be String")
+        .trim().toLowerCase().escape(),
+
+    type: body('type')
+        .exists().withMessage("Missed parameter type")
+        .isString().withMessage("type must be String")
+        .trim().toLowerCase().escape()
+        .isIn(types).withMessage(`Invalid parameter type :: (${types.join('|')})`),
 
     crawlCycle: body('crawlCycle')
         .exists().withMessage("Missed parameter crawlCycle")
