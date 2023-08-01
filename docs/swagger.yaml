@@ -2647,6 +2647,18 @@ security:
           $ref: '#/components/schemas/DateString'
         lastDomainChangeDate:
           $ref: '#/components/schemas/DateString'
+        lastConfigUpdateDate:
+          $ref: '#/components/schemas/DateString'
+        userData:
+          type: object
+          properties:
+            userId:
+              type: string
+            role:
+              type: string
+            rawUsername:
+              type: string
+
 
     DbConfigs:
       type: object

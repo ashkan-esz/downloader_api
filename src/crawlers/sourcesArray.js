@@ -95,6 +95,8 @@ export const sourcesObj = () => {
             disabledDate: now,
             lastCrawlDate: 0,
             lastDomainChangeDate: 0,
+            lastConfigUpdateDate: 0,
+            userData: null,
         }
     }
     return obj;

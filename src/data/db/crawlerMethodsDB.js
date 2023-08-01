@@ -1,5 +1,6 @@
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
+import {findUserById} from "./usersDbMethods.js";
 
 //todo : npm install express-mongo-sanitize
 
@@ -196,10 +197,43 @@ export async function removeByIdDB(collectionName, id) {
 //-----------------------------------
 //-----------------------------------
 
-export async function getSourcesObjDB() {
+export async function getSourcesObjDB(adminCall) {
     try {
         let collection = await getCollection('sources');
-        return await collection.findOne({title: 'sources'});
+        let result = await collection.findOne({title: 'sources'});
+
+        if (result && adminCall) {
+            let keys = Object.keys(result);
+            result.sources = [];
+            for (let i = 0; i < keys.length; i++) {
+                if (['_id', 'title'].includes(keys[i])) {
+                    continue;
+                }
+                result.sources.push({
+                    sourceName: keys[i],
+                    ...result[keys[i]],
+                })
+                delete result[keys[i]];
+            }
+
+            for (let i = 0; i < result.sources.length; i++) {
+                let users = [];
+                if (!result.sources[i].userData) {
+                    continue;
+                }
+                let userId = result.sources[i].userData.userId;
+                let data = users.find(item => item.id === userId);
+                if (data) {
+                    result.sources[i].userData = {...result.sources[i].userData, ...data};
+                } else {
+                    let data = await findUserById(userId, {_id: 0, rawUsername: 1});
+                    users.push({id: userId, data: data});
+                    result.sources[i].userData = {...result.sources[i].userData, ...data};
+                }
+            }
+        }
+
+        return result;
     } catch (error) {
         saveError(error);
         return null;

@@ -20,6 +20,11 @@
         disabledDate: Date,
         addDate: Date,
         lastDomainChangeDate: Date,
+        userData: {
+            userId: String,
+            role: String,
+            rawUsername: String,
+        }
     },
 }
 

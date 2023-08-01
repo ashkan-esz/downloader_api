@@ -120,35 +120,21 @@ export async function resolveServerAnalysisLastDays(fieldsName, days) {
 //---------------------------------------------------
 
 export async function getCrawlerSources() {
-    let result = await crawlerMethodsDB.getSourcesObjDB();
+    let result = await crawlerMethodsDB.getSourcesObjDB(true);
     if (!result || result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     }
-
-    let keys = Object.keys(result);
-    result.sources = [];
-    for (let i = 0; i < keys.length; i++) {
-        if (['_id', 'title'].includes(keys[i])) {
-            continue;
-        }
-        result.sources.push({
-            sourceName: keys[i],
-            ...result[keys[i]],
-        })
-        delete result[keys[i]];
-    }
-
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl) {
+export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, userData) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,
         serial_url,
         crawlCycle,
         disabled,
         cookies
-    });
+    }, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result === "notfound") {

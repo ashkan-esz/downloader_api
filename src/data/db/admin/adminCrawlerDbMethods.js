@@ -3,7 +3,7 @@ import {resolveCrawlerWarning} from "../serverAnalysisDbMethods.js";
 import {saveError} from "../../../error/saveError.js";
 import {getCrawlerWarningMessages} from "../../../crawlers/status/crawlerWarnings.js";
 
-export async function updateSourceData(sourceName, data) {
+export async function updateSourceData(sourceName, data, userData) {
     try {
         let collection = await getCollection('sources');
         let sourceData = await collection.findOne({title: 'sources'}, {
@@ -37,6 +37,11 @@ export async function updateSourceData(sourceName, data) {
         }
 
         sourceData = {...sourceData, ...data};
+        sourceData.userData = {
+            userId: userData.userId,
+            role: userData.role,
+        }
+        sourceData.lastConfigUpdateDate = new Date();
 
         await collection.updateOne({title: 'sources'}, {
             $set: {
