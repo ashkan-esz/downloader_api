@@ -10,10 +10,7 @@
 //todo : 18. crawler: crawl torrent sites
 //todo : 19. remoteBrowser: download links from (16),(19)
 //todo : 20. crawler: add new movie sources to replace 'digimoviez'
-//todo : 21. crawler: add feature to check sources changed
-//todo : 21.2 crawler: check sources changes need fixes or need to be disable
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
-//todo : 23. crawler: reCrawl sources after being disable for a while
 //todo : 27. add elastic search and fallback to mongo search
 //todo : 29. add telegram bot for some system to backup database
 //todo : 30. adminPanel: manage bots like movie sources
@@ -49,15 +46,11 @@
 //todo : 87. organize cronjob times
 //todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
-//todo : 103. add movie source change detection service
 //todo : 104. add title duplication finder service
-//todo : 105. service to update sources auth cookies / notify on expire
 //todo : 106. handle flag 'disable' for bots on admin panel
 //todo : 108. Add thumbnail api and status
 //todo : 109. When/How to add admin account
 //todo : 112. remove source link/poster/trailer after 5 day inactive
-//todo : 113. save last crawler run data on sources, better detection for source url not accessible
-//todo : 115. Add fields username Change and description to crawler sources
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
 //todo : 124. add feature: 'like_month' , 'view_month' to movies
@@ -67,7 +60,6 @@
 //todo : 128. add schema for models and add related methods to it
 //todo : 130. add new sources
 //todo : 131. add personality type to user data, and api to find same characters
-//todo : 132. add a mechanism to crawl a site after see bad links
 //todo : 133. add feature: 'watched', 'watching', 'want to watch', 'dropped' to movies
 //todo : 134. add feature: upload fanArt
 //todo : 135. check fastify
