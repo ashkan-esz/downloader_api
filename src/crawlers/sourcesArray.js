@@ -90,6 +90,7 @@ export const sourcesObj = () => {
             serial_url: "",
             crawlCycle: 0,
             disabled: true,
+            isManualDisable: false,
             cookies: [],
             addDate: now,
             disabledDate: now,

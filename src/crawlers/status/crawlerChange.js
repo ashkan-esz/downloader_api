@@ -1,5 +1,6 @@
 import {getCrawlerWarningMessages} from "./crawlerWarnings.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
+import {disableSource} from "../../data/db/admin/adminCrawlerDbMethods.js";
 
 const changesStatus = {
     sourceName: '',
@@ -28,25 +29,29 @@ export function checkCrawledDataForChanges(sourceName, pageLink, downloadLinks, 
 }
 
 export async function checkAndHandleSourceChange() {
-    let isBadStatus = false;
+    let reasons = [];
     if (changesStatus.badDownloadLinks.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, changesStatus.badDownloadLinks.length);
         await saveCrawlerWarning(warningMessages.sourceStatus.badDownloadLinks);
-        isBadStatus = true;
+        reasons.push('downloadLinks');
     }
     if (changesStatus.badPosters.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, changesStatus.badPosters.length);
         await saveCrawlerWarning(warningMessages.sourceStatus.badPosters);
-        isBadStatus = true;
+        reasons.push('poster');
     }
     if (changesStatus.badPersianSummary.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, changesStatus.badPersianSummary.length);
         await saveCrawlerWarning(warningMessages.sourceStatus.badPersianSummary);
-        isBadStatus = true;
+        reasons.push('trailers');
     }
 
-    if (isBadStatus) {
-
+    if (Math.max(changesStatus.badDownloadLinks.length, changesStatus.badPosters.length, changesStatus.badPersianSummary.length) >= 30) {
+        let disableResult = await disableSource(changesStatus.sourceName);
+        if (disableResult !== 'notfound' && disableResult !== "error") {
+            const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, `bad ${reasons.join(',')}`);
+            await saveCrawlerWarning(warningMessages.sourceDisabled);
+        }
     }
 
 

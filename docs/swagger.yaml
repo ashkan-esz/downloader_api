@@ -2641,6 +2641,8 @@ security:
                 type: integer
         disabled:
           type: boolean
+        isManualDisable:
+          type: boolean
         disabledDate:
           $ref: '#/components/schemas/DateString'
         addDate:

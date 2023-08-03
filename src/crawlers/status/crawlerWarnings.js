@@ -35,6 +35,7 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         axiosTimeoutError: `Axios timeout error (${data1}): ${data2}`,
         crawlerBadLink: `Crawler generated badLink (${data1})`,
         sourceLastPage: `Source (${data1}) lastPage: ${data2}`,
+        sourceDisabled: `Source (${data1}): Disabled, reasons: ${data2}`,
         sourceStatus: {
             badDownloadLinks: `Source (${data1}): badDownloadLinks: ${data2}`,
             badPosters: `Source (${data1}): badPosters: ${data2}`,

@@ -21,10 +21,12 @@ export async function updateSourceData(sourceName, data, userData) {
         if (sourceData.disabled && !data.disabled) {
             //source got activated
             sourceData.disabled = false;
+            sourceData.isManualDisable = false;
             sourceData.disabledDate = 0;
         } else if (!sourceData.disabled && data.disabled) {
             //source got disabled
             sourceData.disabled = true;
+            sourceData.isManualDisable = true;
             sourceData.disabledDate = new Date();
         }
 
@@ -121,6 +123,37 @@ export async function updateSourceResponseStatus(sourceName, isResponsible) {
             }
         });
         return temp;
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function disableSource(sourceName) {
+    try {
+        let collection = await getCollection('sources');
+        let sourceData = await collection.findOne({title: 'sources'}, {
+            projection: {
+                _id: 0,
+                [sourceName]: 1,
+            }
+        });
+        if (!sourceData || !sourceData[sourceName]) {
+            return 'notfound';
+        }
+
+        sourceData = sourceData[sourceName];
+
+        sourceData.disabled = true;
+        sourceData.isManualDisable = false;
+        sourceData.disabledDate = new Date();
+
+        await collection.updateOne({title: 'sources'}, {
+            $set: {
+                [sourceName]: sourceData,
+            }
+        });
+        return sourceData;
     } catch (error) {
         saveError(error);
         return 'error';
