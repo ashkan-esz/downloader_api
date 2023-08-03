@@ -13,6 +13,7 @@ import {
 } from "./status/crawlerStatus.js";
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
+import {checkAndHandleSourceChange} from "./status/crawlerChange.js";
 
 
 export let _handleCastUpdate = true;
@@ -130,6 +131,7 @@ export async function crawler(sourceName, {
                     await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
                     let lastPages = await sourcesArray[i].starter();
                     await updateCrawlerStatus_sourceEnd(lastPages);
+                    await checkAndHandleSourceChange();
                     if (crawlMode === 2) {
                         fullyCrawledSources.push(sourcesArray[i].name);
                         let now = new Date();
@@ -155,6 +157,7 @@ export async function crawler(sourceName, {
                         await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
                         let lastPages = await findSource.starter();
                         await updateCrawlerStatus_sourceEnd(lastPages);
+                        await checkAndHandleSourceChange();
                         if (crawlMode === 2) {
                             fullyCrawledSources.push(sourceName);
                             let now = new Date();

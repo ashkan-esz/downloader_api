@@ -23,6 +23,7 @@ import {getLinksDoesntMatchLinkRegex} from "./extractors/downloadLinks.js";
 import {saveCrawlerBadLink, saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {handleLatestDataUpdate} from "./latestData.js";
+import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber) {
@@ -38,14 +39,17 @@ export default async function save(title, type, year, sourceData, pageNumber) {
             cookies
         } = sourceData;
 
+        let badLinks = [];
         if (pageNumber === 1) {
-            let badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
+            badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
                 await saveCrawlerBadLink(sourceConfig.sourceName, pageLink, badLinks.slice(0, 10));
                 const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
                 await saveCrawlerWarning(warningMessages.crawlerBadLink);
             }
         }
+
+        checkCrawledDataForChanges(sourceConfig.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
         await pauseCrawler();
