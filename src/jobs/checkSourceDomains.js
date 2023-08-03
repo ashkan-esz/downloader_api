@@ -5,6 +5,7 @@ import {saveError} from "../error/saveError.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {crawler} from "../crawlers/crawler.js";
 import {updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
+import {getDatesBetween} from "../crawlers/utils/utils.js";
 
 
 export default function (agenda) {
@@ -46,7 +47,16 @@ export default function (agenda) {
                     } else if (checkUrlResult === "ok") {
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
                         await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
-                        await updateSourceResponseStatus(sources[i].sourceName, true);
+                        //reCrawl source if it was not responding in last 5 days
+                        let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, true);
+                        if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 5) {
+                            await crawler(sources[i].sourceName, {
+                                crawlMode: 2,
+                                handleDomainChangeOnly: false,
+                                handleDomainChange: false,
+                                handleCastUpdate: true,
+                            });
+                        }
                     } else if (checkUrlResult !== "ok") {
                         await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
                         needToCrawl = true;

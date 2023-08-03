@@ -103,9 +103,10 @@ export async function updateSourceResponseStatus(sourceName, isResponsible) {
 
         sourceData = sourceData[sourceName];
         sourceData.status.lastCheck = new Date();
-
+        let temp = 0;
         if (isResponsible) {
             //source activated
+            temp = sourceData.status.notRespondingFrom;
             sourceData.status.notRespondingFrom = 0;
         } else {
             if (sourceData.status.notRespondingFrom === 0) {
@@ -119,7 +120,7 @@ export async function updateSourceResponseStatus(sourceName, isResponsible) {
                 [sourceName]: sourceData,
             }
         });
-        return sourceData;
+        return temp;
     } catch (error) {
         saveError(error);
         return 'error';
