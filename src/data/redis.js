@@ -7,21 +7,12 @@ const client = createClient({
     password: config.redis.password,
 });
 
-let clientConnected = false;
-
-async function handleConnection() {
-    try {
-        if (clientConnected) {
-            return;
-        }
-        await client.connect();
-        clientConnected = true;
-    } catch (e) {
-        saveError(e);
-    }
+try {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await client.connect();
+} catch (e) {
+    saveError(e);
 }
-
-await handleConnection();
 
 client.on('error', err => {
     console.log('Redis Server Error', err);
@@ -35,7 +26,6 @@ export default client;
 
 export async function clearRedisRedundantCachedData(retryCounter = 0) {
     try {
-        await handleConnection();
         if (!client.isReady) {
             if (retryCounter === 0) {
                 retryCounter++;
@@ -64,7 +54,6 @@ export async function clearRedisRedundantCachedData(retryCounter = 0) {
 
 export async function redisKeyExist(key) {
     try {
-        await handleConnection();
         if (!client.isReady) {
             return false;
         }
@@ -77,7 +66,6 @@ export async function redisKeyExist(key) {
 
 export async function getRedis(key) {
     try {
-        await handleConnection();
         if (!client.isReady) {
             return null;
         }
@@ -91,7 +79,6 @@ export async function getRedis(key) {
 export async function setRedis(key, value, duration = null) {
     //duration: seconds
     try {
-        await handleConnection();
         if (!client.isReady) {
             return 'error';
         }

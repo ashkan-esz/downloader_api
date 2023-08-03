@@ -17,7 +17,7 @@ services:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
       REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
-      REMOTE_BROWSER_TABS_COUNT1: 7
+      REMOTE_BROWSER_TABS_COUNT1: 5
       DISABLE_CRAWLER: 'false'
       CRAWLER_CONCURRENCY: 17
       PAUSE_CRAWLER_ON_HIGH_LOAD: 'true'
@@ -79,7 +79,7 @@ services:
     env_file: ./remotebrowser.env
     environment:
       - NODE_ENV=development
-      - CRAWLER_BROWSER_TAB_COUNT=6
+      - CRAWLER_BROWSER_TAB_COUNT=5
       - TOTAL_MEMORY_AMOUNT=1024
       - TOTAL_DISK_SPACE=2000
       - SERVER_NAME=remoteBrowser-vps-1

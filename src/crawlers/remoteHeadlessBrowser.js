@@ -73,7 +73,7 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
             selectedBrowser = notUsedBrowsers
                 //tabsCount - apiCallCount :: server capability
                 .sort((a, b) => (b.tabsCount - b.apiCallCount) - (a.tabsCount - a.apiCallCount))
-                .filter(item => item.apiCallCount < 2 * item.tabsCount)
+                .filter(item => item.apiCallCount < 1.5 * item.tabsCount)
                 .find(item => {
                     let source = item.sourcesData.find(s => s.sourceName === sourceName);
                     return !source || !source.isBlocked;
@@ -163,7 +163,7 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
             selectedBrowser = notUsedBrowsers
                 //tabsCount - apiCallCount :: server capability
                 .sort((a, b) => (b.tabsCount - b.apiCallCount) - (a.tabsCount - a.apiCallCount))
-                .find(item => item.apiCallCount < 2 * item.tabsCount);
+                .find(item => item.apiCallCount < 1.5 * item.tabsCount);
             if (selectedBrowser) {
                 break;
             }
