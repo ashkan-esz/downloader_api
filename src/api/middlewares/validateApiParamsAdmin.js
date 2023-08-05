@@ -89,6 +89,13 @@ const validations = Object.freeze({
                 : '';
         }),
 
+    botId_query: query('botId')
+        .customSanitizer(value => {
+            return value
+                ? value.toString().toLowerCase().trim()
+                : '';
+        }),
+
     crawlerMode: query('mode')
         .customSanitizer(value => {
             return (value && !isNaN(value))
@@ -179,6 +186,11 @@ const validations = Object.freeze({
         .isString().withMessage("sourceName must be String")
         .trim().escape(),
 
+    botId_param: param('botId')
+        .exists().withMessage("Missed parameter botId")
+        .isString().withMessage("botId must be String")
+        .trim().escape(),
+
     url: param('url')
         .exists().withMessage("Missed parameter url")
         .isString().withMessage("url must be String")
@@ -197,6 +209,16 @@ const validations = Object.freeze({
         .exists().withMessage("Missed parameter sourceName")
         .isString().withMessage("sourceName must be String")
         .trim().toLowerCase().escape(),
+
+    botName: body('botName')
+        .exists().withMessage("Missed parameter botName")
+        .isString().withMessage("botName must be String")
+        .trim().toLowerCase().escape(),
+
+    botType: body('botType')
+        .exists().withMessage("Missed parameter botType")
+        .isString().withMessage("botType must be String")
+        .trim().escape(),
 
     movie_url: body('movie_url')
         .exists().withMessage("Missed parameter movie_url")
@@ -358,6 +380,57 @@ const validations = Object.freeze({
                 }
             } catch (error) {
                 throw new Error('Invalid parameter date :: (Date String | Time in milliseconds)');
+            }
+        })
+        .customSanitizer(value => {
+            return new Date(value);
+        }),
+
+    lastUseDate: body('lastUseDate')
+        .custom((value) => {
+            try {
+                let temp = new Date(value);
+                if (temp === 'Invalid Date') {
+                    throw new Error('Invalid parameter lastUseDate :: (Date String | Time in milliseconds)');
+                } else {
+                    return value;
+                }
+            } catch (error) {
+                throw new Error('Invalid parameter lastUseDate :: (Date String | Time in milliseconds)');
+            }
+        })
+        .customSanitizer(value => {
+            return new Date(value);
+        }),
+
+    lastApiCall_news: body('lastApiCall_news')
+        .custom((value) => {
+            try {
+                let temp = new Date(value);
+                if (temp === 'Invalid Date') {
+                    throw new Error('Invalid parameter lastApiCall_news :: (Date String | Time in milliseconds)');
+                } else {
+                    return value;
+                }
+            } catch (error) {
+                throw new Error('Invalid parameter lastApiCall_news :: (Date String | Time in milliseconds)');
+            }
+        })
+        .customSanitizer(value => {
+            return new Date(value);
+        }),
+
+    lastApiCall_updates: body('lastApiCall_updates')
+        .custom((value) => {
+            try {
+                let temp = new Date(value);
+                if (temp === 'Invalid Date') {
+                    throw new Error('Invalid parameter lastApiCall_updates :: (Date String | Time in milliseconds)');
+                } else {
+                    return value;
+                }
+            } catch (error) {
+                throw new Error('Invalid parameter lastApiCall_updates :: (Date String | Time in milliseconds)');
             }
         })
         .customSanitizer(value => {

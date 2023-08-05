@@ -397,7 +397,7 @@ function getTitlesFromData(fullData) {
         ? japaneseTitle
         : japaneseTitle.replace(/-....+-/g, '');
     let apiTitleJapanese = utils.replaceSpecialCharacters(japaneseTitle);
-    let titleSynonyms = fullData.title_synonyms.map(value => value.toLowerCase());
+    let titleSynonyms = fullData.title_synonyms?.map(value => value.toLowerCase()) || [];
 
     let splitApiTitle = apiTitle_simple.split(' ');
     let splitApiTitle_lastPart = splitApiTitle[splitApiTitle.length - 1];

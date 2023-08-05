@@ -1592,6 +1592,141 @@ paths:
                         englishName:
                           type: string
 
+  /admin/bots:
+    get:
+      tags:
+        - Admin-Bots
+      summary: Bots
+      description: return bots data
+      operationId: bots-botsData
+      parameters:
+        - $ref: '#/components/parameters/botId_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/BotData'
+                      - $ref: '#/components/schemas/BotData'
+
+  /admin/bots/editBot/{botId}:
+    put:
+      tags:
+        - Admin-Bots
+      summary: Edit Bot
+      description: edit bots data
+      operationId: bots-editBot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                botName:
+                  type: string
+                  required: true
+                botType:
+                  type: string
+                  required: true
+                lastUseDate:
+                  $ref: '#/components/schemas/DateString'
+                lastApiCall_news:
+                  $ref: '#/components/schemas/DateString'
+                lastApiCall_updates:
+                  $ref: '#/components/schemas/DateString'
+                disabled:
+                  type: boolean
+                  default: false
+                  required: true
+                description:
+                  type: string
+                  required: false
+      parameters:
+        - $ref: '#/components/parameters/botId_param'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
+  /admin/bots/addBot:
+    put:
+      tags:
+        - Admin-Bots
+      summary: Add Bot
+      description: add new Bot
+      operationId: bots-addNewBot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                botName:
+                  type: string
+                  required: true
+                botType:
+                  type: string
+                  required: true
+                disabled:
+                  type: boolean
+                  default: false
+                  required: true
+                description:
+                  type: string
+                  required: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
+  /admin/bots/deleteBot/{botId}:
+    delete:
+      tags:
+        - Admin-Bots
+      summary: Delete Bot
+      description: delete bot data
+      operationId: bots-deleteBot
+      parameters:
+        - $ref: '#/components/parameters/botId_param'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
 
 security:
   - accessToken: [ ]
@@ -1763,6 +1898,18 @@ security:
         example: 1080p-720p
     name_query:
       name: name
+      required: false
+      in: query
+      schema:
+        type: string
+    botId_param:
+      name: botId
+      required: true
+      in: path
+      schema:
+        type: string
+    botId_query:
+      name: botId
       required: false
       in: query
       schema:
@@ -3097,3 +3244,37 @@ security:
         userId:
           type: string
 
+    BotData:
+      type: object
+      properties:
+        botName:
+          type: string
+        botType:
+          type: string
+        botId:
+          type: string
+        addDate:
+          $ref: '#/components/schemas/DateString'
+        lastUseDate:
+          $ref: '#/components/schemas/DateString'
+        lastApiCall_news:
+          $ref: '#/components/schemas/DateString'
+        lastApiCall_updates:
+          $ref: '#/components/schemas/DateString'
+        lastConfigUpdateDate:
+          $ref: '#/components/schemas/DateString'
+        disabled:
+          type: boolean
+        disabledDate:
+          $ref: '#/components/schemas/DateString'
+        userData:
+          type: object
+          properties:
+            userId:
+              type: string
+            role:
+              type: string
+            rawUsername:
+              type: string
+        description:
+          type: string

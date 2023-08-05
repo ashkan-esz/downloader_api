@@ -165,3 +165,28 @@ export async function check3rdPartApisWorking(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function getBots(req, res) {
+    let result = await adminServices.getBots(req.query.botId);
+    return sendResponse(req, res, result);
+}
+
+export async function editBot(req, res) {
+    let {botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description} = req.body;
+    let result = await adminServices.editBot(req.params.botId, botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
+export async function addBot(req, res) {
+    let {botName, botType, disabled, description} = req.body;
+    let result = await adminServices.addBot(botName, botType, disabled, description, req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
+export async function deleteBot(req, res) {
+    let result = await adminServices.deleteBot(req.params.botId, req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

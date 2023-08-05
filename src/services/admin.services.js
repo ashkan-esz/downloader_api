@@ -4,6 +4,7 @@ import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.js";
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
+import * as botsDbMethods from "../data/db/botsDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
@@ -357,6 +358,69 @@ export async function check3rdPartApisWorking() {
         {name: 'omdb', totalKeys: res[1].value.totalKeys, badKeys: res[1].value.badKeys, noKeyNeed: false},
         {name: 'tvmaze', totalKeys: 0, badKeys: [], noKeyNeed: true},
     ];
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getBots(botId) {
+    let result;
+    if (botId) {
+        result = await botsDbMethods.getBotData(botId);
+        if (result === 'error') {
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
+        }
+        if (result === null) {
+            return generateServiceResult({data: null}, 404, errorMessage.botNotFound);
+        }
+    } else {
+        result = await botsDbMethods.getAllBots();
+        if (result === 'error') {
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
+        }
+        if (result.length === 0) {
+            return generateServiceResult({data: []}, 404, errorMessage.botNotFound);
+        }
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function editBot(botId, botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, userData) {
+    let result = await botsDbMethods.updateBotData(botId, {
+        botName,
+        botType,
+        lastUseDate,
+        lastApiCall_news,
+        lastApiCall_updates,
+        disabled,
+        description,
+    }, userData);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === "notfound") {
+        return generateServiceResult({data: null}, 404, errorMessage.botNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function addBot(botName, botType, disabled, description, userData) {
+    let result = await botsDbMethods.addNewBot(botName, botType, disabled, description, userData);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+    if (result === "notfound") {
+        return generateServiceResult({data: null}, 500, errorMessage.botNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function deleteBot(botId, userData) {
+    let result = await botsDbMethods.removeBotData(botId, userData);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
     return generateServiceResult({data: result}, 200, '');
 }
 

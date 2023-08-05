@@ -218,4 +218,39 @@ router.get('/3rdpartyApis/checkWorking',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/bots
+router.get('/bots',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['botId_query']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getBots);
+
+//admin/bots/editBot/:botId
+router.put('/bots/editBot/:botId',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(
+        ['botId_param', 'botName', 'botType', 'lastUseDate', 'lastApiCall_news', 'lastApiCall_updates', 'disabled', 'description']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    mongoSanitize(),
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.editBot);
+
+//admin/bots/addBot
+router.put('/bots/addBot',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(
+        ['botName', 'botType', 'disabled', 'description']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    mongoSanitize(),
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.addBot);
+
+//admin/bots/deleteBot/:botId
+router.delete('/bots/deleteBot/:botId',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['botId_param']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.deleteBot);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;
