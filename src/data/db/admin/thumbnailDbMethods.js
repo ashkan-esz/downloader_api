@@ -1,14 +1,20 @@
 import getCollection from "../../mongoDB.js";
 import {getImageThumbnail} from "../../../utils/sharpImageMethods.js";
 import {saveError} from "../../../error/saveError.js";
+import {updateCronJobsStatus} from "../../../utils/cronJobsStatus.js";
 
 
 export async function createThumbnails() {
+    updateCronJobsStatus('createThumbnail', 'start');
     let cachedResult = [];
+    updateCronJobsStatus('createThumbnail', 'movies');
     await createThumbnails_movies(cachedResult);
+    updateCronJobsStatus('createThumbnail', 'staff');
     await createThumbnails_StaffAndCharacter("staff", cachedResult);
+    updateCronJobsStatus('createThumbnail', 'characters');
     await createThumbnails_StaffAndCharacter("characters", cachedResult);
     cachedResult = [];
+    updateCronJobsStatus('createThumbnail', 'profileImages');
     await createThumbnails_profileImages();
 }
 
@@ -18,7 +24,10 @@ export async function createThumbnails_movies(cachedResult) {
         let badLinks = [];
         let noCreationCounter = 0;
         let moviesCollection = await getCollection('movies');
+        let loopCounter = 0;
         while (true) {
+            updateCronJobsStatus('createThumbnail', `movies, checked: ${loopCounter * 50} created: ${totalThumbnailsCreated}`);
+            loopCounter++;
             let movies = await moviesCollection.find({
                 $or: [
                     {'posters.thumbnail': ''},
@@ -224,7 +233,10 @@ export async function createThumbnails_StaffAndCharacter(collectionName, cachedR
         let badLinks = [];
         let noCreationCounter = 0;
         let collection = await getCollection(collectionName);
+        let loopCounter = 0;
         while (true) {
+            updateCronJobsStatus('createThumbnail', `${collectionName}, checked: ${loopCounter * 50} created: ${totalThumbnailsCreated}`);
+            loopCounter++;
             let result = await collection.find({
                 $or: [
                     {'imageData.thumbnail': ''},
@@ -402,6 +414,7 @@ export async function createThumbnails_profileImages() {
         let noCreationCounter = 0;
         let collection = await getCollection("users");
         while (true) {
+            updateCronJobsStatus('createThumbnail', 'profileImages, created: ' + totalThumbnailsCreated);
             let result = await collection.find({
                 'profileImages.thumbnail': '',
             }, {

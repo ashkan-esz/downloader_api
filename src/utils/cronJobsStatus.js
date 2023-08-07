@@ -2,6 +2,7 @@ import {removeServerOldLogsJobFunc, saveTotalUsersCountJobFunc} from "../jobs/us
 import {computeUsersFavoriteGenresJobFunc} from "../jobs/computeUserJob.js";
 import {checkCrawlerDomainsJobFunc} from "../jobs/checkSourceDomains.js";
 import {removeS3UnusedFilesJobFunc, resetMonthLikesJobFunc, updateJikanImdbDataJobFunc} from "../agenda/index.js";
+import {createThumbnails} from "../data/db/admin/thumbnailDbMethods.js";
 import {saveError} from "../error/saveError.js";
 
 const cronJobsStatus = {
@@ -61,6 +62,14 @@ const cronJobsStatus = {
         description: 'At 00:00 on day-of-month 7',
         startFunc: removeServerOldLogsJobFunc,
     },
+    createThumbnail: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: createThumbnails,
+    },
 }
 
 
@@ -85,6 +94,9 @@ export function getCronJobsStatus() {
 
 export async function startCronJobByName(jobName) {
     try {
+        if (!cronJobsStatus[jobName]) {
+            return 'notfound';
+        }
         if (cronJobsStatus[jobName].running) {
             return 'already running';
         }

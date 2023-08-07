@@ -441,6 +441,9 @@ export async function startCronJob(jobName) {
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
+    if (result === "notfound") {
+        return generateServiceResult({data: null}, 400, errorMessage.jobNotFound);
+    }
     return generateServiceResult({data: result}, 200, '');
 }
 

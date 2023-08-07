@@ -32,6 +32,7 @@ export const errorMessage = Object.freeze({
     messageNotFound: 'Message not found',
     appNotFound: 'App not found',
     configsDbNotFound: 'Configs from database not found',
+    jobNotFound: 'job not found',
     cantRemoveCurrentOrigin: 'Cannot remove current origin from corsAllowedOrigins',
     //----------------------
     userNotFound: 'Cannot find user',
