@@ -375,7 +375,7 @@ paths:
       description: Edit profile data.
       operationId: users/editProfile
       security:
-        - accessToken: []
+        - accessToken: [ ]
       requestBody:
         content:
           application/json:
@@ -1728,6 +1728,65 @@ paths:
                   data:
                     type: string
 
+  /admin/cronjobs:
+    get:
+      tags:
+        - Admin-CronJobs
+      summary: CronJobs
+      description: return cronJobs status
+      operationId: bots-cronJobs
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        running:
+                          type: string
+                        startDate:
+                          $ref: '#/components/schemas/DateString'
+                        state:
+                          type: string
+                        value:
+                          oneOf:
+                            - type: string
+                            - type: integer
+                            - type: object
+                        description:
+                          type: string
+
+  /admin/CronJobs/start/{jobName}:
+    put:
+      tags:
+        - Admin-CronJobs
+      summary: Start CronJob
+      description: start CronJob
+      operationId: bots-startCronJobs
+      parameters:
+        - $ref: '#/components/parameters/jobName_param'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
+
 security:
   - accessToken: [ ]
 
@@ -1904,6 +1963,12 @@ security:
         type: string
     botId_param:
       name: botId
+      required: true
+      in: path
+      schema:
+        type: string
+    jobName_param:
+      name: jobName
       required: true
       in: path
       schema:

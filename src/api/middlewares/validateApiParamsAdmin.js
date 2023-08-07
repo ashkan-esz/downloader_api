@@ -191,6 +191,11 @@ const validations = Object.freeze({
         .isString().withMessage("botId must be String")
         .trim().escape(),
 
+    jobName: param('jobName')
+        .exists().withMessage("Missed parameter jobName")
+        .isString().withMessage("jobName must be String")
+        .trim().escape(),
+
     url: param('url')
         .exists().withMessage("Missed parameter url")
         .isString().withMessage("url must be String")

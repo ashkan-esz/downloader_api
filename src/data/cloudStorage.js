@@ -21,6 +21,7 @@ import {updateTrailerUploadLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {getDecodedLink} from "../crawlers/utils/utils.js";
+import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 
 
 const s3 = new S3Client({
@@ -543,6 +544,7 @@ export async function deleteUnusedFiles(retryCounter = 0) {
         let checkBuckets = [bucketNamesObject.poster, bucketNamesObject.downloadTrailer, bucketNamesObject.cast];
 
         for (let k = 0; k < checkBuckets.length; k++) {
+            updateCronJobsStatus('removeS3UnusedFiles', 'checking bucket ' + checkBuckets[k]);
             let dataBaseFiles = [];
             // files that are in use
             if (checkBuckets[k] === bucketNamesObject.poster) {
@@ -593,6 +595,7 @@ export async function deleteUnusedFiles(retryCounter = 0) {
                     }
                 }
                 await Promise.allSettled(promiseArray);
+                updateCronJobsStatus('removeS3UnusedFiles', `checking bucket ${checkBuckets[k]} deleted ${deleteCounter}`);
             }
         }
         return 'ok';

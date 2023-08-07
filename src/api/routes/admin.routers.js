@@ -253,4 +253,19 @@ router.delete('/bots/deleteBot/:botId',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/cronjobs
+router.get('/cronjobs',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.getCronJobs);
+
+//admin/cronjobs/:jobName
+router.put('/cronjobs/start/:jobName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['jobName']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.startCronJob);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;

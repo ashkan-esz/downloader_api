@@ -190,3 +190,16 @@ export async function deleteBot(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function getCronJobs(req, res) {
+    let result = await adminServices.getCronJobs();
+    return sendResponse(req, res, result);
+}
+
+export async function startCronJob(req, res) {
+    let result = await adminServices.startCronJob(req.params.jobName);
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

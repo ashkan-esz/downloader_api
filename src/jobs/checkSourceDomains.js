@@ -6,76 +6,90 @@ import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {crawler} from "../crawlers/crawler.js";
 import {updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
 import {getDatesBetween} from "../crawlers/utils/utils.js";
+import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 
 
 export default function (agenda) {
     agenda.define("check movie source domains", {concurrency: 1}, async (job) => {
-        try {
-            let result = await crawlerMethodsDB.getSourcesObjDB();
-            if (!result || result === 'error') {
-                return {status: 'error'};
-            }
+        await checkCrawlerDomainsJobFunc();
+    });
+}
 
-            let keys = Object.keys(result);
-            const sources = [];
-            for (let i = 0; i < keys.length; i++) {
-                if (['_id', 'title'].includes(keys[i])) {
-                    continue;
-                }
-                sources.push({
-                    sourceName: keys[i],
-                    ...result[keys[i]],
-                });
-            }
 
-            for (let i = 0; i < sources.length; i++) {
-                let cookies = sources[i].cookies;
-                if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    const warningMessages = getCrawlerWarningMessages(sources[i].sourceName);
-                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.expireCookie);
-                }
-            }
-
-            let needToCrawl = false;
-            let promiseArray = [];
-            for (let i = 0; i < sources.length; i++) {
-                let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
-                    const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
-                    if (checkUrlResult === "error") {
-                        await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
-                        await updateSourceResponseStatus(sources[i].sourceName, false);
-                    } else if (checkUrlResult === "ok") {
-                        await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
-                        await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
-                        //reCrawl source if it was not responding in last 5 days
-                        let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, true);
-                        if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 5) {
-                            await crawler(sources[i].sourceName, {
-                                crawlMode: 2,
-                                handleDomainChangeOnly: false,
-                                handleDomainChange: false,
-                                handleCastUpdate: true,
-                            });
-                        }
-                    } else if (checkUrlResult !== "ok") {
-                        await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
-                        needToCrawl = true;
-                    }
-                });
-                promiseArray.push(prom);
-            }
-            await Promise.allSettled(promiseArray);
-            if (needToCrawl) {
-                await crawler('', {
-                    handleDomainChangeOnly: true,
-                    handleDomainChange: true,
-                    handleCastUpdate: false,
-                });
-            }
-            return {status: 'ok'};
-        } catch (error) {
-            saveError(error);
+export async function checkCrawlerDomainsJobFunc() {
+    try {
+        updateCronJobsStatus('checkCrawlerDomains', 'start');
+        let result = await crawlerMethodsDB.getSourcesObjDB();
+        if (!result || result === 'error') {
+            updateCronJobsStatus('checkCrawlerDomains', 'end', result);
             return {status: 'error'};
         }
-    });
+
+        let keys = Object.keys(result);
+        const sources = [];
+        for (let i = 0; i < keys.length; i++) {
+            if (['_id', 'title'].includes(keys[i])) {
+                continue;
+            }
+            sources.push({
+                sourceName: keys[i],
+                ...result[keys[i]],
+            });
+        }
+
+        updateCronJobsStatus('checkCrawlerDomains', 'checkingCookies');
+        for (let i = 0; i < sources.length; i++) {
+            let cookies = sources[i].cookies;
+            if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                const warningMessages = getCrawlerWarningMessages(sources[i].sourceName);
+                await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.expireCookie);
+            }
+        }
+
+        updateCronJobsStatus('checkCrawlerDomains', 'checkingUrls');
+        let needToCrawl = false;
+        let promiseArray = [];
+        for (let i = 0; i < sources.length; i++) {
+            let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
+                const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
+                if (checkUrlResult === "error") {
+                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
+                    await updateSourceResponseStatus(sources[i].sourceName, false);
+                } else if (checkUrlResult === "ok") {
+                    await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
+                    await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
+                    //reCrawl source if it was not responding in last 5 days
+                    let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, true);
+                    updateCronJobsStatus('checkCrawlerDomains', 'starting crawler on source activation', sources[i].sourceName);
+                    if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 5) {
+                        await crawler(sources[i].sourceName, {
+                            crawlMode: 2,
+                            handleDomainChangeOnly: false,
+                            handleDomainChange: false,
+                            handleCastUpdate: true,
+                        });
+                    }
+                } else if (checkUrlResult !== "ok") {
+                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
+                    needToCrawl = true;
+                }
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        if (needToCrawl) {
+            updateCronJobsStatus('checkCrawlerDomains', 'starting crawler because of url change', 'all sources');
+            await crawler('', {
+                handleDomainChangeOnly: true,
+                handleDomainChange: true,
+                handleCastUpdate: false,
+            });
+        }
+        updateCronJobsStatus('checkCrawlerDomains', 'end');
+        return {status: 'ok'};
+    } catch (error) {
+        saveError(error);
+        updateCronJobsStatus('checkCrawlerDomains', 'end');
+        return {status: 'error'};
+    }
 }

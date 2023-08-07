@@ -17,6 +17,7 @@ import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 import {checkImdbApiKeys} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
 import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
+import {getCronJobsStatus, startCronJobByName} from "../utils/cronJobsStatus.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -418,6 +419,25 @@ export async function addBot(botName, botType, disabled, description, userData) 
 
 export async function deleteBot(botId, userData) {
     let result = await botsDbMethods.removeBotData(botId, userData);
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getCronJobs() {
+    let result = getCronJobsStatus();
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function startCronJob(jobName) {
+    let result = startCronJobByName(jobName);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }

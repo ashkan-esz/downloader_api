@@ -6,6 +6,7 @@ import checkDiskSpace from 'check-disk-space';
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getJikanCacheSize} from "../crawlers/3rdPartyApi/jikanApi.js";
 import {getUserStatsCacheSize} from "../data/db/userStatsDbMethods.js";
+import {getCronJobsStatus} from "./cronJobsStatus.js";
 
 nou.options.INTERVAL = 10000;
 
@@ -25,6 +26,7 @@ export async function getServerResourcesStatus() {
             cpu: await getCpuStatus(),
             memoryStatus: await getMemoryStatus(),
             diskStatus: await getDiskStatus(),
+            getCronJobsStatus: await getCronJobsStatus(),
         });
     } catch (error) {
         saveError(error);
