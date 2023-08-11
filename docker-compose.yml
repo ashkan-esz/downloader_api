@@ -25,7 +25,10 @@ services:
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
       CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- https://admin.movietracker.mom
-#    ports:
+      MAILSERVER_HOST: localhost
+      MAILSERVER_PORT: 587
+      MAILSERVER_USERNAME: webmaster@movietracker.mom
+    #    ports:
 #      - "3000:3000"
     deploy:
       resources:
@@ -165,6 +168,27 @@ services:
       - telegrambot
       - adminpanel
       - website
+
+  #more details in readme.md
+  mailServer:
+    image: boky/postfix
+#    network_mode: host
+    environment:
+      - ALLOWED_SENDER_DOMAINS=movietracker.mom
+    ports:
+      - "587:587"
+      - "25:25"
+#    volumes:
+#      - ./postfix/main.cf:/etc/postfix/main.cf
+#      - ./postfix/virtual:/etc/postfix/virtual
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 300M
+        reservations:
+          memory: 50M
+    restart: always
 
 volumes:
   redis:

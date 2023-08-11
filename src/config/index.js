@@ -35,8 +35,10 @@ export default Object.freeze({
     }),
     remoteBrowser: getRemoteBrowsers(),
     email: Object.freeze({
-        username: process.env.EMAIL_USERNAME,
-        password: process.env.EMAIL_PASSWORD,
+        host: process.env.MAILSERVER_HOST || 'localhost',
+        port: Number(process.env.MAILSERVER_PORT || 587),
+        username: process.env.MAILSERVER_USERNAME,
+        password: process.env.MAILSERVER_PASSWORD,
     }),
     jwt: Object.freeze({
         accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,

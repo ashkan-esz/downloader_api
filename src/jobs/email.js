@@ -3,7 +3,8 @@ import nodemailer from "nodemailer";
 import {saveError} from "../error/saveError.js";
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: config.email.host,
+    port: config.email.port,
     from: config.email.username,
     auth: {
         user: config.email.username,
@@ -11,16 +12,12 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-//todo : better html for emails
-//todo : add sendgrid api
-//todo : fix bug
-
 export default function (agenda) {
     agenda.define("registration email", {concurrency: 50}, async (job) => {
         try {
             let {email, rawUsername, emailVerifyToken, host} = job.attrs.data;
             const mailOptions = {
-                from: 'downloaderapi@gmail.com',
+                from: config.email.username,
                 to: email,
                 subject: 'Thanks for registering',
                 text: `user ${rawUsername}, welcome to our wonderful app, open this link to verify your account --> ${host}/users/verifyEmail/${emailVerifyToken}`,
@@ -38,7 +35,7 @@ export default function (agenda) {
         try {
             let {deviceInfo, email} = job.attrs.data;
             const mailOptions = {
-                from: 'downloaderapi@gmail.com',
+                from: config.email.username,
                 to: email,
                 subject: 'New login detected',
                 text: `new device login ---> ${deviceInfo.appName}/${deviceInfo.appVersion} , ${deviceInfo.deviceModel}/${deviceInfo.os} from ${deviceInfo.ipLocation}`,
@@ -65,7 +62,7 @@ export default function (agenda) {
         try {
             let {email} = job.attrs.data;
             const mailOptions = {
-                from: 'downloaderapi@gmail.com',
+                from: config.email.username,
                 to: email,
                 subject: 'Password Changed',
                 text: `Your password has been changed`,
@@ -87,7 +84,7 @@ export default function (agenda) {
         try {
             let {email, rawUsername, emailVerifyToken, host} = job.attrs.data;
             const mailOptions = {
-                from: 'downloaderapi@gmail.com',
+                from: config.email.username,
                 to: email,
                 subject: 'Verify Account',
                 text: `user ${rawUsername}, open this link to verify your account --> ${host}/users/verifyEmail/${emailVerifyToken}`,
