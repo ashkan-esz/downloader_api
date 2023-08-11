@@ -359,6 +359,8 @@ export async function verifyEmail(token) {
     try {
         let verify = await usersDbMethods.verifyUserEmail(token);
         if (verify === 'ok') {
+            //todo : show page like :: https://unlayer.com/templates/account-activation
+            //todo : show page like :: https://unlayer.com/templates/streaming-app-subscription
             return generateServiceResult({message: 'email verified'}, 200, '');
         } else if (verify === 'notfound') {
             return generateServiceResult({}, 404, errorMessage.invalidToken);

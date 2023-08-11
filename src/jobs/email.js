@@ -32,6 +32,7 @@ export default function (agenda) {
     });
 
     agenda.define("login email", {concurrency: 50}, async (job) => {
+        //todo : use config.userSessionsPage
         try {
             let {deviceInfo, email} = job.attrs.data;
             const mailOptions = {
@@ -59,6 +60,7 @@ export default function (agenda) {
     });
 
     agenda.define("update password", {concurrency: 50}, async (job) => {
+        //todo : use config.userSessionsPage
         try {
             let {email} = job.attrs.data;
             const mailOptions = {

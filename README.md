@@ -84,6 +84,7 @@ To run this project, you will need to add the following environment variables to
 | **`MAILSERVER_PORT`**                  |                                                                                                                                | `false`  | 587           |
 | **`MAILSERVER_USERNAME`**              |                                                                                                                                | `false`  |               |
 | **`MAILSERVER_PASSWORD`**              |                                                                                                                                | `false`  |               |
+| **`USER_SESSION_PAGE`**                |                                                                                                                                | `false`  |               |
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                                | `true`   |               |
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
 | **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                                       | `false`  |               |
