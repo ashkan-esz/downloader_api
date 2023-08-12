@@ -1535,7 +1535,7 @@ paths:
                         - $ref: '#/components/schemas/Staff'
                         - $ref: '#/components/schemas/Character'
 
-  /movies/bots/{botId}/{moviesRequestName}/{types}/{dataLevel}/{imdbScores/{malScores}:
+  /movies/bots/{botId}/{moviesRequestName}/{types}/{dataLevel}/{imdbScores}/{malScores}:
     get:
       tags:
         - Bots
@@ -2514,6 +2514,7 @@ security:
     DataLevels:
       type: string
       enum: [ 'dlink', 'low', 'telbot', 'medium', 'high', 'info' ]
+      default: 'low'
 
     LatestData:
       type: object

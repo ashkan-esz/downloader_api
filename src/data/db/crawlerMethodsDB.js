@@ -30,22 +30,6 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                     title: new RegExp('^' + temp + '$')
                 });
 
-                let temp2 = titleObj.title
-                    .split('')
-                    .map(item => {
-                        if (item === ' ') {
-                            item = ':?' + item;
-                        } else {
-                            item = item + '\\\'?';
-                        }
-                        return item;
-                    })
-                    .join('')
-                    .replace(/\*/g, '\\*');
-                searchObj['$or'].push({
-                    alternateTitles: new RegExp('^' + temp2 + '$')
-                });
-
                 if (!titleObj.title.startsWith('the ')) {
                     searchObj['$or'].push({
                         title: 'the ' + titleObj.title,
@@ -55,6 +39,27 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 saveError(error2);
             }
         }
+
+        try {
+            let temp2 = titleObj.title
+                .split('')
+                .map(item => {
+                    if (item === ' ') {
+                        item = ':?' + item;
+                    } else {
+                        item = item + '\\\'?';
+                    }
+                    return item;
+                })
+                .join('')
+                .replace(/\*/g, '\\*');
+            searchObj['$or'].push({
+                alternateTitles: new RegExp('^' + temp2 + '$')
+            });
+        } catch (error2) {
+            saveError(error2);
+        }
+
         return await collection.find(searchObj, {projection: dataConfig}).toArray();
     } catch (error) {
         saveError(error);

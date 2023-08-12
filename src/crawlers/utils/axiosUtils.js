@@ -9,7 +9,7 @@ export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter =
         const client = wrapper(axios.create({jar}));
         let response = await client.head(url);
         if (response.headers['content-type'].includes('text/html')) {
-            return null;
+            return 0;
         }
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
