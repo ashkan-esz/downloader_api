@@ -14,7 +14,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = ["email", "computeUserJob", "userAnalysisJob", "checkSourceDomains"];
+const jobTypes = ["email", "computeUserJob", "userAnalysisJob", "checkSourceDomains", "youtubeTrailers"];
 
 export async function startAgenda() {
     try {
@@ -65,6 +65,7 @@ export async function startAgenda() {
         await agenda.every("0 1 * * 0", "compute users favorite genres", {}, {timezone: "Asia/Tehran"}); //At 01:00 on Sunday.
         await agenda.every("0 23 * * *", "save total/active users count", {}, {timezone: "Asia/Tehran"}); //At 23:00.
         await agenda.every("0 0 7 * *", "remove server analysis old logs", {}, {timezone: "Asia/Tehran"}); //At 00:00 on day-of-month 7.
+        await agenda.every("0 */8 * * *", "add trailers from youtube", {}, {timezone: "Asia/Tehran"}); //Every 8 hours
 
     } catch (error) {
         saveError(error);
@@ -92,13 +93,13 @@ export async function updateJikanImdbDataJobFunc() {
     updateCronJobsStatus('updateJikanImdbData', 'end');
 }
 
-export async function resetMonthLikesJobFunc(){
+export async function resetMonthLikesJobFunc() {
     updateCronJobsStatus('resetMonthLikes', 'start');
     await resetMonthLikeAndViewDB();
     updateCronJobsStatus('resetMonthLikes', 'end');
 }
 
-export async function removeS3UnusedFilesJobFunc(){
+export async function removeS3UnusedFilesJobFunc() {
     updateCronJobsStatus('removeS3UnusedFiles', 'start');
     await deleteUnusedFiles();
     updateCronJobsStatus('removeS3UnusedFiles', 'end');

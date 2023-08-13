@@ -76,6 +76,7 @@ To run this project, you will need to add the following environment variables to
 | **`BUCKET_NAME_PREFIX`**               | if bucket names not exist use this. for example 'poster' --> 'test_poster'                                                     | `false`  |               |
 | **`IMDB_API_KEY`**                     | keys split by `-` . see [imdb-api.com](https://imdb-api.com/)                                                                  | `true`   |               |
 | **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                              | `true`   |               |
+| **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                                    | `true`   |               |
 | **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  | false         |
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                            | `false`  | false         |
 | **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                                       | `false`  | false         |

@@ -3,6 +3,7 @@ import {computeUsersFavoriteGenresJobFunc} from "../jobs/computeUserJob.js";
 import {checkCrawlerDomainsJobFunc} from "../jobs/checkSourceDomains.js";
 import {removeS3UnusedFilesJobFunc, resetMonthLikesJobFunc, updateJikanImdbDataJobFunc} from "../agenda/index.js";
 import {createThumbnails} from "../data/db/admin/thumbnailDbMethods.js";
+import {addTrailersFromYoutubeJobFunc} from "../jobs/youtubeTrailers.js";
 import {saveError} from "../error/saveError.js";
 
 const cronJobsStatus = {
@@ -69,6 +70,14 @@ const cronJobsStatus = {
         value: '',
         description: '',
         startFunc: createThumbnails,
+    },
+    addTrailersFromYoutube: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: 'Every 8 hours',
+        startFunc: addTrailersFromYoutubeJobFunc,
     },
 }
 

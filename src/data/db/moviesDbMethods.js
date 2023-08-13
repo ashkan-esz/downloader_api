@@ -245,6 +245,38 @@ export async function getNewTrailers(userId, types, imdbScores, malScores, skip,
 //-----------------------------------
 //-----------------------------------
 
+export async function getMoviesWithNoTrailer(types, limit) {
+    try {
+        let collection = await getCollection('movies');
+
+        return await collection.find({
+            type: {$in: types},
+            trailers: null,
+        }, {
+            projection: {
+                title: 1,
+                rawTitle: 1,
+                type: 1,
+                year: 1,
+                trailers: 1,
+                trailer_s3: 1,
+            }
+        })
+            .sort({
+                year: -1,
+                add_date: -1,
+            })
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
 export async function getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
     try {
         let searchBase;

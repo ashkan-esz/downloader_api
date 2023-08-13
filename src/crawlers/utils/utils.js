@@ -3,6 +3,7 @@ import {saveError} from "../../error/saveError.js";
 
 export function replaceSpecialCharacters(input) {
     return input
+        .replace('&#39;', '')
         .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
         .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥△Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')

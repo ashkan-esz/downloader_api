@@ -25,6 +25,7 @@ export default Object.freeze({
     apiKeys: Object.freeze({
         imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
         omdbApiKeys: getOmdbApiKeys(),
+        googleApiKey: process.env.GOOGLE_API_KEY || '',
     }),
     cloudStorage: Object.freeze({
         endpoint: process.env.CLOUAD_STORAGE_ENDPOINT,

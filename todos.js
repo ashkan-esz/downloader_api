@@ -1,5 +1,4 @@
 
-//todo : 7. remoteBrowser: crawl youtube for trailers
 //todo : 13. add api to remove user/staff/character
 //todo : 14. add api to remove movie
 //todo : 15. adminPanel: add (13),(14)
@@ -10,8 +9,6 @@
 //todo : 20. crawler: add new movie sources to replace 'digimoviez'
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
 //todo : 29. add telegram bot for some system to backup database
-//todo : 36. save errors into db, add api to get them
-//todo : 37. adminPanel: show errors
 //todo : 38. add feature 'score' to movies
 //todo : 39. better emails
 //todo : 44. telegramBot: add features that exist in adminPanel
@@ -34,10 +31,8 @@
 //todo : 83. add api to check for new episode release on movies that user follow
 //todo : 84. add api to check for relatedTitles that user follow
 //todo : 85. add feature: send notification to users
-//todo : 101. check strapi
 //todo : 102. add feature : remove movie source and its movies
 //todo : 104. add title duplication finder service
-//todo : 109. When/How to add admin account
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
