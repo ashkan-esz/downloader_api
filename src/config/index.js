@@ -16,10 +16,18 @@ export default Object.freeze({
         pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 10),
     }),
     disableThumbnailCreate: process.env.DISABLE_THUMBNAIL_CREATE,
-    databaseURL: process.env.DATABASE_URL,
-    redis: Object({
-        url: process.env.REDIS_URL,
-        password: process.env.REDIS_PASSWORD,
+    dataBases: Object.freeze({
+        mongodb: {
+            url: process.env.MONGODB_DATABASE_URL,
+        },
+        postgres: Object.freeze({
+            url: process.env.POSTGRE_DATABASE_URL,
+            password: process.env.POSTGRES_PASSWORD,
+        }),
+        redis: Object({
+            url: process.env.REDIS_URL,
+            password: process.env.REDIS_PASSWORD,
+        }),
     }),
     sentryDns: process.env.SENTRY_DNS,
     apiKeys: Object.freeze({

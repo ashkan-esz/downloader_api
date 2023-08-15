@@ -7,7 +7,7 @@ export let database = null;
 
 async function startDatabase() {
     try {
-        const uri = config.databaseURL;
+        const uri = config.dataBases.mongodb.url;
         connection = new mongodb.MongoClient(uri, {compressors: ["zstd", "zlib"]});
         await connection.connect();
         database = connection.db();

@@ -5,6 +5,9 @@ services:
     image: downloader-api
     depends_on:
       - redis
+      - postgresDb
+      - mailServer
+      - remoteBrowser
     network_mode: host
     build:
       context: .
@@ -190,8 +193,35 @@ services:
           memory: 50M
     restart: always
 
+  postgresDb:
+    image: postgres:15.4-alpine3.18
+    env_file: ./.env
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=downloader
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 300M
+        reservations:
+          memory: 100M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d downloader -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    restart: always
+
 volumes:
   redis:
     driver: local
   telegrambot:
+    driver: local
+  pgdata:
     driver: local

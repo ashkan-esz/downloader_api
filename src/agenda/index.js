@@ -10,7 +10,7 @@ import {saveError} from "../error/saveError.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 
 let agenda = new Agenda({
-    db: {address: config.databaseURL, collection: 'agendaJobs'},
+    db: {address: config.dataBases.mongodb.url, collection: 'agendaJobs'},
     processEvery: '1 minute',
 });
 
