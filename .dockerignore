@@ -20,3 +20,4 @@ manualTest.http
 .db
 signoz
 nginx
+prisma/migrations

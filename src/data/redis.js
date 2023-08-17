@@ -3,15 +3,15 @@ import {createClient} from "redis";
 import {saveError} from "../error/saveError.js";
 
 const client = createClient({
-    url: config.redis.url,
-    password: config.redis.password,
+    url: config.dataBases.redis.url,
+    password: config.dataBases.redis.password,
 });
 
 try {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     await client.connect();
 } catch (e) {
-    saveError(e);
+    // saveError(e); //todo :
 }
 
 client.on('error', err => {
