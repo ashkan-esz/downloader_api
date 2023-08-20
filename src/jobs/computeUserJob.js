@@ -31,8 +31,8 @@ export async function computeUsersFavoriteGenresJobFunc() {
             }
 
             for (let i = 0; i < users.length; i++) {
-                let prom = getGenresFromUserStats(users[i]._id).then(async (genres) => {
-                    let temp = await updateComputedFavoriteGenres(users[i]._id, genres);
+                let prom = getGenresFromUserStats(users[i].userId).then(async (genres) => {
+                    let temp = await updateComputedFavoriteGenres(users[i].userId, genres);
                     if (temp === 'error') {
                         result = 'error';
                     }

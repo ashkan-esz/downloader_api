@@ -1,30 +1,92 @@
-import mongodb from 'mongodb';
-import getCollection from '../mongoDB.js';
-import {getNewDeviceSession} from "../../models/user.js";
+import prisma from '../prisma.js';
 import {saveError} from "../../error/saveError.js";
 
 
-export async function findUser(username, email, projection) {
+export const _editableUserDataFields = Object.freeze(['username', 'publicName', 'email', 'bio']);
+
+export async function findUser(username, email, includeSessions = false) {
     try {
-        let collection = await getCollection('users');
-        let searchObj = {
-            $or: [
-                {
-                    $and: [
-                        {username: {$ne: ''}},
-                        {username: username.toLowerCase()}
-                    ]
+        return await prisma.user.findFirst({
+            where: {
+                OR: [
+                    {
+                        AND: [
+                            {username: {not: ''}},
+                            {username: {equals: username.toLowerCase()}},
+                        ]
+                    },
+                    {
+                        AND: [
+                            {email: {not: ''}},
+                            {email: {equals: email.toLowerCase()}},
+                        ]
+                    }
+                ]
+            },
+            select: {
+                userId: true,
+                username: true,
+                rawUsername: true,
+                publicName: true,
+                password: true,
+                role: true,
+                email: true,
+                activeSessions: includeSessions,
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUserProfile(userId, refreshToken) {
+    try {
+        return await prisma.user.findFirst({
+            where: {
+                userId: userId,
+            },
+            select: {
+                password: false,
+                emailVerifyToken: false,
+                emailVerifyToken_expire: false,
+                emailVerified: true,
+                rawUsername: true,
+                email: true,
+                role: true,
+                publicName: true,
+                userId: true,
+                username: true,
+                bio: true,
+                defaultProfile: true,
+                profileImages: true,
+                registrationDate: true,
+                favoriteGenres: true,
+                activeSessions: {
+                    where: {
+                        refreshToken: refreshToken
+                    },
+                    take: 1,
+                    select: {
+                        refreshToken: false,
+                        deviceId: true,
+                        appName: true,
+                        appVersion: true,
+                        deviceModel: true,
+                        deviceOs: true,
+                        ipLocation: true,
+                        loginDate: true,
+                        lastUseDate: true,
+                    }
                 },
-                {
-                    $and: [
-                        {email: {$ne: ''}},
-                        {email: email.toLowerCase()}
-                    ]
-                },
-            ],
-        };
-        let result = await collection.find(searchObj, {projection: projection}).limit(1).toArray();
-        return result.length === 0 ? null : result[0];
+                computedFavoriteGenres: true,
+                ComputedStatsLastUpdate: true,
+                movieSettings: true,
+                downloadLinksSettings: true,
+                notificationSettings: true,
+
+            },
+        });
     } catch (error) {
         saveError(error);
         return 'error';
@@ -33,20 +95,52 @@ export async function findUser(username, email, projection) {
 
 export async function findUserById(userId, projection = {}) {
     try {
-        let collection = await getCollection('users');
-        return await collection.findOne({_id: new mongodb.ObjectId(userId)}, {projection: projection});
+        return await prisma.user.findFirst({
+            where: {
+                userId: userId,
+            },
+            select: projection,
+        });
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function addUser(userData) {
+export async function addUser(username, email, hashedPassword, role, emailVerifyToken, emailVerifyToken_expire, defaultProfileImage) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.insertOne(userData);
-        return result.insertedId;
+        return await prisma.user.create({
+            data: {
+                username: username.toLowerCase(),
+                rawUsername: username,
+                publicName: username,
+                email: email.toLowerCase(),
+                emailVerified: false,
+                emailVerifyToken: emailVerifyToken,
+                emailVerifyToken_expire: emailVerifyToken_expire,
+                password: hashedPassword,
+                role: role || 'user',
+                defaultProfile: defaultProfileImage,
+                movieSettings: {
+                    create: {}
+                },
+                notificationSettings: {
+                    create: {}
+                },
+                downloadLinksSettings: {
+                    create: {}
+                }
+            }
+        });
     } catch (error) {
+        if (error.code === "P2002") {
+            if (error.meta.target[0] === 'email') {
+                return 'email exist';
+            }
+            if (error.meta.target[0] === 'username') {
+                return 'username exist';
+            }
+        }
         saveError(error);
         return null;
     }
@@ -54,199 +148,182 @@ export async function addUser(userData) {
 
 export async function updateUserByID(userId, updateFields) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.updateOne({_id: new mongodb.ObjectId(userId)}, {
-            $set: updateFields
+        let result = await prisma.user.update({
+            where: {
+                userId: userId,
+            },
+            data: updateFields,
         });
-        if (result.modifiedCount === 0) {
+        if (!result) {
             return 'notfound';
         }
-        return 'ok';
+        return result;
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function updateEmailToken(userId, token, expire) {
+export async function verifyUserEmail(userId, token) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.updateOne(
-            {
-                _id: new mongodb.ObjectId(userId),
-            }, {
-                $set: {
-                    emailVerifyToken: token,
-                    emailVerifyToken_expire: expire,
-                },
-            });
-
-        if (result.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
-export async function verifyUserEmail(token) {
-    try {
-        let collection = await getCollection('users');
-        let result = await collection.updateOne({
-            emailVerifyToken: token,
-            emailVerifyToken_expire: {$gte: Date.now()},
-        }, {
-            $set: {
+        return await prisma.user.update({
+            where: {
+                userId: userId,
+                emailVerifyToken: token,
+                emailVerifyToken_expire: {gte: Date.now()}
+            },
+            data: {
+                emailVerifyToken: '',
+                emailVerifyToken_expire: 0,
                 emailVerified: true,
             },
-            $unset: {
-                emailVerifyToken: '',
-                emailVerifyToken_expire: '',
+            select: {
+                emailVerified: true,
             }
         });
-        if (result.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
     } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//------------------------------------------------
+//------------------------------------------------
+
+export async function getUserActiveSessions(userId) {
+    try {
+        return await prisma.activeSession.findMany({
+            where: {
+                userId: userId,
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function addSession(userId, deviceInfo, deviceId, refreshToken) {
+    try {
+        return await prisma.activeSession.create({
+            data: {
+                userId: userId,
+                deviceId: deviceId,
+                appName: deviceInfo.appName || '',
+                appVersion: deviceInfo.appVersion || '',
+                deviceOs: deviceInfo.os || '',
+                deviceModel: deviceInfo.deviceModel || '',
+                ipLocation: deviceInfo.ipLocation || '',
+                refreshToken: refreshToken,
+            }
+        });
+    } catch (error) {
+        if (error.code === "P2002") {
+            if (error.meta.target[0] === 'deviceId') {
+                return 'deviceId exist';
+            }
+        }
         saveError(error);
         return null;
     }
 }
 
-export async function setTokenForNewUser(userId, refreshToken) {
+export async function updateSession(userId, deviceInfo, deviceId, refreshToken) {
     try {
-        let collection = await getCollection('users');
-        let updateFields = {
-            'activeSessions.0.refreshToken': refreshToken,
-        }
-        await collection.updateOne({_id: userId}, {
-            $set: updateFields,
-        });
-    } catch (error) {
-        saveError(error);
-    }
-}
-
-export async function setTokenForNewDevice(userId, deviceInfo, deviceId, refreshToken) {
-    try {
-        let collection = await getCollection('users');
-        let newDeviceData = getNewDeviceSession(deviceInfo, deviceId, refreshToken);
-        //-------------------------------------------
-        //check device already exist
-        let deviceExistResult = await collection.findOneAndUpdate({
-            _id: userId,
-            'activeSessions.deviceId': deviceId,
-        }, {
-            $set: {
-                "activeSessions.$.appName": newDeviceData.appName,
-                "activeSessions.$.appVersion": newDeviceData.appVersion,
-                "activeSessions.$.deviceOs": newDeviceData.deviceOs,
-                "activeSessions.$.ipLocation": newDeviceData.ipLocation,
-                "activeSessions.$.deviceModel": newDeviceData.deviceModel,
-                "activeSessions.$.lastUseDate": newDeviceData.lastUseDate,
-                "activeSessions.$.refreshToken": newDeviceData.refreshToken,
-            }
-        }, {
-            returnDocument: 'after',
-            projection: {
-                activeSessions: 1,
-                email: 1,
-            }
-        });
-        if (deviceExistResult.value) {
-            for (let i = 0; i < deviceExistResult.value.activeSessions.length; i++) {
-                if (deviceExistResult.value.activeSessions[i].refreshToken === refreshToken) {
-                    return {
-                        email: deviceExistResult.value.email,
-                        isNewDevice: false,
-                    };
+        const now = new Date();
+        let res = await prisma.activeSession.upsert({
+            where: {
+                userId: userId,
+                deviceId: deviceId,
+            },
+            update: {
+                appName: deviceInfo.appName || '',
+                appVersion: deviceInfo.appVersion || '',
+                deviceOs: deviceInfo.os || '',
+                deviceModel: deviceInfo.deviceModel || '',
+                ipLocation: deviceInfo.ipLocation || '',
+                lastUseDate: now,
+                refreshToken: refreshToken,
+            },
+            create: {
+                appName: deviceInfo.appName || '',
+                appVersion: deviceInfo.appVersion || '',
+                deviceOs: deviceInfo.os || '',
+                deviceModel: deviceInfo.deviceModel || '',
+                ipLocation: deviceInfo.ipLocation || '',
+                loginDate: now,
+                lastUseDate: now,
+                refreshToken: refreshToken || '',
+                deviceId: deviceId,
+                userId: userId,
+            },
+            include: {
+                user: {
+                    select: {
+                        email: true,
+                    }
                 }
             }
-        }
-        //-------------------------------------------
-
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: userId
-            }, {
-                $push: {
-                    activeSessions: newDeviceData,
-                }
-            }, {
-                projection: {email: 1}
-            });
-        return result.value
-            ? {
-                email: result.value.email,
-                isNewDevice: true,
-            }
-            : 'cannot find user';
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
-export async function updateUserAuthToken(userId, deviceInfo, refreshToken, prevRefreshToken) {
-    try {
-        let collection = await getCollection('users');
-        let sessionData = getNewDeviceSession(deviceInfo, '', refreshToken);
-        let updateFields = {
-            "activeSessions.$[item].appName": sessionData.appName,
-            "activeSessions.$[item].appVersion": sessionData.appVersion,
-            "activeSessions.$[item].deviceOs": sessionData.deviceOs,
-            "activeSessions.$[item].ipLocation": sessionData.ipLocation,
-            "activeSessions.$[item].deviceModel": sessionData.deviceModel,
-            "activeSessions.$[item].lastUseDate": sessionData.lastUseDate,
-            "activeSessions.$[item].refreshToken": sessionData.refreshToken,
+        });
+        return {
+            email: res.user.email,
+            isNewDevice: res.loginDate.toString() === now.toString(),
         };
-        const options = {
-            returnDocument: 'after',
-            arrayFilters: [
-                {
-                    "item.refreshToken": prevRefreshToken,
-                },
-            ],
-            projection: {
-                activeSessions: 1,
-                rawUsername: 1,
-                profileImages: 1,
-            }
-        };
-        let result = await collection.findOneAndUpdate({_id: new mongodb.ObjectId(userId)}, {$set: updateFields}, options);
-        if (result.value) {
-            for (let i = 0; i < result.value.activeSessions.length; i++) {
-                if (result.value.activeSessions[i].refreshToken === refreshToken) {
-                    return result.value;
-                }
-            }
-        }
-        return 'cannot find device';
     } catch (error) {
         saveError(error);
         return null;
     }
 }
 
-export async function removeAuthToken(userId, prevRefreshToken) {
+export async function updateSessionRefreshToken(userId, deviceInfo, refreshToken, prevRefreshToken, includeProfileImages) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-                'activeSessions.refreshToken': prevRefreshToken,
-            }, {
-                $pull: {
-                    activeSessions: {refreshToken: prevRefreshToken},
-                }
-            }, {
-                projection: {activeSessions: 1}
-            });
-        return result.value ? result.value : 'cannot find device';
+        return await prisma.activeSession.update({
+            where: {
+                userId: userId,
+                refreshToken: prevRefreshToken,
+            },
+            data: {
+                appName: deviceInfo.appName || '',
+                appVersion: deviceInfo.appVersion || '',
+                deviceOs: deviceInfo.os || '',
+                deviceModel: deviceInfo.deviceModel || '',
+                ipLocation: deviceInfo.ipLocation || '',
+                lastUseDate: new Date(),
+                refreshToken: refreshToken,
+            },
+            include: {
+                user: includeProfileImages ? {
+                    select: {
+                        profileImages: true,
+                        rawUsername: true,
+                    }
+                } : false,
+            },
+        });
     } catch (error) {
+        if (error.meta?.cause === 'Record to update not found.') {
+            return 'cannot find device';
+        }
+        saveError(error);
+        return null;
+    }
+}
+
+export async function removeSession(userId, prevRefreshToken) {
+    try {
+        return await prisma.activeSession.delete({
+            where: {
+                userId: userId,
+                refreshToken: prevRefreshToken,
+            },
+            select: {
+                refreshToken: true,
+            },
+        });
+    } catch (error) {
+        if (error.meta?.cause === 'Record to delete does not exist.') {
+            return 'cannot find device';
+        }
         saveError(error);
         return null;
     }
@@ -254,27 +331,32 @@ export async function removeAuthToken(userId, prevRefreshToken) {
 
 export async function removeAuthSession(userId, deviceId, prevRefreshToken) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-                'activeSessions.refreshToken': prevRefreshToken,
-            }, {
-                $pull: {
-                    activeSessions: {deviceId: deviceId},
-                }
-            }, {
-                projection: {activeSessions: 1}
+        const checkRefreshTokenExist = await prisma.activeSession.findFirst({
+            where: {
+                userId: userId,
+                refreshToken: prevRefreshToken,
+            },
+            select: {
+                refreshToken: true,
+            },
+        });
+        if (checkRefreshTokenExist) {
+            return await prisma.activeSession.delete({
+                where: {
+                    userId: userId,
+                    deviceId: deviceId,
+                },
+                select: {
+                    refreshToken: true,
+                },
             });
-        if (result.value) {
-            for (let i = 0; i < result.value.activeSessions.length; i++) {
-                if (result.value.activeSessions[i].deviceId === deviceId) {
-                    return result.value;
-                }
-            }
+        } else {
+            return 'cannot find device';
         }
-        return 'cannot find device';
     } catch (error) {
+        if (error.meta?.cause === 'Record to delete does not exist.') {
+            return 'cannot find device';
+        }
         saveError(error);
         return null;
     }
@@ -282,50 +364,83 @@ export async function removeAuthSession(userId, deviceId, prevRefreshToken) {
 
 export async function removeAllAuthSession(userId, prevRefreshToken) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-                'activeSessions.refreshToken': prevRefreshToken,
-            }, {
-                $pull: {
-                    activeSessions: {refreshToken: {$ne: prevRefreshToken}},
+        const checkRefreshTokenExist = await prisma.activeSession.findFirst({
+            where: {
+                userId: userId,
+                refreshToken: prevRefreshToken,
+            },
+            select: {
+                refreshToken: true,
+            },
+        });
+        if (checkRefreshTokenExist) {
+            let sessions = await prisma.activeSession.findMany({
+                where: {
+                    userId: userId,
+                    refreshToken: {not: prevRefreshToken}
+                },
+                select: {
+                    refreshToken: true,
                 }
-            }, {
-                projection: {activeSessions: 1}
             });
-        return result.value ? result.value : 'cannot find device';
+            let {count} = await prisma.activeSession.deleteMany({
+                where: {
+                    userId: userId,
+                    refreshToken: {not: prevRefreshToken}
+                },
+            });
+            if (count > 0) {
+                return sessions;
+            }
+            return [];
+        } else {
+            return 'cannot find device';
+        }
     } catch (error) {
         saveError(error);
         return null;
     }
 }
 
-//----------------------------
-//----------------------------
+//------------------------------------------------
+//------------------------------------------------
+
+export async function getProfileImagesCount(userId) {
+    try {
+        return await prisma.profileImage.count({
+            where: {
+                userId: userId,
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
 
 export async function uploadProfileImageDB(userId, imageData) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-                profileImageCounter: {$lt: 20}
-            }, {
-                $push: {
-                    profileImages: {
-                        $each: [imageData],
-                        $position: 0,
-                    },
-                },
-                $inc: {
-                    profileImageCounter: 1
-                }
-            }, {
-                returnDocument: 'after',
-                projection: {profileImages: 1}
-            });
-        return result.value;
+        let createResult = await prisma.profileImage.create({
+            data: {
+                userId: userId,
+                originalSize: imageData.originalSize,
+                size: imageData.size,
+                url: imageData.url,
+                thumbnail: imageData.thumbnail,
+                addDate: new Date(),
+            },
+            select: {
+                userId: true,
+            },
+        });
+        if (!createResult) {
+            return 'error';
+        }
+        return await prisma.profileImage.findMany({
+            where: {
+                userId: userId,
+            },
+        });
     } catch (error) {
         saveError(error);
         return 'error';
@@ -334,26 +449,20 @@ export async function uploadProfileImageDB(userId, imageData) {
 
 export async function removeProfileImageDB(userId, fileName) {
     try {
-        let fileNameRegex = new RegExp(fileName.replace(/\./g, '\\.') + '$');
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-                'profileImages.url': fileNameRegex
-            }, {
-                $pull: {
-                    profileImages: {
-                        url: fileNameRegex
-                    },
-                },
-                $inc: {
-                    profileImageCounter: -1
-                }
-            }, {
-                returnDocument: 'after',
-                projection: {profileImages: 1}
-            });
-        return result.value;
+        let {count} = await prisma.profileImage.deleteMany({
+            where: {
+                userId: userId,
+                url: {endsWith: fileName}
+            }
+        });
+        if (count === 0) {
+            return null;
+        }
+        return await prisma.profileImage.findMany({
+            where: {
+                userId: userId,
+            },
+        });
     } catch (error) {
         saveError(error);
         return 'error';
@@ -365,18 +474,35 @@ export async function removeProfileImageDB(userId, fileName) {
 
 export async function getAllUserSettingsDB(userId) {
     try {
-        let collection = await getCollection('users');
-        let result = await collection.find({
-            _id: new mongodb.ObjectId(userId),
-        }, {
-            projection: {
-                _id: 0,
-                movieSettings: 1,
-                downloadLinksSettings: 1,
-                notificationSettings: 1,
-            }
-        }).limit(1).toArray();
-        return result.length === 0 ? null : result[0];
+        let res = await Promise.allSettled([
+            prisma.movieSettings.findFirst({
+                where: {
+                    userId: userId,
+                },
+            }),
+            prisma.downloadLinksSettings.findFirst({
+                where: {
+                    userId: userId,
+                },
+            }),
+            prisma.notificationSettings.findFirst({
+                where: {
+                    userId: userId,
+                },
+            })
+        ]);
+
+        if (res.find(item => item.status !== 'fulfilled')) {
+            return 'error';
+        }
+        if (res.every(item => !item.value)) {
+            return null;
+        }
+        return {
+            movieSettings: res[0].value,
+            downloadLinksSettings: res[1].value,
+            notificationSettings: res[2].value,
+        }
     } catch (error) {
         saveError(error);
         return 'error';
@@ -385,16 +511,27 @@ export async function getAllUserSettingsDB(userId) {
 
 export async function getUserSettingsDB(userId, settingSectionName) {
     try {
-        let fieldName = settingSectionName + 'Settings';
-        let collection = await getCollection('users');
-        let result = await collection.find({
-            _id: new mongodb.ObjectId(userId),
-        }, {
-            projection: {
-                [fieldName]: 1
-            }
-        }).limit(1).toArray();
-        return result.length === 0 ? null : result[0][fieldName];
+        if (settingSectionName === 'movie') {
+            return await prisma.movieSettings.findFirst({
+                where: {
+                    userId: userId,
+                },
+            });
+        }
+        if (settingSectionName === 'downloadLinks') {
+            return await prisma.downloadLinksSettings.findFirst({
+                where: {
+                    userId: userId,
+                },
+            });
+        }
+        if (settingSectionName === 'notification') {
+            return await prisma.notificationSettings.findFirst({
+                where: {
+                    userId: userId,
+                }
+            });
+        }
     } catch (error) {
         saveError(error);
         return 'error';
@@ -403,23 +540,42 @@ export async function getUserSettingsDB(userId, settingSectionName) {
 
 export async function changeUserSettingsDB(userId, settings, settingSectionName) {
     try {
-        let fieldName = settingSectionName + 'Settings';
-        let collection = await getCollection('users');
-        let result = await collection.findOneAndUpdate(
-            {
-                _id: new mongodb.ObjectId(userId),
-            }, {
-                $set: {
-                    [fieldName]: settings
+        if (settingSectionName === 'movie') {
+            return await prisma.movieSettings.upsert({
+                where: {
+                    userId: userId,
                 },
-            }, {
-                returnDocument: 'after',
-                projection: {
-                    [fieldName]: 1
+                update: settings,
+                create: {
+                    userId: userId,
+                    ...settings,
                 }
             });
-
-        return result.value?.[fieldName];
+        }
+        if (settingSectionName === 'downloadLinks') {
+            return await prisma.downloadLinksSettings.upsert({
+                where: {
+                    userId: userId,
+                },
+                update: settings,
+                create: {
+                    userId: userId,
+                    ...settings,
+                }
+            });
+        }
+        if (settingSectionName === 'notification') {
+            return await prisma.notificationSettings.upsert({
+                where: {
+                    userId: userId,
+                },
+                update: settings,
+                create: {
+                    userId: userId,
+                    ...settings,
+                }
+            });
+        }
     } catch (error) {
         saveError(error);
         return 'error';
@@ -431,14 +587,19 @@ export async function changeUserSettingsDB(userId, settings, settingSectionName)
 
 export async function getTotalAndActiveUsersCount() {
     try {
-        let collection = await getCollection('users');
         let prevDay = new Date();
         prevDay.setDate(prevDay.getDate() - 1);
         let res = await Promise.allSettled([
-            await collection.countDocuments(),
-            await collection.countDocuments({
-                'activeSessions.lastUseDate': {$gte: prevDay}
-            })
+            prisma.user.count({}),
+            prisma.user.count({
+                where: {
+                    activeSessions: {
+                        some: {
+                            lastUseDate: {gte: prevDay}
+                        }
+                    }
+                }
+            }),
         ]);
         if (res[0].status !== 'fulfilled' || res[1].status !== 'fulfilled') {
             return null;

@@ -453,7 +453,7 @@ const validations = Object.freeze({
 
     settingName: param('settingName')
         .isString().withMessage('Invalid parameter settingName :: String')
-        .trim().toLowerCase()
+        .trim()
         .isIn(settingNames).withMessage(`Invalid parameter settingName :: (${settingNames.join('|')})`),
 
     setting_body: body('settings')

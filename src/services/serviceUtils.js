@@ -36,6 +36,7 @@ export const errorMessage = Object.freeze({
     cantRemoveCurrentOrigin: 'Cannot remove current origin from corsAllowedOrigins',
     //----------------------
     userNotFound: 'Cannot find user',
+    sessionNotFound: 'Cannot find session',
     profileImageNotFound: 'Cannot find profile image',
     emailNotFound: 'Cannot find user email',
     //----------------------

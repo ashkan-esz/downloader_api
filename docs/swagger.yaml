@@ -176,6 +176,11 @@ paths:
                 deviceInfo:
                   $ref: '#/components/schemas/DeviceInfo'
       parameters:
+        - name: profileImages
+          in: query
+          schema:
+            type: boolean
+          required: false
         - name: noCookie
           in: query
           schema:
@@ -281,12 +286,6 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  activeSessions:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Session'
         400:
           description: Bad request body fields
           content:
@@ -319,12 +318,6 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  activeSessions:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Session'
         400:
           description: Bad request body fields
           content:
@@ -332,11 +325,6 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  data:
-                    type: object
-                    nullable: true
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -515,7 +503,7 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/verifyEmail/{token}:
+  /users/verifyEmail/{userId}/{token}:
     get:
       tags:
         - Users
@@ -525,6 +513,11 @@ paths:
         <p/>
       operationId: users/verifyEmail
       parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: integer
         - name: token
           required: true
           in: path
@@ -2048,9 +2041,8 @@ security:
     Profile:
       type: object
       properties:
-        _id:
-          type: string
-          description: act as userId
+        userId:
+          type: integer
         username:
           type: string
         publicName:
@@ -2081,11 +2073,8 @@ security:
           type: string
         favoriteGenres:
           $ref: '#/components/schemas/StringArray'
-        computed:
-          type: object
-          properties:
-            favoriteGenres:
-              $ref: '#/components/schemas/FavoriteGenres'
+        computedFavoriteGenres:
+          $ref: '#/components/schemas/FavoriteGenres'
         movieSettings:
           $ref: '#/components/schemas/MovieSettings'
         downloadLinksSettings:
@@ -2098,7 +2087,7 @@ security:
           $ref: '#/components/schemas/DateString'
         role:
           type: string
-          enum: [ 'test-user', 'user', 'dev', 'admin' ]
+          enum: [ 'test_user', 'user', 'dev', 'admin' ]
         thisDevice:
           $ref: '#/components/schemas/Session'
 
@@ -2868,7 +2857,7 @@ security:
           type: object
           properties:
             userId:
-              type: string
+              type: integer
             role:
               type: string
             rawUsername:
@@ -3308,7 +3297,7 @@ security:
         username:
           type: string
         userId:
-          type: string
+          type: integer
 
     BotData:
       type: object
@@ -3337,7 +3326,7 @@ security:
           type: object
           properties:
             userId:
-              type: string
+              type: integer
             role:
               type: string
             rawUsername:

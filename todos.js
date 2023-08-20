@@ -22,7 +22,6 @@
 //todo : 58. add more tests
 //todo : 73. add feature 'view' to movies
 //todo : 74. add feature: users chats
-//todo : 75. add sql dataBase
 //todo : 76. add socket
 //todo : 78. add feature 'comments' to movies
 //todo : 79. add filter for 'hentai' and 'pornography' on api results

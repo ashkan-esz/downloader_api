@@ -1,5 +1,5 @@
 import getCollection from "../mongoDB.js";
-import {findUserById} from "./usersDbMethods.js";
+import * as usersDbMethods from "./usersDbMethods.js";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../../error/saveError.js";
 
@@ -23,7 +23,7 @@ export async function getAllBots() {
             if (data) {
                 result[i].userData = {...result[i].userData, ...data};
             } else {
-                let data = await findUserById(userId, {_id: 0, rawUsername: 1});
+                let data = await usersDbMethods.findUserById(userId, {rawUsername: true});
                 users.push({id: userId, data: data});
                 result[i].userData = {...result[i].userData, ...data};
             }
@@ -47,7 +47,7 @@ export async function getBotData(botId) {
 
         if (result && result.userData) {
             let userId = result.userData.userId;
-            let data = await findUserById(userId, {_id: 0, rawUsername: 1});
+            let data = await usersDbMethods.findUserById(userId, {rawUsername: true});
             result.userData = {...result.userData, ...data};
         }
 

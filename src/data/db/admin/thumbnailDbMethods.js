@@ -2,6 +2,8 @@ import getCollection from "../../mongoDB.js";
 import {getImageThumbnail} from "../../../utils/sharpImageMethods.js";
 import {saveError} from "../../../error/saveError.js";
 import {updateCronJobsStatus} from "../../../utils/cronJobsStatus.js";
+import prisma from "../../prisma.js";
+import PQueue from "p-queue";
 
 
 export async function createThumbnails() {
@@ -412,53 +414,49 @@ export async function createThumbnails_profileImages() {
         let totalThumbnailsCreated = 0;
         let badLinks = [];
         let noCreationCounter = 0;
-        let collection = await getCollection("users");
+        const promiseQueue = new PQueue({concurrency: 20});
+
         while (true) {
             updateCronJobsStatus('createThumbnail', 'profileImages, created: ' + totalThumbnailsCreated);
-            let result = await collection.find({
-                'profileImages.thumbnail': '',
-            }, {
-                projection: {
-                    profileImages: 1,
-                }
-            }).limit(50).toArray();
-            if (result.length === 0) {
+            let profileImages = await prisma.profileImage.findMany({
+                where: {
+                    thumbnail: '',
+                },
+                take: 50,
+            });
+            if (profileImages.length === 0) {
                 break;
             }
 
             let counter = 0;
-            let promiseArray2 = [];
-            for (let i = 0; i < result.length; i++) {
-                let profileImages = result[i].profileImages;
-
-                let promiseArray = [];
-                for (let j = 0; j < profileImages.length; j++) {
-                    if (!badLinks.includes(profileImages[j].url) && !profileImages[j].thumbnail) {
-                        let prom = getImageThumbnail(profileImages[j].url, true).then((thumbnailData) => {
-                            if (thumbnailData) {
-                                counter++;
-                                profileImages[j].thumbnail = thumbnailData.dataURIBase64;
-                                if (!profileImages[j].size) {
-                                    profileImages[j].size = thumbnailData.fileSize;
-                                }
-                            } else {
-                                badLinks.push(profileImages[j].url);
+            for (let i = 0; i < profileImages.length; i++) {
+                if (!badLinks.includes(profileImages[i].url) && !profileImages[i].thumbnail) {
+                    promiseQueue.add(() => getImageThumbnail(profileImages[i].url, true).then(async (thumbnailData) => {
+                        if (thumbnailData) {
+                            counter++;
+                            profileImages[i].thumbnail = thumbnailData.dataURIBase64;
+                            if (!profileImages[i].size) {
+                                profileImages[i].size = thumbnailData.fileSize;
                             }
-                        });
-                        promiseArray.push(prom);
-                    }
-                }
-
-                let pp = Promise.allSettled(promiseArray).then(async () => {
-                    await collection.updateOne({_id: result[i]._id}, {
-                        $set: {
-                            profileImages: result[i].profileImages,
+                            await prisma.profileImage.update({
+                                where: {
+                                    url: profileImages[i].url,
+                                },
+                                data: {
+                                    thumbnail: profileImages[i].thumbnail,
+                                    size: profileImages[i].size,
+                                },
+                                select: {
+                                    thumbnail: true,
+                                }
+                            });
+                        } else {
+                            badLinks.push(profileImages[i].url);
                         }
-                    });
-                });
-                promiseArray2.push(pp);
+                    }));
+                }
             }
-            await Promise.allSettled(promiseArray2);
+            await promiseQueue.onIdle();
             totalThumbnailsCreated += counter;
             if (counter === 0) {
                 noCreationCounter++;
@@ -467,6 +465,7 @@ export async function createThumbnails_profileImages() {
                 break;
             }
         }
+        await promiseQueue.onIdle();
         return totalThumbnailsCreated;
     } catch (error) {
         saveError(error);

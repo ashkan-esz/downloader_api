@@ -1,11 +1,11 @@
-import {findUserById} from "../../data/db/usersDbMethods.js";
+import {getProfileImagesCount} from "../../data/db/usersDbMethods.js";
 import {errorMessage} from "../../services/serviceUtils.js";
 import * as adminConfigDbMethods from "../../data/db/admin/adminConfigDbMethods.js";
 
 
 export async function uploadProfileImage(req, res, next) {
-    let userData = await findUserById(req.jwtUserData.userId, {profileImageCounter: 1});
-    if (userData === 'error') {
+    let profileImageCount = await getProfileImagesCount(req.jwtUserData.userId);
+    if (profileImageCount === 'error') {
         return res.status(500).json({
             data: null,
             code: 500,
@@ -14,16 +14,8 @@ export async function uploadProfileImage(req, res, next) {
             isCacheData: false,
         });
     }
-    if (!userData) {
-        return res.status(404).json({
-            data: null,
-            code: 404,
-            errorMessage: errorMessage.userNotFound,
-            isGuest: false,
-            isCacheData: false,
-        });
-    }
-    if (userData.profileImageCounter > 19) {
+
+    if (profileImageCount > 19) {
         return res.status(409).json({
             data: null,
             code: 409,

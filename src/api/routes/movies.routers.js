@@ -186,7 +186,7 @@ router.get('/animeEnglishName',
 
 //movies/birthday/:staffOrCharacters/:dataLevel/:page
 router.get('/birthday/:staffOrCharacters/:dataLevel/:page',
-    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['staffOrCharacters', 'followedOnly', 'dataLevel', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,

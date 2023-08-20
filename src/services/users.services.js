@@ -1,13 +1,12 @@
 import config from "../config/index.js";
 import * as usersDbMethods from "../data/db/usersDbMethods.js";
-import {userModel} from "../models/user.js";
 import * as bcrypt from "bcrypt";
 import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
-import {removeProfileImageFromS3, uploadProfileImageToS3} from "../data/cloudStorage.js";
+import {defaultProfileImage, removeProfileImageFromS3, uploadProfileImageToS3} from "../data/cloudStorage.js";
 import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
@@ -23,32 +22,25 @@ import {setRedis} from "../data/redis.js";
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
-        let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, email: 1});
-        if (findUserResult === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (findUserResult) {
-            if (findUserResult.username === username.toLowerCase()) {
-                return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
-            }
-            if (findUserResult.email === email) {
-                return generateServiceResult({}, 403, errorMessage.emailAlreadyExist);
-            }
-        }
-
-        deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         let hashedPassword = await bcrypt.hash(password, 12);
         let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let deviceId = fingerprint.hash || uuidv4();
-        let userData = userModel(username, email, hashedPassword, emailVerifyToken, emailVerifyToken_expire, deviceInfo, deviceId);
-        let userId = await usersDbMethods.addUser(userData);
-        if (!userId) {
+        let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', emailVerifyToken, emailVerifyToken_expire, defaultProfileImage);
+        if (userData === 'username exist') {
+            return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
+        }
+        if (userData === 'email exist') {
+            return generateServiceResult({}, 403, errorMessage.emailAlreadyExist);
+        }
+        if (!userData) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         }
-        const user = getJwtPayload(userData, userId);
+        const user = getJwtPayload(userData);
         const tokens = generateAuthTokens(user);
-        await usersDbMethods.setTokenForNewUser(userId, tokens.refreshToken);
+        deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
+        const deviceId = fingerprint.hash || uuidv4();
+        await usersDbMethods.addSession(userData.userId, deviceInfo, deviceId, tokens.refreshToken);
         await agenda.schedule('in 5 seconds', 'registration email', {
             rawUsername: userData.rawUsername,
             email,
@@ -59,7 +51,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             username: userData.rawUsername,
-            userId: userId,
+            userId: userData.userId,
         }, 201, '', tokens);
     } catch (error) {
         saveError(error);
@@ -71,11 +63,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
     //todo : terminate sessions inactive for 6 month
     //todo : limit number of device
     try {
-        let userData = await usersDbMethods.findUser(username_email, username_email, {
-            password: 1,
-            rawUsername: 1,
-            role: 1
-        });
+        let userData = await usersDbMethods.findUser(username_email, username_email);
         if (userData === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
@@ -88,11 +76,9 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
             deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
             let deviceId = fingerprint.hash || uuidv4();
-            let result = await usersDbMethods.setTokenForNewDevice(userData._id, deviceInfo, deviceId, tokens.refreshToken);
+            let result = await usersDbMethods.updateSession(userData.userId, deviceInfo, deviceId, tokens.refreshToken);
             if (!result) {
                 return generateServiceResult({}, 500, errorMessage.serverError);
-            } else if (result === 'cannot find user') {
-                return generateServiceResult({}, 404, errorMessage.userNotFound);
             }
             if (result.isNewDevice) {
                 agenda.schedule('in 4 seconds', 'login email', {
@@ -104,7 +90,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
                 accessToken: tokens.accessToken,
                 accessToken_expire: tokens.accessToken_expire,
                 username: userData.rawUsername,
-                userId: userData._id,
+                userId: userData.userId,
             }, 200, '', tokens);
         } else {
             return generateServiceResult({}, 403, errorMessage.userPassNotMatch);
@@ -115,7 +101,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
     }
 }
 
-export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRefreshToken, isAdminLogin) {
+export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRefreshToken, includeProfileImages, isAdminLogin) {
     try {
         const user = {
             userId: jwtUserData.userId,
@@ -125,7 +111,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
         };
         const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
         deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
-        let result = await usersDbMethods.updateUserAuthToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken);
+        let result = await usersDbMethods.updateSessionRefreshToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken, includeProfileImages);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
@@ -134,9 +120,9 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
         return generateServiceResult({
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
-            username: result.rawUsername,
-            userId: result._id.toString(),
-            profileImages: result.profileImages,
+            username: result.user?.rawUsername,
+            userId: jwtUserData.userId,
+            profileImages: result.user?.profileImages,
         }, 200, '', tokens);
     } catch (error) {
         saveError(error);
@@ -146,18 +132,18 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
 
 export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
     try {
-        let result = await usersDbMethods.removeAuthToken(jwtUserData.userId, prevRefreshToken);
+        let result = await usersDbMethods.removeSession(jwtUserData.userId, prevRefreshToken);
         if (!result) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (result === 'cannot find device') {
             return generateServiceResult({}, 403, errorMessage.invalidRefreshToken);
         }
-        let device = result.activeSessions.find(item => item.refreshToken === prevRefreshToken);
+
         try {
             let decodedJwt = jwt.decode(prevAccessToken);
             if (decodedJwt) {
                 let jwtExpireLeft = (decodedJwt.exp * 1000 - Date.now()) / 1000;
-                await setRedis('jwtKey:' + device.refreshToken, 'logout', jwtExpireLeft);
+                await setRedis('jwtKey:' + prevRefreshToken, 'logout', jwtExpireLeft);
             }
         } catch (error2) {
             saveError(error2);
@@ -177,10 +163,8 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
         } else if (result === 'cannot find device') {
             return generateServiceResult({}, 403, errorMessage.invalidDeviceId);
         }
-        let device = result.activeSessions.find(item => item.deviceId === deviceId);
-        await setRedis('jwtKey:' + device.refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
-        let restOfSessions = result.activeSessions.filter(item => item.refreshToken !== prevRefreshToken && item.deviceId !== deviceId);
-        return generateServiceResult({activeSessions: restOfSessions}, 200, '');
+        await setRedis('jwtKey:' + result.refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
+        return generateServiceResult({}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);
@@ -189,34 +173,33 @@ export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
 
 export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
     try {
-        let result = await usersDbMethods.removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
-        if (!result) {
+        let logOutedSessions = await usersDbMethods.removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
+        if (!logOutedSessions) {
             return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (result === 'cannot find device') {
+        } else if (logOutedSessions === 'cannot find device') {
             return generateServiceResult({}, 403, errorMessage.invalidRefreshToken);
         }
-        let activeSessions = result.activeSessions;
-        for (let i = 0; i < activeSessions.length; i++) {
-            if (activeSessions[i].refreshToken !== prevRefreshToken) {
-                await setRedis('jwtKey:' + activeSessions[i].refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
-            }
+        for (let i = 0; i < logOutedSessions.length; i++) {
+            await setRedis('jwtKey:' + logOutedSessions[i].refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
         }
-        return generateServiceResult({activeSessions: []}, 200, '');
+        return generateServiceResult({}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
-export async function getUserProfile(userData, refreshToken) {
+export async function getUserProfile(jwtUserData, refreshToken) {
     try {
-        userData.thisDevice = userData.activeSessions.find(item => item.refreshToken === refreshToken);
-        delete userData.thisDevice.refreshToken;
+        let userData = await usersDbMethods.getUserProfile(jwtUserData.userId, refreshToken);
+        if (userData === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!userData) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+
+        userData.thisDevice = userData.activeSessions[0] || null;
         delete userData.activeSessions;
-        delete userData.password;
-        delete userData.emailVerifyToken;
-        delete userData.emailVerifyToken_expire;
-        delete userData.profileImageCounter;
         userData.username = userData.rawUsername; //outside of server rawUsername is the actual username
         delete userData.rawUsername;
         return generateServiceResult(userData, 200, '');
@@ -228,10 +211,10 @@ export async function getUserProfile(userData, refreshToken) {
 
 export async function editProfile(jwtUserData, username, publicName, bio, email) {
     try {
-        let findUserResult = await usersDbMethods.findUser(username, email, {username: 1, publicName: 1, email: 1});
+        let findUserResult = await usersDbMethods.findUser(username, email);
         if (findUserResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (findUserResult && findUserResult._id.toString() !== jwtUserData.userId.toString()) {
+        } else if (findUserResult && findUserResult.userId !== jwtUserData.userId) {
             if (findUserResult.username === username.toLowerCase()) {
                 return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
             }
@@ -272,7 +255,7 @@ export async function editProfile(jwtUserData, username, publicName, bio, email)
 
 export async function updatePassword(jwtUserData, oldPassword, newPassword) {
     try {
-        let findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {password: 1, email: 1});
+        const findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {password: true, email: true});
         if (findUserResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!findUserResult) {
@@ -315,13 +298,22 @@ export async function updatePassword(jwtUserData, oldPassword, newPassword) {
 //     }
 // }
 
-export async function getUserActiveSessions(userData, refreshToken) {
+export async function getUserActiveSessions(jwtUserData, refreshToken) {
     try {
-        let thisDevice = userData.activeSessions.find(item => item.refreshToken === refreshToken);
-        let activeSessions = userData.activeSessions.filter(item => item.refreshToken !== refreshToken).map(item => {
+        let result = await usersDbMethods.getUserActiveSessions(jwtUserData.userId);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!result) {
+            return generateServiceResult({}, 404, errorMessage.sessionNotFound);
+        }
+
+        let thisDevice = result.find(item => item.refreshToken === refreshToken);
+        let activeSessions = result.filter(item => item.refreshToken !== refreshToken).map(item => {
+            delete item.userId;
             delete item.refreshToken;
             return item;
         });
+        delete thisDevice.userId;
         delete thisDevice.refreshToken;
         return generateServiceResult({thisDevice, activeSessions}, 200, '');
     } catch (error) {
@@ -330,42 +322,53 @@ export async function getUserActiveSessions(userData, refreshToken) {
     }
 }
 
-export async function sendVerifyEmail(userData, host) {
+export async function sendVerifyEmail(jwtUserData, host) {
     try {
+        const findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {rawUsername: true, email: true});
+        if (findUserResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!findUserResult) {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+
         let newEmailToken = await bcrypt.hash(uuidv4(), 12);
         newEmailToken = newEmailToken.replace(/\//g, '');
-        let newEmailToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let updateResult = await usersDbMethods.updateEmailToken(userData._id, newEmailToken, newEmailToken_expire);
-        if (updateResult === 'ok') {
-            await agenda.now('verify email', {
-                rawUsername: userData.rawUsername,
-                email: userData.email,
-                emailVerifyToken: newEmailToken,
-                host,
-            });
+        const newEmailToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
 
-            return generateServiceResult({}, 200, '');
-        } else if (updateResult === 'notfound') {
+        const updateResult = await usersDbMethods.updateUserByID(jwtUserData.userId, {
+            emailVerifyToken: newEmailToken,
+            emailVerifyToken_expire: newEmailToken_expire,
+        });
+        if (updateResult === 'notfound') {
             return generateServiceResult({}, 404, errorMessage.emailNotFound);
+        } else if (updateResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
         }
-        return generateServiceResult({}, 500, errorMessage.serverError);
+        await agenda.now('verify email', {
+            userId: jwtUserData.userId,
+            rawUsername: findUserResult.rawUsername,
+            email: findUserResult.email,
+            emailVerifyToken: newEmailToken,
+            host,
+        });
+        return generateServiceResult({}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
 
-export async function verifyEmail(token) {
+export async function verifyEmail(userId, token) {
     try {
-        let verify = await usersDbMethods.verifyUserEmail(token);
-        if (verify === 'ok') {
-            //todo : show page like :: https://unlayer.com/templates/account-activation
-            //todo : show page like :: https://unlayer.com/templates/streaming-app-subscription
-            return generateServiceResult({message: 'email verified'}, 200, '');
-        } else if (verify === 'notfound') {
+        let verifyResult = await usersDbMethods.verifyUserEmail(userId, token);
+        if (verifyResult === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (verifyResult === 'notfound') {
             return generateServiceResult({}, 404, errorMessage.invalidToken);
         }
-        return generateServiceResult({}, 500, errorMessage.serverError);
+        //todo : show page like :: https://unlayer.com/templates/account-activation
+        //todo : show page like :: https://unlayer.com/templates/streaming-app-subscription
+        return generateServiceResult({message: 'email verified'}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);
@@ -386,23 +389,17 @@ export async function uploadProfileImage(jwtUserData, uploadFileData) {
         if (!s3ProfileImage) {
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
         }
-        s3ProfileImage.addDate = new Date();
 
-        let userData = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, s3ProfileImage);
-        if (userData === 'error') {
+        let profileImages = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, s3ProfileImage);
+        if (profileImages === 'error' || profileImages.length === 0) {
             const fileName = s3ProfileImage.url.split('/').pop();
             await removeProfileImageFromS3(fileName);
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
-        } else if (!userData) {
-            //inCase if two image upload in same time
-            const fileName = s3ProfileImage.url.split('/').pop();
-            await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 404, errorMessage.exceedProfileImage);
         }
 
         return generateServiceResult({
             data: {
-                profileImages: userData.profileImages
+                profileImages: profileImages
             }
         }, 200, '');
     } catch (error) {
@@ -414,10 +411,10 @@ export async function uploadProfileImage(jwtUserData, uploadFileData) {
 export async function removeProfileImage(jwtUserData, fileName) {
     try {
         fileName = fileName.split('/').pop();
-        let userData = await usersDbMethods.removeProfileImageDB(jwtUserData.userId, fileName);
-        if (userData === 'error') {
+        let profileImages = await usersDbMethods.removeProfileImageDB(jwtUserData.userId, fileName);
+        if (profileImages === 'error') {
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
-        } else if (!userData) {
+        } else if (!profileImages) {
             return generateServiceResult({data: null}, 404, errorMessage.profileImageNotFound);
         }
 
@@ -425,7 +422,7 @@ export async function removeProfileImage(jwtUserData, fileName) {
 
         return generateServiceResult({
             data: {
-                profileImages: userData.profileImages
+                profileImages: profileImages
             }
         }, 200, '');
     } catch (error) {
@@ -482,6 +479,7 @@ export async function getUserSettings(jwtUserData, settingName) {
         } else if (!result) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
+        delete result.userId;
         return generateServiceResult({data: result}, 200, '');
     } catch (error) {
         saveError(error);
@@ -504,6 +502,9 @@ export async function changeUserSettings(jwtUserData, settings, settingName) {
     }
 }
 
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
 export async function computeUserStats(jwtUserData) {
     try {
         let genres = await getGenresFromUserStats(jwtUserData.userId);
@@ -515,7 +516,7 @@ export async function computeUserStats(jwtUserData) {
         let updateGenresResult = await updateComputedFavoriteGenres(jwtUserData.userId, genres);
         if (updateGenresResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (updateGenresResult === 'notfound') {
+        } else if (!updateGenresResult) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
 
@@ -569,9 +570,9 @@ function getRequestLocation(fingerprint) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export function getJwtPayload(userData, userId = '') {
+export function getJwtPayload(userData) {
     return {
-        userId: (userData._id || userId).toString(),
+        userId: userData.userId,
         username: userData.rawUsername,
         role: userData.role,
         generatedAt: Date.now(),

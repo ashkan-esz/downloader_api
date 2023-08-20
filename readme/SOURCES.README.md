@@ -21,7 +21,7 @@
         addDate: Date,
         lastDomainChangeDate: Date,
         userData: {
-            userId: String,
+            userId: Int,
             role: String,
             rawUsername: String,
         }

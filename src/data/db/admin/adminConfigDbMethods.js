@@ -3,7 +3,7 @@ import getCollection from "../../mongoDB.js";
 import {saveError} from "../../../error/saveError.js";
 import {safeFieldsToRead, safeFieldsToRead_array, updateServerConfigsDb} from "../../../config/configsDb.js";
 import {v4 as uuidv4} from "uuid";
-import {findUserById} from "../usersDbMethods.js";
+import * as usersDbMethods from "../usersDbMethods.js";
 import {removeAppFileFromS3} from "../../cloudStorage.js";
 
 
@@ -317,7 +317,7 @@ export async function getAppVersionDB(publicCall = false) {
                     if (uploaderData) {
                         versions[j].uploaderData = uploaderData.data;
                     } else {
-                        let data = await findUserById(uploaderId, {_id: 0, rawUsername: 1});
+                        let data = await usersDbMethods.findUserById(uploaderId, {rawUsername: true});
                         users.push({id: uploaderId, data: data});
                         versions[j].uploaderData = data;
                     }

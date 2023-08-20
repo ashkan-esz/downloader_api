@@ -1,28 +1,27 @@
 import getCollection from "../mongoDB.js";
 import mongodb from "mongodb";
 import * as lookupDbMethods from "./lookupDbMethods.js";
+import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
 export async function getNotComputedUsersId(limit = 10) {
     try {
-        const collectionName = 'users';
-        let collection = await getCollection(collectionName);
-
         let lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 6);
         lastWeek.setHours(0, 0, 0, 0);
 
-        return collection.find({
-                $or: [
-                    {'computed.lastUpdate': {$lte: lastWeek}},
-                    {'computed.lastUpdate': 0},
-                ]
-            }, {
-                projection: {
-                    _id: 1
-                }
-            }
-        ).limit(limit).toArray();
+        return await prisma.user.findMany({
+            where: {
+                OR: [
+                    {ComputedStatsLastUpdate: {lte: lastWeek.getTime()}},
+                    {ComputedStatsLastUpdate: 0},
+                ],
+            },
+            select: {
+                userId: true,
+            },
+            take: limit,
+        });
     } catch (error) {
         saveError(error);
         return 'error';
@@ -31,26 +30,25 @@ export async function getNotComputedUsersId(limit = 10) {
 
 export async function updateComputedFavoriteGenres(userId, genres) {
     try {
-        const collectionName = 'users';
-        let collection = await getCollection(collectionName);
-
-        let lastWeek = new Date();
-        lastWeek.setDate(lastWeek.getDate() - 6);
-        lastWeek.setHours(0, 0, 0, 0);
-
-        let result = await collection.updateOne({
-                _id: new mongodb.ObjectId(userId)
+        return await prisma.user.update({
+            where: {
+                userId: userId,
             },
-            {
-                $set: {
-                    'computed.favoriteGenres': genres,
-                    'computed.lastUpdate': new Date(),
+            data: {
+                ComputedStatsLastUpdate: Date.now(),
+                computedFavoriteGenres: {
+                    deleteMany:{
+                      userId: userId,
+                    },
+                    createMany: {
+                        data: genres,
+                    }
                 }
-            });
-        if (result.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
+            },
+            select: {
+                userId: true,
+            }
+        });
     } catch (error) {
         saveError(error);
         return 'error';

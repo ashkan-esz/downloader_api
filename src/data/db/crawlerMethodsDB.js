@@ -1,6 +1,6 @@
 import getCollection from "../mongoDB.js";
+import * as usersDbMethods from "./usersDbMethods.js";
 import {saveError} from "../../error/saveError.js";
-import {findUserById} from "./usersDbMethods.js";
 
 //todo : npm install express-mongo-sanitize
 
@@ -231,7 +231,7 @@ export async function getSourcesObjDB(adminCall = false) {
                 if (data) {
                     result.sources[i].userData = {...result.sources[i].userData, ...data};
                 } else {
-                    let data = await findUserById(userId, {_id: 0, rawUsername: 1});
+                    let data = await usersDbMethods.findUserById(userId, {rawUsername: true});
                     users.push({id: userId, data: data});
                     result.sources[i].userData = {...result.sources[i].userData, ...data};
                 }

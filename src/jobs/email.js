@@ -84,13 +84,13 @@ export default function (agenda) {
 
     agenda.define("verify email", {concurrency: 50}, async (job) => {
         try {
-            let {email, rawUsername, emailVerifyToken, host} = job.attrs.data;
+            let {userId, email, rawUsername, emailVerifyToken, host} = job.attrs.data;
             const mailOptions = {
                 from: config.email.username,
                 to: email,
                 subject: 'Verify Account',
-                text: `user ${rawUsername}, open this link to verify your account --> ${host}/users/verifyEmail/${emailVerifyToken}`,
-                html: `<a href="${host}/users/verifyEmail/${emailVerifyToken}">user ${rawUsername}, click this link to verify your account<a/>
+                text: `user ${rawUsername}, open this link to verify your account --> ${host}/users/verifyEmail/${userId}/${emailVerifyToken}`,
+                html: `<a href="${host}/users/verifyEmail/${userId}/${emailVerifyToken}">user ${rawUsername}, click this link to verify your account<a/>
                         <p>if you don't know what's this, ignore.</p>`,
             };
             let result = await transporter.sendMail(mailOptions);

@@ -2,7 +2,7 @@
 
 ```javascript
 profile = {
-    _id: Object, //act as userId
+    userId: Int,
     username: String,
     publicName: String, //other users see this in general
     email: String,
@@ -46,7 +46,7 @@ profile = {
     },
     friends: Array,
     registrationDate: Date,
-    role: String, // enum('test-user', 'user', 'dev', 'admin')
+    role: String, // enum('test_user', 'user', 'dev', 'admin')
     thisDevice: #Session, //see below
 }
 ```

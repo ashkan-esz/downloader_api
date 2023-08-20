@@ -26,7 +26,7 @@ async function handleGuestMode(req, res, next) {
     //handle test user
     if (!disableTestUserRequests && req.method === 'GET') {
         if (Date.now() - testUserDataCacheDate > testUserDataCacheStale || testUserDataCache === 'error') {
-            testUserDataCache = await findUser('$$test_user$$', '', {activeSessions: 1});
+            testUserDataCache = await findUser('$$test_user$$', '', true);
             testUserDataCacheDate = Date.now();
         }
         if (testUserDataCache && testUserDataCache !== 'error' && testUserDataCache.activeSessions[0]) {

@@ -80,8 +80,9 @@ export async function getToken(req, res) {
     }
 
     let deviceInfo = req.body.deviceInfo;
+    const includeProfileImages = req.query.profileImages === 'true';
     const ip = getClientIp(req) || '';
-    let result = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.fingerprint, req.refreshToken, isAdminLogin);
+    let result = await usersServices.getToken(req.jwtUserData, deviceInfo, ip, req.fingerprint, req.refreshToken, includeProfileImages, isAdminLogin);
     if (result.refreshToken) {
         if (req.query.noCookie === 'true') {
             result.responseData.refreshToken = result.refreshToken;
@@ -123,7 +124,7 @@ export async function forceLogoutAll(req, res) {
 }
 
 export async function getUserProfile(req, res) {
-    let result = await usersServices.getUserProfile(req.userData, req.refreshToken);
+    let result = await usersServices.getUserProfile(req.jwtUserData, req.refreshToken);
     return sendResponse(req, res, result);
 }
 
@@ -146,18 +147,18 @@ export async function updatePassword(req, res) {
 // }
 
 export async function getUserActiveSessions(req, res) {
-    let result = await usersServices.getUserActiveSessions(req.userData, req.refreshToken);
+    let result = await usersServices.getUserActiveSessions(req.jwtUserData, req.refreshToken);
     return sendResponse(req, res, result);
 }
 
 export async function sendVerifyEmail(req, res) {
     const host = req.protocol + '://' + req.get('host');
-    let result = await usersServices.sendVerifyEmail(req.userData, host);
+    let result = await usersServices.sendVerifyEmail(req.jwtUserData, host);
     return sendResponse(req, res, result);
 }
 
 export async function verifyEmail(req, res) {
-    let result = await usersServices.verifyEmail(req.params.token);
+    let result = await usersServices.verifyEmail(Number(req.params.userId), req.params.token);
     return sendResponse(req, res, result);
 }
 

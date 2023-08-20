@@ -1,7 +1,6 @@
 import moviesCache, {movieCache_guest} from './moviesCache.js';
 import * as auth from './isAuth.js';
 import * as validation from './validation.js';
-import attachCurrentUser from './attachCurrentUser.js';
 import * as rateLimit from './rateLimit.js';
 import uploadUserProfile from './uploadUserProfile.js';
 import uploadAppFile from './uploadAppFile.js';
@@ -15,7 +14,6 @@ export default {
     movieCache_guest,
     validation,
     auth,
-    attachCurrentUser,
     rateLimit,
     uploadUserProfile,
     uploadAppFile,

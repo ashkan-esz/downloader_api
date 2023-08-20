@@ -79,15 +79,6 @@ export async function createCollectionsAndIndexes() {
         }
 
 
-        let usersCollection = await getCollection('users');
-        await usersCollection.createIndex({username: 1, email: 1});
-        await usersCollection.createIndex({'activeSessions.refreshToken': 1, _id: 1});
-        //usage: username, email
-        //usage: emailVerifyToken, emailVerifyToken_expire
-        //usage: activeSessions.refreshToken
-        //usage: _id, activeSessions.refreshToken
-
-
         let userAnalysisCollection = await getCollection('serverAnalysis');
         await userAnalysisCollection.createIndex({yearAndMonth: 1});
         //usage: userCounts.date

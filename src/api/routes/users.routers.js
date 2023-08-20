@@ -33,7 +33,7 @@ router.put('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middleware
 router.put('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogoutAll);
 
 //users/myProfile
-router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserProfile);
+router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.getUserProfile);
 
 //users/editProfile
 router.post('/editProfile',
@@ -59,13 +59,13 @@ router.put('/updatePassword',
 //     usersControllers.resetPassword);
 
 //users/activeSessions
-router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.getUserActiveSessions);
+router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.getUserActiveSessions);
 
 //users/sendVerifyEmail
-router.get('/sendVerifyEmail', middlewares.rateLimit.rateLimit_2, middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser, usersControllers.sendVerifyEmail);
+router.get('/sendVerifyEmail', middlewares.rateLimit.rateLimit_2, middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.sendVerifyEmail);
 
-//users/verifyEmail/:token
-router.get('/verifyEmail/:token', middlewares.rateLimit.rateLimit_2, usersControllers.verifyEmail);
+//users/verifyEmail/:userId/:token
+router.get('/verifyEmail/:userId/:token', middlewares.rateLimit.rateLimit_2, usersControllers.verifyEmail);
 
 //users/uploadProfileImage
 router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
@@ -84,19 +84,19 @@ router.put('/setFavoriteGenres/:genres',
 
 //users/allUserSettings
 router.get('/allUserSettings',
-    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     usersControllers.getAllUserSettings);
 
 //users/userSettings/:settingName
 router.get('/userSettings/:settingName',
-    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['settingName']),
     middlewares.validateApiParams.apiParams_sendError,
     usersControllers.getUserSettings);
 
 //users/changeUserSettings/:settingName
 router.put('/changeUserSettings/:settingName',
-    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['settingName', 'setting_body']),
     middlewares.validateApiParams.apiParams_sendError,
     mongoSanitize(),
@@ -104,7 +104,7 @@ router.put('/changeUserSettings/:settingName',
 
 //users/computeUserStats
 router.put('/computeUserStats',
-    middlewares.auth.attachAuthFlag, middlewares.attachCurrentUser,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.rateLimit.rateLimit_3,
     usersControllers.computeUserStats);
 

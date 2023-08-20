@@ -9,6 +9,6 @@ export async function sendResponse(req, res, serviceResult) {
             isCacheData: true,
         }, 5 * 60);
     }
-
+    BigInt.prototype.toJSON = function() { return this.toString() }
     return res.status(serviceResult.responseData.code).json(serviceResult.responseData);
 }

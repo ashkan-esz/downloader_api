@@ -10,19 +10,27 @@ datasource db {
 // ----------------------------------------------------------------
 
 model User {
-  id                      Int                      @id @default(autoincrement())
-  about                   String?
-  activeSessions          ActiveSession[]
-  bio                     String
-  computedFavoriteGenres  ComputedFavoriteGenres[]
-  ComputedStatsLastUpdate DateTime
-  defaultProfile          String
-  downloadLinksSettings   DownloadLinksSettings?
-  email                   String
-  emailVerified           Boolean
-  emailVerifyToken        String?
-  emailVerifyToken_expire Float?
+  userId                  Int                      @id @unique @default(autoincrement())
+  password                String
+  publicName              String
+  rawUsername             String
+  registrationDate        DateTime                 @default(now())
+  role                    userRole                 @default(user)
+  username                String                   @unique
+  bio                     String                   @default("")
+  email                   String                   @unique
+  emailVerified           Boolean                  @default(false)
+  emailVerifyToken        String                   @default("")
+  emailVerifyToken_expire BigInt                   @default(0)
+  defaultProfile          String                   @default("")
   favoriteGenres          String[]
+  ComputedStatsLastUpdate BigInt                   @default(0)
+  profileImages           ProfileImage[]
+  movieSettings           MovieSettings?
+  notificationSettings    NotificationSettings?
+  downloadLinksSettings   DownloadLinksSettings?
+  activeSessions          ActiveSession[]
+  computedFavoriteGenres  ComputedFavoriteGenres[]
   dislikeStaff            DislikeStaff[]
   likeStaff               LikeStaff[]
   followStaff             FollowStaff[]
@@ -37,21 +45,6 @@ model User {
   dislikeMovie            DislikeMovie[]
   /// Could not determine type: the field only had null or empty values in the sample set.
   friends                 Json?
-  gender                  String?
-  movieSettings           MovieSettings?
-  notificationSettings    NotificationSettings?
-  password                String
-  profileImageCounter     Int
-  profileImages           ProfileImage[]
-  publicName              String
-  rawUsername             String
-  registrationDate        DateTime                 @db.Date
-  role                    String
-  username                String
-
-  // todo : add
-  // @@index([activeSessions.refreshToken, id], map: "activeSessions.refreshToken_1__id_1")
-  // @@index([username, email], map: "username_1_email_1")
 }
 
 model ProfileImage {
@@ -61,71 +54,81 @@ model ProfileImage {
   thumbnail    String
   url          String   @id @unique
   userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model ActiveSession {
-  fingerprint  String   @id @unique
+  deviceId     String   @id @unique
   appName      String
   appVersion   String
-  deviceId     String
   deviceModel  String
   deviceOs     String
   ipLocation   String
-  lastUseDate  DateTime
-  loginDate    DateTime
-  refreshToken String
+  loginDate    DateTime @default(now())
+  lastUseDate  DateTime @default(now())
+  refreshToken String   @unique
   userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, refreshToken])
+}
+
+enum userRole {
+  test_user
+  user
+  dev
+  admin
 }
 
 // ----------------------------------------------------------------
 
-model NotificationSettings {
-  finishedList_spinOffSequel Boolean
-  followMovie                Boolean
-  followMovie_betterQuality  Boolean
-  followMovie_subtitle       Boolean
-  futureList                 Boolean
-  futureList_serialSeasonEnd Boolean
-  futureList_subtitle        Boolean
-  userId                     Int     @id @unique
-  user                       User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model MovieSettings {
+  includeAnime  Boolean @default(true)
+  includeHentai Boolean @default(false)
+  userId        Int     @id @unique
+  user          User    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model MovieSettings {
-  includeAnime  Boolean
-  includeHentai Boolean
-  userId        Int     @id
-  user          User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model NotificationSettings {
+  finishedList_spinOffSequel Boolean @default(true)
+  followMovie                Boolean @default(true)
+  followMovie_betterQuality  Boolean @default(true)
+  followMovie_subtitle       Boolean @default(true)
+  futureList                 Boolean @default(true)
+  futureList_serialSeasonEnd Boolean @default(true)
+  futureList_subtitle        Boolean @default(true)
+  userId                     Int     @id @unique
+  user                       User    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model DownloadLinksSettings {
-  includeCensored    Boolean
-  includeDubbed      Boolean
-  includeHardSub     Boolean
-  preferredQualities String[]
+  includeCensored    Boolean  @default(true)
+  includeDubbed      Boolean  @default(true)
+  includeHardSub     Boolean  @default(true)
+  preferredQualities String[] @default(["720p", "1080p", "2160p"])
   userId             Int      @id @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 }
 
+// ----------------------------------------------------------------
+
 model ComputedFavoriteGenres {
-  // todo : need relation to ????
-  userId  Int    @id
   count   Int
   genre   String
   percent Float
-  user    User   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userId  Int
+  user    User   @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([userId, genre])
 }
 
 // ----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 model LikeStaff {
   userId  Int     @id
   staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   staff   Staff[]
 
   @@unique([userId, staffId])
@@ -134,7 +137,7 @@ model LikeStaff {
 model DislikeStaff {
   userId  Int     @id
   staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   staff   Staff[]
 
   @@unique([userId, staffId])
@@ -143,7 +146,7 @@ model DislikeStaff {
 model FollowStaff {
   userId  Int     @id
   staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   staff   Staff[]
 
   @@unique([userId, staffId])
@@ -210,7 +213,7 @@ model StaffCredit {
 model FavoriteCharacter {
   userId      Int         @id
   characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   characters  Character[]
 
   @@unique([userId, characterId])
@@ -219,7 +222,7 @@ model FavoriteCharacter {
 model LikeCharacter {
   userId      Int         @id
   characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   characters  Character[]
 
   @@unique([userId, characterId])
@@ -228,7 +231,7 @@ model LikeCharacter {
 model DislikeCharacter {
   userId      Int         @id
   characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   characters  Character[]
 
   @@unique([userId, characterId])
@@ -283,7 +286,7 @@ model FavoriteMovie {
   userId  Int      @id
   movieId Int      @unique
   date    DateTime
-  user    User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies  Movie[]
 
   @@unique([userId, movieId])
@@ -293,7 +296,7 @@ model WatchListMovie {
   userId  Int      @id
   movieId Int      @unique
   date    DateTime
-  user    User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies  Movie[]
 
   @@unique([userId, movieId])
@@ -306,7 +309,7 @@ model WatchedMovie {
   dropped   Boolean  @default(false)
   droppDate DateTime
   date      DateTime
-  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies    Movie[]
 
   @@unique([userId, movieId])
@@ -316,7 +319,7 @@ model WatchingMovie {
   userId  Int      @id
   movieId Int      @unique
   date    DateTime
-  user    User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies  Movie[]
 
   @@unique([userId, movieId])
@@ -326,7 +329,7 @@ model LikeMovie {
   userId  Int      @id
   movieId Int      @unique
   date    DateTime
-  user    User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies  Movie[]
 
   @@unique([userId, movieId])
@@ -336,7 +339,7 @@ model DislikeMovie {
   userId  Int      @id
   movieId Int      @unique
   date    DateTime
-  user    User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
   movies  Movie[]
 
   @@unique([userId, movieId])
