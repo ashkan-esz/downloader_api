@@ -50,15 +50,16 @@ export async function addTrailersFromYoutubeJobFunc() {
                     continue;
                 }
                 runningCounter++;
-                await promiseQueue.add(() => getTrailerFromYoutube(movies[i].title, movies[i].year).then(async (trailerUrl) => {
+                promiseQueue.add(() => getTrailerFromYoutube(movies[i].title, movies[i].year).then(async (trailerUrl) => {
                         updateCronJobsStatus('addTrailersFromYoutube',
                             `running, checked: ${loopCounter * _batchCount}, notFound: ${notFoundCount}, completed: ${completedCount}, running: ${runningCounter}`);
                         if (trailerUrl) {
                             let updateFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(movies[i], trailerUrl, {});
                             await updateByIdDB('movies', movies[i]._id, updateFields);
                             completedCount++;
+                        } else {
+                            notFoundCount++;
                         }
-                        notFoundCount++;
                         runningCounter--;
                         updateCronJobsStatus('addTrailersFromYoutube',
                             `running, checked: ${loopCounter * _batchCount}, notFound: ${notFoundCount}, completed: ${completedCount}, running: ${runningCounter}`);
