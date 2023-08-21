@@ -60,8 +60,6 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
 }
 
 export async function login(username_email, password, deviceInfo, ip, fingerprint, isAdminLogin) {
-    //todo : terminate sessions inactive for 6 month
-    //todo : limit number of device
     try {
         let userData = await usersDbMethods.findUser(username_email, username_email);
         if (userData === 'error') {
@@ -85,6 +83,11 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
                     deviceInfo,
                     email: result.email,
                 });
+                const activeSessions = await usersDbMethods.getUserActiveSessions(userData.userId);
+                if (activeSessions.length > 5) {
+                    let lastUsedSession = activeSessions.sort((a, b) => new Date(a.lastUseDate).getTime() > new Date(b.lastUseDate).getTime())[0];
+                    await usersDbMethods.removeSession(userData.userId, lastUsedSession.refreshToken);
+                }
             }
             return generateServiceResult({
                 accessToken: tokens.accessToken,
