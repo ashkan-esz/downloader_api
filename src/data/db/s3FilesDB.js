@@ -1,4 +1,5 @@
 import getCollection from "../mongoDB.js";
+import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
 
@@ -24,13 +25,12 @@ export async function getAllS3TrailersDB() {
 
 export async function getAllS3CastImageDB() {
     try {
-        let staffCollection = await getCollection('staff');
-        let charactersCollection = await getCollection('characters');
-        let temp = await Promise.allSettled([
-            staffCollection.find({imageData: {$ne: null}}, {projection: {'imageData.url': 1}}).toArray(),
-            charactersCollection.find({imageData: {$ne: null}}, {projection: {'imageData.url': 1}}).toArray(),
-        ]);
-        return [...temp[0].value, ...temp[1].value];
+        return await prisma.castImage.findMany({
+            where: {},
+            select: {
+                url: true,
+            }
+        });
     } catch (error) {
         saveError(error);
         return null;

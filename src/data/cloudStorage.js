@@ -565,7 +565,7 @@ export async function deleteUnusedFiles(retryCounter = 0) {
                 if (!dataBaseFiles) {
                     continue;
                 }
-                dataBaseFiles = dataBaseFiles.map(item => item.imageData.url.split('/').pop());
+                dataBaseFiles = dataBaseFiles.map(item => item.url.split('/').pop());
             }
 
             let lastKey = '';

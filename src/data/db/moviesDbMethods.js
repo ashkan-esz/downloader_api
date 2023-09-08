@@ -108,8 +108,8 @@ export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, l
             projection: projection
         })
             .sort({
-                //todo : refactor
-                'userStats.like_movie': -1,
+                // todo : refactor
+                // 'userStats.like_movie': -1,
                 _id: -1,
             })
             .skip(skip)
