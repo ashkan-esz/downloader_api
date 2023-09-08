@@ -92,9 +92,9 @@ function decreaseUploadingTrailerNumber() {
 //------------------------------------------
 //------------------------------------------
 
-export async function uploadCastImageToS3ByURl(name, tvmazePersonID, jikanPersonID, originalUrl) {
+export async function uploadCastImageToS3ByURl(name, castType, id, originalUrl) {
     try {
-        const fileName = getFileName(name, '', tvmazePersonID, jikanPersonID, 'jpg');
+        const fileName = getFileName(name, '', castType, id, 'jpg');
         const fileUrl = `https://${bucketNamesObject.cast}.${bucketsEndpointSuffix}/${fileName}`;
         return await uploadImageToS3(bucketNamesObject.cast, fileName, fileUrl, originalUrl);
     } catch (error) {

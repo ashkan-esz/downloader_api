@@ -575,10 +575,9 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                     jikanID: titleDataFromDB.jikanID,
                 },
             };
-            let castAndCharacters = await getCastAndCharacterFields(titleDataFromDB._id, titleDataFromDB, allApiData);
-            if (castAndCharacters) {
-                updateFields = {...updateFields, ...castAndCharacters};
-            }
+            await connectNewAnimeToRelatedTitles(titleDataFromDB, titleDataFromDB._id);
+            await addStaffAndCharacters(titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
+            updateFields.castUpdateDate = new Date();
         }
 
         await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
@@ -635,10 +634,11 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
             let allApiData = {
                 jikanApiFields,
             };
-            let castAndCharacters = await getCastAndCharacterFields(insertedId, titleModel, allApiData);
-            if (castAndCharacters) {
-                await crawlerMethodsDB.updateByIdDB('movies', insertedId, castAndCharacters);
-            }
+            await connectNewAnimeToRelatedTitles(titleModel, insertedId);
+            await addStaffAndCharacters(insertedId, allApiData, titleModel.castUpdateDate);
+            await crawlerMethodsDB.updateByIdDB('movies', insertedId, {
+                castUpdateDate: new Date(),
+            });
         }
     }
 }
@@ -701,21 +701,6 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
                 });
         }
     }
-}
-
-async function getCastAndCharacterFields(insertedId, titleData, allApiData) {
-    await connectNewAnimeToRelatedTitles(titleData, insertedId);
-    let posterData = titleData.posters[0];
-    let posterUrl = posterData ? posterData.url : '';
-    let posterThumbnail = posterData ? posterData.thumbnail : '';
-    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, posterUrl, posterThumbnail, allApiData, titleData.castUpdateDate);
-    if (temp) {
-        return {
-            ...temp,
-            castUpdateDate: new Date(),
-        }
-    }
-    return null;
 }
 
 function getImageUrl(jikanData) {

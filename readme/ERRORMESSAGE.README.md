@@ -89,7 +89,7 @@ queryParamErrors = {
     'settings.**': "Missed parameter settings.**",
     'settings.**': "Wrong parameter settings.**",
     'settings.**': "Invalid parameter settings.** :: String",
-    staffOrCharacters: "Invalid parameter staffOrCharacters :: (staff|characters)",
+    staffOrCharacter: "Invalid parameter staffOrCharacter :: (staff|character)",
 
 }
 ```

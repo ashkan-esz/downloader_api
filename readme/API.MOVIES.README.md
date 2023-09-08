@@ -1,24 +1,24 @@
 # API Parameters
 
-| param name              | Values                                                                                                                                                                                                                     | Description                                                        | Required |
-|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|----------|
-| **`types`**             | enum(_movie_, _serial_, _anime_movie_, _anime_serial_)                                                                                                                                                                     | join values by `-` example: `movie-anime_serial`                   | `true`   |
-| **`dataLevel`**         | _dlink_, _low_, _telbot_, _medium_, _info_, _high_                                                                                                                                                                         |                                                                    | `true`   |
-| **`sortBase`**          | enum(_animeTopComingSoon_, _animeTopAiring_ ,<br/> _animeSeasonNow_, _animeSeasonUpcoming_ ,<br/> _comingSoon_, _inTheaters_, _boxOffice_,<br/> _top_, _popular_)                                                          |                                                                    | `true`   |
-| **`years`**             | Two Number joined by '-'                                                                                                                                                                                                   | example: 2010-2021                                                 | `true`   |
-| **`imdbScores`**        | Two Number in range [0-10] joined by '-'                                                                                                                                                                                   | example: 5-9                                                       | `true`   |
-| **`malScores`**         | Two Number in range [0-10] joined by '-'                                                                                                                                                                                   | example: 5-9                                                       | `true`   |
-| **`page`**              | Number start from 1                                                                                                                                                                                                        | paginating result , 12 item exists in page                         | `true`   |
-| **`count`**             | Number start from 1                                                                                                                                                                                                        | number of item returned in each page                               | `true`   |
-| **`dayNumber`**         | Number in range [0-6]                                                                                                                                                                                                      | number of day in week                                              | `true`   |
-| **`title`**             | String                                                                                                                                                                                                                     | name of movie/staff/character to search                            | `true`   |
-| **`id`**                | Mongodb id object                                                                                                                                                                                                          | id of movie/staff/character to get                                 | `true`   |
-| **`genres`**            | Array of String joined by '-'                                                                                                                                                                                              | example: action or action-comedy-drama or action-sci_fi            | `true`   |
-| **`statType`**          | enum( _like_movie_, _dislike_movie_, <br/>_like_staff_, _dislike_staff_, <br/>_like_character_, _dislike_character_, <br/>_follow_movie_, _follow_staff_, <br/>_future_list_, _dropped_, _finished_, <br/>_save_, _score_) | values with no suffix (_staff or _character) only works for movies | `true`   |
-| **`date`**              | Date                                                                                                                                                                                                                       |                                                                    | `true`   |
-| **`staffOrCharacters`** | enum(_staff_, _characters_)                                                                                                                                                                                                |                                                                    | `true`   |
-| **`botId`**             | String                                                                                                                                                                                                                     | unique id of the bot                                               | `true`   |
-| **`moviesRequestName`** | enum(_news_, _updates_, _newsAndUpdates_)                                                                                                                                                                                  |                                                                    | `true`   |
+| param name              | Values                                                                                                                                                                                                                   | Description                                                        | Required |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|----------|
+| **`types`**             | enum(_movie_, _serial_, _anime_movie_, _anime_serial_)                                                                                                                                                                   | join values by `-` example: `movie-anime_serial`                   | `true`   |
+| **`dataLevel`**         | _dlink_, _low_, _telbot_, _medium_, _info_, _high_                                                                                                                                                                       |                                                                    | `true`   |
+| **`sortBase`**          | enum(_animeTopComingSoon_, _animeTopAiring_ ,<br/> _animeSeasonNow_, _animeSeasonUpcoming_ ,<br/> _comingSoon_, _inTheaters_, _boxOffice_,<br/> _top_, _popular_)                                                        |                                                                    | `true`   |
+| **`years`**             | Two Number joined by '-'                                                                                                                                                                                                 | example: 2010-2021                                                 | `true`   |
+| **`imdbScores`**        | Two Number in range [0-10] joined by '-'                                                                                                                                                                                 | example: 5-9                                                       | `true`   |
+| **`malScores`**         | Two Number in range [0-10] joined by '-'                                                                                                                                                                                 | example: 5-9                                                       | `true`   |
+| **`page`**              | Number start from 1                                                                                                                                                                                                      | paginating result , 12 item exists in page                         | `true`   |
+| **`count`**             | Number start from 1                                                                                                                                                                                                      | number of item returned in each page                               | `true`   |
+| **`dayNumber`**         | Number in range [0-6]                                                                                                                                                                                                    | number of day in week                                              | `true`   |
+| **`title`**             | String                                                                                                                                                                                                                   | name of movie/staff/character to search                            | `true`   |
+| **`id`**                | Mongodb id object                                                                                                                                                                                                        | id of movie/staff/character to get                                 | `true`   |
+| **`genres`**            | Array of String joined by '-'                                                                                                                                                                                            | example: action or action-comedy-drama or action-sci_fi            | `true`   |
+| **`statType`**          | enum( _like_movie_, _dislike_movie_, <br/>_like_staff_, _dislike_staff_, <br/>_like_character_, _dislike_character_, <br/>_follow_movie_, _follow_staff_, _dropped_, _finished_, <br/>_save_, _score_) | values with no suffix (_staff or _character) only works for movies | `true`   |
+| **`date`**              | Date                                                                                                                                                                                                                     |                                                                    | `true`   |
+| **`staffOrCharacter`**  | enum(_staff_, _character_)                                                                                                                                                                                               |                                                                    | `true`   |
+| **`botId`**             | String                                                                                                                                                                                                                   | unique id of the bot                                               | `true`   |
+| **`moviesRequestName`** | enum(_news_, _updates_, _newsAndUpdates_)                                                                                                                                                                                |                                                                    | `true`   |
 
 > they are case-insensitive so `animeTopAiring` and `animetopairing` are equal.
 
@@ -33,7 +33,6 @@
 - [GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviessortedmoviessortbasetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]](#get-moviesseriesofdaydaynumbertypesimdbscoresmalscorespage)
 - [GET /movies/multiple/status/[types]/[dataLevel]/[imdbScores]/[malScores]/[count]/[page]](#get-moviesmultiplestatustypesdatalevelimdbscoresmalscorescountpage)
-- [GET /movies/searchMovieStaffCharacter/[title]/[dataLevel]/[page]](#get-moviessearchmoviestaffcharactertitledatalevelpage)
 - [GET /movies/searchStaffAndCharacter/[dataLevel]/[page]](#get-moviessearchstaffandcharacterdatalevelpage)
 - [GET /movies/searchStaff/[dataLevel]/[page]](#get-moviessearchstaffdatalevelpage)
 - [GET /movies/searchCharacter/[dataLevel]/[page]](#get-moviessearchcharacterdatalevelpage)
@@ -48,7 +47,7 @@
 - [GET /movies/userStatsList/[statType]/[dataLevel]/[page]](#get-moviesuserstatsliststattypedatalevelpage)
 - [GET /movies/animeEnglishName](#get-moviesanimeenglishname)
 - [GET /movies/bots/[botId]/[moviesRequestName]/[types]/[dataLevel]/[imdbScores]/[malScores]](#get-moviesbotsbotidmoviesrequestnametypesdatalevelimdbscoresmalscores)
-- [GET /movies/birthday/[staffOrCharacters]/[dataLevel]/[page]](#get-moviesbirthdaystafforcharactersdatalevelpage)
+- [GET /movies/birthday/[staffOrCharacter]/[dataLevel]/[page]](#get-moviesbirthdaystafforcharacterdatalevelpage)
 
 
 ## Movie-Data Api
@@ -177,20 +176,6 @@ Examples
 </details>
 <br />
 
-### GET /movies/searchMovieStaffCharacter/[title]/[dataLevel]/[page]
-> return { __movies__, __staff__, __characters__ }. ([movies schema](SCHEMA.README.md#Movie-Data)) ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
-> 
-
-<details>
-<summary>
-Examples
-</summary>
-
-- https://api.movietracker.mom/movies/searchMovieStaffCharacter/attack/low/1
-- https://api.movietracker.mom/movies/searchMovieStaffCharacter/mikasa/medium/1
-- https://api.movietracker.mom/movies/searchMovieStaffCharacter/mikasa/high/1
-</details>
-<br />
 
 ## Search Api
 
@@ -441,10 +426,10 @@ Examples
 
 ## Birthday Api
 
-### GET /movies/birthday/[staffOrCharacters]/[dataLevel]/[page]
+### GET /movies/birthday/[staffOrCharacter]/[dataLevel]/[page]
 > also receive query parameters `followedOnly=[true|false]` (only works for staff).
 > 
-> return array of staff/characters. ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
+> return array of staff/character. ([staff schema](SCHEMA.README.md#Staff-Data)) ([character schema](SCHEMA.README.md#Character-Data))
 
 <details>
 <summary>
@@ -453,8 +438,8 @@ Examples
 
 - https://api.movietracker.mom/movies/birthday/staff/low/1
 - https://api.movietracker.mom/movies/birthday/staff/low/1?followedOnly=true
-- https://api.movietracker.mom/movies/birthday/characters/low/1
-- https://api.movietracker.mom/movies/birthday/characters/high/1
+- https://api.movietracker.mom/movies/birthday/character/low/1
+- https://api.movietracker.mom/movies/birthday/character/high/1
 </details>
 <br />
 

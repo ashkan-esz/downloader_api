@@ -5,11 +5,11 @@ const japanRegionNames = japanRegions.prefectureEnNames();
 
 export function extractStaffDataFromJikanAbout(jikanData) {
     if (!jikanData || !jikanData.about) {
-        let birthday = jikanData.birthday ? jikanData.birthday.toString().split('T')[0] : '';
+        let birthday = jikanData.birthday ? jikanData.birthday.toString().split('T')[0] || '' : '';
         return {
             height: '',
             weight: '',
-            birthday: birthday,
+            birthday: birthday || '',
             age: 0,
             deathday: '',
             gender: '',
@@ -34,7 +34,17 @@ export function extractStaffDataFromJikanAbout(jikanData) {
 
     fixJikanAbout(jikanData);
 
-    return {height, weight, birthday, age, deathday, gender, hairColor, eyeColor, country};
+    return {
+        height: height || '',
+        weight: weight || '',
+        birthday: birthday || '',
+        age: age || 0,
+        deathday: deathday || '',
+        gender: gender || '',
+        hairColor: hairColor || '',
+        eyeColor: eyeColor || '',
+        country: country || '',
+    };
 }
 
 function normalizeJikanData(jikanData) {
@@ -391,7 +401,7 @@ function getBirthdayAndAgeFromJikan(jikanData) {
     }
 
     if (!birthday && jikanData.birthday) {
-        birthday = jikanData.birthday.toString().split('T')[0];
+        birthday = jikanData.birthday.toString().split('T')[0] || '';
     }
 
     if (birthday) {

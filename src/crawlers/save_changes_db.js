@@ -87,10 +87,10 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                         await connectNewAnimeToRelatedTitles(titleModel, insertedId);
                     }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
-                    let castAndCharacters = await getCastAndCharactersFromApi(insertedId, titleModel, result.allApiData);
-                    if (castAndCharacters) {
-                        await updateByIdDB('movies', insertedId, castAndCharacters);
-                    }
+                    await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate);
+                    await updateByIdDB('movies', insertedId, {
+                        castUpdateDate: new Date(),
+                    });
                 }
             }
             removePageLinkToCrawlerStatus(pageLink);
@@ -321,10 +321,8 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         let {_handleCastUpdate} = await import("./crawler.js");
         if (apiData && _handleCastUpdate) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingCast);
-            let castAndCharacters = await getCastAndCharactersFromApi(db_data._id, db_data, apiData.allApiData);
-            if (castAndCharacters) {
-                updateFields = {...updateFields, ...castAndCharacters};
-            }
+            await addStaffAndCharacters(db_data._id, apiData.allApiData, db_data.castUpdateDate);
+            updateFields.castUpdateDate = new Date();
         }
 
         if (db_data.trailer_s3 && db_data.trailers) {
@@ -357,20 +355,6 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
     } catch (error) {
         saveError(error);
     }
-}
-
-async function getCastAndCharactersFromApi(insertedId, titleData, allApiData) {
-    let posterData = titleData.poster_s3 || titleData.posters[0];
-    let posterUrl = posterData ? posterData.url : '';
-    let posterThumbnail = posterData ? posterData.thumbnail : '';
-    let temp = await addStaffAndCharacters(insertedId, titleData.rawTitle, titleData.type, posterUrl, posterThumbnail, allApiData, titleData.castUpdateDate);
-    if (temp) {
-        return {
-            ...temp,
-            castUpdateDate: new Date(),
-        }
-    }
-    return null;
 }
 
 async function convertUnReleasedTitleToNewTitle(db_data, updateFields, type) {

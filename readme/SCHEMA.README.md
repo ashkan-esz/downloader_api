@@ -153,12 +153,6 @@ dataLevel = {
         latestData: #LatestData,
         duration: String, // example '60 min'
         releaseDay: String, // days of week
-        actorsAndCharacters: Array(#actor_and_character),
-        staff: {
-            directors: Array(#actor_and_character),
-            writers: Array(#actor_and_character),
-            others: Array(#actor_and_character),
-        },
         seasonEpisode: Array({
             seasonNumber: Int,
             episodes: Int,
@@ -263,12 +257,6 @@ dataLevel = {
         rated: String,
         movieLang: String,
         country: String,
-        actorsAndCharacters: Array(#actor_and_character),
-        staff: {
-            directors: Array(#actor_and_character),
-            writers: Array(#actor_and_character),
-            others: Array(#actor_and_character),
-        },
         awards: String,
         animeType: String,
         animeSource: String,
@@ -371,44 +359,6 @@ dataLevel = {
 }
 ```
 
-## LatestData
-
-```javascript
-#LatestData = {
-    season: Int,
-    episode: Int,
-    quality: String,
-    updateReason: String, //season|episode|quality
-    hardSub: String, //String in format S\d+E\d+
-    dubbed: String, //for series 's1e5' shows last episode with hardsub/dubbed/..
-    subtitle: String, //for movies 's1e1' means hardsub/dubbed/.. exist
-    censored: String,
-    watchOnlineLink: String,
-}
-```
-
-## Actor_And_Character
-
-```javascript
-#actor_and_Character = {
-    //staff data
-    id: Object,
-    name: String,
-    gender: String, //enum('Male', 'Female')
-    country: String,
-    image: String,
-    thumbnail: String,
-    positions: Array(String),
-    characterData: null || {
-        id: Object,
-        name: String,
-        gender: String, //enum('Male', 'Female')
-        image: String,
-        thumbnail: String,
-        role: String,
-    }
-}
-```
 
 ## User Stats
 
@@ -420,11 +370,6 @@ dataLevel = {
     like_movie_count: Int,
     dislike_movie: Boolean,
     dislike_movie_count: Int,
-    //others
-    save: Boolean,
-    save_count: Int,
-    future_list: Boolean,
-    future_list_count: Int,
     //below field includes only when (dataLevel == high)
     follow_movie: Boolean,
     follow_movie_count: Int,

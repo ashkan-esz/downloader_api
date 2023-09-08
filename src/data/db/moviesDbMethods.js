@@ -1,241 +1,145 @@
 import mongodb from 'mongodb';
 import getCollection from '../mongoDB.js';
-import * as lookupDbMethods from "./lookupDbMethods.js";
-import {saveError} from "../../error/saveError.js";
 import {getGenresStatusFromCache} from "../../api/middlewares/moviesCache.js";
+import {saveError} from "../../error/saveError.js";
 
 
-export async function getNewMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getNewMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: 'done',
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    year: -1,
-                    insert_date: -1
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: 'done',
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                year: -1,
+                insert_date: -1
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getNewMoviesWithDate(userId, insertDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getNewMoviesWithDate(insertDate, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: 'done',
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                    insert_date: {$gt: insertDate},
-                    update_date: 0,
-                }
-            },
-            {
-                $sort: {
-                    insert_date: 1
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: 'done',
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            insert_date: {$gt: insertDate},
+            update_date: 0,
+        }, {
+            projection: projection
+        })
+            .sort({
+                insert_date: 1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getUpdateMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: 'done',
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    update_date: -1,
-                    year: -1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: 'done',
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                update_date: -1,
+                year: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getUpdateMoviesWithDate(userId, updateDate, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getUpdateMoviesWithDate(updateDate, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: 'done',
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                    update_date: {$gt: updateDate},
-                }
-            },
-            {
-                $sort: {
-                    update_date: 1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: 'done',
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            update_date: {$gt: updateDate},
+        }, {
+            projection: projection
+        })
+            .sort({
+                update_date: 1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: 'done',
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    'userStats.like_movie': -1,
-                    _id: -1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: 'done',
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                //todo : refactor
+                'userStats.like_movie': -1,
+                _id: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getNewTrailers(userId, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getNewTrailers(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    releaseState: {$ne: "done"},
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                    trailers: {$ne: null},
-                }
-            },
-            {
-                $sort: {
-                    year: -1,
-                    trailerDate: -1,
-                    add_date: -1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            releaseState: {$ne: "done"},
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            trailers: {$ne: null},
+        }, {
+            projection: projection
+        })
+            .sort({
+                year: -1,
+                trailerDate: -1,
+                add_date: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
@@ -277,7 +181,7 @@ export async function getMoviesWithNoTrailer(types, limit) {
 //-----------------------------------
 //-----------------------------------
 
-export async function getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let searchBase;
         sortBase = sortBase.toLowerCase();
@@ -305,41 +209,25 @@ export async function getSortedMovies(userId, sortBase, types, imdbScores, malSc
 
         let collection = await getCollection('movies');
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    [searchBase]: {$ne: -1},
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    [searchBase]: 1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            [searchBase]: {$ne: -1},
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                [searchBase]: 1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, projection) {
     try {
         dayNumber = dayNumber % 7;
         types = types.filter(item => item.includes('serial'));
@@ -376,37 +264,21 @@ export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malSc
             ],
         }
 
-        let aggregationPipeline = [
-            {
-                $match: {
-                    ...filter,
-                    releaseDay: daysOfWeek[dayNumber],
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    'rating.imdb': -1,
-                    'rating.myAnimeList': -1,
-                    _id: -1,
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            ...filter,
+            releaseDay: daysOfWeek[dayNumber],
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                'rating.imdb': -1,
+                'rating.myAnimeList': -1,
+                _id: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
@@ -492,68 +364,45 @@ export async function getGenresStatusDB() {
 export async function getGenreTop5MoviePoster(genre) {
     try {
         const collection = await getCollection('movies');
-        const aggregationPipeline = [
-            {
-                $match: {
-                    genres: genre,
-                    posters: {$ne: []},
-                }
-            },
-            {
-                $sort: {
-                    year: -1,
-                    insert_date: -1,
-                }
-            },
-            {
-                $project: {
-                    title: 1,
-                    posters: 1,
-                }
-            },
-            {
-                $limit: 5,
+
+        return await collection.find({
+            genres: genre,
+            posters: {$ne: []},
+        }, {
+            projection: {
+                title: 1,
+                posters: 1,
             }
-        ];
-        return await collection.aggregate(aggregationPipeline).toArray();
+        })
+            .sort({
+                year: -1,
+                insert_date: -1,
+            })
+            .limit(5)
+            .toArray();
     } catch (error) {
         saveError(error);
         return [];
     }
 }
 
-export async function getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, projection, dontLookupUserStats) {
+export async function getGenresMoviesDB(genres, types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
-        let aggregationPipeline = [
-            {
-                $match: {
-                    genres: {$all: genres},
-                    ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-                }
-            },
-            {
-                $sort: {
-                    year: -1,
-                    insert_date: -1
-                }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
-        ];
 
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+        return await collection.find({
+            genres: {$all: genres},
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+        }, {
+            projection: projection
+        })
+            .sort({
+                year: -1,
+                insert_date: -1,
+            })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
     } catch (error) {
         saveError(error);
         return 'error';
@@ -563,7 +412,7 @@ export async function getGenresMoviesDB(userId, genres, types, imdbScores, malSc
 //-----------------------------------
 //-----------------------------------
 
-export async function searchOnMovieCollectionWithFilters(userId, filters, skip, limit, projection, dontLookupUserStats) {
+export async function searchOnMovieCollectionWithFilters(filters, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
         let aggregationPipeline = [
@@ -576,7 +425,6 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
             {
                 $limit: limit,
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, 'movies', dontLookupUserStats),
         ];
 
         if (filters.title) {
@@ -651,9 +499,9 @@ export async function searchOnMovieCollectionWithFilters(userId, filters, skip, 
     }
 }
 
-export async function searchOnCollectionById(collectionName, userId, id, filters, projection, dataLevel = '', dontLookupUserStats) {
+export async function searchOnMoviesById(id, filters, projection, dataLevel = '') {
     try {
-        let collection = await getCollection(collectionName);
+        let collection = await getCollection("movies");
 
         let aggregationPipeline = [
             {
@@ -670,10 +518,9 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
             {
                 $addFields: {}
             },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats),
         ];
 
-        if (collectionName === 'movies' && filters.seasons) {
+        if (filters.seasons) {
             aggregationPipeline[2]['$addFields'].seasons = {
                 $filter: {
                     input: "$seasons",
@@ -706,7 +553,7 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
                 };
             }
         }
-        if (collectionName === 'movies' && filters.qualities) {
+        if (filters.qualities) {
             aggregationPipeline[2]['$addFields'].qualities = {
                 $filter: {
                     input: "$qualities",
@@ -716,54 +563,11 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
                 }
             };
         }
-        if (filters.embedDownloadLinksConfig) {
-            aggregationPipeline.push(
-                {
-                    $lookup: {
-                        from: 'users',
-                        pipeline: [
-                            {
-                                $match: {
-                                    $expr: {
-                                        $eq: ["$_id", new mongodb.ObjectId(userId)],
-                                    }
-                                }
-                            },
-                            {
-                                $project: {
-                                    _id: 0,
-                                    downloadLinksSettings: 1,
-                                },
-                            },
-                            {$limit: 1}
-                        ],
-                        as: 'downloadLinksConfig',
-                    }
-                },
-                {
-                    $addFields: {
-                        downloadLinksConfig: {
-                            $getField: {
-                                input: {
-                                    $arrayElemAt: ['$downloadLinksConfig', 0],
-                                },
-                                field: "downloadLinksSettings",
-                            }
-                        },
-                    }
-                });
-        }
 
         if (Object.keys(projection).length > 0) {
-            if (Object.values(projection).every(item => item === 1)) {
-                aggregationPipeline.push({
-                    $project: {...projection, downloadLinksConfig: 1},
-                });
-            } else {
-                aggregationPipeline.push({
-                    $project: projection,
-                });
-            }
+            aggregationPipeline.push({
+                $project: projection,
+            });
         }
 
         let result = await collection.aggregate(aggregationPipeline).limit(1).toArray();
@@ -782,90 +586,46 @@ export async function searchOnCollectionById(collectionName, userId, id, filters
     }
 }
 
-export async function searchOnStaffOrCharactersWithFilters(collectionName, userId, filters, skip, limit, projection, dontLookupUserStats) {
+//-----------------------------------
+//-----------------------------------
+
+export async function getMoviesDataInBatch(ids, projection) {
     try {
-        let collection = await getCollection(collectionName);
+        ids = ids.map(id => (new mongodb.ObjectId(id)));
+        const collection = await getCollection('movies');
+        return await collection.find({
+            _id: {$in: ids}
+        }, {projection: projection}).toArray();
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
 
-        let aggregationPipeline = [
-            {
-                $match: {}
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            ...lookupDbMethods.getLookupOnUserStatsStage(userId, collectionName, dontLookupUserStats),
-        ];
-
-        if (filters.name) {
-            aggregationPipeline[0]['$match'].$text = {
-                $search: '\"' + filters.name + '\"',
-            }
-        }
-        if (filters.gender) {
-            aggregationPipeline[0]['$match'].gender = filters.gender;
-        }
-        if (filters.country) {
-            aggregationPipeline[0]['$match'].country = filters.country;
-        }
-        if (filters.hairColor) {
-            aggregationPipeline[0]['$match'].hairColor = filters.hairColor;
-        }
-        if (filters.eyeColor) {
-            aggregationPipeline[0]['$match'].eyeColor = filters.eyeColor;
-        }
-        if (filters.age) {
-            aggregationPipeline[0]['$match'].age = {
-                $gte: filters.age[0],
-                $lte: filters.age[1],
-            }
-        }
-
-        if (Object.keys(projection).length > 0) {
-            aggregationPipeline.push({
-                $project: projection,
-            });
-        }
-
-        return await collection.aggregate(aggregationPipeline).toArray();
+export async function getTitleType(id) {
+    try {
+        const collection = await getCollection('movies');
+        return await collection.findOne({_id: new mongodb.ObjectId(id)}, {projection: {type: 1}});
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-//-----------------------------------
-//-----------------------------------
-
-export async function changeUserStatOnRelatedCollection(collectionName, id, statCounterField, value, statCounterField2, value2, opts = {}, retryCounter) {
+export async function getMovieState(id) {
     try {
-        let collection = await getCollection(collectionName);
-
-        const dataUpdate = {
-            [`userStats.${statCounterField}`]: value
-        }
-        if (statCounterField2) {
-            dataUpdate[`userStats.${statCounterField2}`] = value2;
-        }
-
-        let updateResult = await collection.updateOne({
-            _id: new mongodb.ObjectId(id)
-        }, {
-            $inc: dataUpdate,
-        }, opts);
-
-        if (updateResult.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
+        const collection = await getCollection('movies');
+        return await collection.findOne({_id: new mongodb.ObjectId(id)}, {
+                projection: {
+                    type: 1,
+                    releaseState: 1, //[ 'inTheaters', 'comingSoon', 'waiting', 'done' ]
+                    status: 1, //[ 'running','ended','unknown' ]
+                    latestData: 1, //season, episode
+                }
+            }
+        );
     } catch (error) {
-        if (
-            retryCounter !== 0 ||
-            error.message !== 'WriteConflict error: this operation conflicted with another operation. Please retry your operation or multi-document transaction.') {
-            saveError(error);
-        }
+        saveError(error);
         return 'error';
     }
 }

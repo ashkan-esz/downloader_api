@@ -5,7 +5,6 @@ import nou from "node-os-utils";
 import checkDiskSpace from 'check-disk-space';
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getJikanCacheSize} from "../crawlers/3rdPartyApi/jikanApi.js";
-import {getUserStatsCacheSize} from "../data/db/userStatsDbMethods.js";
 import {getCronJobsStatus} from "./cronJobsStatus.js";
 
 nou.options.INTERVAL = 10000;
@@ -78,7 +77,7 @@ export async function getMemoryStatus(includeAll = true) {
         }
         result.cache = {
             jikan: getJikanCacheSize(),
-            userStats: getUserStatsCacheSize(),
+            userStats: {},
         }
     }
     return result;

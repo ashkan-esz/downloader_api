@@ -1,7 +1,5 @@
-import getCollection from "../mongoDB.js";
-import mongodb from "mongodb";
-import * as lookupDbMethods from "./lookupDbMethods.js";
 import prisma from "../prisma.js";
+import * as moviesDbMethods from "./moviesDbMethods.js";
 import {saveError} from "../../error/saveError.js";
 
 export async function getNotComputedUsersId(limit = 10) {
@@ -37,8 +35,8 @@ export async function updateComputedFavoriteGenres(userId, genres) {
             data: {
                 ComputedStatsLastUpdate: Date.now(),
                 computedFavoriteGenres: {
-                    deleteMany:{
-                      userId: userId,
+                    deleteMany: {
+                        userId: userId,
                     },
                     createMany: {
                         data: genres,
@@ -57,97 +55,86 @@ export async function updateComputedFavoriteGenres(userId, genres) {
 
 export async function getGenresFromUserStats(userId) {
     try {
-        const collectionName = 'userStats';
-        let collection = await getCollection(collectionName);
-
-        let aggregationPipeline = [
-            {
-                $match: {
-                    userId: new mongodb.ObjectId(userId),
-                    $or: [
-                        {like_movie_count: {$ne: 0}},
-                        {follow_movie_count: {$ne: 0}},
-                        {save_count: {$ne: 0}},
-                        {finished_count: {$ne: 0}},
+        let res = await Promise.allSettled([
+            prisma.watchedMovie.findMany({
+                where: {
+                    userId: userId,
+                    OR: [
+                        {dropped: false},
+                        {favorite: true},
                     ]
+                },
+                take: 300,
+                orderBy: {
+                    date: 'desc'
+                },
+                select: {
+                    movieId: true,
                 }
-            },
-            {
-                $sort: {
-                    pageNumber: -1
+            }),
+            prisma.likeDislikeMovie.findMany({
+                where: {
+                    userId: userId,
+                    type: 'like',
+                },
+                take: 150,
+                orderBy: {
+                    date: 'desc'
+                },
+                select: {
+                    movieId: true,
                 }
-            },
-            {
-                $project: {
-                    res: {
-                        $setUnion: ["$like_movie", "$save", "$follow_movie", "$finished"]
-                    }
+            }),
+            prisma.followMovie.findMany({
+                where: {
+                    userId: userId,
+                },
+                take: 50,
+                orderBy: {
+                    date: 'desc'
+                },
+                select: {
+                    movieId: true,
                 }
-            },
-            {
-                $unwind: '$res',
-            },
-            {
-                $sort: {
-                    res: -1,
-                }
-            },
-            {
-                $limit: 500,
-            },
-            lookupDbMethods.getLookupOnCustomCollectionStage('movies', 'res', {genres: 1}),
-            {
-                $replaceRoot: {
-                    newRoot: {
-                        $mergeObjects: [{res: '$res'}, {$arrayElemAt: ['$data', 0]}]
-                    }
-                }
-            },
-            {
-                $unwind: '$genres'
-            },
-            {
-                $group: {
-                    _id: null,
-                    count: {$sum: 1},
-                    "data": {"$push": "$$ROOT"}
-                }
-            },
-            {
-                $unwind: '$data'
-            },
-            {
-                $group: {
-                    _id: '$data.genres',
-                    count: {$sum: 1},
-                    total: {$first: "$count"}
-                }
-            },
-            {
-                $addFields: {
-                    percent: {
-                        $round: [{$multiply: [{$divide: ["$count", "$total"]}, 100]}, 2]
-                    },
-                    genre: '$_id',
-                }
-            },
-            {
-                $sort: {
-                    count: -1
-                }
-            },
-            {
-                $limit: 8
-            },
-            {
-                $project: {
-                    _id: 0,
-                    total: 0,
-                }
-            }
-        ];
+            })
+        ]);
+        if (res.find(item => !item.value)) {
+            return 'error';
+        }
 
-        return await collection.aggregate(aggregationPipeline).toArray();
+        let recentMoviesIds = [...res[0].value, ...res[1].value, ...res[2].value].map(item => item.movieId.toString());
+        let uniqueMovieIds = [];
+        for (let i = 0; i < recentMoviesIds.length; i++) {
+            if (!uniqueMovieIds.includes(recentMoviesIds[i])) {
+                uniqueMovieIds.push(recentMoviesIds[i]);
+            }
+        }
+
+        let allGenres = [];
+        let moviesData = await moviesDbMethods.getMoviesDataInBatch(recentMoviesIds, {genres: 1});
+        for (let i = 0; i < moviesData.length; i++) {
+            allGenres.push(moviesData[i].genres);
+        }
+        allGenres = allGenres.flat(1);
+        let groupGenres = allGenres.reduce((groups, genre) => {
+            let groupData = groups.find(g => g.genre === genre);
+            if (groupData) {
+                groupData.count++;
+            } else {
+                groups.push({
+                    genre: genre,
+                    count: 1,
+                });
+            }
+            return groups;
+        }, []);
+
+        const allGenresLength = allGenres.length;
+        for (let i = 0; i < groupGenres.length; i++) {
+            groupGenres[i].percent = Number((groupGenres[i].count / allGenresLength).toFixed(1));
+        }
+
+        return groupGenres.sort((a, b) => b.count - a.count).slice(0, 8);
     } catch (error) {
         saveError(error);
         return 'error';

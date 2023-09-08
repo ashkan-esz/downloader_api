@@ -10,15 +10,6 @@ export async function createCollectionsAndIndexes() {
     try {
         console.log('creating mongodb collection and indexes');
 
-        let userStats = await getCollection('userStats');
-        await userStats.createIndex({userId: 1, pageNumber: 1});
-        //usage: userId, $or{[statType],[statType2]}
-        //usage: userId, [statCounterField], sort:{pageNumber: 1} --more usage
-        //usage: userId, [statType],
-        //usage: userId, pageNumber, sort:{pageNumber: -1} --more usage
-        //usage: userId, [statCounterField], sort:{pageNumber: -1}
-
-
         let moviesCollection = await getCollection('movies');
         await moviesCollection.createIndex({
             title: "text",
@@ -40,7 +31,6 @@ export async function createCollectionsAndIndexes() {
         await moviesCollection.createIndex({type: 1, releaseState: 1, 'rating.imdb': 1, 'rating.myAnimeList': 1});
         await moviesCollection.createIndex({year: -1, insert_date: -1});
         await moviesCollection.createIndex({update_date: -1, year: -1});
-        await moviesCollection.createIndex({'userStats.like_movie': -1, _id: -1});
         await moviesCollection.createIndex({
             type: 1, //index prefix
             'rank.animeTopComingSoon': 1,
@@ -63,20 +53,10 @@ export async function createCollectionsAndIndexes() {
         //usage: imdbID
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: update_date, year)
-        //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: 'userStats.like_movie', _id)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, trailers, (sort: year, add_date)
         //usage: rank.*, type, rating.imdb, rating.myAnimeList, (sort: rank)
         //usage: status, nextEpisode.releaseStamp, update_date, endYear, releaseDay, type, rating.imdb, rating.myAnimeList (sort: rating.imdb, rating.myAnimeList, _id)
         //usage: genres, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
-
-
-        const staffAndCharactersCollections = ['staff', 'characters'];
-        for (let i = 0; i < staffAndCharactersCollections.length; i++) {
-            let collection = await getCollection(staffAndCharactersCollections[i]);
-            await collection.createIndex({name: "text", rawName: "text"});
-            await collection.createIndex({name: 1});
-            //usage: name, **tvmazePersonID**, **jikanPersonID**
-        }
 
 
         let userAnalysisCollection = await getCollection('serverAnalysis');

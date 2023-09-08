@@ -1,123 +1,154 @@
 import * as moviesDbMethods from '../data/db/moviesDbMethods.js';
 import * as crawlerMethodsDB from '../data/db/crawlerMethodsDB.js';
+import * as usersDbMethods from '../data/db/usersDbMethods.js';
 import * as userStatsDbMethods from '../data/db/userStatsDbMethods.js';
 import * as botsDbMethods from '../data/db/botsDbMethods.js';
+import * as staffAndCharactersDbMethods from '../data/db/staffAndCharactersDbMethods.js';
 import {dataLevelConfig} from "../models/movie.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import {setRedis} from "../data/redis.js";
-import {dataLevelConfig_staff} from "../models/person.js";
-import {dataLevelConfig_character} from "../models/character.js";
 import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils.js";
 import PQueue from 'p-queue';
-import {
-    getFollowedStaffTodayBirthday,
-    getTodayStaffOrCharactersBirthday
-} from "../data/db/staffAndCharactersDbMethods.js";
+import {saveError} from "../error/saveError.js";
 
-export async function getNews(userId, types, dataLevel, imdbScores, malScores, page, isGuest) {
+//todo : cache movies data
+
+export async function getNews(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await moviesDbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let newMovies = await moviesDbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (newMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (newMovies.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(newMovies, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, newMovies, isGuest),
+    ]);
     return generateServiceResult({data: newMovies}, 200, '');
 }
 
-export async function getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await moviesDbMethods.getNewMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let newMovies = await moviesDbMethods.getNewMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (newMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (newMovies.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(newMovies, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, newMovies, isGuest),
+    ]);
     return generateServiceResult({data: newMovies}, 200, '');
 }
 
-export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await moviesDbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let updateMovies = await moviesDbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (updateMovies.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(updateMovies, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, updateMovies, isGuest),
+    ]);
     return generateServiceResult({data: updateMovies}, 200, '');
 }
 
-export async function getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await moviesDbMethods.getUpdateMoviesWithDate(userId, date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let updateMovies = await moviesDbMethods.getUpdateMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (updateMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (updateMovies.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(updateMovies, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, updateMovies, isGuest),
+    ]);
     return generateServiceResult({data: updateMovies}, 200, '');
 }
 
-export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let topsByLikesMovies = await moviesDbMethods.getTopsByLikesMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let topsByLikesMovies = await moviesDbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (topsByLikesMovies === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (topsByLikesMovies.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(topsByLikesMovies, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, topsByLikesMovies, isGuest),
+    ]);
     return generateServiceResult({data: topsByLikesMovies}, 200, '');
 }
 
-export async function getTrailers(userId, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getTrailers(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let trailersData = await moviesDbMethods.getNewTrailers(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let trailersData = await moviesDbMethods.getNewTrailers(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (trailersData === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (trailersData.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(trailersData, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, trailersData, isGuest),
+    ]);
     return generateServiceResult({data: trailersData}, 200, '');
 }
 
-export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page, isGuest) {
+export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let sortedData = await moviesDbMethods.getSortedMovies(userId, sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let sortedData = await moviesDbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (sortedData === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (sortedData.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(sortedData, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, sortedData, isGuest),
+    ]);
     return generateServiceResult({data: sortedData}, 200, '');
 }
 
-export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page, isGuest) {
+export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let seriesOfDay = await moviesDbMethods.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"], isGuest);
+    let seriesOfDay = await moviesDbMethods.getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
     if (seriesOfDay === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (seriesOfDay.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(seriesOfDay, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, seriesOfDay, isGuest),
+    ]);
     return generateServiceResult({data: seriesOfDay}, 200, '');
 }
 
-export async function getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count, isGuest) {
+export async function getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, count);
 
     let result = await Promise.allSettled([
-        moviesDbMethods.getSortedMovies(userId, 'inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest),
-        moviesDbMethods.getSortedMovies(userId, 'comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest),
-        moviesDbMethods.getNewMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest),
-        moviesDbMethods.getUpdateMovies(userId, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest)
+        moviesDbMethods.getSortedMovies('inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getSortedMovies('comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
+        moviesDbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
     ]);
     let multiple = {
         inTheaters: result[0].value,
@@ -138,45 +169,25 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
     } else if (multiple.inTheaters.length === 0 && multiple.comingSoon.length === 0 && multiple.news.length === 0 && multiple.update.length === 0) {
         return generateServiceResult({data: multiple}, 404, errorMessage.moviesNotFound);
     }
-    return generateServiceResult({data: multiple}, 200, '');
-}
-
-export async function searchMovieStaffCharacter(userId, title, dataLevel, page, isGuest) {
-    let {skip, limit} = getSkipLimit(page, 12);
-
-    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
-    let searchDataArray = await Promise.allSettled([
-        moviesDbMethods.searchOnMovieCollectionWithFilters(userId, {title}, skip, limit, dataLevelConfig[dataLevel], isGuest),
-        moviesDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, {name: title}, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel], isGuest),
-        moviesDbMethods.searchOnStaffOrCharactersWithFilters('characters', userId, {name: title}, skip, limit, dataLevelConfig_character[staffCharacterDataLevel], isGuest),
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(multiple.inTheaters, embedStaffAndCharacter),
+        addStaffAndCharacterDataToMovie(multiple.comingSoon, embedStaffAndCharacter),
+        addStaffAndCharacterDataToMovie(multiple.news, embedStaffAndCharacter),
+        addStaffAndCharacterDataToMovie(multiple.update, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, multiple.inTheaters, isGuest),
+        addUserStatsDataToMovie(userId, multiple.comingSoon, isGuest),
+        addUserStatsDataToMovie(userId, multiple.news, isGuest),
+        addUserStatsDataToMovie(userId, multiple.update, isGuest),
     ]);
-    let searchData = {
-        movies: searchDataArray[0].value,
-        staff: searchDataArray[1].value,
-        characters: searchDataArray[2].value,
-    }
-
-    if (searchData.movies === 'error' || searchData.staff === 'error' || searchData.characters === 'error') {
-        return generateServiceResult({
-            data: {
-                movies: [],
-                staff: [],
-                characters: [],
-            }
-        }, 500, errorMessage.serverError);
-    } else if (searchData.movies.length === 0 && searchData.staff.length === 0 && searchData.characters.length === 0) {
-        return generateServiceResult({data: searchData}, 404, errorMessage.mscNotFound);
-    }
-    return generateServiceResult({data: searchData}, 200, '');
+    return generateServiceResult({data: multiple}, 200, '');
 }
 
 export async function searchStaffAndCharacter(userId, filters, dataLevel, page, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
     let searchDataArray = await Promise.allSettled([
-        moviesDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, filters, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel], isGuest),
-        moviesDbMethods.searchOnStaffOrCharactersWithFilters('characters', userId, filters, skip, limit, dataLevelConfig_character[staffCharacterDataLevel], isGuest),
+        staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, filters, skip, limit, dataLevel, isGuest),
+        staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters('character', userId, filters, skip, limit, dataLevel, isGuest),
     ]);
     let searchData = {
         staff: searchDataArray[0].value,
@@ -196,105 +207,275 @@ export async function searchStaffAndCharacter(userId, filters, dataLevel, page, 
     return generateServiceResult({data: searchData}, 200, '');
 }
 
-export async function searchStaffOrCharacter(userId, staffOrCharacters, filters, dataLevel, page, isGuest) {
+export async function searchStaffOrCharacter(userId, staffOrCharacter, filters, dataLevel, page, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
-    let searchResult = await moviesDbMethods.searchOnStaffOrCharactersWithFilters(staffOrCharacters, userId, filters, skip, limit, dataLevelConfig_staff[staffCharacterDataLevel], isGuest)
+    let searchResult = await staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters(staffOrCharacter, userId, filters, skip, limit, dataLevel, isGuest)
 
     if (searchResult === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (searchResult.length === 0) {
-        let temp = staffOrCharacters === 'staff' ? errorMessage.staffNotFound : errorMessage.characterNotFound;
+        let temp = staffOrCharacter === 'staff' ? errorMessage.staffNotFound : errorMessage.characterNotFound;
         return generateServiceResult({data: []}, 404, temp);
     }
     return generateServiceResult({data: searchResult}, 200, '');
 }
 
-export async function searchMovie(userId, filters, dataLevel, page, isGuest) {
+export async function searchMovie(userId, filters, dataLevel, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let searchResult = await moviesDbMethods.searchOnMovieCollectionWithFilters(userId, filters, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let searchResult = await moviesDbMethods.searchOnMovieCollectionWithFilters(filters, skip, limit, dataLevelConfig[dataLevel]);
 
     if (searchResult === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (searchResult.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(searchResult, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, searchResult, isGuest),
+    ]);
     return generateServiceResult({data: searchResult}, 200, '');
 }
 
-export async function searchMovieById(userId, id, dataLevel, filters, isGuest) {
-    let movieData = await moviesDbMethods.searchOnCollectionById("movies", userId, id, filters, dataLevelConfig[dataLevel], dataLevel, isGuest);
+export async function searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, isGuest) {
+    let movieData = await moviesDbMethods.searchOnMoviesById(id, filters, dataLevelConfig[dataLevel], dataLevel);
     if (movieData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!movieData) {
         return generateServiceResult({data: null}, 404, errorMessage.movieNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie([movieData], embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, [movieData], isGuest),
+    ]);
+    if (!isGuest && filters.embedDownloadLinksConfig) {
+        movieData.downloadLinksConfig = await usersDbMethods.getUserSettingsDB(userId, 'downloadLinks');
+    }
     return generateServiceResult({data: movieData}, 200, '');
 }
 
-export async function searchStaffById(userId, id, isGuest) {
-    let staffData = await moviesDbMethods.searchOnCollectionById("staff", userId, id, {}, {}, isGuest);
+export async function searchStaffById(userId, id, creditsCount, isGuest) {
+    let staffData = await staffAndCharactersDbMethods.getStaffById(userId, id, creditsCount, isGuest);
     if (staffData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!staffData) {
         return generateServiceResult({data: null}, 404, errorMessage.staffNotFound);
     }
+    await addMovieDataToCredits(staffData.credits);
     return generateServiceResult({data: staffData}, 200, '');
 }
 
-export async function searchCharacterById(userId, id, isGuest) {
-    let characterData = await moviesDbMethods.searchOnCollectionById("characters", userId, id, {}, {}, isGuest);
+export async function searchCharacterById(userId, id, creditsCount, isGuest) {
+    let characterData = await staffAndCharactersDbMethods.getCharacterById(userId, id, creditsCount, isGuest);
     if (characterData === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (!characterData) {
         return generateServiceResult({data: null}, 404, errorMessage.characterNotFound);
     }
+    await addMovieDataToCredits(characterData.credits);
     return generateServiceResult({data: characterData}, 200, '');
 }
 
-export async function userStatsService(userId, statType, id, isRemove) {
-    if (isRemove) {
-        let removeResult = await userStatsDbMethods.handleRemoveUserStatsTransaction(userId, statType, id);
-        const code = removeResult === 'error' ? 500 : removeResult === 'notfound' ? 404 : 200;
-        const message = removeResult === 'error' ? errorMessage.serverError : removeResult === 'notfound' ? errorMessage.documentNotFound : '';
-        return generateServiceResult({}, code, message);
-    }
+//--------------------------------------------
+//--------------------------------------------
 
-    let result = await userStatsDbMethods.handleAddUserStatsTransaction(userId, statType, id);
+export async function getMovieCreditsById(userId, id, page, isGuest) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let result = await staffAndCharactersDbMethods.getStaffAndCharacterOfMovie(id, skip, limit);
+    if (result === 'error') {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: null}, 404, errorMessage.staffNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getStaffCreditsById(userId, id, page, isGuest) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let result = await staffAndCharactersDbMethods.getCreditsOfStaff(id, skip, limit);
+    if (result === 'error') {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: null}, 404, errorMessage.staffNotFound);
+    }
+    await addMovieDataToCredits(result);
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function getCharacterCreditsById(userId, id, page, isGuest) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let result = await staffAndCharactersDbMethods.getCreditsOfCharacter(id, skip, limit);
+    if (result === 'error') {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: null}, 404, errorMessage.staffNotFound);
+    }
+    await addMovieDataToCredits(result);
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//--------------------------------------------
+//--------------------------------------------
+
+export async function userStatsLikeDislikeService(userId, statType, id, isRemove) {
+    let result = await userStatsDbMethods.addUserStats_likeDislike(userId, statType, id, isRemove);
     if (result === 'error') {
         return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-    if (result === 'notfound') {
+    } else if (result === 'notfound') {
         return generateServiceResult({}, 404, errorMessage.documentNotFound);
-    }
-    if (result === 'already exist') {
-        return generateServiceResult({}, 409, errorMessage.alreadyExist);
     }
     return generateServiceResult({}, 200, '');
 }
 
-export async function getUserStatsList(userId, statType, dataLevel, page) {
-    let {skip, limit} = getSkipLimit(page, 12);
+export async function userStatsFollowStaffService(userId, statType, id, isRemove) {
+    let result = statType === 'follow_staff'
+        ? await userStatsDbMethods.addUserStats_followStaff(userId, statType, id, isRemove)
+        : await userStatsDbMethods.addUserStats_favoriteCharacter(userId, statType, id, isRemove);
 
-    let projection;
-    if (statType.includes('staff')) {
-        projection = dataLevelConfig_staff[dataLevel];
-    } else if (statType.includes('character')) {
-        projection = dataLevelConfig_character[dataLevel];
-    } else {
-        projection = dataLevelConfig[dataLevel];
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsFinishMovieService(userId, id, startDate, endDate, score, remove, favorite) {
+    let drop = false;
+    if (!remove) {
+        //don't need to check its ended, if you want to remove from table
+        let movieData = await moviesDbMethods.getMovieState(id);
+        if (movieData === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (!movieData) {
+            return generateServiceResult({}, 404, errorMessage.documentNotFound);
+        } else {
+            //check its dropped or finished
+            if (movieData.releaseState !== 'waiting' && movieData.releaseState !== 'done') {
+                return generateServiceResult({}, 409, 'Movie didnt released yet');
+            }
+            if (!movieData.type.includes('movie') && movieData.status !== 'ended') {
+                drop = true;
+            }
+        }
     }
 
-    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, skip, limit, projection);
+    let result = await userStatsDbMethods.addUserStats_finishedMovie(userId, id, startDate, endDate, score, drop, favorite, remove);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsFavoriteMovieService(userId, id, favorite) {
+    let result = await userStatsDbMethods.addUserStats_handleFavoriteMovie(userId, id, favorite);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, 'Movie not found in finished movies list');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsFollowMovieService(userId, id, watch_season, watch_episode, score, remove) {
+    let movieType = await moviesDbMethods.getTitleType(id);
+    if (movieType === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!movieType) {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (!movieType.type.includes('serial')) {
+        return generateServiceResult({}, 409, 'Works for serials only');
+    }
+
+    let result = await userStatsDbMethods.addUserStats_followMovie(userId, id, watch_season, watch_episode, score, remove);
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already watched') {
+        return generateServiceResult({}, 404, 'Already watched, cannot follow');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsWatchListMovieService(userId, id, score, remove) {
+    let result = await userStatsDbMethods.addUserStats_watchListMovie(userId, id, score, remove);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already following or watched') {
+        return generateServiceResult({}, 409, 'Already following or watched');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsHandleScore(userId, id, score, stat_list_type) {
+    let result = await userStatsDbMethods.addUserStats_updateScore(userId, id, score, stat_list_type);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsHandleWatchState(userId, id, watch_season, watch_episode, stat_list_type) {
+    let movieData = await moviesDbMethods.getMovieState(id);
+    if (movieData === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!movieData) {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (!movieData.type.includes('serial')) {
+        return generateServiceResult({}, 409, 'Works for serials only');
+    } else if (watch_season > movieData.latestData.season || (watch_season === movieData.latestData.season && watch_episode > movieData.latestData.episode)) {
+        return generateServiceResult({}, 409, 'Didnt released yet');
+    }
+
+    let result = await userStatsDbMethods.addUserStats_updateWatchState(userId, id, watch_season, watch_episode, stat_list_type);
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function getUserStatsList(userId, statType, dataLevel, page, embedStaffAndCharacter) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, skip, limit);
     if (userStatsList === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (userStatsList.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.documentsNotFound);
     }
+
+    if (statType.includes('staff')) {
+        normalizeStaffAndCharactersUserStats('staff', userStatsList, statType);
+    } else if (statType.includes('character')) {
+        normalizeStaffAndCharactersUserStats('character', userStatsList, statType);
+    } else {
+        await addStaffAndCharacterDataToMovie(userStatsList, embedStaffAndCharacter);
+        normalizeMoviesUserStats(userStatsList, statType);
+        await addMovieDataToUserStatsList(userStatsList, dataLevelConfig[dataLevel]);
+    }
+
     return generateServiceResult({data: userStatsList}, 200, '');
 }
+
+//-----------------------------------------------------
+//-----------------------------------------------------
 
 export async function getGenresStatus(routeUrl) {
     let genres = await moviesDbMethods.getGenresStatusDB();
@@ -315,15 +496,19 @@ export async function getGenresStatus(routeUrl) {
     return generateServiceResult({data: genres}, 200, '');
 }
 
-export async function getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page, isGuest) {
+export async function getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page, embedStaffAndCharacter, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let result = await moviesDbMethods.getGenresMoviesDB(userId, genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel], isGuest);
+    let result = await moviesDbMethods.getGenresMoviesDB(genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, isGuest),
+    ]);
     return generateServiceResult({data: result}, 200, '');
 }
 
@@ -389,17 +574,10 @@ export async function getAnimeEnglishNames(japaneseNames) {
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getTodayBirthday(jwtUserData, staffOrCharacters, followedOnly, dataLevel, page, isGuest) {
+export async function getTodayBirthday(jwtUserData, staffOrCharacter, followedOnly, dataLevel, page, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let staffCharacterDataLevel = ['low', 'medium', 'high'].includes(dataLevel) ? dataLevel : 'high';
-    let dataLevelConfig = staffOrCharacters === 'staff'
-        ? dataLevelConfig_staff[staffCharacterDataLevel]
-        : dataLevelConfig_character[staffCharacterDataLevel];
-
-    let result = (staffOrCharacters === 'staff' && followedOnly)
-        ? await getFollowedStaffTodayBirthday(jwtUserData.userId, skip, limit, dataLevelConfig, isGuest)
-        : await getTodayStaffOrCharactersBirthday(staffOrCharacters, jwtUserData.userId, skip, limit, dataLevelConfig, isGuest);
+    let result = await staffAndCharactersDbMethods.getTodayStaffOrCharactersBirthday(staffOrCharacter, jwtUserData.userId, followedOnly, skip, limit, dataLevel, isGuest);
     if (result === 'error') {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
@@ -412,7 +590,7 @@ export async function getTodayBirthday(jwtUserData, staffOrCharacters, followedO
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdbScores, malScores, dontUpdateServerDate) {
+export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdbScores, malScores, embedStaffAndCharacter, dontUpdateServerDate) {
     let botData = await botsDbMethods.getBotData(botId);
     if (botData === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
@@ -427,13 +605,13 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
     let moviesData = [];
     let moviesData2 = [];
     if (apiName === 'news') {
-        moviesData = await moviesDbMethods.getNewMoviesWithDate(null, botData.lastApiCall_news, types, imdbScores, malScores, 0, 24, projection, true);
+        moviesData = await moviesDbMethods.getNewMoviesWithDate(botData.lastApiCall_news, types, imdbScores, malScores, 0, 24, projection);
     } else if (apiName === 'updates') {
-        moviesData = await moviesDbMethods.getUpdateMoviesWithDate(null, botData.lastApiCall_updates, types, imdbScores, malScores, 0, 24, projection, true);
+        moviesData = await moviesDbMethods.getUpdateMoviesWithDate(botData.lastApiCall_updates, types, imdbScores, malScores, 0, 24, projection, true);
     } else if (apiName === 'newsandupdates') {
         let result = await Promise.allSettled([
-            moviesDbMethods.getNewMoviesWithDate(null, botData.lastApiCall_news, types, imdbScores, malScores, 0, 12, projection, true),
-            moviesDbMethods.getUpdateMoviesWithDate(null, botData.lastApiCall_updates, types, imdbScores, malScores, 0, 12, projection, true),
+            moviesDbMethods.getNewMoviesWithDate(botData.lastApiCall_news, types, imdbScores, malScores, 0, 12, projection),
+            moviesDbMethods.getUpdateMoviesWithDate(botData.lastApiCall_updates, types, imdbScores, malScores, 0, 12, projection),
         ]);
         moviesData = result[0].value;
         moviesData2 = result[1].value;
@@ -495,8 +673,320 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
             return generateServiceResult({data: []}, 500, errorMessage.serverError);
         }
     }
-
+    await Promise.allSettled([
+        addStaffAndCharacterDataToMovie(moviesData, embedStaffAndCharacter),
+        addUserStatsDataToMovie('', moviesData, true),
+    ]);
     return generateServiceResult({data: moviesData, hasNextPage}, 200, '');
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+async function addStaffAndCharacterDataToMovie(movies, embedStaffAndCharacter) {
+    if (embedStaffAndCharacter) {
+        let promiseArray = [];
+        for (let i = 0; i < movies.length; i++) {
+            let prom = staffAndCharactersDbMethods.getStaffAndCharacterOfMovie(movies[i]._id.toString(), 0, 24).then(res => {
+                let actorsAndCharacters = [];
+                let staff = {
+                    directors: [],
+                    writers: [],
+                    others: [],
+                };
+
+                if (res !== 'error') {
+                    for (let i = 0; i < res.length; i++) {
+                        let positions = res[i].actorPositions.map(item => item.toLowerCase()).join(' , ');
+                        if (positions.includes('actor')) {
+                            actorsAndCharacters.push(res[i]);
+                        } else if (positions.includes('director')) {
+                            staff.directors.push(res[i]);
+                        } else if (positions.includes('writer')) {
+                            staff.writers.push(res[i]);
+                        } else {
+                            staff.others.push(res[i]);
+                        }
+                    }
+                }
+
+                movies[i].actorsAndCharacters = actorsAndCharacters;
+                movies[i].staff = staff;
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+    }
+}
+
+async function addUserStatsDataToMovie(userId, movies, isGuest) {
+    try {
+        if (movies.length === 0) {
+            return movies;
+        }
+
+        const defaultUserStats = userStatsDbMethods.defaultUserStats;
+        const defaultUserStats_extra = userStatsDbMethods.defaultUserStats_extra;
+
+        if (isGuest) {
+            let userStats = await userStatsDbMethods.getMoviesUserStatsCounts(movies.map(m => m._id.toString()));
+            for (let i = 0; i < movies.length; i++) {
+                let statsData = userStats.find(u => u.movieId === movies[i]._id.toString());
+                if (statsData) {
+                    delete statsData.movieId;
+                    movies[i].userStats = {...defaultUserStats, ...statsData};
+                } else {
+                    movies[i].userStats = defaultUserStats;
+                }
+                movies[i].userStats_extra = null;
+            }
+            if (movies.length === 1) {
+                movies[0].userStats_extra = defaultUserStats_extra;
+            }
+            return movies;
+        } else if (movies.length > 1) {
+            const userStats = await userStatsDbMethods.getMoviesUserStats_likeDislike(userId, movies.map(m => m._id.toString()));
+            for (let i = 0; i < movies.length; i++) {
+                let statsData = userStats.find(u => u.movieId === movies[i]._id.toString());
+                if (statsData) {
+                    movies[i].userStats = {
+                        likes_count: statsData.likes_count,
+                        dislikes_count: statsData.dislikes_count,
+                        favorite_count: statsData.favorite_count,
+                        dropped_count: statsData.dropped_count,
+                        finished_count: statsData.finished_count,
+                        follow_count: statsData.follow_count,
+                        watchlist_count: statsData.watchlist_count,
+                        continue_count: statsData.continue_count,
+                        like: false,
+                        dislike: false,
+                    }
+                    if (statsData.likeDislikeMovies[0]) {
+                        movies[i].userStats.like = statsData.likeDislikeMovies[0].type === 'like';
+                        movies[i].userStats.dislike = statsData.likeDislikeMovies[0].type === 'dislike';
+                    }
+                } else {
+                    movies[i].userStats = defaultUserStats;
+                }
+                movies[i].userStats_extra = null;
+            }
+            return movies;
+        } else {
+            //single movie
+            const userStats = await userStatsDbMethods.getMovieFullUserStats(userId, movies[0]._id.toString());
+            movies[0].userStats_extra = defaultUserStats_extra;
+            if (userStats) {
+                movies[0].userStats = {
+                    likes_count: userStats.likes_count,
+                    dislikes_count: userStats.dislikes_count,
+                    favorite_count: userStats.favorite_count,
+                    dropped_count: userStats.dropped_count,
+                    finished_count: userStats.finished_count,
+                    follow_count: userStats.follow_count,
+                    watchlist_count: userStats.watchlist_count,
+                    continue_count: userStats.continue_count,
+                    like: false,
+                    dislike: false,
+                    favorite: false,
+                    dropped: false,
+                    finished: false,
+                    follow: false,
+                    watchlist: false,
+                };
+                if (userStats.likeDislikeMovies[0]) {
+                    movies[0].userStats.like = userStats.likeDislikeMovies[0].type === 'like';
+                    movies[0].userStats.dislike = userStats.likeDislikeMovies[0].type === 'dislike';
+                }
+                if (userStats.watchListMovies[0]) {
+                    movies[0].userStats.watchlist = true;
+                    movies[0].userStats_extra.myScore = userStats.watchListMovies[0].score;
+                }
+                if (userStats.watchedMovies[0]) {
+                    movies[0].userStats.dropped = userStats.watchedMovies[0].dropped;
+                    movies[0].userStats.finished = !userStats.watchedMovies[0].dropped;
+                    movies[0].userStats.favorite = !userStats.watchedMovies[0].favorite;
+                    movies[0].userStats_extra.watch_start = userStats.watchedMovies[0].startDate;
+                    movies[0].userStats_extra.watch_end = userStats.watchedMovies[0].date;
+                    movies[0].userStats_extra.watch_season = userStats.watchedMovies[0].watch_season;
+                    movies[0].userStats_extra.watch_episode = userStats.watchedMovies[0].watch_episode;
+                    movies[0].userStats_extra.myScore = userStats.watchedMovies[0].score;
+                }
+                if (userStats.followMovies[0]) {
+                    movies[0].userStats.follow = true;
+                    movies[0].userStats_extra.watch_season = userStats.followMovies[0].watch_season;
+                    movies[0].userStats_extra.watch_episode = userStats.followMovies[0].watch_episode;
+                    movies[0].userStats_extra.myScore = userStats.followMovies[0].score;
+                }
+            } else {
+                movies[0].userStats = defaultUserStats;
+            }
+            return movies;
+        }
+    } catch (error) {
+        saveError(error);
+        return movies;
+    }
+}
+
+function normalizeMoviesUserStats(movies, statType) {
+    for (let i = 0; i < movies.length; i++) {
+        let statsData = movies[i].movie;
+        movies[i].userStats = {
+            likes_count: statsData.likes_count,
+            dislikes_count: statsData.dislikes_count,
+            favorite_count: statsData.favorite_count,
+            dropped_count: statsData.dropped_count,
+            finished_count: statsData.finished_count,
+            follow_count: statsData.follow_count,
+            watchlist_count: statsData.watchlist_count,
+            continue_count: statsData.continue_count,
+            like: false,
+            dislike: false,
+        }
+        if (statsData.likeDislikeMovies && statsData.likeDislikeMovies[0]) {
+            movies[i].userStats.like = statsData.likeDislikeMovies[0].type === 'like';
+            movies[i].userStats.dislike = statsData.likeDislikeMovies[0].type === 'dislike';
+        } else if (statType === 'like_movie') {
+            movies[i].userStats.like = true;
+        } else if (statType === 'dislike_movie') {
+            movies[i].userStats.dislike = true;
+        }
+
+        if (statType === 'watchlist_movie') {
+            movies[i].userStats.watchlist = true;
+        } else if (statType === 'follow_movie') {
+            movies[i].userStats.follow = true;
+        } else if (statType === 'finish_movie') {
+            movies[i].userStats.dropped = movies[i].dropped;
+            movies[i].userStats.finished = !movies[i].dropped;
+            movies[i].userStats.favorite = movies[i].favorite;
+        }
+
+        movies[i].userStats_extra = {
+            watch_start: movies[i].startDate || '',
+            watch_end: movies[i].startDate ? movies[i].date || '' : '',
+            watch_season: movies[i].watch_season || 0,
+            watch_episode: movies[i].watch_episode || 0,
+            myScore: movies[i].score || 0,
+        };
+
+        delete movies[i].score;
+        delete movies[i].date;
+        delete movies[i].userId;
+        delete movies[i].startDate;
+        delete movies[i].watch_season;
+        delete movies[i].watch_episode;
+        delete movies[i].dropped;
+        delete movies[i].favorite;
+        delete movies[i].type;
+        delete movies[i].movie;
+    }
+}
+
+async function addMovieDataToUserStatsList(movies, projection) {
+    let moviesData = await moviesDbMethods.getMoviesDataInBatch(movies.map(m => m.movieId), projection);
+    for (let i = 0; i < movies.length; i++) {
+        let movie = moviesData.find(m => m._id.toString() === movies[i].movieId);
+        if (movie) {
+            movies[i] = {...movies[i], ...movie};
+        } else {
+            movies[i] = null;
+        }
+    }
+}
+
+async function addMovieDataToCredits(credits) {
+    let movies = await moviesDbMethods.getMoviesDataInBatch(credits.map(c => c.movie.movieId), {
+        rawTitle: 1,
+        type: 1,
+        posters: 1,
+    });
+    for (let i = 0; i < credits.length; i++) {
+        let movie = movies.find(m => m._id.toString() === credits[i].movie.movieId);
+        if (movie) {
+            delete movie._id;
+            credits[i].movie = {...credits[i].movie, ...movie};
+        } else {
+            credits[i].movie = null;
+        }
+    }
+}
+
+function normalizeStaffAndCharactersUserStats(type, data, statType) {
+    if (type === 'staff') {
+        for (let i = 0; i < data.length; i++) {
+            data[i] = {...data[i], ...data[i].staff};
+            delete data[i].staff;
+            data[i].userStats = {
+                likes_count: data[i].likes_count,
+                dislikes_count: data[i].dislikes_count,
+                follow_count: data[i].follow_count,
+                like: false,
+                dislike: false,
+                followStaff: false,
+            }
+
+            if (data[i].likeDislikeStaff) {
+                data[i].userStats.like = data[i].likeDislikeStaff[0]?.type === 'like';
+                data[i].userStats.dislike = data[i].likeDislikeStaff[0]?.type === 'dislike';
+            } else if (statType === 'like_staff') {
+                data[i].userStats.like = true;
+            } else if (statType === 'dislike_staff') {
+                data[i].userStats.dislike = true;
+            }
+
+            if (data[i].followStaff) {
+                data[i].userStats.followStaff = !!data[i].followStaff[0];
+            } else if (statType === 'follow_staff') {
+                data[i].userStats.followStaff = true;
+            }
+
+            delete data[i].likes_count;
+            delete data[i].dislikes_count;
+            delete data[i].follow_count;
+            delete data[i].likeDislikeStaff;
+            delete data[i].followStaff;
+            delete data[i].type;
+            delete data[i].date;
+            delete data[i].userId;
+        }
+    } else {
+        for (let i = 0; i < data.length; i++) {
+            data[i] = {...data[i], ...data[i].character};
+            delete data[i].character;
+            data[i].userStats = {
+                likes_count: data[i].likes_count,
+                dislikes_count: data[i].dislikes_count,
+                favorite_count: data[i].favorite_count,
+                like: false,
+                dislike: false,
+                favorite: false,
+            }
+            if (data[i].likeDislikeCharacter) {
+                data[i].userStats.like = data[i].likeDislikeCharacter[0]?.type === 'like';
+                data[i].userStats.dislike = data[i].likeDislikeCharacter[0]?.type === 'dislike';
+            } else if (statType === 'like_character') {
+                data[i].userStats.like = true;
+            } else if (statType === 'dislike_character') {
+                data[i].userStats.dislike = true;
+            }
+
+            if (data[i].favoriteCharacter) {
+                data[i].userStats.favorite = !!data[i].favoriteCharacter[0];
+            } else if (statType === 'favorite_character') {
+                data[i].userStats.favorite = true;
+            }
+
+            delete data[i].likes_count;
+            delete data[i].dislikes_count;
+            delete data[i].favorite_count;
+            delete data[i].likeDislikeCharacter;
+            delete data[i].favoriteCharacter;
+            delete data[i].type;
+            delete data[i].date;
+            delete data[i].userId;
+        }
+    }
 }
 
 //-----------------------------------------------------

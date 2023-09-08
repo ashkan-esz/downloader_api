@@ -26,7 +26,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         seasons: [],
         sources: sourceName ? [{sourceName: sourceName, pageLink: page_link}] : [],
         seasonEpisode: [],
-        userStats: userStats,
         view: 0,
         like_month: 0,
         view_month: 0,
@@ -85,12 +84,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             metacritic: 0,
             myAnimeList: 0
         },
-        actorsAndCharacters: [],
-        staff: {
-            directors: [],
-            writers: [],
-            others: [],
-        },
         awards: "",
         //jikan api data
         animeType: '',
@@ -99,69 +92,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         relatedTitles: [],
     };
 }
-
-export const userStats = Object.freeze({
-    like_movie_count: 0,
-    dislike_movie_count: 0,
-    //follow
-    follow_movie_count: 0,
-    //others
-    save_count: 0,
-    future_list_count: 0,
-    dropped_count: 0,
-    finished_count: 0,
-    score_count: 0,
-});
-
-export const userStats_projection = Object.freeze({
-    low: Object.freeze({
-        like_movie: 1,
-        like_movie_count: 1,
-        dislike_movie: 1,
-        dislike_movie_count: 1,
-        //save
-        save: 1,
-        save_count: 1,
-        //future list
-        future_list: 1,
-        future_list_count: 1,
-    }),
-    medium: Object.freeze({
-        like_movie: 1,
-        like_movie_count: 1,
-        dislike_movie: 1,
-        dislike_movie_count: 1,
-        //save
-        save: 1,
-        save_count: 1,
-        //future list
-        future_list: 1,
-        future_list_count: 1,
-    }),
-    high: Object.freeze({
-        like_movie: 1,
-        like_movie_count: 1,
-        dislike_movie: 1,
-        dislike_movie_count: 1,
-        //save
-        save: 1,
-        save_count: 1,
-        //future list
-        future_list: 1,
-        future_list_count: 1,
-        //--- high only fields
-        //follow
-        follow_movie: 1,
-        follow_movie_count: 1,
-        //others
-        dropped: 1,
-        dropped_count: 1,
-        finished: 1,
-        finished_count: 1,
-        score: 1,
-        score_count: 1,
-    })
-});
 
 export const dataLevelConfig = Object.freeze({
     dlink: Object.freeze({
@@ -183,7 +113,6 @@ export const dataLevelConfig = Object.freeze({
         rawTitle: 1,
         rating: 1,
         latestData: 1,
-        userStats: userStats_projection.low,
     }),
     telbot: Object.freeze({
         rawTitle: 1,
@@ -200,8 +129,6 @@ export const dataLevelConfig = Object.freeze({
         latestData: 1,
         duration: 1,
         releaseDay: 1,
-        actorsAndCharacters: 1,
-        staff: 1,
         seasonEpisode: 1,
         insert_date: 1,
         update_date: 1,
@@ -218,7 +145,6 @@ export const dataLevelConfig = Object.freeze({
         alternateTitles: 1,
         rating: 1,
         summary: 1,
-        userStats: userStats_projection.medium,
         genres: 1,
         trailers: 1,
         trailerDate: 1,

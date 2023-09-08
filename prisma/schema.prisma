@@ -31,18 +31,14 @@ model User {
   downloadLinksSettings   DownloadLinksSettings?
   activeSessions          ActiveSession[]
   computedFavoriteGenres  ComputedFavoriteGenres[]
-  dislikeStaff            DislikeStaff[]
-  likeStaff               LikeStaff[]
+  likeDislikeStaff        LikeDislikeStaff[]
   followStaff             FollowStaff[]
   favoriteCharacters      FavoriteCharacter[]
-  likeCharacter           LikeCharacter[]
-  dislikeCharacter        DislikeCharacter[]
-  favoriteMovies          FavoriteMovie[]
+  likeDislikeCharacter    LikeDislikeCharacter[]
   watchListMovies         WatchListMovie[]
   watchedMovies           WatchedMovie[]
-  watchingMovies          WatchingMovie[]
-  likeMovie               LikeMovie[]
-  dislikeMovie            DislikeMovie[]
+  followMovies            FollowMovie[]
+  likeDislikeMovies       LikeDislikeMovie[]
   /// Could not determine type: the field only had null or empty values in the sample set.
   friends                 Json?
 }
@@ -125,62 +121,110 @@ model ComputedFavoriteGenres {
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
-model LikeStaff {
-  userId  Int     @id
-  staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  staff   Staff[]
+model LikeDislikeStaff {
+  type    likeDislike
+  date    DateTime
+  staffId Int
+  staff   Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId  Int
+  user    User        @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, staffId])
-}
-
-model DislikeStaff {
-  userId  Int     @id
-  staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  staff   Staff[]
-
-  @@unique([userId, staffId])
+  @@id([userId, staffId])
 }
 
 model FollowStaff {
-  userId  Int     @id
-  staffId Int     @unique
-  user    User    @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  staff   Staff[]
+  date    DateTime
+  staffId Int
+  staff   Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId  Int
+  user    User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, staffId])
+  @@id([userId, staffId])
 }
 
 model Staff {
-  id               Int               @id @unique @default(autoincrement())
-  about            String
-  age              Int
-  birthday         String
-  country          String
-  staffCredits     StaffCredit[]
-  characterCredits CharacterCredit[]
-  deathday         String
-  eyeColor         String
-  gender           String
-  hairColor        String
-  height           String
-  imageData        CastImage?
-  insert_date      DateTime
-  jikanPersonID    Int
-  name             String
-  originalImages   String[]
-  rawName          String
-  tvmazePersonID   Int
-  update_date      DateTime
-  dislike_count    Int
-  follow_count     Int
-  like_count       Int
-  weight           String
+  id             Int      @id @unique @default(autoincrement())
+  name           String   @unique
+  rawName        String
+  tvmazePersonID Int      @default(0)
+  jikanPersonID  Int      @default(0)
+  gender         String   @default("")
+  originalImages String[] @default([])
+  insert_date    DateTime @default(now())
+  update_date    DateTime @default(now())
+  about          String   @default("")
+  age            Int      @default(0)
+  birthday       String   @default("")
+  country        String   @default("")
+  deathday       String   @default("")
+  eyeColor       String   @default("")
+  hairColor      String   @default("")
+  height         String   @default("")
+  weight         String   @default("")
+  likes_count    Int      @default(0)
+  dislikes_count Int      @default(0)
+  follow_count   Int      @default(0)
 
-  likeStaff    LikeStaff    @relation(fields: [id], references: [staffId], onDelete: NoAction, onUpdate: NoAction, map: "likeStaff")
-  dislikeStaff DislikeStaff @relation(fields: [id], references: [staffId], onDelete: NoAction, onUpdate: NoAction, map: "dislikeStaff")
-  followStaff  FollowStaff  @relation(fields: [id], references: [staffId], onDelete: NoAction, onUpdate: NoAction, map: "followStaff")
+  imageData        CastImage?
+  credits          Credit[]
+  likeDislikeStaff LikeDislikeStaff[]
+  followStaff      FollowStaff[]
+
+  @@index([name, rawName])
+}
+
+// ----------------------------------------------------------------
+
+model LikeDislikeCharacter {
+  type        likeDislike
+  date        DateTime
+  characterId Int
+  character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId      Int
+  user        User        @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, characterId])
+}
+
+model FavoriteCharacter {
+  date        DateTime
+  characterId Int
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, characterId])
+}
+
+model Character {
+  id             Int      @id @unique @default(autoincrement())
+  name           String   @unique
+  rawName        String
+  tvmazePersonID Int      @default(0)
+  jikanPersonID  Int      @default(0)
+  gender         String   @default("")
+  originalImages String[] @default([])
+  insert_date    DateTime @default(now())
+  update_date    DateTime @default(now())
+  about          String   @default("")
+  age            Int      @default(0)
+  birthday       String   @default("")
+  country        String   @default("")
+  deathday       String   @default("")
+  eyeColor       String   @default("")
+  hairColor      String   @default("")
+  height         String   @default("")
+  weight         String   @default("")
+  likes_count    Int      @default(0)
+  dislikes_count Int      @default(0)
+  favorite_count Int      @default(0)
+
+  imageData            CastImage?
+  credits              Credit[]
+  likeDislikeCharacter LikeDislikeCharacter[]
+  favoriteCharacter    FavoriteCharacter[]
+
+  @@index([name, rawName])
 }
 
 model CastImage {
@@ -188,198 +232,121 @@ model CastImage {
   originalUrl  String
   size         Int
   thumbnail    String
-  url          String
+  url          String     @unique
   vpnStatus    String
-  id           Int       @id
-  staff        Staff     @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "staff")
-  character    Character @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "character")
+  staffId      Int?       @unique
+  characterId  Int?       @unique
+  staff        Staff?     @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  character    Character? @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model StaffCredit {
-  actorId     Int
-  characterId Int
-  movieId     Int
-  positions   String[]
+model Credit {
+  id             Int      @id @unique @default(autoincrement())
+  movieId        String
+  staffId        Int?
+  characterId    Int?
+  actorPositions String[]
+  characterRole  String
 
-  staff     Staff     @relation(fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "staff")
-  character Character @relation(fields: [characterId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "character")
-  movie     Movie     @relation(fields: [movieId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "movie")
+  movie     Movie      @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade, map: "movie")
+  staff     Staff?     @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "staff")
+  character Character? @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "character")
 
-  @@unique([actorId, characterId, movieId])
-}
-
-// ----------------------------------------------------------------
-
-model FavoriteCharacter {
-  userId      Int         @id
-  characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  characters  Character[]
-
-  @@unique([userId, characterId])
-}
-
-model LikeCharacter {
-  userId      Int         @id
-  characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  characters  Character[]
-
-  @@unique([userId, characterId])
-}
-
-model DislikeCharacter {
-  userId      Int         @id
-  characterId Int         @unique
-  user        User        @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  characters  Character[]
-
-  @@unique([userId, characterId])
-}
-
-model Character {
-  id               Int               @id @unique @default(autoincrement())
-  about            String
-  age              Int
-  birthday         String
-  country          String
-  staffCredits     StaffCredit[]
-  characterCredits CharacterCredit[]
-  deathday         String
-  eyeColor         String
-  gender           String
-  hairColor        String
-  height           String
-  imageData        CastImage?
-  insert_date      DateTime
-  jikanPersonID    Int
-  name             String
-  originalImages   String[]
-  rawName          String
-  tvmazePersonID   Int
-  update_date      DateTime
-  like_count       Int
-  dislike_count    Int
-  weight           String
-
-  favoriteCharacter FavoriteCharacter @relation(fields: [id], references: [characterId], onDelete: NoAction, onUpdate: NoAction, map: "favoriteCharacter")
-  likeCharacter     LikeCharacter     @relation(fields: [id], references: [characterId], onDelete: NoAction, onUpdate: NoAction, map: "likeCharacter")
-  dislikeCharacter  DislikeCharacter  @relation(fields: [id], references: [characterId], onDelete: NoAction, onUpdate: NoAction, map: "dislikeCharacter")
-}
-
-model CharacterCredit {
-  actorId     Int
-  characterId Int
-  movieId     Int
-  role        String
-
-  staff     Staff     @relation(fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "staff")
-  character Character @relation(fields: [characterId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "character")
-  movie     Movie     @relation(fields: [movieId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "movie")
-
-  @@unique([actorId, characterId, movieId])
+  @@unique([movieId, staffId, characterId, actorPositions])
 }
 
 // ----------------------------------------------------------------
+// ----------------------------------------------------------------
 
-model FavoriteMovie {
-  userId  Int      @id
-  movieId Int      @unique
+model LikeDislikeMovie {
+  type    likeDislike
   date    DateTime
-  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies  Movie[]
+  movieId String
+  movie   Movie       @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId  Int
+  user    User        @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, movieId])
-}
-
-model WatchListMovie {
-  userId  Int      @id
-  movieId Int      @unique
-  date    DateTime
-  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies  Movie[]
-
-  @@unique([userId, movieId])
+  @@id([userId, movieId])
+  @@index([movieId, userId])
 }
 
 model WatchedMovie {
-  userId    Int      @id
-  movieId   Int      @unique
-  score     Int      @default(-1)
-  dropped   Boolean  @default(false)
-  droppDate DateTime
-  date      DateTime
-  user      User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies    Movie[]
+  score         Float    @default(0)
+  watch_season  Int      @default(0)
+  watch_episode Int      @default(0)
+  dropped       Boolean  @default(false)
+  favorite      Boolean  @default(false)
+  startDate     DateTime
+  date          DateTime
+  movieId       String
+  movie         Movie    @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId        Int
+  user          User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, movieId])
+  @@id([userId, movieId])
+  @@index([movieId, userId])
 }
 
-model WatchingMovie {
-  userId  Int      @id
-  movieId Int      @unique
-  date    DateTime
-  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies  Movie[]
+model FollowMovie {
+  score         Float    @default(0)
+  watch_season  Int      @default(0)
+  watch_episode Int      @default(0)
+  date          DateTime
+  movieId       String
+  movie         Movie    @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId        Int
+  user          User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, movieId])
+  @@id([userId, movieId])
+  @@index([movieId, userId])
 }
 
-model LikeMovie {
-  userId  Int      @id
-  movieId Int      @unique
+model WatchListMovie {
+  score   Float    @default(0)
   date    DateTime
-  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies  Movie[]
+  movieId String
+  movie   Movie    @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId  Int
+  user    User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([userId, movieId])
-}
-
-model DislikeMovie {
-  userId  Int      @id
-  movieId Int      @unique
-  date    DateTime
-  user    User     @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  movies  Movie[]
-
-  @@unique([userId, movieId])
+  @@id([userId, movieId])
+  @@index([movieId, userId])
 }
 
 model RelatedMovie {
-  movieId      Int
-  relatedId    Int
+  movieId      String
+  relatedId    String
   relation     String
-  movie        Movie  @relation(fields: [movieId], references: [id])
+  movie        Movie  @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
   // Self-referencing relation to represent related movies
-  relatedMovie Movie? @relation(fields: [relatedId], references: [id], name: "relatedMovies")
+  relatedMovie Movie? @relation(fields: [relatedId], references: [movieId], onDelete: Cascade, onUpdate: Cascade, name: "relatedMovies")
 
   @@unique([movieId, relatedId])
 }
 
 model Movie {
-  id                Int               @id @unique
-  title             String
-  rawTitle          String
-  type              String
-  year              String
-  dislike_count     Int
-  dropped_count     Int
-  finished_count    Int
-  follow_count      Int
-  future_list_count Int
-  like_count        Int
-  save_count        Int
-  score_count       Int
-  staffCredits      StaffCredit[]
-  characterCredits  CharacterCredit[]
-  favoriteMovie     FavoriteMovie     @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "favoriteMovie")
-  watchListMovie    WatchListMovie    @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "watchListMovie")
-  watchedMovie      WatchedMovie      @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "watchedMovie")
-  watchingMovie     WatchingMovie     @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "watchingMovie")
-  likeMovie         LikeMovie         @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "likeMovie")
-  dislikeMovie      DislikeMovie      @relation(fields: [id], references: [movieId], onDelete: NoAction, onUpdate: NoAction, map: "dislikeMovie")
+  movieId         String @id @unique
+  likes_count     Int    @default(0)
+  dislikes_count  Int    @default(0)
+  favorite_count  Int    @default(0)
+  dropped_count   Int    @default(0)
+  finished_count  Int    @default(0)
+  follow_count    Int    @default(0)
+  watchlist_count Int    @default(0)
+  continue_count  Int    @default(0)
+
+  credits           Credit[]
+  watchListMovies   WatchListMovie[]
+  watchedMovies     WatchedMovie[]
+  followMovies      FollowMovie[]
+  likeDislikeMovies LikeDislikeMovie[]
   relatedMovies     RelatedMovie[]
-  relatedMovies2    RelatedMovie[]    @relation("relatedMovies")
+  relatedMovies2    RelatedMovie[]     @relation("relatedMovies")
 }
 
 // ----------------------------------------------------------------
+
+enum likeDislike {
+  like
+  dislike
+}

@@ -13,7 +13,7 @@
 //todo : 39. better emails
 //todo : 44. telegramBot: add features that exist in adminPanel
 //todo : 45. send warnings and errors to admin with telegramBot
-//todo : 46. add more staff and characters
+//todo : 46. add more staff and character
 //todo : 47. add landscape posters for movies
 //todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
 //todo : 52. change the way of data update to dont change original data object
@@ -41,7 +41,7 @@
 //todo : 127. add schema validator
 //todo : 128. add schema for models and add related methods to it
 //todo : 130. add new sources
-//todo : 131. add personality type to user data, and api to find same characters
+//todo : 131. add personality type to user data, and api to find same character
 //todo : 133. add feature: 'watched', 'watching', 'want to watch', 'dropped' to movies
 //todo : 134. add feature: upload fanArt
 //todo : 135. check fastify

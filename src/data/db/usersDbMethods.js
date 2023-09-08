@@ -79,7 +79,13 @@ export async function getUserProfile(userId, refreshToken) {
                         lastUseDate: true,
                     }
                 },
-                computedFavoriteGenres: true,
+                computedFavoriteGenres: {
+                    select: {
+                        genre: true,
+                        count: true,
+                        percent: true,
+                    }
+                },
                 ComputedStatsLastUpdate: true,
                 movieSettings: true,
                 downloadLinksSettings: true,

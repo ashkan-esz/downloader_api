@@ -1,4 +1,5 @@
 import {body, param, query, validationResult} from 'express-validator';
+import {statTypes} from "../../data/db/userStatsDbMethods.js";
 
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
@@ -8,8 +9,6 @@ const sortBases = [
     'animeseasonnow', 'animeseasonupcoming',
     'comingsoon', 'intheaters', 'boxoffice',
     'top', 'popular'];
-const statTypes = ['like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character',
-    'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score'];
 
 const settingNames = ['movie', 'notification', 'downloadLinks'];
 const movieSettingskeys = ['includeAnime', 'includeHentai'];
@@ -18,13 +17,18 @@ const notificationSettingskeys = [
     'followMovie', 'followMovie_betterQuality', 'followMovie_subtitle',
     'futureList', 'futureList_serialSeasonEnd', 'futureList_subtitle', 'finishedList_spinOffSequel'
 ];
-const staffOrCharacters = ['staff', 'characters'];
+const staffOrCharacter = ['staff', 'character'];
 const moviesRequestNames = ['news', 'updates', 'newsandupdates'];
 
 const validations = Object.freeze({
     id: param('id')
         .trim()
-        .isMongoId().withMessage('Invalid parameter id :: MongoId'),
+        .isString().withMessage('Invalid parameter id :: String'),
+
+    id_int: param('id')
+        .trim()
+        .isInt().withMessage('Invalid parameter id_int :: Integer')
+        .toInt(),
 
     types: param('types')
         .customSanitizer(value => {
@@ -125,9 +129,25 @@ const validations = Object.freeze({
         .trim().toLowerCase()
         .isIn(sortBases).withMessage(`Invalid parameter sortBase :: (${sortBases.join('|')})`),
 
+    statType_likeDislike: param('statType')
+        .trim().toLowerCase()
+        .isIn(statTypes.likeDislike).withMessage(`Invalid parameter statType :: (${statTypes.likeDislike.join('|')})`),
+
+    statType_followStaff: param('statType')
+        .trim().toLowerCase()
+        .isIn(statTypes.followStaff).withMessage(`Invalid parameter statType :: (${statTypes.followStaff.join('|')})`),
+
     statType: param('statType')
         .trim().toLowerCase()
-        .isIn(statTypes).withMessage(`Invalid parameter statType :: (${statTypes.join('|')})`),
+        .isIn(statTypes.all).withMessage(`Invalid parameter statType :: (${statTypes.all.join('|')})`),
+
+    stat_list_type: param('stat_list_type')
+        .trim().toLowerCase()
+        .isIn(statTypes.withScore).withMessage(`Invalid parameter stat_list_type :: (${statTypes.withScore.join('|')})`),
+
+    stat_list_type2: param('stat_list_type')
+        .trim().toLowerCase()
+        .isIn(['finish_movie', 'follow_movie']).withMessage(`Invalid parameter stat_list_type :: (${['finish_movie', 'follow_movie'].join('|')})`),
 
     title: param('title')
         .isString().withMessage('Invalid parameter title :: String')
@@ -218,6 +238,37 @@ const validations = Object.freeze({
                 return value;
             }
         }),
+
+    score: param('score')
+        .isFloat({min: 0, max: 10}).withMessage('Invalid parameter score :: [0-10]')
+        .toFloat(),
+
+    score_query: query('score')
+        .customSanitizer(value => {
+            return value ? Number(value) : 0;
+        })
+        .isFloat({min: 0, max: 10}).withMessage('Invalid parameter score :: [0-10]')
+        .toFloat(),
+
+    watch_season: param('watch_season')
+        .isInt({min: 0}).withMessage('Invalid parameter watch_season :: Integer >= 0')
+        .toInt(),
+
+    watch_episode: param('watch_episode')
+        .isInt({min: 0}).withMessage('Invalid parameter watch_episode :: Integer >= 0')
+        .toInt(),
+
+    watch_season_query: query('watch_season')
+        .customSanitizer(value => {
+            return value ? Number(value) : 0;
+        })
+        .isInt({min: 0}).withMessage('Invalid parameter watch_season :: Integer >= 0'),
+
+    watch_episode_query: query('watch_episode')
+        .customSanitizer(value => {
+            return value ? Number(value) : 0;
+        })
+        .isInt({min: 0}).withMessage('Invalid parameter watch_episode :: Integer >= 0'),
 
     genres_query: query('genres')
         .customSanitizer(value => {
@@ -343,7 +394,7 @@ const validations = Object.freeze({
 
     //-----------------------------------
     //-----------------------------------
-    //----- Staff/Characters filters-----
+    //----- Staff/Character filters------
 
     name_query: query('name')
         .customSanitizer(value => {
@@ -396,9 +447,9 @@ const validations = Object.freeze({
             }
         }),
 
-    staffOrCharacters: param('staffOrCharacters')
+    staffOrCharacter: param('staffOrCharacter')
         .trim().toLowerCase()
-        .isIn(staffOrCharacters).withMessage(`Invalid parameter staffOrCharacters :: (${staffOrCharacters.join('|')})`),
+        .isIn(staffOrCharacter).withMessage(`Invalid parameter staffOrCharacter :: (${staffOrCharacter.join('|')})`),
 
     //-----------------------------------
     //-----------------------------------
@@ -428,6 +479,22 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter remove :: (true|false)')
         .toBoolean(),
 
+    favorite: query('favorite')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter favorite :: (true|false)')
+        .toBoolean(),
+
+    favorite_param: param('favorite')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter favorite :: (true|false)')
+        .toBoolean(),
+
     followedOnly: query('followedOnly')
         .trim()
         .customSanitizer(value => {
@@ -443,6 +510,22 @@ const validations = Object.freeze({
         })
         .isBoolean().withMessage('Invalid parameter dontUpdateServerDate :: (true|false)')
         .toBoolean(),
+
+    embedStaffAndCharacter: query('embedStaffAndCharacter')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter embedStaffAndCharacter :: (true|false)')
+        .toBoolean(),
+
+    creditsCount: query('creditsCount')
+        .trim()
+        .customSanitizer(value => {
+            return value || 0
+        })
+        .isInt({min: 0, max: 48}).withMessage('Invalid parameter creditsCount :: Integer(min: 0, max:48)')
+        .toInt(),
 
     //-----------------------------
     //-----------------------------

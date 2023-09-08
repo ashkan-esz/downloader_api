@@ -1,5 +1,6 @@
 import getCollection from "../mongoDB.js";
 import * as usersDbMethods from "./usersDbMethods.js";
+import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
 //todo : npm install express-mongo-sanitize
@@ -89,32 +90,6 @@ export async function searchForAnimeRelatedTitlesByJikanIDDB(jikanID) {
     }
 }
 
-export async function searchStaffAndCharactersDB(collectionName, searchName, tvmazePersonID, jikanPersonID) {
-    try {
-        let collection = await getCollection(collectionName);
-        return await collection.findOne({
-            name: searchName,
-            $or: [
-                {
-                    $and: [
-                        {tvmazePersonID: {$ne: 0}},
-                        {tvmazePersonID: tvmazePersonID}
-                    ]
-                },
-                {
-                    $and: [
-                        {jikanPersonID: {$ne: 0}},
-                        {jikanPersonID: jikanPersonID}
-                    ]
-                },
-            ],
-        });
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
 //-----------------------------------
 //-----------------------------------
 
@@ -182,6 +157,15 @@ export async function insertToDB(collectionName, dataToInsert) {
     try {
         let collection = await getCollection(collectionName);
         let result = await collection.insertOne(dataToInsert);
+        try {
+            await prisma.movie.create({
+                data: {
+                    movieId: result.insertedId,
+                }
+            });
+        } catch (error2) {
+            saveError(error2);
+        }
         return result.insertedId;
     } catch (error) {
         saveError(error);
@@ -341,7 +325,6 @@ export async function getDuplicateTitleInsertion(sourceName, pageLink) {
                     count: {"$sum": 1},
                     insert_dates: {$push: "$insert_date"},
                     ids: {$push: "$_id"},
-                    userStats: {$push: "$userStats"},
                 }
             },
             {
@@ -360,7 +343,6 @@ export async function getDuplicateTitleInsertion(sourceName, pageLink) {
                     count: 1,
                     insert_dates: 1,
                     ids: 1,
-                    userStats: 1,
                 }
             }
         ]).toArray();

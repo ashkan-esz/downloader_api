@@ -211,40 +211,41 @@ export async function handleDuplicateTitles(res) {
     return counter;
 }
 
-export async function handleRemovedMoviesStaffOrCharacters(staffOrCharacters) {
-    //staffOrCharacters values: staff | characters
-    let moviesCollection = await getCollection('movies');
-    let staffOrCharactersCollection = await getCollection(staffOrCharacters);
-
-    let res = await staffOrCharactersCollection.find({}, {
-        projection: {
-            'credits.movieID': 1,
-        }
-    }).toArray();
-
-    let temp = res.map(item => item.credits.map(x => x.movieID.toString())).flat(1);
-    temp = removeDuplicateElements(temp);
-    temp = temp.map(item => new mongodb.ObjectId(item));
-
-    let nullCounter = 0;
-    const promiseQueue = new PQueue({concurrency: 30});
-    for (let i = 0; i < temp.length; i++) {
-        promiseQueue.add(() => {
-            moviesCollection.findOne({_id: temp[i]}, {projection: {title: 1}}).then(async movie => {
-                if (movie === null) {
-                    nullCounter++;
-                    await staffOrCharactersCollection.updateMany({
-                        'credits.movieID': temp[i],
-                    }, {
-                        $pull: {
-                            credits: {movieID: temp[i]},
-                        }
-                    });
-                }
-            })
-        });
-        await promiseQueue.onSizeLessThan(300);
-    }
-    await promiseQueue.onEmpty();
-    await promiseQueue.onIdle();
+export async function handleRemovedMoviesStaffOrCharacter(staffOrCharacter) {
+    // // check / refactor
+    // //staffOrCharacter values: staff | character
+    // let moviesCollection = await getCollection('movies');
+    // let staffOrCharacterCollection = await getCollection(staffOrCharacter);
+    //
+    // let res = await staffOrCharacterCollection.find({}, {
+    //     projection: {
+    //         'credits.movieID': 1,
+    //     }
+    // }).toArray();
+    //
+    // let temp = res.map(item => item.credits.map(x => x.movieID.toString())).flat(1);
+    // temp = removeDuplicateElements(temp);
+    // temp = temp.map(item => new mongodb.ObjectId(item));
+    //
+    // let nullCounter = 0;
+    // const promiseQueue = new PQueue({concurrency: 30});
+    // for (let i = 0; i < temp.length; i++) {
+    //     promiseQueue.add(() => {
+    //         moviesCollection.findOne({_id: temp[i]}, {projection: {title: 1}}).then(async movie => {
+    //             if (movie === null) {
+    //                 nullCounter++;
+    //                 await staffOrCharacterCollection.updateMany({
+    //                     'credits.movieID': temp[i],
+    //                 }, {
+    //                     $pull: {
+    //                         credits: {movieID: temp[i]},
+    //                     }
+    //                 });
+    //             }
+    //         })
+    //     });
+    //     await promiseQueue.onSizeLessThan(300);
+    // }
+    // await promiseQueue.onEmpty();
+    // await promiseQueue.onIdle();
 }

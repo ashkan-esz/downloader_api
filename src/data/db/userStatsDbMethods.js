@@ -1,174 +1,1487 @@
-import mongodb from "mongodb";
-import {LRUCache} from 'lru-cache';
-import getCollection, {getSession} from "../mongoDB.js";
-import * as moviesDbMethods from "./moviesDbMethods.js";
-import * as lookupDbMethods from "./lookupDbMethods.js";
+import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
-import {userStats} from "../../models/movie.js";
-import {userStats_character} from "../../models/character.js";
-import {userStats_staff} from "../../models/person.js";
 
-const cache = new LRUCache({
-    max: 500,
-    maxSize: 5000,
-    sizeCalculation: (value, key) => {
-        return 1
-    },
+
+export const statTypes = Object.freeze({
+    likeDislike: Object.freeze([
+        'like_movie', 'dislike_movie',
+        'like_staff', 'dislike_staff',
+        'like_character', 'dislike_character',
+    ]),
+    followStaff: Object.freeze([
+        'follow_staff', 'favorite_character',
+    ]),
+    movies: Object.freeze([
+        'finish_movie', 'follow_movie', 'watchlist_movie',
+    ]),
+    withScore: Object.freeze(['finish_movie', 'follow_movie', 'watchlist_movie']),
+    all: Object.freeze([
+        'like_movie', 'dislike_movie',
+        'like_staff', 'dislike_staff',
+        'like_character', 'dislike_character',
+        'follow_staff', 'favorite_character',
+        'finish_movie', 'follow_movie', 'watchlist_movie',
+    ]),
 });
 
-export function getUserStatsCacheSize() {
-    return {size: cache.size, calculatedSize: cache.calculatedSize, limit: 5000};
-}
+const _transactionRetryDelay = 100;
 
-const bucketSizePerArray = 1000;
-const transactionRetryDelay = 100;
+//-----------------------------------------------------
+//-----------------------------------------------------
 
-//todo : fix/add feature score
-
-export async function handleRemoveUserStatsTransaction(userId, statType, id, retryCounter = 0) {
-    const collectionName = 'userStats';
-    const session = await getSession();
+export async function addUserStats_likeDislike(userId, statType, id, isRemove, retryCounter = 0) {
     try {
-        const transactionOptions = {
-            readPreference: 'primary',
-            readConcern: {level: 'local'},
-            writeConcern: {w: 'majority'}
-        };
+        const type = statType.split('_')[0];
+        const type2 = type === 'like' ? 'dislike' : 'like';
 
-        let internalResult;
+        const counterField = type + 's_count';
+        const counterField2 = type2 + 's_count';
 
-        const transactionResults = await session.withTransaction(async () => {
-
-            let removeResult = await removeUserStatDB(collectionName, userId, statType, id, {session});
-            if (removeResult === 'error' || removeResult === 'notfound') {
-                //error on removing movie from user list
-                internalResult = removeResult;
-                return;
+        if (statType === 'like_staff' || statType === 'dislike_staff') {
+            id = Number(id);
+            if (isRemove) {
+                return await removeUserStats_likeDislike_staff(userId, id, counterField);
             }
-
-            const statCounterField = `${statType}_count`;
-            const relatedCollection = statType.includes('staff') ? 'staff' : statType.includes('character') ? 'characters' : 'movies';
-            let statUpdateResult = await moviesDbMethods.changeUserStatOnRelatedCollection(
-                relatedCollection, id, statCounterField, -1, '', 0, {session}, retryCounter);
-            internalResult = statUpdateResult; //'error' | 'notfound' | 'ok'
-            //'notfound' --> movieId exist in user list but movie doesnt exist
-            if (statUpdateResult === 'error') {
-                //error on reducing movie like/dislike number
-                await session.abortTransaction();
+            return await addUserStats_likeDislike_staff(userId, id, type, counterField, counterField2);
+        } else if (statType === 'like_character' || statType === 'dislike_character') {
+            id = Number(id);
+            if (isRemove) {
+                return await removeUserStats_likeDislike_character(userId, id, counterField);
             }
-
-        }, transactionOptions);
-
-        await session.endSession();
-        if (internalResult === 'error' && retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
-            retryCounter++;
-            internalResult = await handleRemoveUserStatsTransaction(userId, statType, id, retryCounter);
+            return await addUserStats_likeDislike_character(userId, id, type, counterField, counterField2);
+        } else {
+            if (isRemove) {
+                return await removeUserStats_likeDislike_movie(userId, id, counterField);
+            }
+            return await addUserStats_likeDislike_movie(userId, id, type, counterField, counterField2);
         }
-        return internalResult;
     } catch (error) {
-        saveError(error);
-        await session.endSession();
-        if (retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
-            retryCounter++;
-            return await handleRemoveUserStatsTransaction(userId, statType, id, retryCounter);
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
         }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_likeDislike(userId, statType, id, isRemove, retryCounter);
+        }
+        saveError(error);
         return 'error';
     }
 }
 
-export async function handleAddUserStatsTransaction(userId, statType, id, retryCounter = 0) {
-    const collectionName = 'userStats';
-    const session = await getSession();
-    try {
-        const transactionOptions = {
-            readPreference: 'primary',
-            readConcern: {level: 'local'},
-            writeConcern: {w: 'majority'}
-        };
-
-        let internalResult;
-
-        const transactionResults = await session.withTransaction(async () => {
-
-            const statCounterField = `${statType}_count`;
-            let statCounterField2 = ''; //use for transformation between like/dislike
-
-            //handle like/dislike
-            if (statType.includes('like')) {
-                let statType2 = statType.includes('dislike')
-                    ? statType.replace('dislike', 'like')
-                    : statType.replace('like', 'dislike');
-                let checkStatExist = await checkUserStatExist_likeOrDislike(collectionName, userId, id, statType, statType2, {session});
-                if (checkStatExist && checkStatExist[statType] === true) {
-                    //already liked/disliked
-                    internalResult = 'already exist';
-                    return;
-                } else if (checkStatExist && checkStatExist[statType2] === true) {
-                    //fix conflict between prev state (like/dislike)
-                    statCounterField2 = statType2 + '_count';
-                    let removeResult = await removeUserStatDB(collectionName, userId, statType2, id, {session});
-                    if (removeResult === 'error') {
-                        internalResult = 'error';
-                        return;
+async function addUserStats_likeDislike_staff(userId, id, type, counterField, counterField2) {
+    let checkExist = await prisma.likeDislikeStaff.findFirst({
+        where: {
+            userId: userId,
+            staffId: id,
+        },
+        select: {
+            type: true,
+        }
+    });
+    if (checkExist) {
+        if (checkExist.type === type) {
+            return checkExist;
+        } else {
+            //type swap
+            return prisma.likeDislikeStaff.update({
+                where: {
+                    userId_staffId: {
+                        userId: userId,
+                        staffId: id,
+                    },
+                },
+                data: {
+                    type: type,
+                    date: new Date(),
+                    staff: {
+                        update: {
+                            [counterField2]: {decrement: 1},
+                            [counterField]: {increment: 1},
+                        }
                     }
+                },
+                select: {
+                    type: true,
                 }
-            } else {
-                let checkLikeExist = await checkUserStatExist(collectionName, userId, statType, id, {session});
-                if (checkLikeExist) {
-                    //already saved this movie
-                    internalResult = 'already exist';
-                    return;
-                }
-            }
-
-            let result = await addUserStatDB(collectionName, userId, statType, id, {session}, retryCounter);
-            if (result === 'error') {
-                await session.abortTransaction();
-                internalResult = 'error';
-                return;
-            }
-
-            const relatedCollection = statType.includes('staff') ? 'staff' : statType.includes('character') ? 'characters' : 'movies';
-            let statUpdateResult = await moviesDbMethods.changeUserStatOnRelatedCollection(
-                relatedCollection, id, statCounterField, 1, statCounterField2, -1, {session}, retryCounter);
-            //notfound --> movie doesnt exist
-            internalResult = statUpdateResult;
-            if (statUpdateResult === 'error' || statUpdateResult === 'notfound') {
-                await session.abortTransaction();
-            }
-
-        }, transactionOptions);
-
-        await session.endSession();
-        if (internalResult === 'error' && retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
-            retryCounter++;
-            internalResult = await handleAddUserStatsTransaction(userId, statType, id, retryCounter);
+            });
         }
-        return internalResult;
+    } else {
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.likeDislikeStaff.create({
+                    data: {
+                        userId: userId,
+                        staffId: id,
+                        type: type,
+                        date: new Date(),
+                    },
+                    select: {
+                        type: true,
+                    }
+                }),
+                prisma.staff.update({
+                    where: {
+                        id: id,
+                    },
+                    data: {
+                        [counterField]: {increment: 1}
+                    },
+                    select: {
+                        likes_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    }
+}
+
+async function addUserStats_likeDislike_character(userId, id, type, counterField, counterField2) {
+    let checkExist = await prisma.likeDislikeCharacter.findFirst({
+        where: {
+            userId: userId,
+            characterId: id,
+        },
+        select: {
+            type: true,
+        }
+    });
+    if (checkExist) {
+        if (checkExist.type === type) {
+            return checkExist;
+        } else {
+            //type swap
+            return prisma.likeDislikeCharacter.update({
+                where: {
+                    userId_characterId: {
+                        userId: userId,
+                        characterId: id,
+                    },
+                },
+                data: {
+                    type: type,
+                    date: new Date(),
+                    character: {
+                        update: {
+                            [counterField2]: {decrement: 1},
+                            [counterField]: {increment: 1},
+                        }
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            });
+        }
+    } else {
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.likeDislikeCharacter.create({
+                    data: {
+                        userId: userId,
+                        characterId: id,
+                        type: type,
+                        date: new Date(),
+                    },
+                    select: {
+                        type: true,
+                    }
+                }),
+                prisma.character.update({
+                    where: {
+                        id: id,
+                    },
+                    data: {
+                        [counterField]: {increment: 1}
+                    },
+                    select: {
+                        likes_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    }
+}
+
+async function addUserStats_likeDislike_movie(userId, id, type, counterField, counterField2) {
+    let checkExist = await prisma.likeDislikeMovie.findFirst({
+        where: {
+            userId: userId,
+            movieId: id,
+        },
+        select: {
+            type: true,
+        }
+    });
+    if (checkExist) {
+        if (checkExist.type === type) {
+            return checkExist;
+        } else {
+            //type swap
+            return prisma.likeDislikeMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    },
+                },
+                data: {
+                    type: type,
+                    date: new Date(),
+                    movie: {
+                        update: {
+                            [counterField2]: {decrement: 1},
+                            [counterField]: {increment: 1},
+                        },
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            });
+        }
+    } else {
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.likeDislikeMovie.create({
+                    data: {
+                        userId: userId,
+                        movieId: id,
+                        type: type,
+                        date: new Date(),
+                    },
+                    select: {
+                        type: true,
+                    }
+                }),
+                prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        [counterField]: {increment: 1}
+                    },
+                    select: {
+                        likes_count: true,
+                    }
+                }),
+            ]);
+            return res[0];
+        });
+    }
+}
+
+async function removeUserStats_likeDislike_staff(userId, id, counterField) {
+    return prisma.$transaction(async (prisma) => {
+        let res = await Promise.all([
+            prisma.likeDislikeStaff.delete({
+                where: {
+                    userId_staffId: {
+                        userId: userId,
+                        staffId: id,
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            }),
+            prisma.staff.update({
+                where: {
+                    id: id,
+                },
+                data: {
+                    [counterField]: {decrement: 1}
+                },
+                select: {
+                    likes_count: true,
+                }
+            })
+        ]);
+        return res[0];
+    });
+}
+
+async function removeUserStats_likeDislike_character(userId, id, counterField) {
+    return prisma.$transaction(async (prisma) => {
+        let res = await Promise.all([
+            prisma.likeDislikeCharacter.delete({
+                where: {
+                    userId_characterId: {
+                        userId: userId,
+                        characterId: id,
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            }),
+            prisma.character.update({
+                where: {
+                    id: id,
+                },
+                data: {
+                    [counterField]: {decrement: 1}
+                },
+                select: {
+                    likes_count: true,
+                }
+            })
+        ]);
+        return res[0];
+    });
+}
+
+async function removeUserStats_likeDislike_movie(userId, id, counterField) {
+    return prisma.$transaction(async (prisma) => {
+        let res = await Promise.all([
+            prisma.likeDislikeMovie.delete({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            }),
+            prisma.movie.update({
+                where: {
+                    movieId: id,
+                },
+                data: {
+                    [counterField]: {decrement: 1}
+                },
+                select: {
+                    likes_count: true,
+                }
+            }),
+        ]);
+        return res[0];
+    });
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_followStaff(userId, statType, id, isRemove, retryCounter = 0) {
+    try {
+        id = Number(id);
+        if (isRemove) {
+            return await removeUserStats_followStaff(userId, id);
+        }
+
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.followStaff.create({
+                    data: {
+                        userId: userId,
+                        staffId: id,
+                        date: new Date(),
+                    },
+                    select: {
+                        date: true,
+                    }
+                }),
+                prisma.staff.update({
+                    where: {
+                        id: id,
+                    },
+                    data: {
+                        follow_count: {increment: 1}
+                    },
+                    select: {
+                        follow_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+
     } catch (error) {
-        saveError(error);
-        await session.endSession();
-        if (retryCounter < 2) {
-            await new Promise(resolve => setTimeout(resolve, transactionRetryDelay));
-            retryCounter++;
-            return await handleAddUserStatsTransaction(userId, statType, id, retryCounter);
+        if (error.code === 'P2002') {
+            //Unique constraint failed on the fields: (`userId`,`staffId`)
+            return 'ok';
         }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_followStaff(userId, statType, id, isRemove, retryCounter);
+        }
+        saveError(error);
         return 'error';
     }
 }
 
-export async function checkUserStatExist(collectionName, userId, statType, id, opts = {}) {
+async function removeUserStats_followStaff(userId, id) {
+    return prisma.$transaction(async (prisma) => {
+        let res = await Promise.all([
+            prisma.followStaff.delete({
+                where: {
+                    userId_staffId: {
+                        userId: userId,
+                        staffId: id,
+                    },
+                },
+                select: {
+                    type: true,
+                }
+            }),
+            prisma.staff.update({
+                where: {
+                    id: id,
+                },
+                data: {
+                    follow_count: {decrement: 1}
+                },
+                select: {
+                    follow_count: true,
+                }
+            })
+        ]);
+        return res[0];
+    });
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_favoriteCharacter(userId, statType, id, isRemove, retryCounter = 0) {
     try {
-        let collection = await getCollection(collectionName);
-        return await collection.findOne({
-            userId: new mongodb.ObjectId(userId),
-            [statType]: new mongodb.ObjectId(id)
-        }, {
-            projection: {pageNumber: 1},
-            ...opts,
+        id = Number(id);
+        if (isRemove) {
+            return await removeUserStats_favoriteCharacter(userId, id);
+        }
+
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.favoriteCharacter.create({
+                    data: {
+                        userId: userId,
+                        characterId: id,
+                        date: new Date(),
+                    },
+                    select: {
+                        date: true,
+                    }
+                }),
+                prisma.character.update({
+                    where: {
+                        id: id,
+                    },
+                    data: {
+                        favorite_count: {increment: 1}
+                    },
+                    select: {
+                        favorite_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code === 'P2002') {
+            //Unique constraint failed on the fields: (`userId`,`characterId`)
+            return 'ok';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_favoriteCharacter(userId, statType, id, isRemove, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function removeUserStats_favoriteCharacter(userId, id) {
+    return prisma.$transaction(async (prisma) => {
+        let res = await Promise.all([
+            prisma.favoriteCharacter.delete({
+                where: {
+                    userId_characterId: {
+                        userId: userId,
+                        characterId: id,
+                    },
+                },
+                select: {
+                    date: true,
+                }
+            }),
+            prisma.character.update({
+                where: {
+                    id: id,
+                },
+                data: {
+                    favorite_count: {decrement: 1}
+                },
+                select: {
+                    favorite_count: true,
+                }
+            })
+        ]);
+        return res[0];
+    });
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_followMovie(userId, id, watch_season, watch_episode, score, isRemove, retryCounter = 0) {
+    try {
+        if (isRemove) {
+            return await removeUserStats_followMovie(userId, id);
+        }
+
+        let removeWatchlistResult = null;
+        try {
+            removeWatchlistResult = await removeUserStats_watchListMovie(userId, id);
+        } catch (error2) {
+            if (error2.code === 'P2025') {
+                removeWatchlistResult = null;
+            } else {
+                saveError(error2);
+                return 'error';
+            }
+        }
+
+        let checkWatched = null;
+        let isReWatch = false;
+        if (removeWatchlistResult === null) {
+            //doesn't exist in watchList, maybe exist in watched list
+            //integrity: followMovie/watchListMovie/watchedMovie
+            checkWatched = await prisma.watchedMovie.findFirst({
+                where: {
+                    userId: userId,
+                    movieId: id,
+                },
+                select: {
+                    dropped: true,
+                    favorite: true,
+                    score: true,
+                    watch_season: true,
+                    watch_episode: true,
+                }
+            });
+            if (checkWatched) {
+                if (!checkWatched.dropped) {
+                    return 'already watched';
+                }
+                try {
+                    await removeUserStats_finishedMovie(userId, id);
+                    isReWatch = true;
+                } catch (error2) {
+                    saveError(error2);
+                    return 'error';
+                }
+            }
+        }
+
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.followMovie.create({
+                    data: {
+                        userId: userId,
+                        movieId: id,
+                        score: score || (removeWatchlistResult?.score ?? checkWatched?.score ?? 0),
+                        watch_season: watch_season ?? checkWatched?.watch_season ?? 0,
+                        watch_episode: watch_episode ?? checkWatched?.watch_episode ?? 0,
+                        date: new Date(),
+                    },
+                    select: {
+                        date: true,
+                    }
+                }),
+                prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        follow_count: {increment: 1},
+                        continue_count: {increment: isReWatch ? 1 : 0},
+                    },
+                    select: {
+                        follow_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code === 'P2002') {
+            //Unique constraint failed on the fields: (`userId`,`movieId`)
+            return 'ok';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_followMovie(userId, id, score, isRemove, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function removeUserStats_followMovie(userId, id) {
+    try {
+        return prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.followMovie.delete({
+                    where: {
+                        userId_movieId: {
+                            userId: userId,
+                            movieId: id,
+                        },
+                    },
+                    select: {
+                        date: true,
+                        score: true,
+                        watch_season: true,
+                        watch_episode: true,
+                    }
+                }),
+                prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        follow_count: {decrement: 1},
+                    },
+                    select: {
+                        follow_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code !== 'P2025') {
+            saveError(error);
+        }
+        return null;
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_watchListMovie(userId, id, score, isRemove, retryCounter = 0) {
+    try {
+        if (isRemove) {
+            return await removeUserStats_watchListMovie(userId, id);
+        }
+
+        let checkExists = await Promise.allSettled([
+            prisma.watchedMovie.findFirst({
+                where: {
+                    userId: userId,
+                    movieId: id,
+                },
+                select: {
+                    date: true,
+                }
+            }),
+            prisma.followMovie.findFirst({
+                where: {
+                    userId: userId,
+                    movieId: id,
+                },
+                select: {
+                    date: true,
+                }
+            }),
+        ]);
+        if (checkExists[0].value || checkExists[1].value) {
+            return 'already following or watched';
+        }
+
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.watchListMovie.create({
+                    data: {
+                        userId: userId,
+                        movieId: id,
+                        score: score || 0,
+                        date: new Date(),
+                    },
+                    select: {
+                        date: true,
+                    }
+                }),
+                prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        watchlist_count: {increment: 1},
+                    },
+                    select: {
+                        watchlist_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code === 'P2002') {
+            //Unique constraint failed on the fields: (`userId`,`movieId`)
+            return 'ok';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_watchListMovie(userId, id, score, isRemove, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function removeUserStats_watchListMovie(userId, id) {
+    try {
+        return prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.watchListMovie.delete({
+                    where: {
+                        userId_movieId: {
+                            userId: userId,
+                            movieId: id,
+                        },
+                    },
+                    select: {
+                        date: true,
+                        score: true,
+                    }
+                }),
+                await prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        watchlist_count: {decrement: 1},
+                    },
+                    select: {
+                        watchlist_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code !== 'P2025') {
+            saveError(error);
+        }
+        return null;
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_finishedMovie(userId, id, startDate, endDate, score, drop, favorite, isRemove, retryCounter = 0) {
+    try {
+        if (isRemove) {
+            return await removeUserStats_finishedMovie(userId, id);
+        }
+
+        let removeFollowResult = null;
+        try {
+            removeFollowResult = await removeUserStats_followMovie(userId, id);
+        } catch (error2) {
+            if (error2.code === 'P2025') {
+                removeFollowResult = null;
+            } else {
+                saveError(error2);
+                return 'error';
+            }
+        }
+
+        let removeWatchlistResult = null;
+        if (removeFollowResult === null) {
+            //doesn't exist in follow, maybe exist in watchList
+            //integrity: followMovie/watchListMovie/watchedMovie
+            try {
+                removeWatchlistResult = await removeUserStats_watchListMovie(userId, id);
+            } catch (error2) {
+                if (error2.code === 'P2025') {
+                    removeWatchlistResult = null;
+                } else {
+                    saveError(error2);
+                    return 'error';
+                }
+            }
+        }
+
+        let checkExist = await prisma.watchedMovie.findFirst({
+            where: {
+                userId: userId,
+                movieId: id,
+            },
+            select: {
+                dropped: true,
+                favorite: true,
+                score: true,
+            }
+        });
+
+        if (checkExist) {
+            return checkExist;
+        } else {
+            if (startDate) {
+                startDate = new Date(startDate);
+            }
+            if (endDate) {
+                endDate = new Date(endDate);
+            }
+
+            return await prisma.$transaction(async (prisma) => {
+                let res = await Promise.all([
+                    prisma.watchedMovie.create({
+                        data: {
+                            userId: userId,
+                            movieId: id,
+                            startDate: startDate ?? removeFollowResult?.date ?? new Date(),
+                            date: endDate ?? new Date(),
+                            favorite: favorite,
+                            dropped: drop,
+                            score: score || (removeFollowResult?.score ?? removeWatchlistResult?.score ?? 0),
+                            watch_season: removeFollowResult?.watch_season ?? 0,
+                            watch_episode: removeFollowResult?.watch_episode ?? 0,
+                        },
+                        select: {
+                            date: true,
+                            score: true,
+                            favorite: true,
+                            dropped: true,
+                        }
+                    }),
+                    prisma.movie.update({
+                        where: {
+                            movieId: id,
+                        },
+                        data: {
+                            dropped_count: {increment: drop ? 1 : 0},
+                            finished_count: {increment: !drop ? 1 : 0},
+                            favorite_count: {increment: favorite ? 1 : 0},
+                        },
+                        select: {
+                            dropped_count: true,
+                            finished_count: true,
+                            favorite_count: true,
+                        }
+                    })
+                ]);
+                return res[0];
+            });
+        }
+    } catch (error) {
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_finishedMovie(userId, id, startDate, endDate, score, drop, favorite, isRemove, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function removeUserStats_finishedMovie(userId, id) {
+    return prisma.$transaction(async (prisma) => {
+        let deleteResult = await prisma.watchedMovie.delete({
+            where: {
+                userId_movieId: {
+                    userId: userId,
+                    movieId: id,
+                },
+            },
+            select: {
+                dropped: true,
+                favorite: true,
+                score: true,
+            }
+        });
+        let updateResult = await prisma.movie.update({
+            where: {
+                movieId: id,
+            },
+            data: {
+                dropped_count: {decrement: deleteResult.dropped ? 1 : 0},
+                finished_count: {decrement: !deleteResult.dropped ? 1 : 0},
+                favorite_count: {decrement: deleteResult.favorite ? 1 : 0},
+            },
+            select: {
+                dropped_count: true,
+                finished_count: true,
+                favorite_count: true,
+            }
+        });
+
+        return deleteResult;
+    });
+}
+
+export async function addUserStats_handleFavoriteMovie(userId, id, favorite, retryCounter = 0) {
+    try {
+        let checkExist = await prisma.watchedMovie.findFirst({
+            where: {
+                userId: userId,
+                movieId: id,
+            },
+            select: {
+                favorite: true,
+            }
+        });
+
+        if (!checkExist) {
+            //movie must already exist in watchedMovie table
+            return 'notfound';
+        }
+
+        if (checkExist.favorite === favorite) {
+            return 'ok';
+        }
+
+        return await prisma.$transaction(async (prisma) => {
+            let res = await Promise.all([
+                prisma.watchedMovie.update({
+                    where: {
+                        userId_movieId: {
+                            userId: userId,
+                            movieId: id,
+                        }
+                    },
+                    data: {
+                        favorite: favorite,
+                    },
+                    select: {
+                        favorite: true,
+                    }
+                }),
+                prisma.movie.update({
+                    where: {
+                        movieId: id,
+                    },
+                    data: {
+                        favorite_count: {
+                            increment: favorite ? 1 : -1,
+                        },
+                    },
+                    select: {
+                        dropped_count: true,
+                        finished_count: true,
+                        favorite_count: true,
+                    }
+                })
+            ]);
+            return res[0];
+        });
+    } catch (error) {
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_handleFavoriteMovie(userId, id, favorite, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addUserStats_updateScore(userId, id, score, stat_list_type, retryCounter = 0) {
+    try {
+        if (stat_list_type === 'finish_movie') {
+            return await prisma.watchedMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    }
+                },
+                data: {
+                    score: score,
+                },
+                select: {
+                    date: true,
+                }
+            });
+        } else if (stat_list_type === 'follow_movie') {
+            return await prisma.followMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    }
+                },
+                data: {
+                    score: score,
+                },
+                select: {
+                    date: true,
+                }
+            });
+        } else if (stat_list_type === 'watchlist_movie') {
+            return await prisma.watchListMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    }
+                },
+                data: {
+                    score: score,
+                },
+                select: {
+                    date: true,
+                }
+            });
+        }
+    } catch (error) {
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_updateScore(userId, id, score, stat_list_type, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function addUserStats_updateWatchState(userId, id, watch_season, watch_episode, stat_list_type, retryCounter = 0) {
+    try {
+        if (stat_list_type === 'finish_movie') {
+            return await prisma.watchedMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    }
+                },
+                data: {
+                    watch_season: watch_season,
+                    watch_episode: watch_episode,
+                },
+                select: {
+                    date: true,
+                }
+            });
+        } else if (stat_list_type === 'follow_movie') {
+            return await prisma.followMovie.update({
+                where: {
+                    userId_movieId: {
+                        userId: userId,
+                        movieId: id,
+                    }
+                },
+                data: {
+                    watch_season: watch_season,
+                    watch_episode: watch_episode,
+                },
+                select: {
+                    date: true,
+                }
+            });
+        }
+    } catch (error) {
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        if (retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
+            retryCounter++;
+            return await addUserStats_updateWatchState(userId, id, watch_season, watch_episode, stat_list_type, retryCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function getUserStatsListDB(userId, statType, skip, limit) {
+    try {
+        if (statType === 'like_staff' || statType === 'dislike_staff') {
+            const type = statType === 'like_staff' ? 'like' : 'dislike';
+            return await getUserStatsList_likeDislikedStaff(userId, type, skip, limit);
+        }
+        if (statType === 'follow_staff') {
+            return await getUserStatsList_followStaff(userId, skip, limit);
+        }
+
+        if (statType === 'like_character' || statType === 'dislike_character') {
+            const type = statType === 'like_character' ? 'like' : 'dislike';
+            return await getUserStatsList_likeDislikedCharacter(userId, type, skip, limit);
+        }
+        if (statType === 'favorite_character') {
+            return await getUserStatsList_favoriteCharacter(userId, skip, limit);
+        }
+
+        if (statType === 'like_movie' || statType === 'dislike_movie') {
+            const type = statType === 'like_movie' ? 'like' : 'dislike';
+            return await getUserStatsList_likeDislikedMovies(userId, type, skip, limit);
+        }
+        if (statType === 'finish_movie') {
+            return await getUserStatsList_finishedMovies(userId, skip, limit);
+        }
+        if (statType === 'watchlist_movie') {
+            return await getUserStatsList_watchlistMovies(userId, skip, limit);
+        }
+        if (statType === 'follow_movie') {
+            return await getUserStatsList_followMovies(userId, skip, limit);
+        }
+        return [];
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit) {
+    try {
+        return await prisma.likeDislikeStaff.findMany({
+            where: {
+                userId: userId,
+                type: type,
+            },
+            skip: skip,
+            take: limit,
+            include: {
+                staff: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rawName: true,
+                        gender: true,
+                        likes_count: true,
+                        dislikes_count: true,
+                        follow_count: true,
+                        followStaff: {
+                            where: {
+                                userId: userId,
+                            },
+                            select: {
+                                date: true,
+                            }
+                        },
+                        imageData: {
+                            select: {
+                                size: true,
+                                url: true,
+                                originalUrl: true,
+                                thumbnail: true,
+                                vpnStatus: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {date: 'desc'},
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_followStaff(userId, skip, limit) {
+    try {
+        return await prisma.followStaff.findMany({
+            where: {
+                userId: userId,
+            },
+            skip: skip,
+            take: limit,
+            include: {
+                staff: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rawName: true,
+                        gender: true,
+                        likes_count: true,
+                        dislikes_count: true,
+                        follow_count: true,
+                        likeDislikeStaff: {
+                            where: {
+                                userId: userId,
+                            },
+                            select: {
+                                date: true,
+                            }
+                        },
+                        imageData: {
+                            select: {
+                                size: true,
+                                url: true,
+                                originalUrl: true,
+                                thumbnail: true,
+                                vpnStatus: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {date: 'desc'},
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit) {
+    try {
+        return await prisma.likeDislikeCharacter.findMany({
+            where: {
+                userId: userId,
+                type: type,
+            },
+            skip: skip,
+            take: limit,
+            include: {
+                character: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rawName: true,
+                        gender: true,
+                        likes_count: true,
+                        dislikes_count: true,
+                        favorite_count: true,
+                        favoriteCharacter: {
+                            where: {
+                                userId: userId,
+                            },
+                            select: {
+                                date: true,
+                            }
+                        },
+                        imageData: {
+                            select: {
+                                size: true,
+                                url: true,
+                                originalUrl: true,
+                                thumbnail: true,
+                                vpnStatus: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {date: 'desc'},
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_favoriteCharacter(userId, skip, limit) {
+    try {
+        return await prisma.favoriteCharacter.findMany({
+            where: {
+                userId: userId,
+            },
+            skip: skip,
+            take: limit,
+            include: {
+                character: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rawName: true,
+                        gender: true,
+                        likes_count: true,
+                        dislikes_count: true,
+                        favorite_count: true,
+                        likeDislikeCharacter: {
+                            where: {
+                                userId: userId,
+                            },
+                            select: {
+                                date: true,
+                            }
+                        },
+                        imageData: {
+                            select: {
+                                size: true,
+                                url: true,
+                                originalUrl: true,
+                                thumbnail: true,
+                                vpnStatus: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {date: 'desc'},
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit) {
+    try {
+        return await prisma.likeDislikeMovie.findMany({
+            where: {
+                userId: userId,
+                type: type,
+            },
+            skip: skip,
+            take: limit,
+            include: {
+                movie: true,
+            },
+            orderBy: {date: 'desc'},
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_finishedMovies(userId, skip, limit) {
+    try {
+        return await prisma.watchedMovie.findMany(
+            getUserStatsList_movies_query(userId, skip, limit)
+        );
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_followMovies(userId, skip, limit) {
+    try {
+        return await prisma.followMovie.findMany(
+            getUserStatsList_movies_query(userId, skip, limit)
+        );
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+async function getUserStatsList_watchlistMovies(userId, skip, limit) {
+    try {
+        return await prisma.watchListMovie.findMany(
+            getUserStatsList_movies_query(userId, skip, limit)
+        );
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+function getUserStatsList_movies_query(userId, skip, limit) {
+    return ({
+        where: {
+            userId: userId,
+        },
+        skip: skip,
+        take: limit,
+        include: {
+            movie: {
+                include: {
+                    likeDislikeMovies: {
+                        where: {
+                            userId: userId,
+                        },
+                        take: 1,
+                        select: {
+                            type: true,
+                        }
+                    },
+                }
+            },
+        },
+        orderBy: {date: 'desc'},
+    });
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function getMovieFullUserStats(userId, movieId) {
+    try {
+        return await prisma.movie.findFirst({
+            where: {
+                movieId: movieId,
+            },
+            take: 1,
+            include: {
+                likeDislikeMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        type: true,
+                    }
+                },
+                followMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        watch_season: true,
+                        watch_episode: true,
+                        score: true,
+                    }
+                },
+                watchedMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        score: true,
+                        dropped: true,
+                        favorite: true,
+                        watch_season: true,
+                        watch_episode: true,
+                        startDate: true,
+                        date: true,
+                    }
+                },
+                watchListMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        score: true,
+                    }
+                },
+            }
         });
     } catch (error) {
         saveError(error);
@@ -176,372 +1489,72 @@ export async function checkUserStatExist(collectionName, userId, statType, id, o
     }
 }
 
-export async function checkUserStatExist_likeOrDislike(collectionName, userId, id, statType, statType2, opts = {}) {
+export async function getMoviesUserStats_likeDislike(userId, movieIds) {
     try {
-        id = new mongodb.ObjectId(id);
-        let collection = await getCollection(collectionName);
-
-        let aggregationPipeline = [
-            {
-                $match: {
-                    userId: new mongodb.ObjectId(userId),
-                    $or: [
-                        {[statType]: id},
-                        {[statType2]: id}
-                    ]
+        return await prisma.movie.findMany({
+            where: {
+                movieId: {
+                    in: movieIds,
                 }
             },
-            {
-                $limit: 1,
-            },
-            {
-                $addFields: {
-                    [statType]: {$cond: [{$in: [id, `$${statType}`]}, true, false]},
-                    [statType2]: {$cond: [{$in: [id, `$${statType2}`]}, true, false]}
-                }
-            },
-            {
-                $project: {
-                    pageNumber: 1,
-                    [statType]: 1,
-                    [statType2]: 1,
-                }
-            },
-        ];
-
-        let result = await collection.aggregate(aggregationPipeline).toArray();
-        return result.length > 0 ? result[0] : null;
-    } catch (error) {
-        saveError(error);
-        return null;
-    }
-}
-
-export async function addUserStatDB(collectionName, userId, statType, id, opts = {}, retryCounter) {
-    try {
-        let collection = await getCollection(collectionName);
-        const statCounterField = `${statType}_count`;
-        const statCounterFull = `${statType}_full`;
-
-        // case : 992  1000  105  0
-        // full :  T     T    F   F
-        // --> insert on 105
-
-        let firstBucketWithSpace = await getFirstBucketWithSpace(collection, userId, statCounterField, statCounterFull);
-
-        if (firstBucketWithSpace) {
-            let updateField = {};
-            if (firstBucketWithSpace[statCounterField] === bucketSizePerArray - 1) {
-                updateField[statCounterFull] = true;
-            }
-            let updateResult = await collection.updateOne({
-                _id: firstBucketWithSpace._id,
-            }, {
-                $push: {
-                    [statType]: {
-                        $each: [new mongodb.ObjectId(id)],
-                        $position: 0,
+            include: {
+                likeDislikeMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        type: true,
                     }
                 },
-                $inc: {
-                    [statCounterField]: 1,
-                },
-                $set: updateField,
-            }, opts);
-
-            //update cache value
-            const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
-            let cacheResult = cache.get(cacheKey);
-            if (cacheResult) {
-                cacheResult[statCounterField]++;
-                cache.set(cacheKey, cacheResult);
             }
-
-            const cacheKey2 = 'bucketWithSpace' + userId.toString() + statCounterField;
-            let cacheResult2 = cache.get(cacheKey2);
-            if (cacheResult2) {
-                cacheResult2[statCounterField]++;
-                if (cacheResult2[statCounterField] < bucketSizePerArray) {
-                    cache.set(cacheKey2, cacheResult2);
-                } else {
-                    cache.delete(cacheKey2);
-                }
-            }
-
-        } else {
-            //need new bucket
-            let lastBucket = await getLastBucket(collection, userId, statCounterField, opts);
-            let nextBucketNumber = lastBucket ? lastBucket.pageNumber + 1 : 1;
-            const statsObject = createUserStatsObject(userId, nextBucketNumber);
-            statsObject[statType] = [new mongodb.ObjectId(id)];
-            statsObject[statCounterField] = 1;
-            await collection.insertOne(statsObject, opts);
-        }
-        return 'ok';
-    } catch (error) {
-        if (
-            retryCounter !== 0 ||
-            error.message !== 'WriteConflict error: this operation conflicted with another operation. Please retry your operation or multi-document transaction.') {
-            saveError(error);
-        }
-        return 'error';
-    }
-}
-
-export function createUserStatsObject(userId, pageNumber) {
-    return ({
-        userId: new mongodb.ObjectId(userId),
-        pageNumber: pageNumber,
-        //like,dislike
-        like_movie: [],
-        like_movie_count: 0,
-        like_movie_full: false,
-        dislike_movie: [],
-        dislike_movie_count: 0,
-        dislike_movie_full: false,
-        like_staff: [],
-        like_staff_count: 0,
-        like_staff_full: false,
-        dislike_staff: [],
-        dislike_staff_count: 0,
-        dislike_staff_full: false,
-        like_character: [],
-        like_character_count: 0,
-        like_character_full: false,
-        dislike_character: [],
-        dislike_character_count: 0,
-        dislike_character_full: false,
-        //follow
-        follow_movie: [],
-        follow_movie_count: 0,
-        follow_movie_full: false,
-        follow_staff: [],
-        follow_staff_count: 0,
-        follow_staff_full: false,
-        //others
-        save: [],
-        save_count: 0,
-        save_full: false,
-        future_list: [],
-        future_list_count: 0,
-        future_list_full: false,
-        dropped: [],
-        dropped_count: 0,
-        dropped_full: false,
-        finished: [],
-        finished_count: 0,
-        finished_full: false,
-        score: [],
-        score_count: 0,
-        score_full: false,
-    });
-}
-
-export async function removeUserStatDB(collectionName, userId, statType, id, opts = {}) {
-    try {
-        let collection = await getCollection(collectionName);
-        const statCounterField = `${statType}_count`;
-        let updateResult = await collection.updateOne({
-            userId: new mongodb.ObjectId(userId),
-            [statType]: new mongodb.ObjectId(id)
-        }, {
-            $pull: {
-                [statType]: new mongodb.ObjectId(id),
-            },
-            $inc: {
-                [statCounterField]: -1,
-            }
-        }, opts);
-
-        if (updateResult.modifiedCount === 0) {
-            return 'notfound';
-        }
-
-        //update cache value
-        const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
-        let cacheResult = cache.get(cacheKey);
-        if (cacheResult) {
-            cacheResult[statCounterField]--;
-            cache.set(cacheKey, cacheResult);
-        }
-
-        const cacheKey2 = 'bucketWithSpace' + userId.toString() + statCounterField;
-        let cacheResult2 = cache.get(cacheKey2);
-        if (cacheResult2) {
-            cacheResult2[statCounterField]--;
-            cache.set(cacheKey2, cacheResult2);
-        }
-
-        return 'ok';
+        });
     } catch (error) {
         saveError(error);
-        return 'error';
+        return [];
     }
 }
 
-export async function removeUserStatsBucketsAll(userId) {
+export async function getMoviesUserStatsCounts(movieIds) {
     try {
-        const collectionName = 'userStats';
-        let collection = await getCollection(collectionName);
-        let result = await collection.deleteMany({userId: new mongodb.ObjectId(userId)});
-        return result.value;
+        return await prisma.movie.findMany({
+            where: {
+                movieId: {
+                    in: movieIds,
+                }
+            },
+        });
     } catch (error) {
         saveError(error);
-        return 'error';
+        return [];
     }
 }
 
-export async function getUserStatsListDB(userId, statType, skip, limit, projection) {
-    try {
-        const collectionName = 'userStats';
-        let collection = await getCollection(collectionName);
-        const relatedCollection = statType.includes('staff')
-            ? 'staff'
-            : statType.includes('character') ? 'characters' : 'movies';
-        const statCounterField = `${statType}_count`;
+//----------------------------------------------------------------
+//----------------------------------------------------------------
 
-        // 8 7 6 5
-        // 4 3 2 1
-        // ---> 8 7 6 5 4 3 2 1
+export const defaultUserStats = Object.freeze({
+    like: false,
+    dislike: false,
+    favorite: false,
+    dropped: false,
+    finished: false,
+    follow: false,
+    watchlist: false,
+    likes_count: 0,
+    dislikes_count: 0,
+    favorite_count: 0,
+    dropped_count: 0,
+    finished_count: 0,
+    follow_count: 0,
+    watchlist_count: 0,
+    continue_count: 0,
+});
 
-        let lastBucketNumber = 1;
-        let bucketNumberSkip = 0;
-        if (skip > bucketSizePerArray) {
-            let lastBucket = await getLastBucket(collection, userId, statCounterField);
-            if (lastBucket) {
-                lastBucketNumber = lastBucket.pageNumber;
-                let lastBucketItemsCount = lastBucket[statCounterField];
-                skip -= lastBucketItemsCount;
-            }
-            bucketNumberSkip = Math.floor(skip / bucketSizePerArray) + 1;
-            skip = skip % bucketSizePerArray;
-        }
-        let bucketNumberLimit = Math.floor((skip + limit) / bucketSizePerArray) + 1;
-
-        //--------------------------------------
-        let stats;
-        if (statType.includes('staff')) {
-            stats = Object.keys((projection && projection.userStats) || userStats_staff);
-        } else if (statType.includes('character')) {
-            stats = Object.keys((projection && projection.userStats) || userStats_character);
-        } else {
-            stats = Object.keys((projection && projection.userStats) || userStats);
-        }
-        //--------------------------------------
-
-        let aggregationPipeline = [
-            {
-                $match: {
-                    userId: new mongodb.ObjectId(userId),
-                    pageNumber: {$lte: lastBucketNumber}
-                }
-            },
-            {
-                $sort: {
-                    pageNumber: -1
-                }
-            },
-            {
-                $skip: bucketNumberSkip,
-            },
-            {
-                $limit: bucketNumberLimit,
-            },
-            {
-                $unwind: `$${statType}`
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limit,
-            },
-            lookupDbMethods.getLookupOnCustomCollectionStage(relatedCollection, statType, projection),
-            {
-                $addFields: {
-                    data: {$arrayElemAt: ['$data', 0]},
-                }
-            },
-            userStatsList_addFieldsPipeline(stats, statType, '$data._id'),
-            {
-                $replaceRoot: {
-                    newRoot: "$data",
-                }
-            },
-        ];
-
-        return await collection.aggregate(aggregationPipeline).toArray();
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
-export function userStatsList_addFieldsPipeline(stats, statType, id) {
-    let addStatFieldsArray = {
-        $addFields: {}
-    };
-    for (let i = 0; i < stats.length; i++) {
-        let stat = stats[i].replace('_count', '');
-        if (stat === statType) {
-            addStatFieldsArray["$addFields"][`data.userStats.${stat}`] = true;
-        } else {
-            addStatFieldsArray["$addFields"][`data.userStats.${stat}`] = {
-                $cond: [{$in: [id, `$${stat}`]}, true, false]
-            }
-        }
-    }
-    return addStatFieldsArray;
-}
-
-async function getFirstBucketWithSpace(collection, userId, statCounterField, statCounterFull) {
-    const cacheKey = 'bucketWithSpace' + userId.toString() + statCounterField;
-    let cacheResult = cache.get(cacheKey);
-    if (cacheResult) {
-        return cacheResult;
-    }
-
-    let firstBucketWithSpace = await collection.find({
-        // bucket with empty space
-        userId: new mongodb.ObjectId(userId),
-        [statCounterField]: {$lt: bucketSizePerArray},
-        [statCounterFull]: false,
-    }, {
-        projection: {
-            pageNumber: 1,
-            [statCounterField]: 1,
-        }
-    }).sort({pageNumber: 1}).limit(1).toArray();
-
-    firstBucketWithSpace = firstBucketWithSpace[0] ?? null;
-    if (firstBucketWithSpace) {
-        cache.set(cacheKey, firstBucketWithSpace);
-    }
-    return firstBucketWithSpace;
-}
-
-async function getLastBucket(collection, userId, statCounterField, opts = {}) {
-    const cacheKey = 'lastBucket' + userId.toString() + statCounterField;
-    let cacheResult = cache.get(cacheKey);
-    if (cacheResult) {
-        return cacheResult;
-    }
-
-    let result = await collection.find({
-            userId: new mongodb.ObjectId(userId),
-            [statCounterField]: {$ne: 0}
-        },
-        {
-            projection: {pageNumber: 1, [statCounterField]: 1},
-            ...opts
-        })
-        .sort({pageNumber: -1})
-        .limit(1)
-        .toArray();
-
-    result = result[0] ?? null;
-    if (result) {
-        cache.set(cacheKey, result);
-    }
-    return result;
-}
+export const defaultUserStats_extra = Object.freeze({
+    watch_start: '',
+    watch_end: '',
+    watch_season: 0,
+    watch_episode: 0,
+    myScore: 0,
+});

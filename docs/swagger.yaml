@@ -911,6 +911,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -929,6 +930,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -946,6 +948,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -964,6 +967,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -981,6 +985,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -998,6 +1003,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1016,6 +1022,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1033,6 +1040,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1051,6 +1059,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/count'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           description: Ok
@@ -1094,6 +1103,7 @@ paths:
         - $ref: '#/components/parameters/seasons_query'
         - $ref: '#/components/parameters/episodes_query'
         - $ref: '#/components/parameters/qualities_query'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
         - name: embedDownloadLinksConfig
           required: false
           in: query
@@ -1113,7 +1123,8 @@ paths:
       description: Return Staff Data
       operationId: movies-searchStaffById
       parameters:
-        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/id_int'
+        - $ref: '#/components/parameters/creditsCount'
       responses:
         200:
           description: Ok
@@ -1135,7 +1146,8 @@ paths:
       description: Return Character Data
       operationId: movies-searchCharacterById
       parameters:
-        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/id_int'
+        - $ref: '#/components/parameters/creditsCount'
       responses:
         200:
           description: Ok
@@ -1149,43 +1161,6 @@ paths:
                   data:
                     $ref: '#/components/schemas/Character'
 
-  /movies/searchMovieStaffCharacter/{title}/{dataLevel}/{page}:
-    get:
-      tags:
-        - Movies-Search
-      summary: Search All
-      description: idk!!
-      operationId: movies-searchMovieStaffCharacter
-      parameters:
-        - $ref: '#/components/parameters/title'
-        - $ref: '#/components/parameters/dataLevel'
-        - $ref: '#/components/parameters/page'
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      movies:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MovieData'
-                      staff:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Staff'
-                      characters:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Character'
-
   /movies/searchStaffAndCharacter/{dataLevel}/{page}:
     get:
       tags:
@@ -1194,7 +1169,6 @@ paths:
       description: __dataLevel__ can only be on one ['low', 'medium', 'high']
       operationId: movies-searchStaffAndCharacter
       parameters:
-        - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/name_query'
         - $ref: '#/components/parameters/gender_query'
@@ -1202,6 +1176,13 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - name: dataLevel
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'low', 'medium', 'high' ]
+            default: 'low'
       responses:
         200:
           description: Ok
@@ -1232,7 +1213,6 @@ paths:
       description: __dataLevel__ can only be on one ['low', 'medium', 'high']
       operationId: movies-searchStaff
       parameters:
-        - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/name_query'
         - $ref: '#/components/parameters/gender_query'
@@ -1240,6 +1220,13 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - name: dataLevel
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'low', 'medium', 'high' ]
+            default: 'low'
       responses:
         200:
           description: Ok
@@ -1263,7 +1250,6 @@ paths:
       description: __dataLevel__ can only be on one ['low', 'medium', 'high']
       operationId: movies-searchCharacter
       parameters:
-        - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/name_query'
         - $ref: '#/components/parameters/gender_query'
@@ -1271,6 +1257,13 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - name: dataLevel
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'low', 'medium', 'high' ]
+            default: 'low'
       responses:
         200:
           description: Ok
@@ -1297,6 +1290,7 @@ paths:
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/country_query'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
         - name: title
           required: false
           in: query
@@ -1391,6 +1385,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
         - name: genres
           required: true
           in: path
@@ -1402,6 +1397,81 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
+
+  /movies/credits/{id}/{page}:
+    get:
+      tags:
+        - Credits
+      summary: Movie Credits by Movie Id
+      description: Return Movie Credits Data
+      operationId: movies-getCreditsByMovieId
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Credit'
+
+  /movies/staff/credits/{id}/{page}:
+    get:
+      tags:
+        - Credits
+      summary: Staff Credits by Id
+      description: Return Staff Credits Data
+      operationId: movies-getStaffCreditsById
+      parameters:
+        - $ref: '#/components/parameters/id_int'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Credit'
+
+  /movies/characters/credits/{id}/{page}:
+    get:
+      tags:
+        - Credits
+      summary: Character Credits by Id
+      description: Return Character Credits Data
+      operationId: movies-getCharacterCreditsById
+      parameters:
+        - $ref: '#/components/parameters/id_int'
+        - $ref: '#/components/parameters/page'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Credit'
 
   /movies/status/genres:
     get:
@@ -1452,15 +1522,20 @@ paths:
                   data:
                     $ref: '#/components/schemas/MovieSources'
 
-  /movies/addUserStats/{statType}/{id}:
+  /movies/addUserStats/likeOrDislike/{statType}/{id}:
     put:
       tags:
         - Movies-UserStats
-      summary: Add/Remove Movie/Staff/Character From List
+      summary: Add/Remove Movie/Staff/Character Like/Dislike
       description: .
-      operationId: movies-addUserStats
+      operationId: movies-addUserStatsLikeDislike
       parameters:
-        - $ref: '#/components/parameters/statType'
+        - name: statType
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character' ]
         - $ref: '#/components/parameters/id'
         - $ref: '#/components/parameters/remove_query'
       responses:
@@ -1472,6 +1547,296 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
 
+  /movies/addUserStats/followStaff/{statType}/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove Staff/Character follow/favorite
+      description: .
+      operationId: movies-addUserStatsFollowStaff
+      parameters:
+        - name: statType
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'follow_staff', 'favorite_character' ]
+        - $ref: '#/components/parameters/id_int'
+        - $ref: '#/components/parameters/remove_query'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/addUserStats/finish_movie/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove Movie To finished/dropped list
+      description: <p> handle when user finished watching movie/serial or dropped it. also can handle favorite movie/serial<br/>
+          movie/serial should be released before doing this action. <br/>
+          if serial isn't ended, it will considered as dropped <br/>
+        <p/>
+      operationId: movies-addUserStatsFinishMovie
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/remove_query'
+        - $ref: '#/components/parameters/favorite_query'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+          allowEmptyValue: true
+        - name: endDate
+          in: query
+          schema:
+            type: string
+          allowEmptyValue: true
+        - name: score
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          allowEmptyValue: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: Movie didnt released yet
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/finish_movie/{id}/handle_favorite/{favorite}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove Movie To finished/dropped list
+      description: handle favorite movies. it should be already added to finish_movie
+      operationId: movies-addUserStatsFavoriteMovie
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: favorite
+          required: false
+          in: path
+          schema:
+            type: boolean
+            default: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/addUserStats/follow_movie/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove Movie To Follow list
+      description: add serial to list of serials that user follows, only works for serials titles.
+      operationId: movies-addUserStatsFollowMovie
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/remove_query'
+        - name: score
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          allowEmptyValue: true
+        - name: watch_season
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          allowEmptyValue: true
+        - name: watch_episode
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          allowEmptyValue: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: Works for serials only
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/watchlist_movie/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove To Watch list
+      description: add movie/serial to watch list
+      operationId: movies-addUserStatsWatchListMovie
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/remove_query'
+        - name: score
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          allowEmptyValue: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: already following or watched
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/changeScore/{stat_list_type}/{score}/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Change Score of movie
+      description: change Score of saved/follow/watched movies
+      operationId: movies-addUserStatsChangeScore
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: score
+          in: path
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          allowEmptyValue: false
+          required: true
+        - name: stat_list_type
+          in: path
+          schema:
+            type: string
+            enum:
+              - finish_movie
+              - follow_movie
+              - watchlist_movie
+          allowEmptyValue: false
+          required: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/addUserStats/changeWatchState/{stat_list_type}/{watch_season}/{watch_episode}/{id}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Change Watch State of movie
+      description: change Watch State of follow/watched movies
+      operationId: movies-addUserStatsChangeWatchState
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: watch_season
+          in: path
+          schema:
+            type: number
+            minimum: 0
+          allowEmptyValue: false
+          required: true
+        - name: watch_episode
+          in: path
+          schema:
+            type: number
+            minimum: 0
+          allowEmptyValue: false
+          required: true
+        - name: stat_list_type
+          in: path
+          schema:
+            type: string
+            enum:
+              - finish_movie
+              - follow_movie
+          allowEmptyValue: false
+          required: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: Works for serials only
+                  code:
+                    type: integer
+                    default: 409
+
   /movies/userStatsList/{statType}/{dataLevel}/{page}:
     get:
       tags:
@@ -1480,9 +1845,17 @@ paths:
       description: Return array of movies/staff/character.
       operationId: movies-userStatsList
       parameters:
-        - $ref: '#/components/parameters/statType'
+        - name: statType
+          required: true
+          in: path
+          schema:
+            type: string
+            enum: [ 'like_movie', 'dislike_movie','like_staff', 'dislike_staff', 'like_character',
+                    'dislike_character', 'follow_staff', 'favorite_character',
+                    'finish_movie', 'follow_movie', 'watchlist_movie' ]
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           description: Ok
@@ -1499,7 +1872,7 @@ paths:
                       - $ref: '#/components/schemas/Staff'
                       - $ref: '#/components/schemas/Character'
 
-  /movies/birthday/{staffOrCharacters}/{dataLevel}/{page}:
+  /movies/birthday/{staffOrCharacter}/{dataLevel}/{page}:
     get:
       tags:
         - Birthday
@@ -1507,7 +1880,7 @@ paths:
       description: Return array of staff/character.
       operationId: movies-birthday
       parameters:
-        - $ref: '#/components/parameters/staffOrCharacters'
+        - $ref: '#/components/parameters/staffOrCharacter'
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/followedOnly_query'
@@ -1547,6 +1920,7 @@ paths:
         - $ref: '#/components/parameters/imdbScores'
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/dontUpdateServerDate_query'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1818,9 +2192,9 @@ security:
       required: true
       in: path
       schema:
-        allOf:
-          - $ref: '#/components/schemas/DataLevels'
-          - default: 'low'
+        type: string
+        enum: [ 'dlink', 'low', 'telbot', 'medium', 'high', 'info' ]
+        default: 'low'
     imdbScores:
       name: imdbScores
       required: true
@@ -1868,27 +2242,25 @@ security:
       in: path
       schema:
         type: string
-    statType:
-      name: statType
-      required: true
-      in: path
-      description: values with no suffix (_staff or _character) only works for movies
-      schema:
-        type: string
-        enum: [ 'like_movie', 'dislike_movie', 'like_staff', 'dislike_staff', 'like_character', 'dislike_character', 'follow_movie', 'follow_staff', 'future_list', 'dropped', 'finished', 'save', 'score' ]
     id:
       name: id
       required: true
       in: path
       schema:
         type: string
-    staffOrCharacters:
-      name: staffOrCharacters
+    id_int:
+      name: id
+      required: true
+      in: path
+      schema:
+        type: integer
+    staffOrCharacter:
+      name: staffOrCharacter
       required: true
       in: path
       schema:
         type: string
-        enum: [ 'staff', 'characters' ]
+        enum: [ 'staff', 'character' ]
         default: staff
     botId:
       name: botId
@@ -1904,8 +2276,32 @@ security:
         type: string
         enum: [ 'news', 'updates', 'newsAndUpdates' ]
         default: 'news'
+    embedStaffAndCharacter:
+      name: embedStaffAndCharacter
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: false
+    creditsCount:
+      name: creditsCount
+      required: false
+      in: query
+      schema:
+        type: integer
+        default: 12
+        description: number of credits to return
+        minimum: 0
+        maximum: 48
     remove_query:
       name: remove
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: false
+    favorite_query:
+      name: favorite
       required: false
       in: query
       schema:
@@ -1915,7 +2311,6 @@ security:
       name: followedOnly
       required: false
       in: query
-      description: only works for staff
       schema:
         type: boolean
         default: false
@@ -2103,8 +2498,6 @@ security:
           percent:
             type: number
             format: float
-          lastUpdate:
-            $ref: '#/components/schemas/DateString'
 
     MovieSettings:
       type: object
@@ -2169,6 +2562,8 @@ security:
         - $ref: '#/components/schemas/DataLevel_info'
 
     DataLevel_dlink:
+      allOf:
+        - $ref: '#/components/schemas/EmbedCast'
       type: object
       properties:
         _id:
@@ -2204,6 +2599,8 @@ security:
                 type: string
 
     DataLevel_low:
+      allOf:
+        - $ref: '#/components/schemas/EmbedCast'
       type: object
       properties:
         _id:
@@ -2229,8 +2626,12 @@ security:
           $ref: '#/components/schemas/LatestData'
         userStats:
           $ref: '#/components/schemas/UserStats'
+        userStats_extra:
+          $ref: '#/components/schemas/UserStats_extra'
 
     DataLevel_telbot:
+      allOf:
+        - $ref: '#/components/schemas/EmbedCast'
       type: object
       properties:
         _id:
@@ -2268,25 +2669,6 @@ security:
         releaseDay:
           type: string
           description: days of week
-        actorsAndCharacters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Actor_and_Character'
-        staff:
-          type: object
-          properties:
-            directors:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
-            writers:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
-            others:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
         seasonEpisode:
           type: array
           items:
@@ -2304,6 +2686,7 @@ security:
     DataLevel_medium:
       allOf:
         - $ref: '#/components/schemas/DataLevel_low'
+        - $ref: '#/components/schemas/EmbedCast'
       type: object
       properties:
         releaseState:
@@ -2358,10 +2741,13 @@ security:
               type: integer
         userStats:
           $ref: '#/components/schemas/UserStats'
+        userStats_extra:
+          $ref: '#/components/schemas/UserStats_extra'
 
     DataLevel_high:
       allOf:
         - $ref: '#/components/schemas/DataLevel_medium'
+        - $ref: '#/components/schemas/EmbedCast'
       type: object
       properties:
         titleSynonyms:
@@ -2441,25 +2827,6 @@ security:
           type: string
         country:
           type: string
-        actorsAndCharacters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Actor_and_Character'
-        staff:
-          type: object
-          properties:
-            directors:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
-            writers:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
-            others:
-              type: array
-              items:
-                $ref: '#/components/schemas/Actor_and_Character'
         awards:
           type: string
         animeType:
@@ -2486,10 +2853,13 @@ security:
                 enum: [ 'Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off' ]
         userStats:
           $ref: '#/components/schemas/UserStats'
+        userStats_extra:
+          $ref: '#/components/schemas/UserStats_extra'
 
     DataLevel_info:
       allOf:
         - $ref: '#/components/schemas/DataLevel_high'
+        - $ref: '#/components/schemas/EmbedCast'
       not:
         type: object
         properties:
@@ -2531,65 +2901,102 @@ security:
         watchOnlineLink:
           type: string
 
+    EmbedCast:
+      type: object
+      properties:
+        actorsAndCharacters:
+          default: null
+          description: only exist if query parameter embedStaffAndCharacter=true
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor_and_Character'
+        staff:
+          default: null
+          description: only exist if query parameter embedStaffAndCharacter=true
+          type: object
+          properties:
+            directors:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            writers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+            others:
+              type: array
+              items:
+                $ref: '#/components/schemas/Actor_and_Character'
+
     Actor_and_Character:
       type: object
       properties:
         id:
-          type: object
-        name:
-          type: string
-        gender:
-          type: string
-          enum: [ 'Male', 'Female' ]
-        country:
-          type: string
-        image:
-          type: string
-        thumbnail:
-          type: string
-        positions:
+          type: integer
+        actorPositions:
           $ref: '#/components/schemas/StringArray'
-        characterData:
+        characterRole:
+          type: string
+        staff:
           type: object
           properties:
             id:
-              type: object
+              type: integer
             name:
               type: string
             gender:
               type: string
               enum: [ 'Male', 'Female' ]
-            image:
+            country:
               type: string
-            thumbnail:
+            imageData:
+              type: object
+              properties:
+                size:
+                  type: integer
+                thumbnail:
+                  type: string
+                url:
+                  type: string
+                vpnStatus:
+                  $ref: '#/components/schemas/VpnStatus'
+        character:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
               type: string
-            role:
+            gender:
               type: string
+              enum: [ 'Male', 'Female', 'Sexless' ]
+            imageData:
+              type: object
+              properties:
+                size:
+                  type: integer
+                thumbnail:
+                  type: string
+                url:
+                  type: string
+                vpnStatus:
+                  $ref: '#/components/schemas/VpnStatus'
 
     UserStats:
       description: movies only
       type: object
       properties:
-        like_movie:
+        like:
           type: boolean
-        like_movie_count:
+        likes_count:
           type: integer
-        dislike_movie:
+        dislike:
           type: boolean
-        dislike_movie_count:
+        dislikes_count:
           type: integer
-        save:
+        favorite:
           type: boolean
-        save_count:
-          type: integer
-        future_list:
-          type: boolean
-        future_list_count:
-          type: integer
-        #below field includes only when (dataLevel == high)
-        follow_movie:
-          type: boolean
-        follow_movie_count:
+        favorite_count:
           type: integer
         dropped:
           type: boolean
@@ -2599,39 +3006,72 @@ security:
           type: boolean
         finished_count:
           type: integer
-        score:
-          type: number
-          format: float
-        score_count:
+        follow:
+          type: boolean
+        follow_count:
           type: integer
+        watchlist:
+          type: boolean
+        watchlist_count:
+          type: integer
+        continue_count:
+          type: integer
+
+    UserStats_extra:
+      description: movies only
+      type: object
+      properties:
+        watch_start:
+          $ref: '#/components/schemas/DateString'
+        watch_end:
+          $ref: '#/components/schemas/DateString'
+        watch_season:
+          type: integer
+          default: 0
+        watch_episode:
+          type: integer
+          default: 0
+        myScore:
+          type: integer
+
 
     UserStats_staff:
       type: object
       properties:
-        like_staff:
-          type: boolean
-        like_staff_count:
+        likes_count:
           type: integer
-        dislike_staff:
-          type: boolean
-        dislike_staff_count:
+        dislikes_count:
           type: integer
-        follow_staff:
-          type: boolean
-        follow_staff_count:
+        follow_count:
           type: integer
+        like:
+          type: boolean
+          default: false
+        dislike:
+          type: boolean
+          default: false
+        follow:
+          type: boolean
+          default: false
 
     UserStats_character:
       type: object
       properties:
-        like_character:
-          type: boolean
-        like_character_count:
+        likes_count:
           type: integer
-        dislike_character:
-          type: boolean
-        dislike_character_count:
+        dislikes_count:
           type: integer
+        favorite_count:
+          type: integer
+        like:
+          type: boolean
+          default: false
+        dislike:
+          type: boolean
+          default: false
+        favorite:
+          type: boolean
+          default: false
 
     Staff:
       type: object
@@ -2684,30 +3124,7 @@ security:
         credits:
           type: array
           items:
-            type: object
-            properties:
-              movieID:
-                type: string
-              movieName:
-                type: string
-              movieType:
-                type: string
-              moviePoster:
-                type: string
-              movieThumbnail:
-                type: string
-              positions:
-                $ref: '#/components/schemas/StringArray'
-              characterID:
-                type: string
-              characterName:
-                type: string
-              characterRole:
-                type: string
-              characterImage:
-                type: string
-              characterThumbnail:
-                type: string
+            $ref: '#/components/schemas/Credit'
         insert_date:
           $ref: '#/components/schemas/DateString'
         update_date:
@@ -2766,34 +3183,80 @@ security:
         credits:
           type: array
           items:
-            type: object
-            properties:
-              movieID:
-                type: string
-              movieName:
-                type: string
-              movieType:
-                type: string
-              moviePoster:
-                type: string
-              movieThumbnail:
-                type: string
-              role:
-                type: string
-              actorID:
-                type: string
-              actorName:
-                type: string
-              actorImage:
-                type: string
-              actorThumbnail:
-                type: string
+            $ref: '#/components/schemas/Credit'
         insert_date:
           $ref: '#/components/schemas/DateString'
         update_date:
           $ref: '#/components/schemas/DateString'
         userStats:
           $ref: '#/components/schemas/UserStats_character'
+
+    Credit:
+      type: object
+      properties:
+        id:
+          type: integer
+        actorPositions:
+          $ref: '#/components/schemas/StringArray'
+        characterRole:
+          type: string
+        staff:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            gender:
+              type: string
+              enum: [ 'Male', 'Female' ]
+            country:
+              type: string
+            imageData:
+              type: object
+              properties:
+                size:
+                  type: integer
+                thumbnail:
+                  type: string
+                url:
+                  type: string
+                vpnStatus:
+                  $ref: '#/components/schemas/VpnStatus'
+        character:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            gender:
+              type: string
+              enum: [ 'Male', 'Female', 'Sexless' ]
+            imageData:
+              type: object
+              properties:
+                size:
+                  type: integer
+                thumbnail:
+                  type: string
+                url:
+                  type: string
+                vpnStatus:
+                  $ref: '#/components/schemas/VpnStatus'
+        movie:
+          type: object
+          properties:
+            id:
+              type: string
+            rawTitle:
+              type: string
+            type:
+              type: string
+            posters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Poster'
 
     Genres:
       type: array
@@ -2872,7 +3335,6 @@ security:
             lastCheck:
               $ref: '#/components/schemas/DateString'
 
-
     DbConfigs:
       type: object
       properties:
@@ -2887,7 +3349,9 @@ security:
           type: integer
           default: 0
         disableCrawlerStart:
-          $ref: '#/components/schemas/DateString0'
+          type: string
+          format: date
+          default: 0
         crawlerDisabled:
           type: boolean
           default: false
@@ -2898,7 +3362,9 @@ security:
           type: boolean
           default: false
         developmentFazeStart:
-          $ref: '#/components/schemas/DateString0'
+          type: string
+          format: date
+          default: 0
 
     Season:
       type: object
@@ -3197,11 +3663,6 @@ security:
       type: string
       format: date
 
-    DateString0:
-      type: string
-      format: date
-      default: 0
-
     StringArray:
       type: array
       items:
@@ -3212,10 +3673,12 @@ security:
       properties:
         code:
           type: integer
+          default: 200
         errorMessage:
           type: string
         isGuest:
           type: boolean
+          default: false
         isCacheData:
           type: boolean
           default: false
