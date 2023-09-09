@@ -1,59 +1,59 @@
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {setRedis} from "../data/redis.js";
+import {getCache, setCache} from "../data/cache.js";
 import {compareAppVersions} from "../data/db/admin/adminConfigDbMethods.js";
 
 
-export async function getMessage(routeUrl) {
-    let result = await adminConfigDbMethods.getMessageDB();
+export async function getMessage() {
+    let cacheResult = await getCache('utils/message');
+    let result = cacheResult || await adminConfigDbMethods.getMessageDB();
     if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result === null) {
         return generateServiceResult({data: null}, 404, errorMessage.messageNotFound);
     }
 
-    await setRedis(routeUrl, {
-        data: result,
-        code: 200,
-        errorMessage: '',
-        isGuest: false,
-        isCacheData: true,
-    }, 5 * 60);
+    if (!cacheResult) {
+        await setCache('utils/message', result);
+    }
 
-    return generateServiceResult({data: result}, 200, '');
+    return generateServiceResult({data: result, isCacheData: !!cacheResult}, 200, '');
 }
 
-export async function getApps(appName, routeUrl) {
-    let result = await adminConfigDbMethods.getAppVersionDB(true);
+export async function getApps(appName) {
+    let cacheResult = await getCache('utils/apps');
+    let result = cacheResult || await adminConfigDbMethods.getAppVersionDB(true);
     if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.appNotFound);
     }
 
+    if (!cacheResult) {
+        await setCache('utils/apps', result);
+    }
+
     if (appName) {
         result = result.filter(app => app.appName === appName);
     }
 
-    await setRedis(routeUrl, {
-        data: result,
-        code: 200,
-        errorMessage: '',
-        isGuest: false,
-        isCacheData: true,
-    }, 5 * 60);
-
-    return generateServiceResult({data: result}, 200, '');
+    return generateServiceResult({data: result, isCacheData: !!cacheResult}, 200, '');
 }
 
-export async function checkAppUpdate(appName, os, version, routeUrl) {
-    let result = await Promise.allSettled([
+export async function checkAppUpdate(appName, os, version) {
+    const cacheKey = 'utils/appUpdate/' + [appName, os, version].join('/');
+    let cacheResult = await getCache(cacheKey);
+    let result = cacheResult || await Promise.allSettled([
         adminConfigDbMethods.getAppVersionDB(true),
         adminConfigDbMethods.getMessageDB(),
     ]);
 
     if (result[0].value === 'error' || result[1].value === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    }
+
+    if (!cacheResult) {
+        await setCache(cacheKey, result);
     }
 
     let appData = result[0].value.find(app => app.appName === appName && app.os === os);
@@ -65,13 +65,5 @@ export async function checkAppUpdate(appName, os, version, routeUrl) {
         message: result[1].value?.message || '',
     }
 
-    await setRedis(routeUrl, {
-        data: data,
-        code: 200,
-        errorMessage: '',
-        isGuest: false,
-        isCacheData: true,
-    }, 5 * 60);
-
-    return generateServiceResult({data: data}, 200, '');
+    return generateServiceResult({data: data, isCacheData: !!cacheResult}, 200, '');
 }

@@ -19,6 +19,9 @@ up-prod:
 down:
 	docker-compose down
 
+run-redis:
+	docker run  --rm --network=host --memory 200m -e ALLOW_EMPTY_PASSWORD=yes redis:alpine
+
 redis-stat:
 	docker-compose -f ./redis-stat.docker-compose.yml up --build
 

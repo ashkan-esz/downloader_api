@@ -1,6 +1,6 @@
 import mongodb from 'mongodb';
 import getCollection from '../mongoDB.js';
-import {getGenresStatusFromCache} from "../../api/middlewares/moviesCache.js";
+import {getMoviesCacheByKey} from "../cache.js";
 import {saveError} from "../../error/saveError.js";
 
 
@@ -574,7 +574,7 @@ export async function searchOnMoviesById(id, filters, projection, dataLevel = ''
         result = result.length === 0 ? null : result[0];
 
         if (result && result.genres && result.genres.length > 0 && dataLevel !== 'telbot') {
-            let genresWithImage = await getGenresStatusFromCache();
+            let genresWithImage = await getMoviesCacheByKey('status/genres');
             genresWithImage = genresWithImage?.filter(item => result.genres.includes(item.genre.replace(/[\s_]/g, '-'))) || [];
             result.genresWithImage = genresWithImage;
         }

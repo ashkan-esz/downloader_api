@@ -76,6 +76,7 @@ export async function getMultipleStatus(req, res) {
 export async function searchStaffAndCharacter(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    delete filters.noUserStats;
     let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
     let result = await moviesServices.searchStaffAndCharacter(userId, filters, dataLevel, page, noUserStats, req.isGuest);
@@ -85,6 +86,7 @@ export async function searchStaffAndCharacter(req, res) {
 export async function searchStaff(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    delete filters.noUserStats;
     let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
     let result = await moviesServices.searchStaffOrCharacter(userId, 'staff', filters, dataLevel, page, noUserStats, req.isGuest);
@@ -94,6 +96,7 @@ export async function searchStaff(req, res) {
 export async function searchCharacter(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    delete filters.noUserStats;
     let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
     let result = await moviesServices.searchStaffOrCharacter(userId, 'character', filters, dataLevel, noUserStats, page, req.isGuest);
@@ -102,8 +105,10 @@ export async function searchCharacter(req, res) {
 
 export async function searchMovie(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
     let filters = filterObjectFalsyValues(req.query);
+    delete filters.noUserStats;
+    delete filters.embedStaffAndCharacter;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {dataLevel, page} = req.params;
     let result = await moviesServices.searchMovie(userId, filters, dataLevel, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
@@ -111,8 +116,10 @@ export async function searchMovie(req, res) {
 
 export async function searchMovieById(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
     let filters = filterObjectFalsyValues(req.query);
+    delete filters.noUserStats;
+    delete filters.embedStaffAndCharacter;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {id, dataLevel} = req.params;
     let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
@@ -234,12 +241,12 @@ export async function getUserStatsList(req, res) {
 //--------------------------------------------
 
 export async function getGenresStatus(req, res) {
-    let result = await moviesServices.getGenresStatus(req.url);
+    let result = await moviesServices.getGenresStatus();
     return sendResponse(req, res, result);
 }
 
 export async function getMovieSources(req, res) {
-    let result = await moviesServices.getMovieSources(req.url);
+    let result = await moviesServices.getMovieSources();
     return sendResponse(req, res, result);
 }
 

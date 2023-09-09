@@ -1,4 +1,3 @@
-import moviesCache, {movieCache_guest} from './moviesCache.js';
 import * as auth from './isAuth.js';
 import * as validation from './validation.js';
 import * as rateLimit from './rateLimit.js';
@@ -10,8 +9,6 @@ import * as validateApiParamsAdmin from './validateApiParamsAdmin.js';
 
 
 export default {
-    moviesCache,
-    movieCache_guest,
     validation,
     auth,
     rateLimit,

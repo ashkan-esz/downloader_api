@@ -2,10 +2,10 @@ export function generateServiceResult(dataFields, code, errorMessage, extraData 
     return {
         ...extraData,
         responseData: {
+            isCacheData: false,
             ...dataFields,
             code: code,
             errorMessage: errorMessage,
-            isCacheData: false,
         }
     };
 }

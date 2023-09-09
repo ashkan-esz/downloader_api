@@ -6,145 +6,178 @@ import * as botsDbMethods from '../data/db/botsDbMethods.js';
 import * as staffAndCharactersDbMethods from '../data/db/staffAndCharactersDbMethods.js';
 import {dataLevelConfig} from "../models/movie.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {setRedis} from "../data/redis.js";
 import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils.js";
 import PQueue from 'p-queue';
+import {getMoviesCacheByKey, setMoviesCacheByKey} from "../data/cache.js";
 import {saveError} from "../error/saveError.js";
 
-//todo : cache movies data
 
 export async function getNews(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await moviesDbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (newMovies === 'error') {
+    const cacheKey = getCacheKey(['getNews', types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (newMovies.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(newMovies, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, newMovies, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: newMovies}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let newMovies = await moviesDbMethods.getNewMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (newMovies === 'error') {
+    const cacheKey = getCacheKey(['getNewsWithDate', date, types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getNewMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (newMovies.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(newMovies, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, newMovies, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: newMovies}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getUpdates(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await moviesDbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (updateMovies === 'error') {
+    const cacheKey = getCacheKey(['getUpdates', types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getUpdateMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (updateMovies.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(updateMovies, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, updateMovies, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: updateMovies}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let updateMovies = await moviesDbMethods.getUpdateMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (updateMovies === 'error') {
+    const cacheKey = getCacheKey(['getUpdatesWithDate', date, types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getUpdateMoviesWithDate(date, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (updateMovies.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(updateMovies, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, updateMovies, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: updateMovies}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let topsByLikesMovies = await moviesDbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (topsByLikesMovies === 'error') {
+    const cacheKey = getCacheKey(['getTopsByLikes', types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (topsByLikesMovies.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(topsByLikesMovies, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, topsByLikesMovies, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: topsByLikesMovies}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getTrailers(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let trailersData = await moviesDbMethods.getNewTrailers(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (trailersData === 'error') {
+    const cacheKey = getCacheKey(['getTrailers', types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getNewTrailers(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (trailersData.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(trailersData, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, trailersData, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: trailersData}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let sortedData = await moviesDbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
-    if (sortedData === 'error') {
+    const cacheKey = getCacheKey(['getSortedMovies', sortBase, types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (sortedData.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(sortedData, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, sortedData, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: sortedData}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let seriesOfDay = await moviesDbMethods.getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
-    if (seriesOfDay === 'error') {
+    const cacheKey = getCacheKey(['getSeriesOfDay', dayNumber, types, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getSeriesOfDay(dayNumber, types, imdbScores, malScores, skip, limit, dataLevelConfig["medium"]);
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (seriesOfDay.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(seriesOfDay, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, seriesOfDay, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: seriesOfDay}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, count);
 
-    let result = await Promise.allSettled([
+    const cacheKey = getCacheKey(['getMultipleStatus', types, dataLevel, imdbScores, malScores, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await Promise.allSettled([
         moviesDbMethods.getSortedMovies('inTheaters', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
         moviesDbMethods.getSortedMovies('comingSoon', types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
         moviesDbMethods.getNewMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]),
@@ -169,6 +202,8 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
     } else if (multiple.inTheaters.length === 0 && multiple.comingSoon.length === 0 && multiple.news.length === 0 && multiple.update.length === 0) {
         return generateServiceResult({data: multiple}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
         addStaffAndCharacterDataToMovie(multiple.inTheaters, embedStaffAndCharacter),
         addStaffAndCharacterDataToMovie(multiple.comingSoon, embedStaffAndCharacter),
@@ -179,7 +214,7 @@ export async function getMultipleStatus(userId, types, dataLevel, imdbScores, ma
         addUserStatsDataToMovie(userId, multiple.news, noUserStats, isGuest),
         addUserStatsDataToMovie(userId, multiple.update, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: multiple}, 200, '');
+    return generateServiceResult({data: multiple, isCacheData}, 200, '');
 }
 
 export async function searchStaffAndCharacter(userId, filters, dataLevel, page, noUserStats, isGuest) {
@@ -189,92 +224,99 @@ export async function searchStaffAndCharacter(userId, filters, dataLevel, page, 
         staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters('staff', userId, filters, skip, limit, dataLevel, noUserStats, isGuest),
         staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters('character', userId, filters, skip, limit, dataLevel, noUserStats, isGuest),
     ]);
-    let searchData = {
+    let result = {
         staff: searchDataArray[0].value,
         characters: searchDataArray[1].value,
     }
 
-    if (searchData.staff === 'error' || searchData.characters === 'error') {
+    if (result.staff === 'error' || result.characters === 'error') {
         return generateServiceResult({
             data: {
                 staff: [],
                 characters: [],
             }
         }, 500, errorMessage.serverError);
-    } else if (searchData.staff.length === 0 && searchData.characters.length === 0) {
-        return generateServiceResult({data: searchData}, 404, errorMessage.scNotFound);
+    } else if (result.staff.length === 0 && result.characters.length === 0) {
+        return generateServiceResult({data: result}, 404, errorMessage.scNotFound);
     }
-    return generateServiceResult({data: searchData}, 200, '');
+    return generateServiceResult({data: result}, 200, '');
 }
 
 export async function searchStaffOrCharacter(userId, staffOrCharacter, filters, dataLevel, page, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let searchResult = await staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters(staffOrCharacter, userId, filters, skip, limit, dataLevel, noUserStats, isGuest)
-
-    if (searchResult === 'error') {
+    let result = await staffAndCharactersDbMethods.searchOnStaffOrCharactersWithFilters(staffOrCharacter, userId, filters, skip, limit, dataLevel, noUserStats, isGuest)
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (searchResult.length === 0) {
+    } else if (result.length === 0) {
         let temp = staffOrCharacter === 'staff' ? errorMessage.staffNotFound : errorMessage.characterNotFound;
         return generateServiceResult({data: []}, 404, temp);
     }
-    return generateServiceResult({data: searchResult}, 200, '');
+    return generateServiceResult({data: result}, 200, '');
 }
 
 export async function searchMovie(userId, filters, dataLevel, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let searchResult = await moviesDbMethods.searchOnMovieCollectionWithFilters(filters, skip, limit, dataLevelConfig[dataLevel]);
+    const cacheKey = getCacheKey(['searchMovie', filters, dataLevel, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.searchOnMovieCollectionWithFilters(filters, skip, limit, dataLevelConfig[dataLevel]);
 
-    if (searchResult === 'error') {
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (searchResult.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie(searchResult, embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, searchResult, noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: searchResult}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, noUserStats, isGuest) {
-    let movieData = await moviesDbMethods.searchOnMoviesById(id, filters, dataLevelConfig[dataLevel], dataLevel);
-    if (movieData === 'error') {
+    const cacheKey = getCacheKey(['searchMovieById', id, dataLevel, filters]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.searchOnMoviesById(id, filters, dataLevelConfig[dataLevel], dataLevel);
+    if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (!movieData) {
+    } else if (!result) {
         return generateServiceResult({data: null}, 404, errorMessage.movieNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
-        addStaffAndCharacterDataToMovie([movieData], embedStaffAndCharacter),
-        addUserStatsDataToMovie(userId, [movieData], noUserStats, isGuest),
+        addStaffAndCharacterDataToMovie([result], embedStaffAndCharacter),
+        addUserStatsDataToMovie(userId, [result], noUserStats, isGuest),
     ]);
     if (!isGuest && filters.embedDownloadLinksConfig) {
-        movieData.downloadLinksConfig = await usersDbMethods.getUserSettingsDB(userId, 'downloadLinks');
+        result.downloadLinksConfig = await usersDbMethods.getUserSettingsDB(userId, 'downloadLinks');
     }
-    return generateServiceResult({data: movieData}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function searchStaffById(userId, id, creditsCount, noUserStats, isGuest) {
-    let staffData = await staffAndCharactersDbMethods.getStaffById(userId, id, creditsCount, noUserStats, isGuest);
-    if (staffData === 'error') {
+    let result = await staffAndCharactersDbMethods.getStaffById(userId, id, creditsCount, noUserStats, isGuest);
+    if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (!staffData) {
+    } else if (!result) {
         return generateServiceResult({data: null}, 404, errorMessage.staffNotFound);
     }
-    await addMovieDataToCredits(staffData.credits);
-    return generateServiceResult({data: staffData}, 200, '');
+    await addMovieDataToCredits(result.credits);
+    return generateServiceResult({data: result}, 200, '');
 }
 
 export async function searchCharacterById(userId, id, creditsCount, noUserStats, isGuest) {
-    let characterData = await staffAndCharactersDbMethods.getCharacterById(userId, id, creditsCount, noUserStats, isGuest);
-    if (characterData === 'error') {
+    let result = await staffAndCharactersDbMethods.getCharacterById(userId, id, creditsCount, noUserStats, isGuest);
+    if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    } else if (!characterData) {
+    } else if (!result) {
         return generateServiceResult({data: null}, 404, errorMessage.characterNotFound);
     }
-    await addMovieDataToCredits(characterData.credits);
-    return generateServiceResult({data: characterData}, 200, '');
+    await addMovieDataToCredits(result.credits);
+    return generateServiceResult({data: result}, 200, '');
 }
 
 //--------------------------------------------
@@ -477,43 +519,44 @@ export async function getUserStatsList(userId, statType, dataLevel, page, embedS
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getGenresStatus(routeUrl) {
-    let genres = await moviesDbMethods.getGenresStatusDB();
-    if (genres === 'error') {
+export async function getGenresStatus() {
+    const cacheKey = 'status/genres';
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getGenresStatusDB();
+    if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
-    } else if (genres.length === 0) {
+    } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.genresNotFound);
     }
 
-    await setRedis(routeUrl, {
-        data: genres,
-        code: 200,
-        errorMessage: '',
-        isGuest: false,
-        isCacheData: true,
-    }, 60 * 60);
-
-    return generateServiceResult({data: genres}, 200, '');
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result, 60);
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
 export async function getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page, embedStaffAndCharacter, noUserStats, isGuest) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let result = await moviesDbMethods.getGenresMoviesDB(genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
+    const cacheKey = getCacheKey(['getGenresMovies', genres, types, imdbScores, malScores, dataLevel, page]);
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await moviesDbMethods.getGenresMoviesDB(genres, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {
         return generateServiceResult({data: []}, 404, errorMessage.moviesNotFound);
     }
+
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
         addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter),
         addUserStatsDataToMovie(userId, result, noUserStats, isGuest),
     ]);
-    return generateServiceResult({data: result}, 200, '');
+    return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
-export async function getMovieSources(routeUrl) {
-    let result = await crawlerMethodsDB.getSourcesObjDB();
+export async function getMovieSources() {
+    const cacheKey = 'status/movieSources';
+    const cacheResult = await getMoviesCacheByKey(cacheKey);
+    let result = cacheResult || await crawlerMethodsDB.getSourcesObjDB();
     if (!result || result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     }
@@ -529,15 +572,8 @@ export async function getMovieSources(routeUrl) {
         return generateServiceResult({data: []}, 404, errorMessage.movieSourcesNotFound);
     }
 
-    await setRedis(routeUrl, {
-        data: sourcesUrls,
-        code: 200,
-        errorMessage: '',
-        isGuest: false,
-        isCacheData: true,
-    }, 30 * 60);
-
-    return generateServiceResult({data: sourcesUrls}, 200, '');
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result, 30);
+    return generateServiceResult({data: sourcesUrls, isCacheData}, 200, '');
 }
 
 export async function getAnimeEnglishNames(japaneseNames) {
@@ -1017,4 +1053,27 @@ function getSkipLimit(page, limit) {
         skip: limit * (page - 1),
         limit,
     };
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+function getCacheKey(params) {
+    return params.map(item => {
+        if (typeof item === 'string') {
+            return item;
+        }
+        if (Array.isArray(item)) {
+            return item.join('-');
+        }
+        return JSON.stringify(item);
+    }).join('/');
+}
+
+async function handleSetingMovieCache(cacheKey, cacheResult, result, durationMin = 5) {
+    if (!cacheResult) {
+        await setMoviesCacheByKey(cacheKey, result, durationMin);
+        return {isCacheData: false};
+    }
+    return {isCacheData: true};
 }

@@ -11,7 +11,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     await client.connect();
 } catch (e) {
-    // saveError(e); //todo :
+    saveError(e);
 }
 
 client.on('error', err => {
