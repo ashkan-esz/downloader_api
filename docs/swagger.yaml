@@ -912,6 +912,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -931,6 +932,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -949,6 +951,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -968,6 +971,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -986,6 +990,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1004,6 +1009,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1023,6 +1029,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1041,6 +1048,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -1060,6 +1068,7 @@ paths:
         - $ref: '#/components/parameters/count'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           description: Ok
@@ -1104,6 +1113,7 @@ paths:
         - $ref: '#/components/parameters/episodes_query'
         - $ref: '#/components/parameters/qualities_query'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
         - name: embedDownloadLinksConfig
           required: false
           in: query
@@ -1125,6 +1135,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/id_int'
         - $ref: '#/components/parameters/creditsCount'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           description: Ok
@@ -1148,6 +1159,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/id_int'
         - $ref: '#/components/parameters/creditsCount'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           description: Ok
@@ -1176,6 +1188,7 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - $ref: '#/components/parameters/noUserStats'
         - name: dataLevel
           required: true
           in: path
@@ -1220,6 +1233,7 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - $ref: '#/components/parameters/noUserStats'
         - name: dataLevel
           required: true
           in: path
@@ -1257,6 +1271,7 @@ paths:
         - $ref: '#/components/parameters/hairColor_query'
         - $ref: '#/components/parameters/eyeColor_query'
         - $ref: '#/components/parameters/age_query'
+        - $ref: '#/components/parameters/noUserStats'
         - name: dataLevel
           required: true
           in: path
@@ -1291,6 +1306,7 @@ paths:
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/country_query'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
         - name: title
           required: false
           in: query
@@ -1386,6 +1402,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
         - name: genres
           required: true
           in: path
@@ -1856,6 +1873,7 @@ paths:
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           description: Ok
@@ -1884,6 +1902,7 @@ paths:
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/followedOnly_query'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           description: Ok
@@ -1921,6 +1940,7 @@ paths:
         - $ref: '#/components/parameters/malScores'
         - $ref: '#/components/parameters/dontUpdateServerDate_query'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
       responses:
         200:
           $ref: '#/components/responses/Movies_200'
@@ -2278,6 +2298,14 @@ security:
         default: 'news'
     embedStaffAndCharacter:
       name: embedStaffAndCharacter
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: false
+    noUserStats:
+      name: noUserStats
+      description: dont check and return userStats for corresponding movie/staff/character. results in faster response
       required: false
       in: query
       schema:

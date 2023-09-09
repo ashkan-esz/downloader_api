@@ -7,7 +7,7 @@ const router = Router();
 //movies/news/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getNews);
@@ -15,7 +15,7 @@ router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page',
 //movies/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getNewsWithDate);
@@ -23,7 +23,7 @@ router.get('/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
 //movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/updates/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getUpdates);
@@ -31,7 +31,7 @@ router.get('/updates/:types/:dataLevel/:imdbScores/:malScores/:page',
 //movies/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getUpdatesWithDate);
@@ -39,7 +39,7 @@ router.get('/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:pag
 //movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getTopsByLikes);
@@ -47,7 +47,7 @@ router.get('/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page',
 //movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/trailers/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getTrailers);
@@ -55,7 +55,7 @@ router.get('/trailers/:types/:dataLevel/:imdbScores/:malScores/:page',
 //movies/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['sortBase', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['sortBase', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getSortedMovies);
@@ -63,7 +63,7 @@ router.get('/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:pa
 //movies/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page
 router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['dayNumber', 'types', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['dayNumber', 'types', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getSeriesOfDay);
@@ -71,7 +71,7 @@ router.get('/seriesOfDay/:dayNumber/:types/:imdbScores/:malScores/:page',
 //movies/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:page
 router.get('/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'count', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'count', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getMultipleStatus);
@@ -79,7 +79,7 @@ router.get('/multiple/status/:types/:dataLevel/:imdbScores/:malScores/:count/:pa
 //movies/searchStaffAndCharacter/:dataLevel/:page
 router.get('/searchStaffAndCharacter/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchStaffAndCharacter);
@@ -87,7 +87,7 @@ router.get('/searchStaffAndCharacter/:dataLevel/:page',
 //movies/searchStaff/:dataLevel/:page
 router.get('/searchStaff/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchStaff);
@@ -95,7 +95,7 @@ router.get('/searchStaff/:dataLevel/:page',
 //movies/searchCharacter/:dataLevel/:page
 router.get('/searchCharacter/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query']),
+    middlewares.validateApiParams.checkApiParams(['dataLevel', 'page', 'name_query', 'gender_query', 'age_query', 'country_query', 'hairColor_query', 'eyeColor_query', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchCharacter);
@@ -108,7 +108,7 @@ router.get('/searchMovie/:dataLevel/:page',
             'title_query', 'types_query', 'years_query',
             'imdbScores_query', 'malScores_query', 'genres_query', 'country_query', 'movieLang_query',
             'dubbed_query', 'hardSub_query', 'censored_query', 'subtitle_query', 'watchOnlineLink_query',
-            'numberOfSeason_query', 'embedStaffAndCharacter'
+            'numberOfSeason_query', 'embedStaffAndCharacter', 'noUserStats'
         ]),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
@@ -117,7 +117,7 @@ router.get('/searchMovie/:dataLevel/:page',
 //movies/searchById/:id/:dataLevel
 router.get('/searchById/:id/:dataLevel',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchMovieById);
@@ -125,7 +125,7 @@ router.get('/searchById/:id/:dataLevel',
 //movies/staff/searchById/:id
 router.get('/staff/searchById/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount']),
+    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchStaffById);
@@ -133,7 +133,7 @@ router.get('/staff/searchById/:id',
 //movies/characters/searchById/:id
 router.get('/characters/searchById/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount']),
+    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.searchCharacterById);
@@ -227,7 +227,7 @@ router.put('/addUserStats/changeWatchState/:stat_list_type/:watch_season/:watch_
 //movies/userStatsList/:statType/:dataLevel/:page
 router.get('/userStatsList/:statType/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUserStatsList);
 
@@ -243,7 +243,7 @@ router.get('/status/movieSources', middlewares.auth.attachAuthFlag, middlewares.
 //movies/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/genres/:genres/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['genres', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['genres', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getGenresMovies);
@@ -259,7 +259,7 @@ router.get('/animeEnglishName',
 //movies/birthday/:staffOrCharacter/:dataLevel/:page
 router.get('/birthday/:staffOrCharacter/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['staffOrCharacter', 'followedOnly', 'dataLevel', 'page']),
+    middlewares.validateApiParams.checkApiParams(['staffOrCharacter', 'followedOnly', 'dataLevel', 'page', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     middlewares.movieCache_guest,
     moviesControllers.getTodayBirthday);
@@ -267,7 +267,7 @@ router.get('/birthday/:staffOrCharacter/:dataLevel/:page',
 //movies/bots/:botId/:moviesRequestName/:types/:dataLevel/:imdbScores/:malScores
 router.get('/bots/:botId/:moviesRequestName/:types/:dataLevel/:imdbScores/:malScores',
     middlewares.rateLimit.rateLimit_5,
-    middlewares.validateApiParams.checkApiParams(['moviesRequestName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'dontUpdateServerDate', 'embedStaffAndCharacter']),
+    middlewares.validateApiParams.checkApiParams(['moviesRequestName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'dontUpdateServerDate', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getMoviesDataForBot);
 

@@ -2,7 +2,7 @@ import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
 
-export async function getTodayStaffOrCharactersBirthday(type, userId, followOnly, skip, limit, dataLevel, isGuest) {
+export async function getTodayStaffOrCharactersBirthday(type, userId, followOnly, skip, limit, dataLevel, noUserStats, isGuest) {
     try {
         let now = new Date();
         let monthAndDay = '-' + (now.getMonth() + 1) + '-' + now.getDate();
@@ -10,8 +10,8 @@ export async function getTodayStaffOrCharactersBirthday(type, userId, followOnly
             .replace(/-\d(-|$)/g, r => r.replace('-', '-0'))
             .replace(/-\d(-|$)/g, r => r.replace('-', '-0'));
 
-        const userStatsQuery = getUserStatsQuery(type, userId, isGuest);
-        const fieldsSelectionStage = getFieldsSelectionStage(type, dataLevel, userStatsQuery);
+        const userStatsQuery = getUserStatsQuery(type, userId, noUserStats, isGuest);
+        const fieldsSelectionStage = getFieldsSelectionStage(type, dataLevel, userStatsQuery, noUserStats);
 
         let result = await prisma[type].findMany({
             where: {
@@ -36,7 +36,7 @@ export async function getTodayStaffOrCharactersBirthday(type, userId, followOnly
         });
 
         for (let i = 0; i < result.length; i++) {
-            normalizeUserStats(type, result[i]);
+            normalizeUserStats(type, result[i], noUserStats);
         }
 
         return result;
@@ -46,10 +46,10 @@ export async function getTodayStaffOrCharactersBirthday(type, userId, followOnly
     }
 }
 
-export async function searchOnStaffOrCharactersWithFilters(type, userId, filters, skip, limit, dataLevel, isGuest) {
+export async function searchOnStaffOrCharactersWithFilters(type, userId, filters, skip, limit, dataLevel, noUserStats, isGuest) {
     try {
-        const userStatsQuery = getUserStatsQuery(type, userId, isGuest);
-        const fieldsSelectionStage = getFieldsSelectionStage(type, dataLevel, userStatsQuery);
+        const userStatsQuery = getUserStatsQuery(type, userId, noUserStats, isGuest);
+        const fieldsSelectionStage = getFieldsSelectionStage(type, dataLevel, userStatsQuery, noUserStats);
 
         let result = await prisma[type].findMany({
             where: {
@@ -72,7 +72,7 @@ export async function searchOnStaffOrCharactersWithFilters(type, userId, filters
         });
 
         for (let i = 0; i < result.length; i++) {
-            normalizeUserStats(type, result[i]);
+            normalizeUserStats(type, result[i], noUserStats);
         }
 
         return result;
@@ -85,7 +85,7 @@ export async function searchOnStaffOrCharactersWithFilters(type, userId, filters
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
-function getFieldsSelectionStage(type, dataLevel, userStatsQuery) {
+function getFieldsSelectionStage(type, dataLevel, userStatsQuery, noUserStats) {
     return ({
         select: dataLevel === 'high' ? null : {
             name: true,
@@ -103,10 +103,10 @@ function getFieldsSelectionStage(type, dataLevel, userStatsQuery) {
                 }
             },
             ...userStatsQuery,
-            likes_count: true,
-            dislikes_count: true,
-            follow_count: type === 'staff' ? true : undefined,
-            favorite_count: type === 'character' ? true : undefined,
+            likes_count: !noUserStats,
+            dislikes_count: !noUserStats,
+            follow_count: type === 'staff' ? !noUserStats : undefined,
+            favorite_count: type === 'character' ? !noUserStats : undefined,
         },
         include: dataLevel !== 'high' ? null : {
             imageData: {
@@ -124,10 +124,10 @@ function getFieldsSelectionStage(type, dataLevel, userStatsQuery) {
     });
 }
 
-function getUserStatsQuery(type, userId, isGuest) {
+function getUserStatsQuery(type, userId, noUserStats, isGuest) {
     if (type === 'staff') {
         return ({
-            followStaff: isGuest ? false : {
+            followStaff: (noUserStats || isGuest) ? false : {
                 take: 1,
                 where: {
                     userId: userId,
@@ -136,7 +136,7 @@ function getUserStatsQuery(type, userId, isGuest) {
                     date: true,
                 }
             },
-            likeDislikeStaff: isGuest ? false : {
+            likeDislikeStaff: (noUserStats || isGuest) ? false : {
                 take: 1,
                 where: {
                     userId: userId,
@@ -149,7 +149,7 @@ function getUserStatsQuery(type, userId, isGuest) {
         });
     } else {
         return ({
-            favoriteCharacter: isGuest ? false : {
+            favoriteCharacter: (noUserStats || isGuest) ? false : {
                 take: 1,
                 where: {
                     userId: userId,
@@ -158,7 +158,7 @@ function getUserStatsQuery(type, userId, isGuest) {
                     date: true,
                 }
             },
-            likeDislikeCharacter: isGuest ? false : {
+            likeDislikeCharacter: (noUserStats || isGuest) ? false : {
                 take: 1,
                 where: {
                     userId: userId,
@@ -175,14 +175,14 @@ function getUserStatsQuery(type, userId, isGuest) {
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
-export async function getStaffById(userId, id, creditsCount, isGuest) {
+export async function getStaffById(userId, id, creditsCount, noUserStats, isGuest) {
     try {
         let result = await prisma.staff.findFirst({
             where: {
                 id: id,
             },
             include: {
-                followStaff: isGuest ? false : {
+                followStaff: (noUserStats || isGuest) ? false : {
                     take: 1,
                     where: {
                         userId: userId,
@@ -191,7 +191,7 @@ export async function getStaffById(userId, id, creditsCount, isGuest) {
                         date: true,
                     }
                 },
-                likeDislikeStaff: isGuest ? false : {
+                likeDislikeStaff: (noUserStats || isGuest) ? false : {
                     take: 1,
                     where: {
                         userId: userId,
@@ -247,7 +247,7 @@ export async function getStaffById(userId, id, creditsCount, isGuest) {
             }
         });
         if (result) {
-            normalizeUserStats('staff', result);
+            normalizeUserStats('staff', result, noUserStats);
         }
         return result;
     } catch (error) {
@@ -256,14 +256,14 @@ export async function getStaffById(userId, id, creditsCount, isGuest) {
     }
 }
 
-export async function getCharacterById(userId, id, creditsCount, isGuest) {
+export async function getCharacterById(userId, id, creditsCount, noUserStats, isGuest) {
     try {
         let result = await prisma.character.findFirst({
             where: {
                 id: id,
             },
             include: {
-                favoriteCharacter: isGuest ? false : {
+                favoriteCharacter: (noUserStats || isGuest) ? false : {
                     take: 1,
                     where: {
                         userId: userId,
@@ -272,7 +272,7 @@ export async function getCharacterById(userId, id, creditsCount, isGuest) {
                         date: true,
                     }
                 },
-                likeDislikeCharacter: isGuest ? false : {
+                likeDislikeCharacter: (noUserStats || isGuest) ? false : {
                     take: 1,
                     where: {
                         userId: userId,
@@ -328,7 +328,7 @@ export async function getCharacterById(userId, id, creditsCount, isGuest) {
             }
         });
         if (result) {
-            normalizeUserStats('character', result);
+            normalizeUserStats('character', result, noUserStats);
         }
         return result;
     } catch (error) {
@@ -340,7 +340,16 @@ export async function getCharacterById(userId, id, creditsCount, isGuest) {
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
-function normalizeUserStats(type, data) {
+function normalizeUserStats(type, data, noUserStats) {
+    if (noUserStats) {
+        data.userStats = null;
+        delete data.likes_count;
+        delete data.dislikes_count;
+        delete data.follow_count;
+        delete data.favorite_count;
+        return data;
+    }
+
     if (type === 'staff') {
         data.userStats = {
             likes_count: data.likes_count,

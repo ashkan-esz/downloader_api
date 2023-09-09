@@ -519,6 +519,14 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter embedStaffAndCharacter :: (true|false)')
         .toBoolean(),
 
+    noUserStats: query('noUserStats')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter noUserStats :: (true|false)')
+        .toBoolean(),
+
     creditsCount: query('creditsCount')
         .trim()
         .customSanitizer(value => {

@@ -1123,36 +1123,36 @@ export async function addUserStats_updateWatchState(userId, id, watch_season, wa
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getUserStatsListDB(userId, statType, skip, limit) {
+export async function getUserStatsListDB(userId, statType, skip, limit, noUserStats) {
     try {
         if (statType === 'like_staff' || statType === 'dislike_staff') {
             const type = statType === 'like_staff' ? 'like' : 'dislike';
-            return await getUserStatsList_likeDislikedStaff(userId, type, skip, limit);
+            return await getUserStatsList_likeDislikedStaff(userId, type, skip, limit, noUserStats);
         }
         if (statType === 'follow_staff') {
-            return await getUserStatsList_followStaff(userId, skip, limit);
+            return await getUserStatsList_followStaff(userId, skip, limit, noUserStats);
         }
 
         if (statType === 'like_character' || statType === 'dislike_character') {
             const type = statType === 'like_character' ? 'like' : 'dislike';
-            return await getUserStatsList_likeDislikedCharacter(userId, type, skip, limit);
+            return await getUserStatsList_likeDislikedCharacter(userId, type, skip, limit, noUserStats);
         }
         if (statType === 'favorite_character') {
-            return await getUserStatsList_favoriteCharacter(userId, skip, limit);
+            return await getUserStatsList_favoriteCharacter(userId, skip, limit, noUserStats);
         }
 
         if (statType === 'like_movie' || statType === 'dislike_movie') {
             const type = statType === 'like_movie' ? 'like' : 'dislike';
-            return await getUserStatsList_likeDislikedMovies(userId, type, skip, limit);
+            return await getUserStatsList_likeDislikedMovies(userId, type, skip, limit, noUserStats);
         }
         if (statType === 'finish_movie') {
-            return await getUserStatsList_finishedMovies(userId, skip, limit);
+            return await getUserStatsList_finishedMovies(userId, skip, limit, noUserStats);
         }
         if (statType === 'watchlist_movie') {
-            return await getUserStatsList_watchlistMovies(userId, skip, limit);
+            return await getUserStatsList_watchlistMovies(userId, skip, limit, noUserStats);
         }
         if (statType === 'follow_movie') {
-            return await getUserStatsList_followMovies(userId, skip, limit);
+            return await getUserStatsList_followMovies(userId, skip, limit, noUserStats);
         }
         return [];
     } catch (error) {
@@ -1161,7 +1161,7 @@ export async function getUserStatsListDB(userId, statType, skip, limit) {
     }
 }
 
-async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit) {
+async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit, noUserStats) {
     try {
         return await prisma.likeDislikeStaff.findMany({
             where: {
@@ -1177,10 +1177,10 @@ async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit) {
                         name: true,
                         rawName: true,
                         gender: true,
-                        likes_count: true,
-                        dislikes_count: true,
-                        follow_count: true,
-                        followStaff: {
+                        likes_count: !noUserStats,
+                        dislikes_count: !noUserStats,
+                        follow_count: !noUserStats,
+                        followStaff: noUserStats ? undefined : {
                             where: {
                                 userId: userId,
                             },
@@ -1208,7 +1208,7 @@ async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit) {
     }
 }
 
-async function getUserStatsList_followStaff(userId, skip, limit) {
+async function getUserStatsList_followStaff(userId, skip, limit, noUserStats) {
     try {
         return await prisma.followStaff.findMany({
             where: {
@@ -1223,10 +1223,10 @@ async function getUserStatsList_followStaff(userId, skip, limit) {
                         name: true,
                         rawName: true,
                         gender: true,
-                        likes_count: true,
-                        dislikes_count: true,
-                        follow_count: true,
-                        likeDislikeStaff: {
+                        likes_count: !noUserStats,
+                        dislikes_count: !noUserStats,
+                        follow_count: !noUserStats,
+                        likeDislikeStaff: noUserStats ? undefined : {
                             where: {
                                 userId: userId,
                             },
@@ -1254,7 +1254,7 @@ async function getUserStatsList_followStaff(userId, skip, limit) {
     }
 }
 
-async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit) {
+async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit, noUserStats) {
     try {
         return await prisma.likeDislikeCharacter.findMany({
             where: {
@@ -1270,10 +1270,10 @@ async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit)
                         name: true,
                         rawName: true,
                         gender: true,
-                        likes_count: true,
-                        dislikes_count: true,
-                        favorite_count: true,
-                        favoriteCharacter: {
+                        likes_count: !noUserStats,
+                        dislikes_count: !noUserStats,
+                        favorite_count: !noUserStats,
+                        favoriteCharacter: noUserStats ? undefined : {
                             where: {
                                 userId: userId,
                             },
@@ -1301,7 +1301,7 @@ async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit)
     }
 }
 
-async function getUserStatsList_favoriteCharacter(userId, skip, limit) {
+async function getUserStatsList_favoriteCharacter(userId, skip, limit, noUserStats) {
     try {
         return await prisma.favoriteCharacter.findMany({
             where: {
@@ -1316,10 +1316,10 @@ async function getUserStatsList_favoriteCharacter(userId, skip, limit) {
                         name: true,
                         rawName: true,
                         gender: true,
-                        likes_count: true,
-                        dislikes_count: true,
-                        favorite_count: true,
-                        likeDislikeCharacter: {
+                        likes_count: !noUserStats,
+                        dislikes_count: !noUserStats,
+                        favorite_count: !noUserStats,
+                        likeDislikeCharacter: noUserStats ? undefined : {
                             where: {
                                 userId: userId,
                             },
@@ -1347,7 +1347,7 @@ async function getUserStatsList_favoriteCharacter(userId, skip, limit) {
     }
 }
 
-async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit) {
+async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit, noUserStats) {
     try {
         return await prisma.likeDislikeMovie.findMany({
             where: {
@@ -1356,7 +1356,7 @@ async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit) {
             },
             skip: skip,
             take: limit,
-            include: {
+            include: noUserStats ? undefined : {
                 movie: true,
             },
             orderBy: {date: 'desc'},
@@ -1367,10 +1367,10 @@ async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit) {
     }
 }
 
-async function getUserStatsList_finishedMovies(userId, skip, limit) {
+async function getUserStatsList_finishedMovies(userId, skip, limit, noUserStats) {
     try {
         return await prisma.watchedMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit)
+            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1378,10 +1378,10 @@ async function getUserStatsList_finishedMovies(userId, skip, limit) {
     }
 }
 
-async function getUserStatsList_followMovies(userId, skip, limit) {
+async function getUserStatsList_followMovies(userId, skip, limit, noUserStats) {
     try {
         return await prisma.followMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit)
+            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1389,10 +1389,10 @@ async function getUserStatsList_followMovies(userId, skip, limit) {
     }
 }
 
-async function getUserStatsList_watchlistMovies(userId, skip, limit) {
+async function getUserStatsList_watchlistMovies(userId, skip, limit, noUserStats) {
     try {
         return await prisma.watchListMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit)
+            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1400,14 +1400,14 @@ async function getUserStatsList_watchlistMovies(userId, skip, limit) {
     }
 }
 
-function getUserStatsList_movies_query(userId, skip, limit) {
+function getUserStatsList_movies_query(userId, skip, limit, noUserStats) {
     return ({
         where: {
             userId: userId,
         },
         skip: skip,
         take: limit,
-        include: {
+        include: noUserStats ? undefined : {
             movie: {
                 include: {
                     likeDislikeMovies: {

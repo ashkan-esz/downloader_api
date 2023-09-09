@@ -3,131 +3,134 @@ import {sendResponse} from "./controllerUtils.js";
 
 export async function getNews(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getNews(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getNews(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getNewsWithDate(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {date, types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getNewsWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getUpdates(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getUpdates(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getUpdates(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getUpdatesWithDate(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {date, types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getTopsByLikes(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getTrailers(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getTrailers(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getTrailers(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getSortedMovies(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {sortBase, types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getSortedMovies(userId, sortBase, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getSeriesOfDay(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {dayNumber, types, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getSeriesOfDay(userId, dayNumber, types, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function getMultipleStatus(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, dataLevel, imdbScores, malScores, page, count} = req.params;
-    let result = await moviesServices.getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getMultipleStatus(userId, types, dataLevel, imdbScores, malScores, page, count, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchStaffAndCharacter(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
-    let result = await moviesServices.searchStaffAndCharacter(userId, filters, dataLevel, page, req.isGuest);
+    let result = await moviesServices.searchStaffAndCharacter(userId, filters, dataLevel, page, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchStaff(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
-    let result = await moviesServices.searchStaffOrCharacter(userId, 'staff', filters, dataLevel, page, req.isGuest);
+    let result = await moviesServices.searchStaffOrCharacter(userId, 'staff', filters, dataLevel, page, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchCharacter(req, res) {
     let userId = req.jwtUserData.userId;
     let filters = filterObjectFalsyValues(req.query);
+    let {noUserStats} = req.query;
     let {dataLevel, page} = req.params;
-    let result = await moviesServices.searchStaffOrCharacter(userId, 'character', filters, dataLevel, page, req.isGuest);
+    let result = await moviesServices.searchStaffOrCharacter(userId, 'character', filters, dataLevel, noUserStats, page, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchMovie(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let filters = filterObjectFalsyValues(req.query);
     let {dataLevel, page} = req.params;
-    let result = await moviesServices.searchMovie(userId, filters, dataLevel, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.searchMovie(userId, filters, dataLevel, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchMovieById(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let filters = filterObjectFalsyValues(req.query);
     let {id, dataLevel} = req.params;
-    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchStaffById(req, res) {
     let userId = req.jwtUserData.userId;
-    let {creditsCount} = req.query;
+    let {creditsCount, noUserStats} = req.query;
     let id = req.params.id;
-    let result = await moviesServices.searchStaffById(userId, id, creditsCount, req.isGuest);
+    let result = await moviesServices.searchStaffById(userId, id, creditsCount, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
 export async function searchCharacterById(req, res) {
     let userId = req.jwtUserData.userId;
-    let {creditsCount} = req.query;
+    let {creditsCount, noUserStats} = req.query;
     let id = req.params.id;
-    let result = await moviesServices.searchCharacterById(userId, id, creditsCount, req.isGuest);
+    let result = await moviesServices.searchCharacterById(userId, id, creditsCount, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -221,9 +224,9 @@ export async function userStatsHandleWatchState(req, res) {
 
 export async function getUserStatsList(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {statType, dataLevel, page} = req.params;
-    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, page, embedStaffAndCharacter);
+    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, page, embedStaffAndCharacter, noUserStats);
     return sendResponse(req, res, result);
 }
 
@@ -242,9 +245,9 @@ export async function getMovieSources(req, res) {
 
 export async function getGenresMovies(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter} = req.query;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
     let {types, genres, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page, embedStaffAndCharacter, req.isGuest);
+    let result = await moviesServices.getGenresMovies(userId, genres, types, imdbScores, malScores, dataLevel, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -254,8 +257,9 @@ export async function getAnimeEnglishNames(req, res) {
 }
 
 export async function getTodayBirthday(req, res) {
+    let {noUserStats} = req.query;
     let {staffOrCharacter, dataLevel, page} = req.params;
-    let result = await moviesServices.getTodayBirthday(req.jwtUserData, staffOrCharacter, req.query.followedOnly, dataLevel, page, req.isGuest);
+    let result = await moviesServices.getTodayBirthday(req.jwtUserData, staffOrCharacter, req.query.followedOnly, dataLevel, page, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -263,9 +267,9 @@ export async function getTodayBirthday(req, res) {
 //--------------------------------------------
 
 export async function getMoviesDataForBot(req, res) {
-    let {embedStaffAndCharacter, dontUpdateServerDate} = req.query;
+    let {embedStaffAndCharacter, dontUpdateServerDate, noUserStats} = req.query;
     let {botId, moviesRequestName, types, dataLevel, imdbScores, malScores} = req.params;
-    let result = await moviesServices.getMoviesDataForBot(botId, moviesRequestName, types, dataLevel, imdbScores, malScores, embedStaffAndCharacter, dontUpdateServerDate);
+    let result = await moviesServices.getMoviesDataForBot(botId, moviesRequestName, types, dataLevel, imdbScores, malScores, embedStaffAndCharacter, noUserStats, dontUpdateServerDate);
     return sendResponse(req, res, result);
 }
 
