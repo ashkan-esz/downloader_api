@@ -5,10 +5,9 @@ import {statTypes} from "../../data/db/userStatsDbMethods.js";
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const dataLevels = ['dlink', 'low', 'telbot', 'medium', 'info', 'high'];
 const sortBases = [
-    'animetopcomingsoon', 'animetopairing',
-    'animeseasonnow', 'animeseasonupcoming',
-    'comingsoon', 'intheaters', 'boxoffice',
-    'top', 'popular'];
+    'animetopcomingsoon', 'animetopairing', 'animeseasonnow',
+    'animeseasonupcoming', 'comingsoon', 'intheaters',
+    'boxoffice', 'top', 'popular', 'topsbylike',];
 
 const settingNames = ['movie', 'notification', 'downloadLinks'];
 const movieSettingskeys = ['includeAnime', 'includeHentai'];
@@ -19,6 +18,7 @@ const notificationSettingskeys = [
 ];
 const staffOrCharacter = ['staff', 'character'];
 const moviesRequestNames = ['news', 'updates', 'newsandupdates'];
+const apiName = ['news', 'updates', 'trailers'];
 
 const validations = Object.freeze({
     id: param('id')
@@ -450,6 +450,10 @@ const validations = Object.freeze({
     staffOrCharacter: param('staffOrCharacter')
         .trim().toLowerCase()
         .isIn(staffOrCharacter).withMessage(`Invalid parameter staffOrCharacter :: (${staffOrCharacter.join('|')})`),
+
+    apiName: param('apiName')
+        .trim().toLowerCase()
+        .isIn(apiName).withMessage(`Invalid parameter apiName :: (${apiName.join('|')})`),
 
     //-----------------------------------
     //-----------------------------------

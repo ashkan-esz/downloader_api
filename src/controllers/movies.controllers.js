@@ -1,11 +1,11 @@
 import {moviesServices} from '../services/index.js';
 import {sendResponse} from "./controllerUtils.js";
 
-export async function getNews(req, res) {
+export async function getMoviesOfApiName(req, res) {
     let userId = req.jwtUserData.userId;
     let {embedStaffAndCharacter, noUserStats} = req.query;
-    let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getNews(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
+    let {apiName, types, dataLevel, imdbScores, malScores, page} = req.params;
+    let result = await moviesServices.getMoviesOfApiName(userId, apiName, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -17,35 +17,11 @@ export async function getNewsWithDate(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function getUpdates(req, res) {
-    let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
-    let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getUpdates(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
-    return sendResponse(req, res, result);
-}
-
 export async function getUpdatesWithDate(req, res) {
     let userId = req.jwtUserData.userId;
     let {embedStaffAndCharacter, noUserStats} = req.query;
     let {date, types, dataLevel, imdbScores, malScores, page} = req.params;
     let result = await moviesServices.getUpdatesWithDate(userId, date, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
-    return sendResponse(req, res, result);
-}
-
-export async function getTopsByLikes(req, res) {
-    let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
-    let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getTopsByLikes(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
-    return sendResponse(req, res, result);
-}
-
-export async function getTrailers(req, res) {
-    let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
-    let {types, dataLevel, imdbScores, malScores, page} = req.params;
-    let result = await moviesServices.getTrailers(userId, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -125,19 +101,11 @@ export async function searchMovieById(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function searchStaffById(req, res) {
+export async function searchStaffOrCharacterById(req, res) {
     let userId = req.jwtUserData.userId;
     let {creditsCount, noUserStats} = req.query;
-    let id = req.params.id;
-    let result = await moviesServices.searchStaffById(userId, id, creditsCount, noUserStats, req.isGuest);
-    return sendResponse(req, res, result);
-}
-
-export async function searchCharacterById(req, res) {
-    let userId = req.jwtUserData.userId;
-    let {creditsCount, noUserStats} = req.query;
-    let id = req.params.id;
-    let result = await moviesServices.searchCharacterById(userId, id, creditsCount, noUserStats, req.isGuest);
+    let {id, staffOrCharacter} = req.params;
+    let result = await moviesServices.searchStaffOrCharacterById(userId, staffOrCharacter, id, creditsCount, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -151,17 +119,10 @@ export async function getMovieCreditsById(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function getStaffCreditsById(req, res) {
+export async function getStaffOrCharacterCreditsById(req, res) {
     let userId = req.jwtUserData.userId;
-    let {id, page} = req.params;
-    let result = await moviesServices.getStaffCreditsById(userId, id, page, req.isGuest);
-    return sendResponse(req, res, result);
-}
-
-export async function getCharacterCreditsById(req, res) {
-    let userId = req.jwtUserData.userId;
-    let {id, page} = req.params;
-    let result = await moviesServices.getCharacterCreditsById(userId, id, page, req.isGuest);
+    let {staffOrCharacter, id, page} = req.params;
+    let result = await moviesServices.getStaffOrCharacterCreditsById(userId, staffOrCharacter, id, page, req.isGuest);
     return sendResponse(req, res, result);
 }
 

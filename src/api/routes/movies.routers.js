@@ -4,12 +4,12 @@ import middlewares from '../middlewares/index.js';
 
 const router = Router();
 
-//movies/news/:types/:dataLevel/:imdbScores/:malScores/:page
-router.get('/news/:types/:dataLevel/:imdbScores/:malScores/:page',
+//movies/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page
+router.get('/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
+    middlewares.validateApiParams.checkApiParams(['apiName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getNews);
+    moviesControllers.getMoviesOfApiName);
 
 //movies/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
@@ -18,33 +18,12 @@ router.get('/newsWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getNewsWithDate);
 
-//movies/updates/:types/:dataLevel/:imdbScores/:malScores/:page
-router.get('/updates/:types/:dataLevel/:imdbScores/:malScores/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
-    middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getUpdates);
-
 //movies/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/updatesWithDate/:date/:types/:dataLevel/:imdbScores/:malScores/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['date', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUpdatesWithDate);
-
-//movies/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page
-router.get('/topsByLikes/:types/:dataLevel/:imdbScores/:malScores/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
-    middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getTopsByLikes);
-
-//movies/trailers/:types/:dataLevel/:imdbScores/:malScores/:page
-router.get('/trailers/:types/:dataLevel/:imdbScores/:malScores/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
-    middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getTrailers);
 
 //movies/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/sortedMovies/:sortBase/:types/:dataLevel/:imdbScores/:malScores/:page',
@@ -108,19 +87,12 @@ router.get('/searchById/:id/:dataLevel',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.searchMovieById);
 
-//movies/staff/searchById/:id
-router.get('/staff/searchById/:id',
+//movies/:staffOrCharacter/searchById/:id
+router.get('/:staffOrCharacter/searchById/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount', 'noUserStats']),
+    middlewares.validateApiParams.checkApiParams(['staffOrCharacter', 'id_int', 'creditsCount', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.searchStaffById);
-
-//movies/characters/searchById/:id
-router.get('/characters/searchById/:id',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'creditsCount', 'noUserStats']),
-    middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.searchCharacterById);
+    moviesControllers.searchStaffOrCharacterById);
 
 //--------------------------------------------
 //--------------------------------------------
@@ -132,19 +104,12 @@ router.get('/credits/:id/:page',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getMovieCreditsById);
 
-//movies/staff/credits/:id/:page
-router.get('/staff/credits/:id/:page',
+//movies/:staffOrCharacter/credits/:id/:page
+router.get('/:staffOrCharacter/credits/:id/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'page']),
+    middlewares.validateApiParams.checkApiParams(['staffOrCharacter', 'id_int', 'page']),
     middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getStaffCreditsById);
-
-//movies/characters/credits/:id/:page
-router.get('/characters/credits/:id/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id_int', 'page']),
-    middlewares.validateApiParams.apiParams_sendError,
-    moviesControllers.getCharacterCreditsById);
+    moviesControllers.getStaffOrCharacterCreditsById);
 
 //--------------------------------------------
 //--------------------------------------------
