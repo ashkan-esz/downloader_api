@@ -129,7 +129,7 @@ async function update_top_popular_title(titleDataFromDB, semiImdbData, type, mod
             await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imdbPoster, updateFields);
         }
 
-        await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+        await crawlerMethodsDB.updateMovieByIdDB(titleDataFromDB._id, updateFields);
     } catch (error) {
         saveError(error);
     }
@@ -213,7 +213,7 @@ async function update_inTheaters_comingSoon_title(titleDataFromDB, semiImdbData,
             addS3TrailerToTitleModel(updateFields, s3Trailer);
         }
 
-        await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+        await crawlerMethodsDB.updateMovieByIdDB(titleDataFromDB._id, updateFields);
     } catch (error) {
         saveError(error);
     }
@@ -280,7 +280,7 @@ async function addImdbTitleToDB(imdbData, type, status, releaseState, mode, rank
             }
         }
 
-        await crawlerMethodsDB.insertToDB('movies', titleModel);
+        await crawlerMethodsDB.insertMovieToDB(titleModel);
     } catch (error) {
         saveError(error);
     }

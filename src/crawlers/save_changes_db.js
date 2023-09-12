@@ -1,4 +1,4 @@
-import {searchTitleDB, insertToDB, updateByIdDB} from "../data/db/crawlerMethodsDB.js";
+import {searchTitleDB, insertMovieToDB, updateMovieByIdDB} from "../data/db/crawlerMethodsDB.js";
 import {deleteTrailerFromS3} from "../data/cloudStorage.js";
 import {addApiData, apiDataUpdate} from "./3rdPartyApi/allApiData.js";
 import {addStaffAndCharacters} from "./3rdPartyApi/staffAndCharacters/personCharacter.js";
@@ -80,7 +80,7 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
                 }
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
-                let insertedId = await insertToDB('movies', result.titleModel);
+                let insertedId = await insertMovieToDB(result.titleModel);
                 if (insertedId) {
                     if (type.includes('anime')) {
                         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.connectingRelatedTitles);
@@ -88,7 +88,7 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                     }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
                     await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate);
-                    await updateByIdDB('movies', insertedId, {
+                    await updateMovieByIdDB(insertedId, {
                         castUpdateDate: new Date(),
                     });
                 }
@@ -349,7 +349,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (Object.keys(updateFields).length > 0) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
-            await updateByIdDB('movies', db_data._id, updateFields);
+            await updateMovieByIdDB(db_data._id, updateFields);
         }
 
     } catch (error) {

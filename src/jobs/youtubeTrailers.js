@@ -1,5 +1,5 @@
 import {getMoviesWithNoTrailer} from "../data/db/moviesDbMethods.js";
-import {updateByIdDB} from "../data/db/crawlerMethodsDB.js";
+import {updateMovieByIdDB} from "../data/db/crawlerMethodsDB.js";
 import {uploadTitleYoutubeTrailerAndAddToTitleModel} from "../crawlers/posterAndTrailer.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 import {saveError} from "../error/saveError.js";
@@ -55,7 +55,7 @@ export async function addTrailersFromYoutubeJobFunc() {
                             `running, checked: ${loopCounter * _batchCount}, notFound: ${notFoundCount}, completed: ${completedCount}, running: ${runningCounter}`);
                         if (trailerUrl) {
                             let updateFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(movies[i], trailerUrl, {});
-                            await updateByIdDB('movies', movies[i]._id, updateFields);
+                            await updateMovieByIdDB(movies[i]._id, updateFields);
                             completedCount++;
                         } else {
                             notFoundCount++;

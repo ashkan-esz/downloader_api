@@ -580,7 +580,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             updateFields.castUpdateDate = new Date();
         }
 
-        await crawlerMethodsDB.updateByIdDB('movies', titleDataFromDB._id, updateFields);
+        await crawlerMethodsDB.updateMovieByIdDB(titleDataFromDB._id, updateFields);
     } catch (error) {
         saveError(error);
     }
@@ -628,7 +628,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
         titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         titleModel.summary.english_source = 'jikan';
         titleModel.genres = jikanApiFields.genres;
-        let insertedId = await crawlerMethodsDB.insertToDB('movies', titleModel);
+        let insertedId = await crawlerMethodsDB.insertMovieToDB(titleModel);
 
         if (insertedId && jikanApiFields) {
             let allApiData = {
@@ -636,7 +636,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
             };
             await connectNewAnimeToRelatedTitles(titleModel, insertedId);
             await addStaffAndCharacters(insertedId, allApiData, titleModel.castUpdateDate);
-            await crawlerMethodsDB.updateByIdDB('movies', insertedId, {
+            await crawlerMethodsDB.updateMovieByIdDB(insertedId, {
                 castUpdateDate: new Date(),
             });
         }
@@ -693,9 +693,7 @@ export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
             }
         }
         if (updateFlag) {
-            await crawlerMethodsDB.updateByIdDB(
-                'movies',
-                searchResults[i]._id,
+            await crawlerMethodsDB.updateMovieByIdDB(searchResults[i]._id,
                 {
                     relatedTitles: thisTitleRelatedTitles
                 });

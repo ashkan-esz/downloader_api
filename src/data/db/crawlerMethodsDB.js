@@ -93,17 +93,6 @@ export async function searchForAnimeRelatedTitlesByJikanIDDB(jikanID) {
 //-----------------------------------
 //-----------------------------------
 
-export async function updateMovieCollectionDB(updateFields) {
-    try {
-        let collection = await getCollection('movies');
-        await collection.updateMany({}, {
-            $set: updateFields
-        });
-    } catch (error) {
-        saveError(error);
-    }
-}
-
 export async function resetMonthLikeAndViewDB() {
     try {
         let collection = await getCollection('movies');
@@ -115,22 +104,6 @@ export async function resetMonthLikeAndViewDB() {
         });
     } catch (error) {
         saveError(error);
-    }
-}
-
-export async function updateByIdDB(collectionName, id, updateFields) {
-    try {
-        let collection = await getCollection(collectionName);
-        let result = await collection.updateOne({_id: id}, {
-            $set: updateFields
-        });
-        if (result.modifiedCount === 0) {
-            return 'notfound';
-        }
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return 'error';
     }
 }
 
@@ -153,9 +126,9 @@ export async function findOneAndUpdateMovieCollection(searchQuery, updateFields)
 //-----------------------------------
 //-----------------------------------
 
-export async function insertToDB(collectionName, dataToInsert) {
+export async function insertMovieToDB(dataToInsert) {
     try {
-        let collection = await getCollection(collectionName);
+        let collection = await getCollection('movies');
         let result = await collection.insertOne(dataToInsert);
         try {
             await prisma.movie.create({
@@ -173,13 +146,38 @@ export async function insertToDB(collectionName, dataToInsert) {
     }
 }
 
-export async function removeByIdDB(collectionName, id) {
+export async function updateMovieByIdDB(id, updateFields) {
     try {
-        let collection = await getCollection(collectionName);
-        let result = await collection.findOneAndDelete({_id: id});
-        return result.value;
+        let collection = await getCollection('movies');
+        let result = await collection.updateOne({_id: id}, {
+            $set: updateFields
+        });
+        if (result.modifiedCount === 0) {
+            return 'notfound';
+        }
+        return 'ok';
     } catch (error) {
         saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeMovieById(id) {
+    try {
+        let collection = await getCollection('movies');
+        await collection.deleteOne({_id: id});
+        await prisma.movie.delete({
+            where: {
+                movieId: id.toString(),
+            },
+            select: {
+                movieId: true,
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
     }
 }
 
@@ -349,16 +347,5 @@ export async function getDuplicateTitleInsertion(sourceName, pageLink) {
     } catch (error) {
         saveError(error);
         return [];
-    }
-}
-
-export async function removeMovieById(id) {
-    try {
-        let collection = await getCollection('movies');
-        await collection.deleteOne({_id: id});
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return 'error';
     }
 }
