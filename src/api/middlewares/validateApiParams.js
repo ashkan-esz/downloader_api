@@ -19,6 +19,7 @@ const notificationSettingskeys = [
 const staffOrCharacter = ['staff', 'character'];
 const moviesRequestNames = ['news', 'updates', 'newsandupdates'];
 const apiName = ['news', 'updates', 'trailers'];
+const sortBy = ['date', 'score'];
 
 const validations = Object.freeze({
     id: param('id')
@@ -363,6 +364,29 @@ const validations = Object.freeze({
         })
         .isBoolean().withMessage('Invalid parameter embedDownloadLinksConfig :: (true|false)')
         .toBoolean(),
+
+    favoritesOnly: query('favoritesOnly')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter favoritesOnly :: (true|false)')
+        .toBoolean(),
+
+    dropsOnly: query('dropsOnly')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter dropsOnly :: (true|false)')
+        .toBoolean(),
+
+    sortBy: query('sortBy')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'date'
+        })
+        .isIn(sortBy).withMessage(`Invalid parameter sortBy :: (${sortBy.join('|')})`),
 
     numberOfSeason_query: query('numberOfSeason')
         .customSanitizer(value => {

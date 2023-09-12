@@ -429,10 +429,10 @@ export async function userStatsHandleWatchState(userId, id, watch_season, watch_
     return generateServiceResult({}, 200, '');
 }
 
-export async function getUserStatsList(userId, statType, dataLevel, page, embedStaffAndCharacter, noUserStats) {
+export async function getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, page, embedStaffAndCharacter, noUserStats) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, skip, limit, noUserStats);
+    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats);
     if (userStatsList === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (userStatsList.length === 0) {

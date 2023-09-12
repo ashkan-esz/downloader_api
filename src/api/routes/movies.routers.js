@@ -173,7 +173,7 @@ router.put('/addUserStats/changeWatchState/:stat_list_type/:watch_season/:watch_
 //movies/userStatsList/:statType/:dataLevel/:page
 router.get('/userStatsList/:statType/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'embedStaffAndCharacter', 'noUserStats']),
+    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'sortBy', 'favoritesOnly', 'dropsOnly', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUserStatsList);
 

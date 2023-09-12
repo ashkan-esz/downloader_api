@@ -1123,7 +1123,7 @@ export async function addUserStats_updateWatchState(userId, id, watch_season, wa
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getUserStatsListDB(userId, statType, skip, limit, noUserStats) {
+export async function getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats) {
     try {
         if (statType === 'like_staff' || statType === 'dislike_staff') {
             const type = statType === 'like_staff' ? 'like' : 'dislike';
@@ -1146,13 +1146,13 @@ export async function getUserStatsListDB(userId, statType, skip, limit, noUserSt
             return await getUserStatsList_likeDislikedMovies(userId, type, skip, limit, noUserStats);
         }
         if (statType === 'finish_movie') {
-            return await getUserStatsList_finishedMovies(userId, skip, limit, noUserStats);
+            return await getUserStatsList_finishedMovies(userId, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats);
         }
         if (statType === 'watchlist_movie') {
-            return await getUserStatsList_watchlistMovies(userId, skip, limit, noUserStats);
+            return await getUserStatsList_watchlistMovies(userId, sortBy, skip, limit, noUserStats);
         }
         if (statType === 'follow_movie') {
-            return await getUserStatsList_followMovies(userId, skip, limit, noUserStats);
+            return await getUserStatsList_followMovies(userId, sortBy, skip, limit, noUserStats);
         }
         return [];
     } catch (error) {
@@ -1367,21 +1367,47 @@ async function getUserStatsList_likeDislikedMovies(userId, type, skip, limit, no
     }
 }
 
-async function getUserStatsList_finishedMovies(userId, skip, limit, noUserStats) {
+async function getUserStatsList_finishedMovies(userId, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats) {
     try {
-        return await prisma.watchedMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
-        );
+        return await prisma.watchedMovie.findMany({
+            where: {
+                userId: userId,
+                favorite: favoritesOnly ? true : undefined,
+                dropped: dropsOnly ? true : undefined,
+            },
+            skip: skip,
+            take: limit,
+            include: noUserStats ? undefined : {
+                movie: {
+                    include: {
+                        likeDislikeMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                type: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: [{
+                [sortBy]: 'desc',
+            }, {
+                date: sortBy === 'date' ? undefined : 'desc',
+            }],
+        });
     } catch (error) {
         saveError(error);
         return 'error';
     }
 }
 
-async function getUserStatsList_followMovies(userId, skip, limit, noUserStats) {
+async function getUserStatsList_followMovies(userId, sortBy, skip, limit, noUserStats) {
     try {
         return await prisma.followMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
+            getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1389,10 +1415,10 @@ async function getUserStatsList_followMovies(userId, skip, limit, noUserStats) {
     }
 }
 
-async function getUserStatsList_watchlistMovies(userId, skip, limit, noUserStats) {
+async function getUserStatsList_watchlistMovies(userId, sortBy, skip, limit, noUserStats) {
     try {
         return await prisma.watchListMovie.findMany(
-            getUserStatsList_movies_query(userId, skip, limit, noUserStats)
+            getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1400,7 +1426,7 @@ async function getUserStatsList_watchlistMovies(userId, skip, limit, noUserStats
     }
 }
 
-function getUserStatsList_movies_query(userId, skip, limit, noUserStats) {
+function getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats) {
     return ({
         where: {
             userId: userId,
@@ -1422,7 +1448,11 @@ function getUserStatsList_movies_query(userId, skip, limit, noUserStats) {
                 }
             },
         },
-        orderBy: {date: 'desc'},
+        orderBy: [{
+            [sortBy]: 'desc',
+        }, {
+            date: sortBy === 'date' ? undefined : 'desc',
+        }],
     });
 }
 

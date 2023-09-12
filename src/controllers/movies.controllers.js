@@ -192,9 +192,9 @@ export async function userStatsHandleWatchState(req, res) {
 
 export async function getUserStatsList(req, res) {
     let userId = req.jwtUserData.userId;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
+    let {sortBy, favoritesOnly, dropsOnly, embedStaffAndCharacter, noUserStats} = req.query;
     let {statType, dataLevel, page} = req.params;
-    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, page, embedStaffAndCharacter, noUserStats);
+    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, page, embedStaffAndCharacter, noUserStats);
     return sendResponse(req, res, result);
 }
 

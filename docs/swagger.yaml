@@ -1776,6 +1776,30 @@ paths:
             enum: [ 'like_movie', 'dislike_movie','like_staff', 'dislike_staff', 'like_character',
                     'dislike_character', 'follow_staff', 'favorite_character',
                     'finish_movie', 'follow_movie', 'watchlist_movie' ]
+        - name: sortBy
+          required: false
+          description: only works for finish_movie, follow_movie, watchlist_movie.  By default sorted by date
+          in: query
+          schema:
+            type: string
+            enum:
+              - date
+              - score
+            default: date
+        - name: favoritesOnly
+          required: false
+          description: only works for finish_movie
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: dropsOnly
+          required: false
+          description: only works for finish_movie
+          in: query
+          schema:
+            type: boolean
+            default: false
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
