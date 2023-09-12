@@ -78,18 +78,6 @@ export async function searchOnMovieCollectionDB(searchQuery, projection = {}) {
     }
 }
 
-export async function searchForAnimeRelatedTitlesByJikanIDDB(jikanID) {
-    try {
-        let collection = await getCollection('movies');
-        return await collection.find({
-            "relatedTitles.jikanID": jikanID,
-        }, {projection: {relatedTitles: 1}}).toArray();
-    } catch (error) {
-        saveError(error);
-        return [];
-    }
-}
-
 //-----------------------------------
 //-----------------------------------
 

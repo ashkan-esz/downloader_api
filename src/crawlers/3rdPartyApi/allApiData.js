@@ -1,6 +1,6 @@
 import {getOMDBApiData, getOMDBApiFields} from "./omdbApi.js";
 import {getTvMazeApiData, getTvMazeApiFields} from "./tvmazeApi.js";
-import {getJikanApiData, getJikanApiFields, getAnimeRelatedTitles} from "./jikanApi.js";
+import {getJikanApiData, getJikanApiFields, handleAnimeRelatedTitles} from "./jikanApi.js";
 import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
 import {handleSeasonEpisodeUpdate, getTotalDuration, getEndYear, getSeasonEpisode} from "../seasonEpisode.js";
 import {sortPosters} from "../subUpdates.js";
@@ -109,8 +109,6 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                 }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
                 titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
-                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
-                titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
             }
         }
     }
@@ -210,9 +208,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                 db_data.rating = currentRating;
                 updateFields.rating = currentRating;
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingRelatedTitles);
-                let newRelatedTitles = await getAnimeRelatedTitles(db_data, jikanApiFields.jikanRelatedTitles);
-                db_data.relatedTitles = newRelatedTitles;
-                updateFields.relatedTitles = newRelatedTitles;
+                await handleAnimeRelatedTitles(db_data._id, jikanApiFields.jikanRelatedTitles);
             }
         }
     }

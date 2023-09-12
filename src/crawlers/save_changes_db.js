@@ -5,7 +5,7 @@ import {addStaffAndCharacters} from "./3rdPartyApi/staffAndCharacters/personChar
 import {handleSiteSeasonEpisodeUpdate, getTotalDuration, getSeasonEpisode} from "./seasonEpisode.js";
 import {handleSubUpdates} from "./subUpdates.js";
 import {getMovieModel} from "../models/movie.js";
-import {getJikanApiData, connectNewAnimeToRelatedTitles} from "./3rdPartyApi/jikanApi.js";
+import {getJikanApiData, handleAnimeRelatedTitles} from "./3rdPartyApi/jikanApi.js";
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
@@ -82,9 +82,9 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
                 let insertedId = await insertMovieToDB(result.titleModel);
                 if (insertedId) {
-                    if (type.includes('anime')) {
-                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.connectingRelatedTitles);
-                        await connectNewAnimeToRelatedTitles(titleModel, insertedId);
+                    if (type.includes('anime') && result.allApiData.jikanApiFields) {
+                        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
+                        await handleAnimeRelatedTitles(insertedId, result.allApiData.jikanApiFields.jikanRelatedTitles);
                     }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
                     await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate);
@@ -244,7 +244,10 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (db_data.releaseState !== 'done' && downloadLinks.length > 0) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.convertingToRelease);
-            await convertUnReleasedTitleToNewTitle(db_data, updateFields, type);
+            db_data.releaseState = 'done';
+            updateFields.releaseState = 'done';
+            db_data.insert_date = new Date();
+            updateFields.insert_date = new Date();
         }
 
         if (type.includes('serial') && !apiData) {
@@ -354,16 +357,6 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
     } catch (error) {
         saveError(error);
-    }
-}
-
-async function convertUnReleasedTitleToNewTitle(db_data, updateFields, type) {
-    db_data.releaseState = 'done';
-    updateFields.releaseState = 'done';
-    db_data.insert_date = new Date();
-    updateFields.insert_date = new Date();
-    if (db_data.type.includes('anime') || type.includes('anime')) {
-        await connectNewAnimeToRelatedTitles(db_data, db_data._id);
     }
 }
 

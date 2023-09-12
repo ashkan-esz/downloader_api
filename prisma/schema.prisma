@@ -316,10 +316,10 @@ model WatchListMovie {
 model RelatedMovie {
   movieId      String
   relatedId    String
-  relation     String
-  movie        Movie  @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  relation     titleRelation
+  movie        Movie         @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
   // Self-referencing relation to represent related movies
-  relatedMovie Movie? @relation(fields: [relatedId], references: [movieId], onDelete: Cascade, onUpdate: Cascade, name: "relatedMovies")
+  relatedMovie Movie?        @relation(fields: [relatedId], references: [movieId], onDelete: Cascade, onUpdate: Cascade, name: "relatedMovies")
 
   @@unique([movieId, relatedId])
 }
@@ -349,4 +349,17 @@ model Movie {
 enum likeDislike {
   like
   dislike
+}
+
+enum titleRelation {
+  prequel
+  sequel
+  spin_off
+  side_story
+  full_story
+  summary
+  parent_story
+  other
+  alternative_setting
+  alternative_version
 }

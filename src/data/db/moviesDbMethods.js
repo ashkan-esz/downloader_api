@@ -1,5 +1,6 @@
 import mongodb from 'mongodb';
 import getCollection from '../mongoDB.js';
+import prisma from "../prisma.js";
 import {getMoviesCacheByKey} from "../cache.js";
 import {saveError} from "../../error/saveError.js";
 
@@ -583,6 +584,72 @@ export async function searchOnMoviesById(id, filters, projection, dataLevel = ''
     } catch (error) {
         saveError(error);
         return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function addRelatedMovies(id1, id2, relation) {
+    try {
+        id1 = id1.toString();
+        id2 = id2.toString();
+        relation = relation.toLowerCase().replace(/[-\s]/g, '_');
+        await prisma.relatedMovie.create({
+            data: {
+                movieId: id1,
+                relatedId: id2,
+                relation: relation,
+            },
+            select: {
+                movieId: true,
+            }
+        });
+
+        if (relation === 'prequel') {
+            await prisma.relatedMovie.create({
+                data: {
+                    movieId: id2,
+                    relatedId: id1,
+                    relation: 'sequel',
+                },
+                select: {
+                    movieId: true,
+                }
+            });
+        } else if (relation === 'sequel') {
+            await prisma.relatedMovie.create({
+                data: {
+                    movieId: id2,
+                    relatedId: id1,
+                    relation: 'prequel',
+                },
+                select: {
+                    movieId: true,
+                }
+            });
+        }
+
+        return 'ok';
+    } catch (error) {
+        if (error.code !== 'P2002') {
+            saveError(error);
+            return 'error';
+        }
+        return 'ok';
+    }
+}
+
+export async function getRelatedMovies(id) {
+    try {
+        return await prisma.relatedMovie.findMany({
+            where: {
+                relatedId: id.toString(),
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 

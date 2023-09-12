@@ -232,7 +232,7 @@ export async function searchMovie(userId, filters, dataLevel, page, embedStaffAn
     return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
-export async function searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, noUserStats, isGuest) {
+export async function searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedStaffAndCharacter, noUserStats, isGuest) {
     const cacheKey = getCacheKey(['searchMovieById', id, dataLevel, filters]);
     const cacheResult = await getMoviesCacheByKey(cacheKey);
     let result = cacheResult || await moviesDbMethods.searchOnMoviesById(id, filters, dataLevelConfig[dataLevel], dataLevel);
@@ -244,6 +244,7 @@ export async function searchMovieById(userId, id, dataLevel, filters, embedStaff
 
     let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
+        addRelatedTitlesToMovie(result, embedRelatedTitles),
         addStaffAndCharacterDataToMovie([result], embedStaffAndCharacter),
         addUserStatsDataToMovie(userId, [result], noUserStats, isGuest),
     ]);
@@ -654,6 +655,37 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
 
 //-----------------------------------------------------
 //-----------------------------------------------------
+
+export async function addRelatedTitlesToMovie(movie, embedRelatedTitles) {
+    try {
+        if (!embedRelatedTitles) {
+            return;
+        }
+
+        let relatedTitles = await moviesDbMethods.getRelatedMovies(movie._id);
+        let moviesData = await moviesDbMethods.getMoviesDataInBatch(relatedTitles.map(m => m.movieId), {
+            title: 1,
+            rawTitle: 1,
+            type: 1,
+            year: 1,
+            posters: 1,
+        });
+        let result = [];
+        for (let i = 0; i < relatedTitles.length; i++) {
+            let data = moviesData.find(m => m._id.toString() === relatedTitles[i].movieId);
+            if (data) {
+                let temp = {...relatedTitles[i], ...data};
+                delete temp.movieId;
+                delete temp.relatedId;
+                result.push(temp);
+            }
+        }
+        movie.relatedTitles = result;
+    } catch (error) {
+        saveError(error);
+        movie.relatedTitles = [];
+    }
+}
 
 async function addStaffAndCharacterDataToMovie(movies, embedStaffAndCharacter) {
     if (embedStaffAndCharacter) {

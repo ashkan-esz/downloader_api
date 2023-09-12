@@ -89,7 +89,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         animeType: '',
         animeSource: '',
         animeSeason: '',
-        relatedTitles: [],
     };
 }
 

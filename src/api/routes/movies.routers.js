@@ -83,7 +83,9 @@ router.get('/searchMovie/:dataLevel/:page',
 //movies/searchById/:id/:dataLevel
 router.get('/searchById/:id/:dataLevel',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedStaffAndCharacter', 'noUserStats']),
+    middlewares.validateApiParams.checkApiParams(
+        ['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedRelatedTitles', 'embedStaffAndCharacter', 'noUserStats']
+    ),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.searchMovieById);
 

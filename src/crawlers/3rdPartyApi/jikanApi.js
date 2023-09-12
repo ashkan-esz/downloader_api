@@ -1,6 +1,7 @@
 import axios from "axios";
 import {LRUCache} from "lru-cache";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
+import * as moviesDbMethods from "../../data/db/moviesDbMethods.js";
 import * as utils from "../utils/utils.js";
 import {addStaffAndCharacters} from "./staffAndCharacters/personCharacter.js";
 import {dataLevelConfig, getMovieModel} from "../../models/movie.js";
@@ -234,14 +235,14 @@ function getRelatedTitles(data) {
     let relatedTitles = [];
     for (let i = 0; i < data.relations.length; i++) {
         let relation = data.relations[i].relation;
+        if (relation === 'Character') {
+            continue;
+        }
         let entry = data.relations[i].entry;
         for (let j = 0; j < entry.length; j++) {
             if (entry[j].type === 'anime') {
                 relatedTitles.push({
-                    _id: '',
                     jikanID: entry[j].mal_id,
-                    title: utils.replaceSpecialCharacters(entry[j].name.toLowerCase()),
-                    rawTitle: entry[j].name.replace(/^["']|["']$/g, ''),
                     relation: relation,
                 });
             }
@@ -556,6 +557,8 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                 titleDataFromDB.summary.english_source = 'jikan';
                 updateFields.summary = titleDataFromDB.summary;
             }
+
+            await handleAnimeRelatedTitles(titleDataFromDB._id, jikanApiFields.jikanRelatedTitles);
         }
 
         const imageUrl = getImageUrl(semiJikanData);
@@ -575,7 +578,6 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                     jikanID: titleDataFromDB.jikanID,
                 },
             };
-            await connectNewAnimeToRelatedTitles(titleDataFromDB, titleDataFromDB._id);
             await addStaffAndCharacters(titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
             updateFields.castUpdateDate = new Date();
         }
@@ -624,7 +626,6 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
         titleModel.country = 'japan';
         titleModel.endYear = jikanApiFields.endYear;
         titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
-        titleModel.relatedTitles = await getAnimeRelatedTitles(titleModel, jikanApiFields.jikanRelatedTitles);
         titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         titleModel.summary.english_source = 'jikan';
         titleModel.genres = jikanApiFields.genres;
@@ -634,7 +635,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
             let allApiData = {
                 jikanApiFields,
             };
-            await connectNewAnimeToRelatedTitles(titleModel, insertedId);
+            await handleAnimeRelatedTitles(insertedId, jikanApiFields.jikanRelatedTitles);
             await addStaffAndCharacters(insertedId, allApiData, titleModel.castUpdateDate);
             await crawlerMethodsDB.updateMovieByIdDB(insertedId, {
                 castUpdateDate: new Date(),
@@ -643,61 +644,20 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
     }
 }
 
-export async function getAnimeRelatedTitles(titleData, jikanRelatedTitles) {
+export async function handleAnimeRelatedTitles(titleId, jikanRelatedTitles) {
     try {
-        let newRelatedTitles = [];
         for (let i = 0; i < jikanRelatedTitles.length; i++) {
             let searchResult = await crawlerMethodsDB.searchOnMovieCollectionDB(
                 {jikanID: jikanRelatedTitles[i].jikanID},
-                dataLevelConfig['medium']
+                {_id: 1}
             );
 
             if (searchResult) {
-                let relatedTitleData = {
-                    ...jikanRelatedTitles[i],
-                    ...searchResult
-                };
-                newRelatedTitles.push(relatedTitleData);
-            } else {
-                newRelatedTitles.push(jikanRelatedTitles[i]);
+                await moviesDbMethods.addRelatedMovies(searchResult._id, titleId, jikanRelatedTitles[i].relation);
             }
         }
-        return newRelatedTitles;
     } catch (error) {
         saveError(error);
-        return titleData.relatedTitles;
-    }
-}
-
-export async function connectNewAnimeToRelatedTitles(titleModel, titleID) {
-    let jikanID = titleModel.jikanID;
-    let mediumLevelDataKeys = Object.keys(dataLevelConfig['medium']);
-    let mediumLevelData = Object.keys(titleModel)
-        .filter(key => mediumLevelDataKeys.includes(key))
-        .reduce((obj, key) => {
-            obj[key] = titleModel[key];
-            return obj;
-        }, {});
-    let searchResults = await crawlerMethodsDB.searchForAnimeRelatedTitlesByJikanIDDB(jikanID);
-    for (let i = 0; i < searchResults.length; i++) {
-        let updateFlag = false;
-        let thisTitleRelatedTitles = searchResults[i].relatedTitles;
-        for (let j = 0; j < thisTitleRelatedTitles.length; j++) {
-            if (thisTitleRelatedTitles[j].jikanID === jikanID) {
-                updateFlag = true;
-                thisTitleRelatedTitles[j] = {
-                    ...thisTitleRelatedTitles[j],
-                    ...mediumLevelData,
-                    _id: titleID,
-                }
-            }
-        }
-        if (updateFlag) {
-            await crawlerMethodsDB.updateMovieByIdDB(searchResults[i]._id,
-                {
-                    relatedTitles: thisTitleRelatedTitles
-                });
-        }
     }
 }
 

@@ -1067,6 +1067,12 @@ paths:
         - $ref: '#/components/parameters/qualities_query'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
         - $ref: '#/components/parameters/noUserStats'
+        - name: embedRelatedTitles
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
         - name: embedDownloadLinksConfig
           required: false
           in: query
@@ -1501,8 +1507,8 @@ paths:
         - Movies-UserStats
       summary: Add/Remove Movie To finished/dropped list
       description: <p> handle when user finished watching movie/serial or dropped it. also can handle favorite movie/serial<br/>
-          movie/serial should be released before doing this action. <br/>
-          if serial isn't ended, it will considered as dropped <br/>
+        movie/serial should be released before doing this action. <br/>
+        if serial isn't ended, it will considered as dropped <br/>
         <p/>
       operationId: movies-addUserStatsFinishMovie
       parameters:
@@ -2525,6 +2531,7 @@ security:
     DataLevel_dlink:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       type: object
       properties:
         _id:
@@ -2562,6 +2569,7 @@ security:
     DataLevel_low:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       type: object
       properties:
         _id:
@@ -2593,6 +2601,7 @@ security:
     DataLevel_telbot:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       type: object
       properties:
         _id:
@@ -2648,6 +2657,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/DataLevel_low'
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       type: object
       properties:
         releaseState:
@@ -2709,6 +2719,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/DataLevel_medium'
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       type: object
       properties:
         titleSynonyms:
@@ -2796,22 +2807,6 @@ security:
           type: string
         animeSeason:
           type: string
-        relatedTitles:
-          type: array
-          items:
-            type: object
-            properties:
-              _id:
-                type: string
-              jikanID:
-                type: integer
-              title:
-                type: string
-              rawTitle:
-                type: string
-              relation:
-                type: string
-                enum: [ 'Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off' ]
         userStats:
           $ref: '#/components/schemas/UserStats'
         userStats_extra:
@@ -2821,6 +2816,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/DataLevel_high'
         - $ref: '#/components/schemas/EmbedCast'
+        - $ref: '#/components/schemas/RelatedTitles'
       not:
         type: object
         properties:
@@ -2835,6 +2831,32 @@ security:
       type: string
       enum: [ 'dlink', 'low', 'telbot', 'medium', 'high', 'info' ]
       default: 'low'
+
+    RelatedTitles:
+      description: only exist for single movie requests
+      type: array
+      items:
+        type: object
+        properties:
+          _id:
+            type: string
+          title:
+            type: string
+          rawTitle:
+            type: string
+          type:
+            type: string
+          year:
+            type: string
+          posters:
+            type: array
+            items:
+              $ref: '#/components/schemas/Poster'
+          relation:
+            type: string
+            enum: [ 'prequel', 'sequel', 'spin_off', 'side_story',
+                    'full_story', 'summary', 'parent_story', 'other',
+                    'alternative_setting', 'alternative_version' ]
 
     LatestData:
       type: object

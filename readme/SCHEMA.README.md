@@ -261,13 +261,6 @@ dataLevel = {
         animeType: String,
         animeSource: String,
         animeSeason: String,
-        relatedTitles: Array({
-            _id: '' || Object,
-            jikanID: Int,
-            title: String,
-            rawTitle: String,
-            relation: String, //enum('Prequel', 'Sequel', 'Side Story', 'Parent Story', 'Spin-off')
-        }),
         userStats: #userStats,
     },
     info: {

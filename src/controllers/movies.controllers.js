@@ -95,9 +95,10 @@ export async function searchMovieById(req, res) {
     let filters = filterObjectFalsyValues(req.query);
     delete filters.noUserStats;
     delete filters.embedStaffAndCharacter;
-    let {embedStaffAndCharacter, noUserStats} = req.query;
+    delete filters.embedRelatedTitles;
+    let {embedRelatedTitles, embedStaffAndCharacter, noUserStats} = req.query;
     let {id, dataLevel} = req.params;
-    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedStaffAndCharacter, noUserStats, req.isGuest);
+    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 

@@ -154,7 +154,6 @@ export const linkStateMessages = Object.freeze({
     newTitle: Object.freeze({
         newTitle: 'new title',
         inserting: 'new title: inserting',
-        connectingRelatedTitles: 'new title: connecting related titles',
         addingCast: 'new title: adding cast and characters',
         uploadingPosterToS3: 'new title: uploading poster to s3',
         generatingThumbnail: 'new title: generating thumbnail',

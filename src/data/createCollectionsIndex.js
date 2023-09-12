@@ -49,7 +49,6 @@ export async function createCollectionsAndIndexes() {
         await moviesCollection.createIndex({genres: 1});
         //usage: title, **alternateTitles**, **titleSynonyms**, type, year
         //usage: jikanID
-        //usage: relatedTitles.jikanID
         //usage: imdbID
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: year, insert_date)
         //usage: releaseState, type, rating.imdb, rating.myAnimeList, (sort: update_date, year)
