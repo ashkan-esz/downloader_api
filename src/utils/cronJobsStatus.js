@@ -5,6 +5,7 @@ import {removeS3UnusedFilesJobFunc, resetMonthLikesJobFunc, updateJikanImdbDataJ
 import {createThumbnails} from "../data/db/admin/thumbnailDbMethods.js";
 import {addTrailersFromYoutubeJobFunc} from "../jobs/youtubeTrailers.js";
 import {saveError} from "../error/saveError.js";
+import {updateMovieRanksJobFunc} from "../jobs/movieRanks.js";
 
 const cronJobsStatus = {
     checkCrawlerDomains: {
@@ -22,6 +23,14 @@ const cronJobsStatus = {
         value: '',
         description: 'Every day at 12:00 and 24:00',
         startFunc: updateJikanImdbDataJobFunc,
+    },
+    updateMovieRanks: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: 'Every day at 12:30 and 00:30',
+        startFunc: updateMovieRanksJobFunc,
     },
     resetMonthLikes: {
         running: false,

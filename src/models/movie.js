@@ -16,6 +16,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             boxOffice: -1,
             top: -1,
             popular: -1,
+            like: -1,
         },
         title: titleObj.title,
         type: type,

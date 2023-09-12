@@ -28,7 +28,6 @@
 - [GET /movies/newsWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesnewswithdatedatetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/updates/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdatestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/updatesWithDate/[date]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviesupdateswithdatedatetypesdatalevelimdbscoresmalscorespage)
-- [GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestopsbylikestypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/trailers/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviestrailerstypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/sortedMovies/[sortBase]/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]](#get-moviessortedmoviessortbasetypesdatalevelimdbscoresmalscorespage)
 - [GET /movies/seriesOfDay/[dayNumber]/[types]/[imdbScores]/[malScores]/[page]](#get-moviesseriesofdaydaynumbertypesimdbscoresmalscorespage)
@@ -104,19 +103,6 @@ Examples
 </details>
 <br />
 
-### GET /movies/topsByLikes/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
-> return movies sorted by inApp like count. ([movies schema](SCHEMA.README.md#Movie-Data))
-
-<details>
-<summary>
-Examples
-</summary>
-
-- https://api.movietracker.mom/movies/topsByLikes/serial-anime_serial/low/0-10/0-10/1
-- https://api.movietracker.mom/movies/topsByLikes/anime_serial/medium/6-10/0-10/1
-- https://api.movietracker.mom/movies/topsByLikes/movie/high/0-10/0-10/1
-</details>
-<br />
 
 ### GET /movies/trailers/[types]/[dataLevel]/[imdbScores]/[malScores]/[page]
 > return movies with new added trailer. ([movies schema](SCHEMA.README.md#Movie-Data))

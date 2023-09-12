@@ -60,6 +60,7 @@ export async function startAgenda() {
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("15 * * * *", "check movie source domains", {}, {timezone: "Asia/Tehran"});// Every hour - **:15
         await agenda.every("0 */12 * * *", "update jikan/imdb data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
+        await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30
         await agenda.every("0 1 1 * *", "reset month likes", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 0 * * 0", "remove unused files from s3", {}, {timezone: "Asia/Tehran"}); //At 00:00 on Sunday.
         await agenda.every("0 1 * * 0", "compute users favorite genres", {}, {timezone: "Asia/Tehran"}); //At 01:00 on Sunday.

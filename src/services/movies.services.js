@@ -89,11 +89,7 @@ export async function getSortedMovies(userId, sortBase, types, dataLevel, imdbSc
 
     const cacheKey = getCacheKey(['getSortedMovies', sortBase, types, dataLevel, imdbScores, malScores, page]);
     const cacheResult = await getMoviesCacheByKey(cacheKey);
-    let result = cacheResult || (
-        sortBase === 'topsbylike'
-            ? await moviesDbMethods.getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
-            : await moviesDbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel])
-    );
+    let result = cacheResult || await moviesDbMethods.getSortedMovies(sortBase, types, imdbScores, malScores, skip, limit, dataLevelConfig[dataLevel]);
     if (result === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (result.length === 0) {

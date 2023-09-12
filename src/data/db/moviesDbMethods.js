@@ -98,30 +98,6 @@ export async function getUpdateMoviesWithDate(updateDate, types, imdbScores, mal
     }
 }
 
-export async function getTopsByLikesMovies(types, imdbScores, malScores, skip, limit, projection) {
-    try {
-        let collection = await getCollection('movies');
-
-        return await collection.find({
-            releaseState: 'done',
-            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-        }, {
-            projection: projection
-        })
-            .sort({
-                // todo : refactor
-                // 'userStats.like_movie': -1,
-                _id: -1,
-            })
-            .skip(skip)
-            .limit(limit)
-            .toArray();
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
 export async function getNewTrailers(types, imdbScores, malScores, skip, limit, projection) {
     try {
         let collection = await getCollection('movies');
@@ -204,6 +180,8 @@ export async function getSortedMovies(sortBase, types, imdbScores, malScores, sk
             searchBase = "rank.top";
         } else if (sortBase === 'popular') {
             searchBase = "rank.popular";
+        } else if (sortBase === 'like') {
+            searchBase = "rank.like";
         } else {
             return [];
         }
@@ -584,6 +562,29 @@ export async function searchOnMoviesById(id, filters, projection, dataLevel = ''
     } catch (error) {
         saveError(error);
         return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function getTopMoviesIdsByLikes() {
+    try {
+        return await prisma.movie.findMany({
+            where: {
+                likes_count: {not: 0}
+            },
+            take: 200,
+            select: {
+                movieId: true,
+            },
+            orderBy: {
+                likes_count: 'desc',
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
     }
 }
 
