@@ -1563,6 +1563,27 @@ export async function getMoviesUserStatsCounts(movieIds) {
 //----------------------------------------------------------------
 //----------------------------------------------------------------
 
+export async function incrementMovieView(id) {
+    try {
+        return await prisma.movie.update({
+            where: {
+                movieId: id.toString(),
+            },
+            data: {
+                view_count: {increment: 1},
+            },
+            select: {
+                view_count: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
 export const defaultUserStats = Object.freeze({
     like: false,
     dislike: false,
@@ -1579,6 +1600,7 @@ export const defaultUserStats = Object.freeze({
     follow_count: 0,
     watchlist_count: 0,
     continue_count: 0,
+    view_count: 0,
 });
 
 export const defaultUserStats_extra = Object.freeze({

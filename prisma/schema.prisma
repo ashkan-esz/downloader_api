@@ -334,6 +334,7 @@ model Movie {
   follow_count    Int    @default(0)
   watchlist_count Int    @default(0)
   continue_count  Int    @default(0)
+  view_count      Int    @default(0)
 
   credits           Credit[]
   watchListMovies   WatchListMovie[]

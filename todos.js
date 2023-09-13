@@ -20,7 +20,6 @@
 //todo : 54. alpha feature: use sql dataBase for userStats
 //todo : 57. add documentation for codes
 //todo : 58. add more tests
-//todo : 73. add feature 'view' to movies
 //todo : 74. add feature: users chats
 //todo : 76. add socket
 //todo : 78. add feature 'comments' to movies
@@ -35,7 +34,6 @@
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
-//todo : 124. add feature: 'like_month' , 'view_month' to movies
 //todo : 125. handle moviePoster in cast sections when domain changes
 //todo : 126. refactor allApiData file
 //todo : 127. add schema validator

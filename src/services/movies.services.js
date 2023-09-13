@@ -237,6 +237,7 @@ export async function searchMovieById(userId, id, dataLevel, filters, embedRelat
     } else if (!result) {
         return generateServiceResult({data: null}, 404, errorMessage.movieNotFound);
     }
+    userStatsDbMethods.incrementMovieView(id);
 
     let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
@@ -766,6 +767,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                         follow_count: statsData.follow_count,
                         watchlist_count: statsData.watchlist_count,
                         continue_count: statsData.continue_count,
+                        view_count: statsData.view_count,
                         like: false,
                         dislike: false,
                     }
@@ -793,6 +795,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                     follow_count: userStats.follow_count,
                     watchlist_count: userStats.watchlist_count,
                     continue_count: userStats.continue_count,
+                    view_count: userStats.view_count,
                     like: false,
                     dislike: false,
                     favorite: false,
@@ -852,6 +855,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
                 follow_count: statsData.follow_count,
                 watchlist_count: statsData.watchlist_count,
                 continue_count: statsData.continue_count,
+                view_count: statsData.view_count,
                 like: false,
                 dislike: false,
             }

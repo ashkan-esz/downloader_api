@@ -2999,6 +2999,8 @@ security:
           type: integer
         continue_count:
           type: integer
+        view_count:
+          type: integer
 
     UserStats_extra:
       description: movies only
