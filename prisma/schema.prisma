@@ -325,16 +325,17 @@ model RelatedMovie {
 }
 
 model Movie {
-  movieId         String @id @unique
-  likes_count     Int    @default(0)
-  dislikes_count  Int    @default(0)
-  favorite_count  Int    @default(0)
-  dropped_count   Int    @default(0)
-  finished_count  Int    @default(0)
-  follow_count    Int    @default(0)
-  watchlist_count Int    @default(0)
-  continue_count  Int    @default(0)
-  view_count      Int    @default(0)
+  movieId          String @id @unique
+  likes_count      Int    @default(0)
+  dislikes_count   Int    @default(0)
+  favorite_count   Int    @default(0)
+  dropped_count    Int    @default(0)
+  finished_count   Int    @default(0)
+  follow_count     Int    @default(0)
+  watchlist_count  Int    @default(0)
+  continue_count   Int    @default(0)
+  view_count       Int    @default(0)
+  view_month_count Int    @default(0)
 
   credits           Credit[]
   watchListMovies   WatchListMovie[]

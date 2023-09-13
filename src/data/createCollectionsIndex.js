@@ -43,6 +43,8 @@ export async function createCollectionsAndIndexes() {
             'rank.top': 1,
             'rank.popular': 1,
             'rank.like': 1,
+            'rank.like_month': 1,
+            'rank.view_month': 1,
             'rating.imdb': 1,
             'rating.myAnimeList': 1
         });

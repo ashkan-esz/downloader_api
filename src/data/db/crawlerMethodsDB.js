@@ -81,20 +81,6 @@ export async function searchOnMovieCollectionDB(searchQuery, projection = {}) {
 //-----------------------------------
 //-----------------------------------
 
-export async function resetMonthLikeAndViewDB() {
-    try {
-        let collection = await getCollection('movies');
-        await collection.updateMany({}, {
-            $set: {
-                like_month: 0,
-                view_month: 0,
-            }
-        });
-    } catch (error) {
-        saveError(error);
-    }
-}
-
 export async function findOneAndUpdateMovieCollection(searchQuery, updateFields) {
     try {
         let collection = await getCollection('movies');

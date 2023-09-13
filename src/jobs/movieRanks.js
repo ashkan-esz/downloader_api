@@ -27,6 +27,17 @@ export async function updateMovieRanksJobFunc() {
         await crawlerMethodsDB.replaceRankWithTempRank('like');
         updateCronJobsStatus('updateMovieRanks', 'rank.like -end');
 
+        updateCronJobsStatus('updateMovieRanks', 'rank.like_month');
+        await crawlerMethodsDB.resetTempRank();
+        await updateRank('like_month');
+        await crawlerMethodsDB.replaceRankWithTempRank('like_month');
+        updateCronJobsStatus('updateMovieRanks', 'rank.like_month -end');
+
+        updateCronJobsStatus('updateMovieRanks', 'rank.view_month');
+        await crawlerMethodsDB.resetTempRank();
+        await updateRank('view_month');
+        await crawlerMethodsDB.replaceRankWithTempRank('view_month');
+        updateCronJobsStatus('updateMovieRanks', 'rank.view_month -end');
 
         updateCronJobsStatus('updateMovieRanks', 'end');
         return {status: 'ok'};
@@ -43,7 +54,12 @@ async function updateRank(rankField) {
         let movies = [];
         if (rankField === 'like') {
             movies = await moviesDbMethods.getTopMoviesIdsByLikes();
+        } else if (rankField === 'like_month') {
+            movies = await moviesDbMethods.getTopMoviesIdsByLikeMonth();
+        } else if (rankField === 'view_month') {
+            movies = await moviesDbMethods.getTopMoviesIdsByViewMonth();
         }
+
         for (let i = 0; i < movies.length; i++) {
             const rank = i + 1;
             updatePromiseQueue.add(() => crawlerMethodsDB.updateMovieByIdDB(new mongodb.ObjectId(movies[i].movieId), {tempRank: rank}));

@@ -1571,9 +1571,28 @@ export async function incrementMovieView(id) {
             },
             data: {
                 view_count: {increment: 1},
+                view_month_count: {increment: 1},
             },
             select: {
                 view_count: true,
+                view_month_count: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+    }
+}
+
+export async function resetMoviesMonthView() {
+    try {
+        return await prisma.movie.updateMany({
+            where: {
+            },
+            data: {
+                view_month_count: 0,
+            },
+            select: {
+                view_month_count: true,
             }
         });
     } catch (error) {
@@ -1601,6 +1620,7 @@ export const defaultUserStats = Object.freeze({
     watchlist_count: 0,
     continue_count: 0,
     view_count: 0,
+    view_month_count: 0,
 });
 
 export const defaultUserStats_extra = Object.freeze({

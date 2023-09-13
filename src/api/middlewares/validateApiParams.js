@@ -7,7 +7,7 @@ const dataLevels = ['dlink', 'low', 'telbot', 'medium', 'info', 'high'];
 const sortBases = [
     'animetopcomingsoon', 'animetopairing', 'animeseasonnow',
     'animeseasonupcoming', 'comingsoon', 'intheaters',
-    'boxoffice', 'top', 'popular', 'like',];
+    'boxoffice', 'top', 'popular', 'like', 'like_month', 'view_month'];
 
 const settingNames = ['movie', 'notification', 'downloadLinks'];
 const movieSettingskeys = ['includeAnime', 'includeHentai'];

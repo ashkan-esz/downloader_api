@@ -2129,7 +2129,7 @@ security:
         type: string
         enum: [ 'animeTopComingSoon', 'animeTopAiring', 'animeSeasonNow',
                 'animeSeasonUpcoming', 'comingSoon', 'inTheaters',
-                'boxOffice', 'top', 'popular', 'like',
+                'boxOffice', 'top', 'popular', 'like', 'like_month', 'view_month'
         ]
         default: 'animeTopComingSoon'
     date:
@@ -2757,10 +2757,6 @@ security:
                 type: integer
         view:
           type: integer
-        like_month:
-          type: integer
-        view_month:
-          type: integer
         add_date:
           $ref: '#/components/schemas/DateString'
         apiUpdateDate:
@@ -3000,6 +2996,8 @@ security:
         continue_count:
           type: integer
         view_count:
+          type: integer
+        view_month_count:
           type: integer
 
     UserStats_extra:
@@ -3554,6 +3552,12 @@ security:
         top:
           type: integer
         popular:
+          type: integer
+        like:
+          type: integer
+        like_month:
+          type: integer
+        view_month:
           type: integer
 
     NextEpisode:

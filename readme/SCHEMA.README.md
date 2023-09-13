@@ -225,8 +225,6 @@ dataLevel = {
             episodes: Int,
         }),
         view: Int,
-        like_month: Int,
-        view_month: Int,
         add_date: Date,
         apiUpdateDate: Date,
         castUpdateDate: Date,

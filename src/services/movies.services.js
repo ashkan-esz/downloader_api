@@ -768,6 +768,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                         watchlist_count: statsData.watchlist_count,
                         continue_count: statsData.continue_count,
                         view_count: statsData.view_count,
+                        view_month_count: statsData.view_month_count,
                         like: false,
                         dislike: false,
                     }
@@ -795,7 +796,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                     follow_count: userStats.follow_count,
                     watchlist_count: userStats.watchlist_count,
                     continue_count: userStats.continue_count,
-                    view_count: userStats.view_count,
+                    view_month_count: userStats.view_month_count,
                     like: false,
                     dislike: false,
                     favorite: false,
@@ -855,7 +856,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
                 follow_count: statsData.follow_count,
                 watchlist_count: statsData.watchlist_count,
                 continue_count: statsData.continue_count,
-                view_count: statsData.view_count,
+                view_month_count: statsData.view_month_count,
                 like: false,
                 dislike: false,
             }

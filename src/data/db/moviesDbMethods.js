@@ -182,6 +182,10 @@ export async function getSortedMovies(sortBase, types, imdbScores, malScores, sk
             searchBase = "rank.popular";
         } else if (sortBase === 'like') {
             searchBase = "rank.like";
+        } else if (sortBase === 'like_month') {
+            searchBase = "rank.like_month";
+        } else if (sortBase === 'view_month') {
+            searchBase = "rank.view_month";
         } else {
             return [];
         }
@@ -580,6 +584,65 @@ export async function getTopMoviesIdsByLikes() {
             },
             orderBy: {
                 likes_count: 'desc',
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getTopMoviesIdsByLikeMonth() {
+    try {
+        let startDate = new Date();
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        let result = await prisma.movie.findMany({
+            where: {
+                likes_count: {not: 0}
+            },
+            take: 1000,
+            select: {
+                movieId: true,
+                _count: {
+                    select: {
+                        likeDislikeMovies: {
+                            where: {
+                                type: 'like',
+                                date: {gte: startDate},
+                            },
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                likes_count: 'desc',
+            },
+        });
+
+        result = result.filter(item => item._count.likeDislikeMovies > 0)
+            .sort((a, b) => b._count.likeDislikeMovies - a._count.likeDislikeMovies)
+            .slice(0, 200);
+
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getTopMoviesIdsByViewMonth() {
+    try {
+        return await prisma.movie.findMany({
+            where: {
+                view_month_count: {not: 0}
+            },
+            take: 200,
+            select: {
+                movieId: true,
+            },
+            orderBy: {
+                view_month_count: 'desc',
             }
         });
     } catch (error) {

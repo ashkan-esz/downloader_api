@@ -1,5 +1,4 @@
 import config from "../config/index.js";
-import {resetMonthLikeAndViewDB} from "../data/db/crawlerMethodsDB.js";
 import Agenda from "agenda";
 import {crawler, crawlerCycle} from "../crawlers/crawler.js";
 import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
@@ -8,6 +7,7 @@ import {deleteUnusedFiles} from "../data/cloudStorage.js";
 import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 import {saveError} from "../error/saveError.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
+import {resetMoviesMonthView} from "../data/db/userStatsDbMethods.js";
 
 let agenda = new Agenda({
     db: {address: config.dataBases.mongodb.url, collection: 'agendaJobs'},
@@ -61,7 +61,7 @@ export async function startAgenda() {
         await agenda.every("15 * * * *", "check movie source domains", {}, {timezone: "Asia/Tehran"});// Every hour - **:15
         await agenda.every("0 */12 * * *", "update jikan/imdb data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
         await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30
-        await agenda.every("0 1 1 * *", "reset month likes", {}, {timezone: "Asia/Tehran"});
+        await agenda.every("30 11 1 * *", "reset month likes", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 0 * * 0", "remove unused files from s3", {}, {timezone: "Asia/Tehran"}); //At 00:00 on Sunday.
         await agenda.every("0 1 * * 0", "compute users favorite genres", {}, {timezone: "Asia/Tehran"}); //At 01:00 on Sunday.
         await agenda.every("0 23 * * *", "save total/active users count", {}, {timezone: "Asia/Tehran"}); //At 23:00.
@@ -96,7 +96,7 @@ export async function updateJikanImdbDataJobFunc() {
 
 export async function resetMonthLikesJobFunc() {
     updateCronJobsStatus('resetMonthLikes', 'start');
-    await resetMonthLikeAndViewDB();
+    await resetMoviesMonthView();
     updateCronJobsStatus('resetMonthLikes', 'end');
 }
 
