@@ -9,7 +9,6 @@
 //todo : 20. crawler: add new movie sources to replace 'digimoviez'
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
 //todo : 29. add telegram bot for some system to backup database
-//todo : 38. add feature 'score' to movies
 //todo : 39. better emails
 //todo : 44. telegramBot: add features that exist in adminPanel
 //todo : 45. send warnings and errors to admin with telegramBot
@@ -17,7 +16,6 @@
 //todo : 47. add landscape posters for movies
 //todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
 //todo : 52. change the way of data update to dont change original data object
-//todo : 54. alpha feature: use sql dataBase for userStats
 //todo : 57. add documentation for codes
 //todo : 58. add more tests
 //todo : 74. add feature: users chats
@@ -34,13 +32,11 @@
 //todo : 112. remove source link/poster/trailer after 5 day inactive
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production
-//todo : 125. handle moviePoster in cast sections when domain changes
 //todo : 126. refactor allApiData file
 //todo : 127. add schema validator
 //todo : 128. add schema for models and add related methods to it
 //todo : 130. add new sources
 //todo : 131. add personality type to user data, and api to find same character
-//todo : 133. add feature: 'watched', 'watching', 'want to watch', 'dropped' to movies
 //todo : 134. add feature: upload fanArt
 //todo : 135. check fastify
 //todo : 136. smart suggestion method

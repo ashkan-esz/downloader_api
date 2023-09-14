@@ -33,6 +33,12 @@ export async function updateMovieRanksJobFunc() {
         await crawlerMethodsDB.replaceRankWithTempRank('like_month');
         updateCronJobsStatus('updateMovieRanks', 'rank.like_month -end');
 
+        updateCronJobsStatus('updateMovieRanks', 'rank.follow_month');
+        await crawlerMethodsDB.resetTempRank();
+        await updateRank('follow_month');
+        await crawlerMethodsDB.replaceRankWithTempRank('follow_month');
+        updateCronJobsStatus('updateMovieRanks', 'rank.follow_month -end');
+
         updateCronJobsStatus('updateMovieRanks', 'rank.view_month');
         await crawlerMethodsDB.resetTempRank();
         await updateRank('view_month');
@@ -56,6 +62,8 @@ async function updateRank(rankField) {
             movies = await moviesDbMethods.getTopMoviesIdsByLikes();
         } else if (rankField === 'like_month') {
             movies = await moviesDbMethods.getTopMoviesIdsByLikeMonth();
+        } else if (rankField === 'follow_month') {
+            movies = await moviesDbMethods.getTopMoviesIdsByFollowMonth();
         } else if (rankField === 'view_month') {
             movies = await moviesDbMethods.getTopMoviesIdsByViewMonth();
         }

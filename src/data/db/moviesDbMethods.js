@@ -184,6 +184,8 @@ export async function getSortedMovies(sortBase, types, imdbScores, malScores, sk
             searchBase = "rank.like";
         } else if (sortBase === 'like_month') {
             searchBase = "rank.like_month";
+        } else if (sortBase === 'follow_month') {
+            searchBase = "rank.follow_month";
         } else if (sortBase === 'view_month') {
             searchBase = "rank.view_month";
         } else {
@@ -622,6 +624,51 @@ export async function getTopMoviesIdsByLikeMonth() {
 
         result = result.filter(item => item._count.likeDislikeMovies > 0)
             .sort((a, b) => b._count.likeDislikeMovies - a._count.likeDislikeMovies)
+            .slice(0, 200);
+
+        return result;
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getTopMoviesIdsByFollowMonth() {
+    try {
+        let startDate = new Date();
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        let result = await prisma.movie.findMany({
+            where: {
+                follow_count: {not: 0}
+            },
+            take: 1000,
+            select: {
+                movieId: true,
+                dropped_count: true,
+                _count: {
+                    select: {
+                        followMovies: {
+                            where: {
+                                date: {gte: startDate},
+                            },
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                follow_count: 'desc',
+            },
+        });
+
+        result = result.filter(item => item._count.followMovies > 0)
+            .sort((a, b) => {
+                let temp = b._count.followMovies - a._count.followMovies;
+                if (temp === 0) {
+                    return a.dropped_count - b.dropped_count;
+                }
+                return temp;
+            })
             .slice(0, 200);
 
         return result;
