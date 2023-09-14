@@ -172,8 +172,23 @@ export async function userStatsFollowMovieService(req, res) {
 export async function userStatsWatchListMovieService(req, res) {
     let userId = req.jwtUserData.userId;
     let {remove, score} = req.query;
-    let {id} = req.params;
-    let result = await moviesServices.userStatsWatchListMovieService(userId, id, score, remove);
+    let {id, groupName} = req.params;
+    let result = await moviesServices.userStatsWatchListMovieService(userId, id, groupName, score, remove);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsWatchListMovieGroups(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {embedSampleMovies} = req.query;
+    let result = await moviesServices.userStatsWatchListMovieGroups(userId, embedSampleMovies);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsWatchListMovieAddGroup(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {remove} = req.query;
+    let {groupName} = req.params;
+    let result = await moviesServices.userStatsWatchListMovieAddGroup(userId, groupName, remove);
     return sendResponse(req, res, result);
 }
 
@@ -193,9 +208,9 @@ export async function userStatsHandleWatchState(req, res) {
 
 export async function getUserStatsList(req, res) {
     let userId = req.jwtUserData.userId;
-    let {sortBy, favoritesOnly, dropsOnly, embedStaffAndCharacter, noUserStats} = req.query;
+    let {sortBy, favoritesOnly, dropsOnly, groupName, embedStaffAndCharacter, noUserStats} = req.query;
     let {statType, dataLevel, page} = req.params;
-    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, page, embedStaffAndCharacter, noUserStats);
+    let result = await moviesServices.getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, groupName, page, embedStaffAndCharacter, noUserStats);
     return sendResponse(req, res, result);
 }
 

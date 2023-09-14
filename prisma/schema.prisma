@@ -41,6 +41,7 @@ model User {
   likeDislikeMovies       LikeDislikeMovie[]
   /// Could not determine type: the field only had null or empty values in the sample set.
   friends                 Json?
+  WatchListGroup          WatchListGroup[]
 }
 
 model ProfileImage {
@@ -302,15 +303,27 @@ model FollowMovie {
 }
 
 model WatchListMovie {
-  score   Float    @default(0)
-  date    DateTime
-  movieId String
-  movie   Movie    @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
-  userId  Int
-  user    User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  score          Float           @default(0)
+  date           DateTime
+  group_name     String          @default("default")
+  watchListGroup WatchListGroup? @relation(fields: [userId, group_name], references: [userId, group_name], onDelete: SetDefault, onUpdate: Cascade)
+  movieId        String
+  movie          Movie           @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId         Int
+  user           User            @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([userId, movieId])
   @@index([movieId, userId])
+}
+
+model WatchListGroup {
+  date           DateTime
+  group_name     String
+  WatchListMovie WatchListMovie[]
+  userId         Int
+  user           User             @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, group_name])
 }
 
 model RelatedMovie {

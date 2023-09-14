@@ -382,15 +382,64 @@ export async function userStatsFollowMovieService(userId, id, watch_season, watc
     return generateServiceResult({}, 200, '');
 }
 
-export async function userStatsWatchListMovieService(userId, id, score, remove) {
-    let result = await userStatsDbMethods.addUserStats_watchListMovie(userId, id, score, remove);
+export async function userStatsWatchListMovieService(userId, id, groupName, score, remove) {
+    let result = await userStatsDbMethods.addUserStats_watchListMovie(userId, id, groupName, score, remove);
 
     if (result === 'error') {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (result === 'notfound') {
         return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'group notfound') {
+        return generateServiceResult({}, 404, 'Group not found');
     } else if (result === 'already following or watched') {
         return generateServiceResult({}, 409, 'Already following or watched');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsWatchListMovieGroups(userId, embedSampleMovies) {
+    let result = await userStatsDbMethods.getWatchListMoviesGroups(userId, embedSampleMovies);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+
+    if (embedSampleMovies) {
+        let promiseArray = [];
+        for (let i = 0; i < result.length; i++) {
+            let watchListMovies = result[i].WatchListMovie;
+            delete result[i].WatchListMovie;
+            let prom = moviesDbMethods.getMoviesDataInBatch(watchListMovies.map(m => m.movieId), {
+                title: 1,
+                rawTitle: 1,
+                type: 1,
+                year: 1,
+                posters: 1,
+            }).then(moviesData => {
+                result[i].movies = moviesData;
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        promiseArray = null;
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function userStatsWatchListMovieAddGroup(userId, groupName, remove) {
+    let result = await userStatsDbMethods.addWatchListMoviesGroup(userId, groupName, remove);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already exist') {
+        return generateServiceResult({}, 409, 'Already exist');
+    } else if (result === 'reached limit') {
+        return generateServiceResult({}, 409, 'Reached limit');
     }
     return generateServiceResult({}, 200, '');
 }
@@ -427,10 +476,10 @@ export async function userStatsHandleWatchState(userId, id, watch_season, watch_
     return generateServiceResult({}, 200, '');
 }
 
-export async function getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, page, embedStaffAndCharacter, noUserStats) {
+export async function getUserStatsList(userId, statType, dataLevel, sortBy, favoritesOnly, dropsOnly, groupName, page, embedStaffAndCharacter, noUserStats) {
     let {skip, limit} = getSkipLimit(page, 12);
 
-    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats);
+    let userStatsList = await userStatsDbMethods.getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, groupName, skip, limit, noUserStats);
     if (userStatsList === 'error') {
         return generateServiceResult({data: []}, 500, errorMessage.serverError);
     } else if (userStatsList.length === 0) {
@@ -812,6 +861,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                 if (userStats.watchListMovies[0]) {
                     movies[0].userStats.watchlist = true;
                     movies[0].userStats_extra.myScore = userStats.watchListMovies[0].score;
+                    movies[0].userStats_extra.watchlist_groupName = userStats.watchListMovies[0].groupName;
                 }
                 if (userStats.watchedMovies[0]) {
                     movies[0].userStats.dropped = userStats.watchedMovies[0].dropped;
@@ -885,6 +935,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
                 watch_season: movies[i].watch_season || 0,
                 watch_episode: movies[i].watch_episode || 0,
                 myScore: movies[i].score || 0,
+                watchlist_groupName: movies[i].group_name || '',
             };
         }
 
@@ -898,6 +949,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
         delete movies[i].favorite;
         delete movies[i].type;
         delete movies[i].movie;
+        delete movies[i].group_name;
     }
 }
 

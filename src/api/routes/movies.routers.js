@@ -151,12 +151,26 @@ router.put('/addUserStats/follow_movie/:id',
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.userStatsFollowMovieService);
 
-//movies/addUserStats/watchlist_movie/:id?remove=(true|false)
-router.put('/addUserStats/watchlist_movie/:id',
+//movies/addUserStats/watchlist_movie/:id/:groupName?remove=(true|false)
+router.put('/addUserStats/watchlist_movie/:id/:groupName',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['id', 'remove', 'score_query']),
+    middlewares.validateApiParams.checkApiParams(['id', 'groupName', 'remove', 'score_query']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.userStatsWatchListMovieService);
+
+//movies/addUserStats/watchlist_movie/groups
+router.get('/addUserStats/watchlist_movie/groups',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['remove', 'embedSampleMovies']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsWatchListMovieGroups);
+
+//movies/addUserStats/watchlist_movie/addGroup/:groupName?remove=(true|false)
+router.put('/addUserStats/watchlist_movie/addGroup/:groupName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['groupName', 'remove']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsWatchListMovieAddGroup);
 
 //movies/addUserStats/changeScore/:stat_list_type/:score/:id
 router.put('/addUserStats/changeScore/:stat_list_type/:score/:id',
@@ -175,7 +189,7 @@ router.put('/addUserStats/changeWatchState/:stat_list_type/:watch_season/:watch_
 //movies/userStatsList/:statType/:dataLevel/:page
 router.get('/userStatsList/:statType/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'sortBy', 'favoritesOnly', 'dropsOnly', 'embedStaffAndCharacter', 'noUserStats']),
+    middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'sortBy', 'favoritesOnly', 'dropsOnly', 'groupName_query', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUserStatsList);
 

@@ -1633,7 +1633,7 @@ paths:
                     type: integer
                     default: 409
 
-  /movies/addUserStats/watchlist_movie/{id}:
+  /movies/addUserStats/watchlist_movie/{id}/{groupName}:
     put:
       tags:
         - Movies-UserStats
@@ -1643,6 +1643,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/id'
         - $ref: '#/components/parameters/remove_query'
+        - name: groupName
+          in: path
+          schema:
+            type: string
+            default: default
+          required: true
+          allowEmptyValue: false
         - name: score
           in: query
           schema:
@@ -1670,6 +1677,71 @@ paths:
                   errorMessage:
                     type: string
                     default: already following or watched
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/watchlist_movie/groups:
+    get:
+      tags:
+        - Movies-UserStats
+      summary: Get groups of Watch lists
+      description: Get groups of Watch lists
+      operationId: movies-addUserStatsWatchListGroup
+      parameters:
+        - $ref: '#/components/parameters/remove_query'
+        - name: embedSampleMovies
+          required: false
+          in: query
+          schema:
+            type: boolean
+            required: false
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/addUserStats/watchlist_movie/addGroup/{groupName}:
+    put:
+      tags:
+        - Movies-UserStats
+      summary: Add/Remove group for Watch list
+      description: Add/Remove group for Watch list. limited to 20 groups
+      operationId: movies-addUserStatsWatchListAddGroup
+      parameters:
+        - $ref: '#/components/parameters/remove_query'
+        - name: groupName
+          in: path
+          schema:
+            type: string
+            default: default
+          required: true
+          allowEmptyValue: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: already exist
                   code:
                     type: integer
                     default: 409
@@ -1806,6 +1878,12 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: groupName
+          required: false
+          description: only works for watchlist_movie
+          in: query
+          schema:
+            type: string
         - $ref: '#/components/parameters/dataLevel'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/embedStaffAndCharacter'
@@ -3016,6 +3094,8 @@ security:
           default: 0
         myScore:
           type: integer
+        watchlist_groupName:
+          type: string
 
 
     UserStats_staff:

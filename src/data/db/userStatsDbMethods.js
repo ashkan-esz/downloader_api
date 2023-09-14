@@ -676,7 +676,7 @@ async function removeUserStats_followMovie(userId, id) {
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function addUserStats_watchListMovie(userId, id, score, isRemove, retryCounter = 0) {
+export async function addUserStats_watchListMovie(userId, id, groupName, score, isRemove, retryCounter = 0) {
     try {
         if (isRemove) {
             return await removeUserStats_watchListMovie(userId, id);
@@ -714,6 +714,7 @@ export async function addUserStats_watchListMovie(userId, id, score, isRemove, r
                         movieId: id,
                         score: score || 0,
                         date: new Date(),
+                        group_name: groupName,
                     },
                     select: {
                         date: true,
@@ -739,12 +740,22 @@ export async function addUserStats_watchListMovie(userId, id, score, isRemove, r
             return 'ok';
         }
         if (error.code === 'P2003' || error.code === 'P2025') {
+            if (error.code === 'P2003' && !isRemove) {
+                if (groupName === 'default' && retryCounter === 0) {
+                    //create default group
+                    let createDefaultGroup = await addWatchListMoviesGroup(userId, groupName, false);
+                    if (createDefaultGroup === 'ok') {
+                        return await addUserStats_watchListMovie(userId, id, groupName, score, isRemove, retryCounter);
+                    }
+                }
+                return 'group notfound';
+            }
             return 'notfound';
         }
         if (retryCounter < 2) {
             await new Promise(resolve => setTimeout(resolve, _transactionRetryDelay));
             retryCounter++;
-            return await addUserStats_watchListMovie(userId, id, score, isRemove, retryCounter);
+            return await addUserStats_watchListMovie(userId, id, groupName, score, isRemove, retryCounter);
         }
         saveError(error);
         return 'error';
@@ -786,6 +797,79 @@ async function removeUserStats_watchListMovie(userId, id) {
             saveError(error);
         }
         return null;
+    }
+}
+
+export async function getWatchListMoviesGroups(userId, embedSampleMovies) {
+    try {
+        return await prisma.watchListGroup.findMany({
+            where: {
+                userId: userId,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+            select: {
+                date: true,
+                group_name: true,
+                WatchListMovie: embedSampleMovies ? {
+                    select: {
+                        movieId: true,
+                    },
+                    orderBy: {
+                        date: 'desc',
+                    },
+                    take: 4,
+                } : undefined,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function addWatchListMoviesGroup(userId, groupName, remove) {
+    try {
+        if (remove) {
+            await prisma.watchListGroup.delete({
+                where: {
+                    userId_group_name: {
+                        userId: userId,
+                        group_name: groupName,
+                    }
+                }
+            });
+            return 'ok';
+        }
+
+        let checkCount = await prisma.watchListGroup.count({
+            where: {
+                userId: userId,
+                group_name: groupName,
+            }
+        });
+        if (checkCount >= 20) {
+            return 'reached limit';
+        }
+
+        await prisma.watchListGroup.create({
+            data: {
+                date: new Date(),
+                group_name: groupName,
+                userId: userId,
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return 'already exist';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
     }
 }
 
@@ -1123,7 +1207,7 @@ export async function addUserStats_updateWatchState(userId, id, watch_season, wa
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-export async function getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats) {
+export async function getUserStatsListDB(userId, statType, sortBy, favoritesOnly, dropsOnly, groupName, skip, limit, noUserStats) {
     try {
         if (statType === 'like_staff' || statType === 'dislike_staff') {
             const type = statType === 'like_staff' ? 'like' : 'dislike';
@@ -1149,7 +1233,7 @@ export async function getUserStatsListDB(userId, statType, sortBy, favoritesOnly
             return await getUserStatsList_finishedMovies(userId, sortBy, favoritesOnly, dropsOnly, skip, limit, noUserStats);
         }
         if (statType === 'watchlist_movie') {
-            return await getUserStatsList_watchlistMovies(userId, sortBy, skip, limit, noUserStats);
+            return await getUserStatsList_watchlistMovies(userId, sortBy, groupName, skip, limit, noUserStats);
         }
         if (statType === 'follow_movie') {
             return await getUserStatsList_followMovies(userId, sortBy, skip, limit, noUserStats);
@@ -1407,7 +1491,7 @@ async function getUserStatsList_finishedMovies(userId, sortBy, favoritesOnly, dr
 async function getUserStatsList_followMovies(userId, sortBy, skip, limit, noUserStats) {
     try {
         return await prisma.followMovie.findMany(
-            getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats)
+            getUserStatsList_movies_query(userId, sortBy, '', skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1415,10 +1499,10 @@ async function getUserStatsList_followMovies(userId, sortBy, skip, limit, noUser
     }
 }
 
-async function getUserStatsList_watchlistMovies(userId, sortBy, skip, limit, noUserStats) {
+async function getUserStatsList_watchlistMovies(userId, sortBy, groupName, skip, limit, noUserStats) {
     try {
         return await prisma.watchListMovie.findMany(
-            getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats)
+            getUserStatsList_movies_query(userId, sortBy, groupName, skip, limit, noUserStats)
         );
     } catch (error) {
         saveError(error);
@@ -1426,10 +1510,11 @@ async function getUserStatsList_watchlistMovies(userId, sortBy, skip, limit, noU
     }
 }
 
-function getUserStatsList_movies_query(userId, sortBy, skip, limit, noUserStats) {
+function getUserStatsList_movies_query(userId, sortBy, groupName, skip, limit, noUserStats) {
     return ({
         where: {
             userId: userId,
+            group_name: groupName ? groupName : undefined,
         },
         skip: skip,
         take: limit,
@@ -1509,6 +1594,7 @@ export async function getMovieFullUserStats(userId, movieId) {
                     take: 1,
                     select: {
                         score: true,
+                        group_name: true,
                     }
                 },
             }
@@ -1586,8 +1672,7 @@ export async function incrementMovieView(id) {
 export async function resetMoviesMonthView() {
     try {
         return await prisma.movie.updateMany({
-            where: {
-            },
+            where: {},
             data: {
                 view_month_count: 0,
             },
@@ -1629,4 +1714,5 @@ export const defaultUserStats_extra = Object.freeze({
     watch_season: 0,
     watch_episode: 0,
     myScore: 0,
+    watchlist_groupName: '',
 });

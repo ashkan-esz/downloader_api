@@ -479,6 +479,21 @@ const validations = Object.freeze({
         .trim().toLowerCase()
         .isIn(apiName).withMessage(`Invalid parameter apiName :: (${apiName.join('|')})`),
 
+    groupName: param('groupName')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'default';
+        })
+        .isLength({min: 3, max: 30}).withMessage(`Invalid parameter groupName :: String{min: 3, max:30}`)
+        .isString().withMessage(`Invalid parameter groupName :: String`),
+
+    groupName_query: query('groupName')
+        .trim()
+        .customSanitizer(value => {
+            return value || '';
+        })
+        .isString().withMessage(`Invalid parameter groupName :: String`),
+
     //-----------------------------------
     //-----------------------------------
 
@@ -553,6 +568,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter embedRelatedTitles :: (true|false)')
+        .toBoolean(),
+
+    embedSampleMovies: query('embedSampleMovies')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter embedSampleMovies :: (true|false)')
         .toBoolean(),
 
     noUserStats: query('noUserStats')
