@@ -228,7 +228,7 @@ export async function searchMovie(userId, filters, dataLevel, page, embedStaffAn
     return generateServiceResult({data: result, isCacheData}, 200, '');
 }
 
-export async function searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedStaffAndCharacter, noUserStats, isGuest) {
+export async function searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedCollections, embedStaffAndCharacter, noUserStats, isGuest) {
     const cacheKey = getCacheKey(['searchMovieById', id, dataLevel, filters]);
     const cacheResult = await getMoviesCacheByKey(cacheKey);
     let result = cacheResult || await moviesDbMethods.searchOnMoviesById(id, filters, dataLevelConfig[dataLevel], dataLevel);
@@ -242,6 +242,7 @@ export async function searchMovieById(userId, id, dataLevel, filters, embedRelat
     let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
     await Promise.allSettled([
         addRelatedTitlesToMovie(result, embedRelatedTitles),
+        addCollectionsToMovie(userId, result, embedCollections),
         addStaffAndCharacterDataToMovie([result], embedStaffAndCharacter),
         addUserStatsDataToMovie(userId, [result], noUserStats, isGuest),
     ]);
@@ -442,6 +443,133 @@ export async function userStatsWatchListMovieAddGroup(userId, groupName, remove)
         return generateServiceResult({}, 409, 'Reached limit');
     }
     return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsAddCollection(userId, collectionName, isPublic, description, remove) {
+    let result = await userStatsDbMethods.addMoviesCollection(userId, collectionName, isPublic, description, remove);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already exist') {
+        return generateServiceResult({}, 409, 'Already exist');
+    } else if (result === 'reached limit') {
+        return generateServiceResult({}, 409, 'Reached limit');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsUpdateCollection(userId, collectionName, newCollectionName, isPublic, description) {
+    let result = await userStatsDbMethods.updateMoviesCollection(userId, collectionName, newCollectionName, isPublic, description);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already exist') {
+        return generateServiceResult({}, 409, 'Collection name already exist');
+    } else if (result === 'reached limit') {
+        return generateServiceResult({}, 409, 'Reached limit');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsAddMovieToCollection(userId, collectionName, id, remove) {
+    let result = await userStatsDbMethods.addMovieToCollection(userId, collectionName, id, remove);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === 'notfound') {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    } else if (result === 'already exist') {
+        return generateServiceResult({}, 409, 'Already exist');
+    } else if (result === 'reached limit') {
+        return generateServiceResult({}, 409, 'Reached limit');
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function userStatsMovieCollections(userId, embedSampleMovies) {
+    let result = await userStatsDbMethods.getMovieCollections(userId, embedSampleMovies);
+
+    if (result === 'error') {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
+    }
+
+    if (embedSampleMovies) {
+        let promiseArray = [];
+        for (let i = 0; i < result.length; i++) {
+            let userCollectionMovies = result[i].userCollectionMovies;
+            delete result[i].userCollectionMovies;
+            let prom = moviesDbMethods.getMoviesDataInBatch(userCollectionMovies.map(m => m.movieId), {
+                title: 1,
+                rawTitle: 1,
+                type: 1,
+                year: 1,
+                posters: 1,
+            }).then(moviesData => {
+                result[i].movies = moviesData;
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        promiseArray = null;
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function userStatsCollectionMovies(userId, collectionName, dataLevel, page, embedStaffAndCharacter, noUserStats) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let result = await userStatsDbMethods.getCollectionMovies(userId, collectionName, skip, limit, noUserStats);
+    if (result === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.documentsNotFound);
+    }
+
+    await addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter);
+    normalizeMoviesUserStats(result, 'collection_movie', noUserStats);
+    await addMovieDataToUserStatsList(result, dataLevelConfig[dataLevel]);
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function userStatsSearchCollections(userId, collectionName, page, embedSampleMovies) {
+    let {skip, limit} = getSkipLimit(page, 12);
+
+    let result = await userStatsDbMethods.searchCollections(userId, collectionName, skip, limit, embedSampleMovies);
+    if (result === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.documentsNotFound);
+    }
+
+    if (embedSampleMovies) {
+        let promiseArray = [];
+        for (let i = 0; i < result.length; i++) {
+            let userCollectionMovies = result[i].userCollectionMovies;
+            delete result[i].userCollectionMovies;
+            let prom = moviesDbMethods.getMoviesDataInBatch(userCollectionMovies.map(m => m.movieId), {
+                title: 1,
+                rawTitle: 1,
+                type: 1,
+                year: 1,
+                posters: 1,
+            }).then(moviesData => {
+                result[i].movies = moviesData;
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        promiseArray = null;
+    }
+
+    return generateServiceResult({data: result}, 200, '');
 }
 
 export async function userStatsHandleScore(userId, id, score, stat_list_type) {
@@ -733,11 +861,42 @@ export async function addRelatedTitlesToMovie(movie, embedRelatedTitles) {
     }
 }
 
+export async function addCollectionsToMovie(userId, movie, embedCollections) {
+    try {
+        if (!embedCollections) {
+            return;
+        }
+
+        let relatedCollections = await moviesDbMethods.getCollectionsIncludeMovieId(userId, movie._id);
+        movie.collections = relatedCollections;
+        let promiseArray = [];
+        for (let i = 0; i < relatedCollections.length; i++) {
+            let userCollectionMovies = relatedCollections[i].userCollectionMovies;
+            delete relatedCollections[i].userCollectionMovies;
+            relatedCollections[i].movies = [];
+            let prom = moviesDbMethods.getMoviesDataInBatch(userCollectionMovies.map(m => m.movieId), {
+                title: 1,
+                rawTitle: 1,
+                type: 1,
+                year: 1,
+                posters: 1,
+            }).then(moviesData => {
+                relatedCollections[i].movies = moviesData;
+            });
+            promiseArray.push(prom);
+        }
+        await Promise.allSettled(promiseArray);
+        promiseArray = null;
+    } catch (error) {
+        saveError(error);
+    }
+}
+
 async function addStaffAndCharacterDataToMovie(movies, embedStaffAndCharacter) {
     if (embedStaffAndCharacter) {
         let promiseArray = [];
         for (let i = 0; i < movies.length; i++) {
-            let prom = staffAndCharactersDbMethods.getStaffAndCharacterOfMovie(movies[i]._id.toString(), 0, 24).then(res => {
+            let prom = staffAndCharactersDbMethods.getStaffAndCharacterOfMovie((movies[i]._id || movies[i].movie?.movieId).toString(), 0, 24).then(res => {
                 let actorsAndCharacters = [];
                 let staff = {
                     directors: [],
@@ -950,6 +1109,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
         delete movies[i].type;
         delete movies[i].movie;
         delete movies[i].group_name;
+        delete movies[i].collection_name;
     }
 }
 

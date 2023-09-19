@@ -96,9 +96,10 @@ export async function searchMovieById(req, res) {
     delete filters.noUserStats;
     delete filters.embedStaffAndCharacter;
     delete filters.embedRelatedTitles;
-    let {embedRelatedTitles, embedStaffAndCharacter, noUserStats} = req.query;
+    delete filters.embedCollections;
+    let {embedRelatedTitles, embedCollections, embedStaffAndCharacter, noUserStats} = req.query;
     let {id, dataLevel} = req.params;
-    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedStaffAndCharacter, noUserStats, req.isGuest);
+    let result = await moviesServices.searchMovieById(userId, id, dataLevel, filters, embedRelatedTitles, embedCollections, embedStaffAndCharacter, noUserStats, req.isGuest);
     return sendResponse(req, res, result);
 }
 
@@ -189,6 +190,53 @@ export async function userStatsWatchListMovieAddGroup(req, res) {
     let {remove} = req.query;
     let {groupName} = req.params;
     let result = await moviesServices.userStatsWatchListMovieAddGroup(userId, groupName, remove);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsAddCollection(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {remove} = req.query;
+    let {collectionName, isPublic, description} = req.params;
+    let result = await moviesServices.userStatsAddCollection(userId, collectionName, isPublic, description, remove);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsUpdateCollection(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {collectionName} = req.params;
+    let {collectionName: newCollectionName, isPublic, description} = req.body;
+    let result = await moviesServices.userStatsUpdateCollection(userId, collectionName, newCollectionName, isPublic, description);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsAddMovieToCollection(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {remove} = req.query;
+    let {collectionName, id} = req.params;
+    let result = await moviesServices.userStatsAddMovieToCollection(userId, collectionName, id, remove);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsMovieCollections(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {embedSampleMovies} = req.query;
+    let result = await moviesServices.userStatsMovieCollections(userId, embedSampleMovies);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsCollectionMovies(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {embedStaffAndCharacter, noUserStats} = req.query;
+    let {collectionName, dataLevel, page} = req.params;
+    let result = await moviesServices.userStatsCollectionMovies(userId, collectionName, dataLevel, page, embedStaffAndCharacter, noUserStats);
+    return sendResponse(req, res, result);
+}
+
+export async function userStatsSearchCollections(req, res) {
+    let userId = req.jwtUserData.userId;
+    let {embedSampleMovies} = req.query;
+    let {collectionName, page} = req.params;
+    let result = await moviesServices.userStatsSearchCollections(userId, collectionName, page, embedSampleMovies);
     return sendResponse(req, res, result);
 }
 

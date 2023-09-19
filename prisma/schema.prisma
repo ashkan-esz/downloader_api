@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -42,6 +43,8 @@ model User {
   /// Could not determine type: the field only had null or empty values in the sample set.
   friends                 Json?
   WatchListGroup          WatchListGroup[]
+  UserCollectionMovie     UserCollectionMovie[]
+  UserCollection          UserCollection[]
 }
 
 model ProfileImage {
@@ -326,6 +329,31 @@ model WatchListGroup {
   @@id([userId, group_name])
 }
 
+model UserCollectionMovie {
+  date            DateTime
+  collection_name String
+  userCollection  UserCollection @relation(fields: [userId, collection_name], references: [userId, collection_name], onDelete: Cascade, onUpdate: Cascade)
+  movieId         String
+  movie           Movie          @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade)
+  userId          Int
+  user            User           @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, movieId, collection_name])
+  @@index([movieId, userId, collection_name])
+}
+
+model UserCollection {
+  date                 DateTime
+  description          String                @default("")
+  collection_name      String
+  public               Boolean               @default(true)
+  userCollectionMovies UserCollectionMovie[]
+  userId               Int
+  user                 User                  @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, collection_name])
+}
+
 model RelatedMovie {
   movieId      String
   relatedId    String
@@ -350,13 +378,14 @@ model Movie {
   view_count       Int    @default(0)
   view_month_count Int    @default(0)
 
-  credits           Credit[]
-  watchListMovies   WatchListMovie[]
-  watchedMovies     WatchedMovie[]
-  followMovies      FollowMovie[]
-  likeDislikeMovies LikeDislikeMovie[]
-  relatedMovies     RelatedMovie[]
-  relatedMovies2    RelatedMovie[]     @relation("relatedMovies")
+  credits             Credit[]
+  watchListMovies     WatchListMovie[]
+  watchedMovies       WatchedMovie[]
+  followMovies        FollowMovie[]
+  likeDislikeMovies   LikeDislikeMovie[]
+  relatedMovies       RelatedMovie[]
+  relatedMovies2      RelatedMovie[]        @relation("relatedMovies")
+  UserCollectionMovie UserCollectionMovie[]
 }
 
 // ----------------------------------------------------------------

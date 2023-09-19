@@ -764,6 +764,51 @@ export async function getRelatedMovies(id) {
     }
 }
 
+export async function getCollectionsIncludeMovieId(userId, id) {
+    try {
+        return await prisma.userCollection.findMany({
+            where: {
+                OR: [
+                    {public: true},
+                    {userId: userId},
+                ],
+                userCollectionMovies: {
+                    some: {
+                        movieId: id.toString(),
+                    }
+                }
+            },
+            orderBy: {
+                date: 'desc',
+            },
+            take: 6,
+            select: {
+                date: true,
+                collection_name: true,
+                public: true,
+                description: true,
+                user: {
+                    select: {
+                        username: true,
+                    }
+                },
+                userCollectionMovies: {
+                    select: {
+                        movieId: true,
+                    },
+                    orderBy: {
+                        date: 'desc',
+                    },
+                    take: 4,
+                },
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
 //-----------------------------------
 //-----------------------------------
 
@@ -802,6 +847,28 @@ export async function getMovieState(id) {
                 }
             }
         );
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function addMoviesFromMongodbToPostgres() {
+    try {
+        let collection2 = await getCollection('movies');
+        let rr = await collection2.find({}, {
+            projection: {
+                _id: 1,
+            },
+        }).toArray();
+        rr = rr.map(item => ({movieId: item._id.toString()}));
+        await prisma.movie.createMany({
+            data: rr,
+        });
+        return 'ok';
     } catch (error) {
         saveError(error);
         return 'error';

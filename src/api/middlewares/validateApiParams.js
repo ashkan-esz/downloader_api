@@ -487,12 +487,50 @@ const validations = Object.freeze({
         .isLength({min: 3, max: 30}).withMessage(`Invalid parameter groupName :: String{min: 3, max:30}`)
         .isString().withMessage(`Invalid parameter groupName :: String`),
 
+    collectionName: param('collectionName')
+        .trim()
+        .customSanitizer(value => {
+            return value || '';
+        })
+        .isLength({min: 3, max: 30}).withMessage(`Invalid parameter collectionName :: String{min: 3, max:30}`)
+        .isString().withMessage(`Invalid parameter collectionName :: String`),
+
+    description: param('description')
+        .trim()
+        .customSanitizer(value => {
+            return value || '';
+        })
+        .isLength({max: 30}).withMessage(`Invalid parameter description :: String{min: 0, max:30}`)
+        .isString().withMessage(`Invalid parameter description :: String`),
+
     groupName_query: query('groupName')
         .trim()
         .customSanitizer(value => {
             return value || '';
         })
         .isString().withMessage(`Invalid parameter groupName :: String`),
+
+    isPublic: param('isPublic')
+        .trim()
+        .isBoolean().withMessage(`Invalid parameter isPublic :: (true|false)`)
+        .toBoolean(),
+
+    collectionName_body: body('collectionName')
+        .exists().withMessage("collectionName cannot be empty")
+        .isString().withMessage("collectionName must be string")
+        .isLength({min: 3, max: 100}).withMessage("collectionName length must be in range [3, 100]")
+        .trim().escape(),
+
+    description_body: body('description')
+        .exists().withMessage("description cannot be empty")
+        .isString().withMessage("description must be string")
+        .isLength({max: 30}).withMessage("description length must be less than 100")
+        .trim().escape(),
+
+    isPublic_body: body('isPublic')
+        .exists().withMessage("isPublic cannot be empty")
+        .isBoolean().withMessage("isPublic must be boolean")
+        .toBoolean(),
 
     //-----------------------------------
     //-----------------------------------
@@ -568,6 +606,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter embedRelatedTitles :: (true|false)')
+        .toBoolean(),
+
+    embedCollections: query('embedCollections')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter embedCollections :: (true|false)')
         .toBoolean(),
 
     embedSampleMovies: query('embedSampleMovies')

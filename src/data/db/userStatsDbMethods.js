@@ -846,7 +846,6 @@ export async function addWatchListMoviesGroup(userId, groupName, remove) {
         let checkCount = await prisma.watchListGroup.count({
             where: {
                 userId: userId,
-                group_name: groupName,
             }
         });
         if (checkCount >= 20) {
@@ -868,6 +867,234 @@ export async function addWatchListMoviesGroup(userId, groupName, remove) {
         if (error.code === 'P2003' || error.code === 'P2025') {
             return 'notfound';
         }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function addMoviesCollection(userId, collectionName, isPublic, description, remove) {
+    try {
+        if (remove) {
+            await prisma.userCollection.delete({
+                where: {
+                    userId_collection_name: {
+                        userId: userId,
+                        collection_name: collectionName,
+                    },
+                }
+            });
+            return 'ok';
+        }
+
+        let checkCount = await prisma.userCollection.count({
+            where: {
+                userId: userId,
+            }
+        });
+        if (checkCount >= 20) {
+            return 'reached limit';
+        }
+
+        await prisma.userCollection.create({
+            data: {
+                date: new Date(),
+                collection_name: collectionName,
+                userId: userId,
+                public: isPublic,
+                description: description,
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return 'already exist';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function updateMoviesCollection(userId, collectionName, newCollectionName, isPublic, description) {
+    try {
+        let updateResult = await prisma.userCollection.update({
+            where: {
+                userId_collection_name: {
+                    userId: userId,
+                    collection_name: collectionName,
+                }
+            },
+            data: {
+                collection_name: newCollectionName,
+                public: isPublic,
+                description: description,
+            }
+        });
+        if (!updateResult) {
+            return 'notfound';
+        }
+        return 'ok';
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return 'already exist';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function addMovieToCollection(userId, collectionName, id, remove) {
+    try {
+        if (remove) {
+            await prisma.userCollectionMovie.delete({
+                where: {
+                    userId_movieId_collection_name: {
+                        userId: userId,
+                        collection_name: collectionName,
+                        movieId: id,
+                    },
+                }
+            });
+            return 'ok';
+        }
+
+        await prisma.userCollectionMovie.create({
+            data: {
+                userId: userId,
+                movieId: id,
+                collection_name: collectionName,
+                date: new Date(),
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return 'already exist';
+        }
+        if (error.code === 'P2003' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getMovieCollections(userId, embedSampleMovies) {
+    try {
+        return await prisma.userCollection.findMany({
+            where: {
+                userId: userId,
+            },
+            orderBy: {
+                date: 'desc',
+            },
+            select: {
+                date: true,
+                collection_name: true,
+                public: true,
+                description: true,
+                userCollectionMovies: embedSampleMovies ? {
+                    select: {
+                        movieId: true,
+                    },
+                    orderBy: {
+                        date: 'desc',
+                    },
+                    take: 4,
+                } : undefined,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getCollectionMovies(userId, collectionName, skip, limit, noUserStats) {
+    try {
+        return await prisma.userCollectionMovie.findMany({
+            where: {
+                userId: userId,
+                collection_name: collectionName,
+                OR: [
+                    {
+                        userCollection: {
+                            public: true,
+                        }
+                    },
+                    {userId: userId},
+                ]
+            },
+            skip: skip,
+            take: limit,
+            include: noUserStats ? undefined : {
+                movie: {
+                    include: {
+                        likeDislikeMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                type: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function searchCollections(userId, collectionName, skip, limit, embedSampleMovies) {
+    try {
+        return await prisma.userCollection.findMany({
+            where: {
+                userId: userId,
+                collection_name: {
+                    search: collectionName,
+                },
+            },
+            orderBy: [
+                {
+                    _relevance: {
+                        fields: ['collection_name'],
+                        search: collectionName,
+                        sort: 'desc',
+                    },
+                },
+                {
+                    date: 'desc',
+                }
+            ],
+            select: {
+                date: true,
+                collection_name: true,
+                public: true,
+                description: true,
+                userCollectionMovies: embedSampleMovies ? {
+                    select: {
+                        movieId: true,
+                    },
+                    orderBy: {
+                        date: 'desc',
+                    },
+                    take: 4,
+                } : undefined,
+            }
+        });
+    } catch (error) {
         saveError(error);
         return 'error';
     }

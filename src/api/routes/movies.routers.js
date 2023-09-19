@@ -6,6 +6,12 @@ const router = Router();
 
 //movies/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page',
+    (req, res, next) => {
+        if (req.params.apiName === 'addUserStats') {
+            return next('route');
+        }
+        next();
+    },
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(['apiName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'page', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
@@ -84,7 +90,7 @@ router.get('/searchMovie/:dataLevel/:page',
 router.get('/searchById/:id/:dataLevel',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(
-        ['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedRelatedTitles', 'embedStaffAndCharacter', 'noUserStats']
+        ['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedRelatedTitles', 'embedCollections', 'embedStaffAndCharacter', 'noUserStats']
     ),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.searchMovieById);
@@ -161,7 +167,7 @@ router.put('/addUserStats/watchlist_movie/:id/:groupName',
 //movies/addUserStats/watchlist_movie/groups
 router.get('/addUserStats/watchlist_movie/groups',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['remove', 'embedSampleMovies']),
+    middlewares.validateApiParams.checkApiParams(['embedSampleMovies']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.userStatsWatchListMovieGroups);
 
@@ -171,6 +177,49 @@ router.put('/addUserStats/watchlist_movie/addGroup/:groupName',
     middlewares.validateApiParams.checkApiParams(['groupName', 'remove']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.userStatsWatchListMovieAddGroup);
+
+//movies/addUserStats/collection_movie/addCollection/:collectionName/:isPublic/:description?remove=(true|false)
+router.put('/addUserStats/collection_movie/addCollection/:collectionName/:isPublic/:description',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['collectionName', 'isPublic', 'description', 'remove']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsAddCollection);
+
+//movies/addUserStats/collection_movie/updateCollection/:collectionName
+router.put('/addUserStats/collection_movie/updateCollection/:collectionName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['collectionName', 'collectionName_body', 'isPublic_body', 'description_body']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsUpdateCollection);
+
+//movies/addUserStats/collection_movie/addMovie/:collectionName/:id?remove=(true|false)
+router.put('/addUserStats/collection_movie/addMovie/:collectionName/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['collectionName', 'id', 'remove']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsAddMovieToCollection);
+
+//movies/addUserStats/collection_movie/collections
+router.get('/addUserStats/collection_movie/collections',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['embedSampleMovies']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsMovieCollections);
+
+//movies/addUserStats/collection_movie/movies/:collectionName/:dataLevel/:page
+router.get('/addUserStats/collection_movie/movies/:collectionName/:dataLevel/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['collectionName', 'dataLevel', 'page', 'embedStaffAndCharacter', 'noUserStats']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsCollectionMovies);
+
+//movies/addUserStats/collection_movie/search/:collectionName/:page
+router.get('/addUserStats/collection_movie/search/:collectionName/:page',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['collectionName', 'page', 'embedSampleMovies']),
+    middlewares.validateApiParams.apiParams_sendError,
+    moviesControllers.userStatsSearchCollections);
+
 
 //movies/addUserStats/changeScore/:stat_list_type/:score/:id
 router.put('/addUserStats/changeScore/:stat_list_type/:score/:id',

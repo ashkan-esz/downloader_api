@@ -1073,6 +1073,12 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: embedCollections
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
         - name: embedDownloadLinksConfig
           required: false
           in: query
@@ -1504,7 +1510,7 @@ paths:
   /movies/addUserStats/finish_movie/{id}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-FinishMovie
       summary: Add/Remove Movie To finished/dropped list
       description: <p> handle when user finished watching movie/serial or dropped it. also can handle favorite movie/serial<br/>
         movie/serial should be released before doing this action. <br/>
@@ -1559,7 +1565,7 @@ paths:
   /movies/addUserStats/finish_movie/{id}/handle_favorite/{favorite}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-FinishMovie
       summary: Add/Remove Movie To finished/dropped list
       description: handle favorite movies. it should be already added to finish_movie
       operationId: movies-addUserStatsFavoriteMovie
@@ -1583,7 +1589,7 @@ paths:
   /movies/addUserStats/follow_movie/{id}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-FinishMovie
       summary: Add/Remove Movie To Follow list
       description: add serial to list of serials that user follows, only works for serials titles.
       operationId: movies-addUserStatsFollowMovie
@@ -1636,7 +1642,7 @@ paths:
   /movies/addUserStats/watchlist_movie/{id}/{groupName}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-WatchList
       summary: Add/Remove To Watch list
       description: add movie/serial to watch list
       operationId: movies-addUserStatsWatchListMovie
@@ -1684,12 +1690,11 @@ paths:
   /movies/addUserStats/watchlist_movie/groups:
     get:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-WatchList
       summary: Get groups of Watch lists
       description: Get groups of Watch lists
       operationId: movies-addUserStatsWatchListGroup
       parameters:
-        - $ref: '#/components/parameters/remove_query'
         - name: embedSampleMovies
           required: false
           in: query
@@ -1709,7 +1714,7 @@ paths:
   /movies/addUserStats/watchlist_movie/addGroup/{groupName}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-WatchList
       summary: Add/Remove group for Watch list
       description: Add/Remove group for Watch list. limited to 20 groups
       operationId: movies-addUserStatsWatchListAddGroup
@@ -1746,10 +1751,233 @@ paths:
                     type: integer
                     default: 409
 
+  /movies/addUserStats/collection_movie/addCollection/{collectionName}/{isPublic}/{description}:
+    put:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Add/Remove Collection
+      description: Add/Remove Collection for movies. limited to 20 groups
+      operationId: movies-addUserStatsAddCollection
+      parameters:
+        - $ref: '#/components/parameters/remove_query'
+        - name: collectionName
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+        - name: description
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+        - name: isPublic
+          in: path
+          schema:
+            type: boolean
+            default: true
+          required: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: already exist
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/collection_movie/updateCollection/{collectionName}:
+    put:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Update Collection
+      description: Update Collection
+      operationId: movies-addUserStatsUpdateCollection
+      parameters:
+        - name: collectionName
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                collectionName:
+                  required: true
+                  type: string
+                description:
+                  required: true
+                  type: string
+                isPublic:
+                  required: true
+                  type: boolean
+                  default: true
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: Collection name already exist
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/collection_movie/addMovie/{collectionName}/{id}:
+    put:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Add/Remove Movie of Collection
+      description: Add/Remove movie from Collection
+      operationId: movies-addUserStatsAddMovieCollection
+      parameters:
+        - $ref: '#/components/parameters/remove_query'
+        - $ref: '#/components/parameters/id'
+        - name: collectionName
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+        409:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    default: already exist
+                  code:
+                    type: integer
+                    default: 409
+
+  /movies/addUserStats/collection_movie/collections:
+    get:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Get Collections
+      description: Get Collections
+      operationId: movies-addUserStatsMovieCollection
+      parameters:
+        - name: embedSampleMovies
+          required: false
+          in: query
+          schema:
+            type: boolean
+            required: false
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /movies/addUserStats/collection_movie/movies/{collectionName}/{dataLevel}/{page}:
+    get:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Get Collections Movies
+      description: Get Collections Movies
+      operationId: movies-addUserStatsCollectionMovies
+      parameters:
+        - $ref: '#/components/parameters/dataLevel'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/embedStaffAndCharacter'
+        - $ref: '#/components/parameters/noUserStats'
+        - name: collectionName
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+      responses:
+        200:
+          $ref: '#/components/responses/Movies_200'
+
+  /movies/addUserStats/collection_movie/search/{collectionName}/{page}:
+    get:
+      tags:
+        - Movies-UserStats-Collection
+      summary: Search Collections
+      description: Get Collections Movies
+      operationId: movies-addUserStatsSearchCollection
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - name: collectionName
+          in: path
+          schema:
+            type: string
+          required: true
+          allowEmptyValue: false
+        - name: embedSampleMovies
+          required: false
+          in: query
+          schema:
+            type: boolean
+            required: false
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /movies/addUserStats/changeScore/{stat_list_type}/{score}/{id}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-State
       summary: Change Score of movie
       description: change Score of saved/follow/watched movies
       operationId: movies-addUserStatsChangeScore
@@ -1785,7 +2013,7 @@ paths:
   /movies/addUserStats/changeWatchState/{stat_list_type}/{watch_season}/{watch_episode}/{id}:
     put:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-State
       summary: Change Watch State of movie
       description: change Watch State of follow/watched movies
       operationId: movies-addUserStatsChangeWatchState
@@ -1841,7 +2069,7 @@ paths:
   /movies/userStatsList/{statType}/{dataLevel}/{page}:
     get:
       tags:
-        - Movies-UserStats
+        - Movies-UserStats-Lists
       summary: User Stats List
       description: Return array of movies/staff/character.
       operationId: movies-userStatsList
@@ -2610,6 +2838,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       type: object
       properties:
         _id:
@@ -2648,6 +2877,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       type: object
       properties:
         _id:
@@ -2680,6 +2910,7 @@ security:
       allOf:
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       type: object
       properties:
         _id:
@@ -2736,6 +2967,7 @@ security:
         - $ref: '#/components/schemas/DataLevel_low'
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       type: object
       properties:
         releaseState:
@@ -2798,6 +3030,7 @@ security:
         - $ref: '#/components/schemas/DataLevel_medium'
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       type: object
       properties:
         titleSynonyms:
@@ -2891,6 +3124,7 @@ security:
         - $ref: '#/components/schemas/DataLevel_high'
         - $ref: '#/components/schemas/EmbedCast'
         - $ref: '#/components/schemas/RelatedTitles'
+        - $ref: '#/components/schemas/RelatedCollections'
       not:
         type: object
         properties:
@@ -2931,6 +3165,43 @@ security:
             enum: [ 'prequel', 'sequel', 'spin_off', 'side_story',
                     'full_story', 'summary', 'parent_story', 'other',
                     'alternative_setting', 'alternative_version' ]
+
+    RelatedCollections:
+      description: only exist for single movie requests
+      type: array
+      items:
+        type: object
+        properties:
+          date:
+            $ref: '#/components/schemas/DateString'
+          collection_name:
+            type: string
+          public:
+            type: boolean
+          description:
+            type: string
+          user:
+            type: object
+            properties:
+              username:
+                type: string
+          movies:
+            type: array
+            items:
+              type: object
+              properties:
+                _id:
+                  type: string
+                title:
+                  type: string
+                rawTitle:
+                  type: string
+                type:
+                  type: string
+                posters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Poster'
 
     LatestData:
       type: object
