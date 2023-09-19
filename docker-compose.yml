@@ -51,7 +51,7 @@ services:
       start_period: 40s
 
   redis:
-    image: "redis:alpine"
+    image: "redis:7.2.1-alpine"
     network_mode: host
     env_file: ./.env
     environment:
