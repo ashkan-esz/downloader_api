@@ -474,7 +474,6 @@ Examples
 
 
 # API
-- Open [admin api docs](API.ADMIN.README.md).
 - Open [user api docs](API.USER.README.md).
 - Open [utils api docs](API.UTILS.README.md).
 - Open [schema](SCHEMA.README.md).

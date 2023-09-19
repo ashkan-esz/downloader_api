@@ -2221,13 +2221,794 @@ paths:
                         englishName:
                           type: string
 
+  /admin/login:
+    post:
+      tags:
+        - Admin-Auth
+      summary: Admin LogIn
+      description: Login account, also return `refreshToken`.
+      operationId: admin-login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username_email:
+                  type: string
+                  pattern: ^[a-z|\d_-]+$
+                  minimum: 6
+                  maximum: 50
+                  required: true
+                  description: means user can log in with username or email address
+                password:
+                  type: string
+                  description: at least one number and capital letter and length in range
+                deviceInfo:
+                  $ref: '#/components/schemas/DeviceInfo'
+      parameters:
+        - name: noCookie
+          in: query
+          schema:
+            type: boolean
+          required: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+
+  /admin/gettoken:
+    put:
+      tags:
+        - Admin-Auth
+      summary: Admin Get token
+      description: Get new Tokens, also return `refreshToken`.
+      operationId: admin-gettoken
+      security:
+        - accessToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceInfo:
+                  $ref: '#/components/schemas/DeviceInfo'
+      parameters:
+        - name: profileImages
+          in: query
+          schema:
+            type: boolean
+          required: false
+        - name: noCookie
+          in: query
+          schema:
+            type: boolean
+          required: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+                type: object
+                properties:
+                  profileImages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        originalSize:
+                          type: integer
+                        size:
+                          type: integer
+                        thumbnail:
+                          type: string
+                        addDate:
+                          $ref: '#/components/schemas/DateString'
+        400:
+          description: Bad request body fields
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/crawler/start:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Start Crawler
+      description: Manually starting crawler
+      operationId: admin-crawler-start
+      parameters:
+        - name: sourceName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: integer
+            default: 0
+        - name: handleDomainChange
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+        - name: handleDomainChangeOnly
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+        - name: handleCastUpdate
+          in: query
+          required: true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/pause/{duration}:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Pause Crawler
+      description: Manually Pause crawler
+      operationId: admin-crawler-pause
+      parameters:
+        - name: duration
+          in: path
+          description: minutes
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 120
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/resume/{force}:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Resume Crawler
+      description: Manually Resume crawler
+      operationId: admin-crawler-resume
+      parameters:
+        - name: force
+          in: path
+          required: true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/stop:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Stop Crawler
+      description: Manually Stop crawler
+      operationId: admin-crawler-stop
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/status:
+    get:
+      tags:
+        - Admin-Crawler
+      summary: Crawler Status
+      description: Status of crawler
+      operationId: admin-crawler-status
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/sources:
+    get:
+      tags:
+        - Admin-Crawler
+      summary: Crawler Sources
+      description: Sources of crawler
+      operationId: admin-crawler-sources
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/editSource/{sourceName}:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Edit Crawler Source
+      description: Update data of selected source.
+      operationId: admin-crawler-editSource
+      parameters:
+        - name: sourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                movie_url:
+                  type: string
+                serial_url:
+                  type: string
+                crawlCycle:
+                  type: integer
+                  minimum: 0
+                disabled:
+                  type: boolean
+                  default: false
+                cookies:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                      expire:
+                        type: integer
+                reCrawl:
+                  type: boolean
+                  default: true
+                description:
+                  type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/addSource:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Add Crawler Source
+      description: Add new source to crawler.
+      operationId: admin-crawler-addSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceName:
+                  type: string
+                movie_url:
+                  type: string
+                serial_url:
+                  type: string
+                crawlCycle:
+                  type: integer
+                  minimum: 0
+                disabled:
+                  type: boolean
+                  default: false
+                cookies:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                      expire:
+                        type: integer
+                description:
+                  type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/crawler/crawlUrl:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: Crawl Url
+      description: Crawl single url.
+      operationId: admin-crawler-crawlUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceName:
+                  type: string
+                url_body:
+                  type: string
+                title:
+                  type: string
+                type:
+                  type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/analysis/{serverAnalysisFieldName}/{startTime}/{endTime}/{skip}/{limit}:
+    get:
+      tags:
+        - Admin-Analysis
+      summary: Crawler Analysis
+      description: Analysis of crawler
+      operationId: admin-crawler-analysis
+      parameters:
+        - $ref: '#/components/parameters/skip'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/serverAnalysisFieldName'
+        - name: startTime
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endTime
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/analysis/currentMonth/{serverAnalysisFieldName}/{page}:
+    get:
+      tags:
+        - Admin-Analysis
+      summary: Crawler Analysis (this month)
+      description: Current Month Analysis of crawler
+      operationId: admin-crawler-currentMonthAnalysis
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/serverAnalysisFieldName'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/analysis/resolve/{serverAnalysisFieldName}/{id}:
+    put:
+      tags:
+        - Admin-Analysis
+      summary: Resolve/Remove Analysis
+      description: Resolve/Remove Analysis
+      operationId: admin-crawler-resolveAnalysis
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/serverAnalysisFieldName'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/analysis/resolve/{serverAnalysisFieldName}:
+    put:
+      tags:
+        - Admin-Analysis
+      summary: Batch Resolve/Remove Analysis
+      description: Batch Resolve/Remove Analysis
+      operationId: admin-crawler-batchResolveAnalysis
+      parameters:
+        - $ref: '#/components/parameters/serverAnalysisFieldName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    $ref: '#/components/parameters/id'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/analysis/resolve/{serverAnalysisFieldName}/lastDays/{days}:
+    put:
+      tags:
+        - Admin-Analysis
+      summary: Batch Resolve/Remove Analysis
+      description: Batch Resolve/Remove Analysis of last days
+      operationId: admin-crawler-batchResolveAnalysisByDays
+      parameters:
+        - $ref: '#/components/parameters/serverAnalysisFieldName'
+        - name: days
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/server/status:
+    get:
+      tags:
+        - Admin-ServerStatus
+      summary: Resource status of server
+      description: Resource status of server
+      operationId: admin-serverStatus
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/remoteBrowsers/status:
+    get:
+      tags:
+        - Admin-ServerStatus
+      summary: Resource status of remoteBrowsers
+      description: Resource status of remoteBrowsers
+      operationId: admin-remoteBrowsersStatus
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/remotebrowsers/{mutateType}/{id}:
+    put:
+      tags:
+        - Admin-ServerStatus
+      summary: Change status of remoteBrowsers
+      description: enable/disable selected remote browser temporary (enables again on the server restart).
+      operationId: admin-changeRemoteBrowsersStatus
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: mutateType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - enable
+              - disable
+        - name: all
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/remoteBrowsers/checkSource/{sourceName}/{url}:
+    get:
+      tags:
+        - Admin-ServerStatus
+      summary: Check source
+      description: check source works on all remote browsers.
+      operationId: admin-checkSource
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: sourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: url
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/configs/update:
+    put:
+      tags:
+        - Admin-ServerStatus
+      summary: Update Config
+      description: Update configs of the server
+      operationId: admin-updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                corsAllowedOrigins:
+                  type: string
+                disableTestUserRequests:
+                  type: boolean
+                disableCrawlerForDuration:
+                  type: boolean
+                disableCrawler:
+                  type: boolean
+                developmentFaze:
+                  type: boolean
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/configs:
+    get:
+      tags:
+        - Admin-ServerStatus
+      summary: Get Config
+      description: Get configs of the server
+      operationId: admin-getConfig
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/setMessage:
+    put:
+      tags:
+        - Admin-Utils
+      summary: Set Message
+      description: set message that all users see when open app
+      operationId: admin-setMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                  description: message expiration date
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/addNewAppVersion:
+    post:
+      tags:
+        - Admin-Utils
+      summary: Add App
+      description: add new app version. receive (appFile ~ File Buffer) in request body
+      operationId: admin-addAppVersion
+      parameters:
+        - name: appData
+          in: query
+          required: true
+          schema:
+            type: object
+            properties:
+              appName:
+                type: string
+              version:
+                type: string
+              versionName:
+                type: string
+              os:
+                type: string
+              description:
+                type: string
+              minVersion:
+                type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/removeAppVersion/{vid}:
+    put:
+      tags:
+        - Admin-Utils
+      summary: Remove App
+      description: remove app version.
+      operationId: admin-removeAppVersion
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/appVersions:
+    get:
+      tags:
+        - Admin-Utils
+      summary: Get Apps
+      description: Get Apps
+      operationId: admin-getApps
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/3rdpartyApis/checkWorking:
+    get:
+      tags:
+        - Admin-Utils
+      summary: Check Apis
+      description: return api keys checking result
+      operationId: admin-checkExternalApis
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /admin/bots:
     get:
       tags:
         - Admin-Bots
       summary: Bots
       description: return bots data
-      operationId: bots-botsData
+      operationId: admin-bots-botsData
       parameters:
         - $ref: '#/components/parameters/botId_query'
       responses:
@@ -2253,7 +3034,7 @@ paths:
         - Admin-Bots
       summary: Edit Bot
       description: edit bots data
-      operationId: bots-editBot
+      operationId: admin-bots-editBot
       requestBody:
         required: true
         content:
@@ -2301,7 +3082,7 @@ paths:
         - Admin-Bots
       summary: Add Bot
       description: add new Bot
-      operationId: bots-addNewBot
+      operationId: admin-bots-addNewBot
       requestBody:
         required: true
         content:
@@ -2341,7 +3122,7 @@ paths:
         - Admin-Bots
       summary: Delete Bot
       description: delete bot data
-      operationId: bots-deleteBot
+      operationId: admin-bots-deleteBot
       parameters:
         - $ref: '#/components/parameters/botId_param'
       responses:
@@ -2363,7 +3144,7 @@ paths:
         - Admin-CronJobs
       summary: CronJobs
       description: return cronJobs status
-      operationId: bots-cronJobs
+      operationId: admin-cronJobs
       responses:
         200:
           description: Ok
@@ -2399,7 +3180,7 @@ paths:
         - Admin-CronJobs
       summary: Start CronJob
       description: start CronJob
-      operationId: bots-startCronJobs
+      operationId: admin-startCronJobs
       parameters:
         - $ref: '#/components/parameters/jobName_param'
       responses:
@@ -2478,6 +3259,22 @@ security:
         default: '0-10'
     page:
       name: page
+      required: true
+      in: path
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    skip:
+      name: skip
+      required: true
+      in: path
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    limit:
+      name: limit
       required: true
       in: path
       schema:
@@ -2673,6 +3470,19 @@ security:
         type: string
         pattern: \d+(-\d+)?
         example: 25-40
+    serverAnalysisFieldName:
+      name: serverAnalysisFieldName
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - userCounts
+          - crawlerLogs
+          - serverLogs
+          - warnings
+          - googleCacheCalls
+          - badLinks
 
 
   responses:
