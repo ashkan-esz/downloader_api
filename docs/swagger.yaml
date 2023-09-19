@@ -3196,6 +3196,84 @@ paths:
                   data:
                     type: string
 
+  /admin/movies/relatedTitle/add/{id1}/{id2}/{relation}:
+    put:
+      tags:
+        - Admin-Movies
+      summary: Add Related Title
+      description: add relationship between titles
+      operationId: admin-addRelatedTitle
+      parameters:
+        - name: id1
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id2
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: relation
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - prequel
+              - sequel
+              - spin_off
+              - side_story
+              - full_story
+              - summary
+              - parent_story
+              - other
+              - alternative_setting
+              - alternative_version
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
+  /admin/movies/relatedTitle/remove/{id1}/{id2}:
+    delete:
+      tags:
+        - Admin-Movies
+      summary: Remove Titles Relation
+      description: remove relationship between titles
+      operationId: admin-removeRelatedTitle
+      parameters:
+        - name: id1
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id2
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
 
 security:
   - accessToken: [ ]

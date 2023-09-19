@@ -2,6 +2,7 @@ import {body, param, query, validationResult} from 'express-validator';
 import {isUri} from "valid-url";
 import {serverAnalysisFields} from "../../data/db/serverAnalysisDbMethods.js";
 import {compareAppVersions, newAppDataFields} from "../../data/db/admin/adminConfigDbMethods.js";
+import {relations} from "../../data/db/moviesDbMethods.js";
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const mutateType = ['enable', 'disable'];
@@ -77,6 +78,19 @@ const validations = Object.freeze({
 
     vid: param('vid')
         .isString().withMessage('Invalid parameter vid :: String')
+        .trim(),
+
+    id1: param('id1')
+        .isString().withMessage('Invalid parameter id1 :: String')
+        .trim(),
+
+    id2: param('id2')
+        .isString().withMessage('Invalid parameter id2 :: String')
+        .trim(),
+
+    relation: param('relation')
+        .isString().withMessage('Invalid parameter relation :: String')
+        .isIn(relations).withMessage(`Invalid parameter relation :: (${relations.join('|')})`)
         .trim(),
 
     //--------------------------------------

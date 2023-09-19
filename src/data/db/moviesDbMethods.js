@@ -751,6 +751,35 @@ export async function addRelatedMovies(id1, id2, relation) {
     }
 }
 
+export async function removeRelatedMovies(id1, id2) {
+    try {
+        id1 = id1.toString();
+        id2 = id2.toString();
+
+        await prisma.relatedMovie.deleteMany({
+            where: {
+                OR: [
+                    {
+                        movieId: id1,
+                        relatedId: id2,
+                    },
+                    {
+                        movieId: id2,
+                        relatedId: id1,
+                    },
+                ]
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        if (error.code !== 'P2002') {
+            saveError(error);
+            return 'error';
+        }
+        return 'ok';
+    }
+}
+
 export async function getRelatedMovies(id) {
     try {
         return await prisma.relatedMovie.findMany({
@@ -891,3 +920,14 @@ function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
         },
     };
 }
+
+//-----------------------------------
+//-----------------------------------
+
+export const relations = Object.freeze([
+    'prequel', 'sequel',
+    'spin_off', 'side_story',
+    'full_story', 'summary',
+    'parent_story', 'other',
+    'alternative_setting', 'alternative_version',
+]);

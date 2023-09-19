@@ -203,3 +203,18 @@ export async function startCronJob(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function addRelatedTitle(req, res) {
+    let {id1, id2, relation} = req.params;
+    let result = await adminServices.addRelatedTitle(id1, id2, relation);
+    return sendResponse(req, res, result);
+}
+
+export async function removeRelatedTitle(req, res) {
+    let {id1, id2} = req.params;
+    let result = await adminServices.removeRelatedTitle(id1, id2);
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

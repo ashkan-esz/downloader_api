@@ -268,4 +268,21 @@ router.put('/cronjobs/start/:jobName',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/movies/relatedTitle/add/:id1/:id2/:relation
+router.put('/movies/relatedTitle/add/:id1/:id2/:relation',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id1', 'id2', 'relation']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.addRelatedTitle);
+
+//admin/movies/relatedTitle/remove/:id1/:id2
+router.delete('/movies/relatedTitle/remove/:id1/:id2',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id1', 'id2']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeRelatedTitle);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;

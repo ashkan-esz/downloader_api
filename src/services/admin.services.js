@@ -5,6 +5,7 @@ import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.j
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
 import * as botsDbMethods from "../data/db/botsDbMethods.js";
+import * as moviesDbMethods from "../data/db/moviesDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
@@ -445,6 +446,25 @@ export async function startCronJob(jobName) {
         return generateServiceResult({data: null}, 400, errorMessage.jobNotFound);
     }
     return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function addRelatedTitle(id1, id2, relation) {
+    let result = await moviesDbMethods.addRelatedMovies(id1, id2, relation);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+export async function removeRelatedTitle(id1, id2) {
+    let result = await moviesDbMethods.removeRelatedMovies(id1, id2);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({}, 200, '');
 }
 
 //---------------------------------------------------
