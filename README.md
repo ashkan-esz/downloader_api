@@ -99,6 +99,8 @@ To run this project, you will need to add the following environment variables to
 | **`TOTAL_DISK_SPACE`**                 | amount of disk space that app can use, by default its 1024. (MB)                                                               | `false`  | 1024          |
 | **`DEFAULT_USED_DISK_SPACE`**          | amount of disk space that app use in init state, by default its. (MB)                                                          | `false`  | 0             |
 | **`INIT_DBS_ON_START`**                | create mongodb collections and indexes, create testUser, create s3 buckets                                                     | `false`  |               |
+| **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                                  | `false`  |               |
+| **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
 
 >**NOTE: check [configs schema](readme/CONFIGS.README.md) for other configs that read from db.**
 

@@ -8,6 +8,9 @@ import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 
 
 export async function preStart(force = false) {
+    if (config.admin.user && config.admin.pass) {
+        await createAdminUser();
+    }
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();
@@ -52,6 +55,27 @@ async function createTestUser() {
         //---------------------------------
     } catch (error) {
         console.log('error on creating test user');
+        saveError(error);
+    }
+}
+
+async function createAdminUser() {
+    console.log('====> creating admin user');
+    try {
+        let hashedPassword = await bcrypt.hash(config.admin.pass, 12);
+        const email = config.admin.user + '@gmail.com';
+        let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword, 'admin', '', 0, defaultProfileImage);
+        if (userData === 'username exist' || userData === 'email exist') {
+            console.log('====> admin user already exist');
+            return;
+        }
+        if (userData) {
+            console.log('====> admin user created!');
+        } else {
+            console.log('====> error on creating admin user');
+        }
+    } catch (error) {
+        console.log('====> error on creating admin user');
         saveError(error);
     }
 }

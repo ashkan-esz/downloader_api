@@ -63,6 +63,10 @@ export default Object.freeze({
     }),
     userSessionsPage: process.env.USER_SESSION_PAGE,
     initDbsOnStart: process.env.INIT_DBS_ON_START === 'true',
+    admin: Object.freeze({
+        user: process.env.ADMIN_USER || '',
+        pass: process.env.ADMIN_PASS || '',
+    }),
 });
 
 function getRemoteBrowsers() {
