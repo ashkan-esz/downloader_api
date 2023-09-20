@@ -456,6 +456,9 @@ export async function addRelatedTitle(id1, id2, relation) {
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
+    if (result === "notfound") {
+        return generateServiceResult({}, 404, errorMessage.movieNotFound);
+    }
     return generateServiceResult({}, 200, '');
 }
 

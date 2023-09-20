@@ -8,6 +8,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cors from "./api/middlewares/cors.js";
 import developmentFaze from "./api/middlewares/developmentFaze.js";
+import {preStart} from "./preStart.js";
 import {loadAgenda} from './loaders/index.js';
 import {saveError} from "./error/saveError.js";
 import swaggerUi from "swagger-ui-express";
@@ -50,6 +51,7 @@ app.use("/docs",
 //--------------------------------------
 //--------------------------------------
 
+await preStart();
 await loadAgenda();
 
 //--------------------------------------

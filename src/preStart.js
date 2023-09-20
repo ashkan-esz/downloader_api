@@ -1,3 +1,4 @@
+import config from "./config/index.js";
 import {createCollectionsAndIndexes} from "./data/createCollectionsIndex.js";
 import * as usersDbMethods from "./data/db/usersDbMethods.js";
 import * as bcrypt from "bcrypt";
@@ -6,11 +7,13 @@ import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";
 import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 
 
-(async function preStart() {
-    await createCollectionsAndIndexes();
-    await createBuckets();
-    await createTestUser();
-})()
+export async function preStart(force = false) {
+    if (config.initDbsOnStart || force) {
+        await createCollectionsAndIndexes();
+        await createBuckets();
+        await createTestUser();
+    }
+}
 
 async function createTestUser() {
     console.log('creating test user');

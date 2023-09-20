@@ -7,7 +7,6 @@
   },
   "type": "module",
   "scripts": {
-    "pre_start": "NODE_ENV=production node src/preStart.js",
     "start": "NODE_ENV=production node --max_old_space_size=1024 src/server.js",
     "start_limited_ram_traceGcc": "node --max_old_space_size=512 --trace_gc src/server.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config src/server.js",

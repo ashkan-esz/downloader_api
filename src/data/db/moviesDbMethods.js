@@ -743,6 +743,9 @@ export async function addRelatedMovies(id1, id2, relation) {
 
         return 'ok';
     } catch (error) {
+        if (error.code === 'P2003'){
+            return 'notfound';
+        }
         if (error.code !== 'P2002') {
             saveError(error);
             return 'error';

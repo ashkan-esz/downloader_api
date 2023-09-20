@@ -9,13 +9,17 @@ WORKDIR /usr/app
 COPY package*.json ./
 
 RUN npm install --omit=dev
+RUN npm install prisma --save-dev
 
 COPY . .
+
+RUN npx prisma generate
 
 # stage 2
 FROM alpine
 RUN apk add --no-cache --update nodejs npm
 COPY --from=build /usr/app /
+COPY --from=build /usr/app/prisma ./prisma
 
 EXPOSE 3000
 CMD [ "node", "src/server.js"]

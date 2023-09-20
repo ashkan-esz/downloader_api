@@ -62,6 +62,7 @@ export default Object.freeze({
         defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
     }),
     userSessionsPage: process.env.USER_SESSION_PAGE,
+    initDbsOnStart: process.env.INIT_DBS_ON_START === 'true',
 });
 
 function getRemoteBrowsers() {
