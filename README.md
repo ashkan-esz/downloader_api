@@ -101,6 +101,7 @@ To run this project, you will need to add the following environment variables to
 | **`INIT_DBS_ON_START`**                | create mongodb collections and indexes, create testUser, create s3 buckets                                                     | `false`  |               |
 | **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                                  | `false`  |               |
 | **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
+| **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                               | `false`  |               |
 
 >**NOTE: check [configs schema](readme/CONFIGS.README.md) for other configs that read from db.**
 

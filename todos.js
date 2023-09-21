@@ -8,7 +8,6 @@
 //todo : 19. remoteBrowser: download links from (16),(19)
 //todo : 20. crawler: add new movie sources to replace 'digimoviez'
 //todo : 22. crawler: disable sources when not responding, delete sources movies data
-//todo : 29. add telegram bot for some system to backup database
 //todo : 39. better emails
 //todo : 44. telegramBot: add features that exist in adminPanel
 //todo : 45. send warnings and errors to admin with telegramBot

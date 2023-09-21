@@ -16,6 +16,7 @@ services:
     env_file: ./.env
     volumes:
       - .:/usr/app
+      - ./db-backups:/db-backups
     environment:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
@@ -196,6 +197,7 @@ services:
   postgresDb:
     image: postgres:16.0-alpine3.18
     env_file: ./.env
+    container_name: downloader_postgres
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

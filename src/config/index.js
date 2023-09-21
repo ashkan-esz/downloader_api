@@ -28,6 +28,7 @@ export default Object.freeze({
             url: process.env.REDIS_URL,
             password: process.env.REDIS_PASSWORD,
         }),
+        backupPassword: process.env.DB_BACKUP_PASSWORD || '',
     }),
     sentryDns: process.env.SENTRY_DNS,
     apiKeys: Object.freeze({

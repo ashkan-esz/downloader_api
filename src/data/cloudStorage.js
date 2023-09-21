@@ -2,12 +2,13 @@ import config from "../config/index.js";
 import axios from "axios";
 import {AbortController} from "@aws-sdk/abort-controller";
 import {
+    CreateBucketCommand,
     DeleteObjectCommand,
     DeleteObjectsCommand,
+    GetObjectCommand,
     HeadObjectCommand,
     ListObjectsCommand,
     PutObjectCommand,
-    CreateBucketCommand,
     S3Client
 } from "@aws-sdk/client-s3";
 import {Upload} from "@aws-sdk/lib-storage";
@@ -47,7 +48,7 @@ const bucketNamePrefix = config.cloudStorage.bucketNamePrefix;
 const defaultProfileUrl = `https://${bucketNamePrefix}serverstatic.${bucketsEndpointSuffix}/defaultProfile.png`;
 export const defaultProfileImage = (await getFileSize(defaultProfileUrl)) > 0 ? defaultProfileUrl : '';
 
-export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image', 'download-app'].map(item => bucketNamePrefix + item));
+export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image', 'download-app', 'downloader-db-backup'].map(item => bucketNamePrefix + item));
 
 export const bucketNamesObject = Object.freeze({
     staticFiles: bucketNamePrefix + 'serverstatic',
@@ -56,7 +57,8 @@ export const bucketNamesObject = Object.freeze({
     poster: bucketNamePrefix + 'poster',
     downloadTrailer: bucketNamePrefix + 'download-trailer',
     profileImage: bucketNamePrefix + 'profile-image',
-    downloadApp: bucketNamePrefix + 'download-app'
+    downloadApp: bucketNamePrefix + 'download-app',
+    backup: bucketNamePrefix + 'downloader-db-backup',
 });
 
 export function getS3Client() {
@@ -473,6 +475,90 @@ async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFil
 //------------------------------------------
 //------------------------------------------
 
+export async function getDbBackupFilesList() {
+    try {
+        const params = {
+            Bucket: bucketNamesObject.backup,
+            MaxKeys: 1000,
+        };
+        let command = new ListObjectsCommand(params);
+        let response = await s3.send(command);
+        let files = response.Contents;
+        return files || [];
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getDbBackupFile(fileName) {
+    try {
+        const params = {
+            Bucket: bucketNamesObject.backup,
+            Key: fileName,
+        };
+        let command = new GetObjectCommand(params);
+        let response = await s3.send(command);
+        return await new Promise((resolve, reject) => {
+            const chunks = [];
+            response.Body.on('data', (chunk) => chunks.push(chunk));
+            response.Body.on('end', () => resolve(Buffer.concat(chunks)));
+            response.Body.on('error', reject);
+        });
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}
+
+export async function uploadDbBackupFileToS3(file, fileName, retryCounter = 0, retryWithSleepCounter = 0) {
+    try {
+        const parallelUploads3 = new Upload({
+            client: s3,
+            params: {
+                Bucket: bucketNamesObject.backup,
+                Body: file,
+                Key: fileName,
+                ACL: 'private',
+            },
+            queueSize: 4, // optional concurrency configuration
+            partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
+            leavePartsOnError: false, // optional manually handle dropped parts
+        });
+
+        await parallelUploads3.done();
+
+        return 'ok';
+    } catch (error) {
+        if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
+            retryCounter++;
+            await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadDbBackupFileToS3(file, fileName, retryCounter, retryWithSleepCounter);
+        }
+        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadDbBackupFileToS3(file, fileName, retryCounter, retryWithSleepCounter);
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeDbBackupFileFromS3(fileName, retryCounter = 0) {
+    fileName = getDecodedLink(fileName);
+    let result = await deleteFileFromS3(bucketNamesObject.backup, fileName);
+    if (result === 'error' && retryCounter < 2) {
+        retryCounter++;
+        await new Promise((resolve => setTimeout(resolve, 200)));
+        return await removeDbBackupFileFromS3(fileName, retryCounter);
+    }
+    return result;
+}
+
+//------------------------------------------
+//------------------------------------------
+
 export async function checkFileExist(bucketName, fileName, fileUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         const params = {
@@ -715,7 +801,7 @@ async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter 
     try {
         const params = {
             Bucket: bucketName,
-            ACL: 'public-read', // 'private' | 'public-read'
+            ACL: bucketName.includes('backup') ? 'private' : 'public-read', // 'private' | 'public-read'
         };
         let command = new CreateBucketCommand(params);
         let result = await s3.send(command);

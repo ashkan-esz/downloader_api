@@ -6,6 +6,7 @@ import {createThumbnails} from "../data/db/admin/thumbnailDbMethods.js";
 import {addTrailersFromYoutubeJobFunc} from "../jobs/youtubeTrailers.js";
 import {saveError} from "../error/saveError.js";
 import {updateMovieRanksJobFunc} from "../jobs/movieRanks.js";
+import {backupDbJobFunc, restoreBackupDbJobFunc} from "../jobs/dbBackup.js";
 
 const cronJobsStatus = {
     checkCrawlerDomains: {
@@ -87,6 +88,22 @@ const cronJobsStatus = {
         value: '',
         description: 'Every 8 hours',
         startFunc: addTrailersFromYoutubeJobFunc,
+    },
+    backupDb: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: 'Every day at 02:00',
+        startFunc: backupDbJobFunc,
+    },
+    restoreBackupDb: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: restoreBackupDbJobFunc,
     },
 }
 
