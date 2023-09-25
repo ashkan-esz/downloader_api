@@ -133,7 +133,7 @@ export async function restoreBackupDbJobFunc() {
 
                     updateCronJobsStatus('restoreBackupDb', modelName + ': adding to db');
                     try {
-                        await prisma[modelName].createMany({data: data});
+                        await prisma[modelName].createMany({data: data, skipDuplicates: true});
                     } catch (error2) {
                         saveError(error2);
                     }

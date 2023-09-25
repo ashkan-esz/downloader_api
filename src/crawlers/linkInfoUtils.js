@@ -14,7 +14,7 @@ export const encodersRegex = new RegExp([
     /|SaNiG|Frontline|TNTVillage|LordVako|LoRD|titler|rDX|w4f|HighCode|TuGAZx|GCJM|BONE|Qman|Micromkv|d3g|NVEE|AViATOR|GECKOS/,
     /|SUJAIDR|r00t|MovCr|ACOOL|N[Oo]GRP|AAA(UHD)?|DAA|BRSHNKV|HEVCBay|TTL|NBY|KamiKaze|TEPES|MZABI|DEEP|RSG|GOOZ|[Aa][Rr][Ii][Ee][Ss]/,
     /|Tom[Dd]oc|POIASD|SUECOS|Garshasp|SARTRE|Budgetbits|[Pp]rof?|LiBRARiANS|m2g|FreetheFish|[Nn]ickarad|AnimeRG|TombDoc|EDITH|ETHEL/,
-    /|FRISKY|3dg|SAMPA|Vyndros|ANONA911|Natty|GetSchwifty|Obey|GSFTX|RONIN|UNK|Bandi|QxR|Paso7[27]|Slinece|SPARKS|PCOK|orenji/,
+    /|FRISKY|3dg|SAMPA|Vyndros|ANONA911|Natty|GetSchwifty|Obey|GSFTX|RONIN|UNK|Bandi|QxR|Paso7[27]|Slinece|SPARKS|PCOK|orenji|LowFatMilk/,
     /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV|BRISK/,
     /|[Aa]pekat|LION|imSamir|KIMO?|Telly|TeamMCU|Grashasp|YOGI|HDSTAr|ViZNU|DREDD|TM[VK]|MHB|EXT|ION10|SECRECY|[RH]?TM|HORiZON/,
     /|Bollycine|InSaNe|ESubs|Lover|FC|COALiTiON|RUSTED|LCK|iExTv|[Ff]2[MmNn]|SH0W|GECK|AMIABLE|KatmovieHD|REM|PRiME|NEZU|TFP|DON/,

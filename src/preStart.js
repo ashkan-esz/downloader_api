@@ -5,12 +5,16 @@ import * as bcrypt from "bcrypt";
 import {v4 as uuidv4} from "uuid";
 import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";
 import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
+import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
 
 
 export async function preStart(force = false) {
     if (config.admin.user && config.admin.pass) {
         await createAdminUser();
     }
+    console.log('====> adding movies to postgres');
+    await addMoviesFromMongodbToPostgres();
+    console.log('====> movies added to postgres');
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();

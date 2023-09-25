@@ -919,7 +919,6 @@ export async function removeMovieById(id) {
 
 export async function addMoviesFromMongodbToPostgres() {
     try {
-        //todo : handle missing movies in postgres
         let collection2 = await getCollection('movies');
         let rr = await collection2.find({}, {
             projection: {
@@ -929,6 +928,7 @@ export async function addMoviesFromMongodbToPostgres() {
         rr = rr.map(item => ({movieId: item._id.toString()}));
         await prisma.movie.createMany({
             data: rr,
+            skipDuplicates: true,
         });
         return 'ok';
     } catch (error) {
