@@ -15,7 +15,7 @@ const sourceName = "mctv";
 const needHeadlessBrowser = false;
 const sourceAuthStatus = 'ok';
 
-export default async function bia2hd({movie_url, serial_url}, pageCount) {
+export default async function mctv({movie_url, serial_url}, pageCount) {
     await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, pageCount, search_title_serial);
     await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, pageCount, search_title_movie);
 }
