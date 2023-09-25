@@ -743,7 +743,7 @@ export async function addRelatedMovies(id1, id2, relation) {
 
         return 'ok';
     } catch (error) {
-        if (error.code === 'P2003'){
+        if (error.code === 'P2003') {
             return 'notfound';
         }
         if (error.code !== 'P2002') {
@@ -888,8 +888,38 @@ export async function getMovieState(id) {
 //-----------------------------------
 //-----------------------------------
 
+export async function removeMovieById(id) {
+    let mongoRemoveResult;
+    try {
+        let collection = await getCollection('movies');
+        mongoRemoveResult = await collection.deleteOne({_id: new mongodb.ObjectId(id)});
+        await prisma.movie.delete({
+            where: {
+                movieId: id,
+            },
+            select: {
+                movieId: true,
+            }
+        });
+        return 'ok';
+    } catch (error) {
+        if (error.message === 'Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer') {
+            return 'invalid id';
+        }
+        if (mongoRemoveResult?.deletedCount === 0 && error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
 export async function addMoviesFromMongodbToPostgres() {
     try {
+        //todo : handle missing movies in postgres
         let collection2 = await getCollection('movies');
         let rr = await collection2.find({}, {
             projection: {

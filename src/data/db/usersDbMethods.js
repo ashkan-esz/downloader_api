@@ -619,3 +619,294 @@ export async function getTotalAndActiveUsersCount() {
         return null;
     }
 }
+
+//----------------------------
+//----------------------------
+
+export async function removeUserById(id) {
+    try {
+        return await prisma.$transaction(async (prisma) => {
+            const removedUser = await prisma.user.delete({
+                where: {
+                    userId: id,
+                    role: {not: 'admin'},
+                },
+                include: {
+                    activeSessions: {
+                        select: {
+                            refreshToken: true,
+                        }
+                    },
+                    favoriteCharacters: {
+                        select: {
+                            characterId: true,
+                        }
+                    },
+                    followStaff: {
+                        select: {
+                            staffId: true,
+                        }
+                    },
+                    likeDislikeStaff: {
+                        select: {
+                            staffId: true,
+                            type: true,
+                        }
+                    },
+                    likeDislikeCharacter: {
+                        select: {
+                            userId: true,
+                            type: true,
+                        }
+                    },
+                    watchListMovies: {
+                        select: {
+                            movieId: true,
+                        }
+                    },
+                    watchedMovies: {
+                        select: {
+                            movieId: true,
+                            dropped: true,
+                            favorite: true,
+                        }
+                    },
+                    profileImages: {
+                        select: {
+                            url: true,
+                        }
+                    },
+                    likeDislikeMovies: {
+                        select: {
+                            movieId: true,
+                            type: true,
+                        }
+                    },
+                    followMovies: {
+                        select: {
+                            movieId: true,
+                        }
+                    },
+                },
+            });
+
+            // movie counts update
+            let likeMovieIds = []
+            let dislikeMovieIds = [];
+            for (let i = 0; i < removedUser.likeDislikeMovies.length; i++) {
+                if (removedUser.likeDislikeMovies[i].type === 'like') {
+                    likeMovieIds.push(removedUser.likeDislikeMovies[i].movieId);
+                } else {
+                    dislikeMovieIds.push(removedUser.likeDislikeMovies[i].movieId);
+                }
+            }
+            delete removedUser.likeDislikeMovies;
+            let followMovieIds = removedUser.followMovies.map(m => m.movieId);
+            delete removedUser.followMovies;
+            let watchListMovieIds = removedUser.watchListMovies.map(m => m.movieId);
+            delete removedUser.watchListMovies;
+            let droppedMovieIds = [];
+            let finishedMovieIds = [];
+            let favoriteMovieIds = [];
+            for (let i = 0; i < removedUser.watchedMovies.length; i++) {
+                if (removedUser.watchedMovies[i].dropped) {
+                    droppedMovieIds.push(removedUser.watchedMovies[i].movieId);
+                } else {
+                    finishedMovieIds.push(removedUser.watchedMovies[i].movieId);
+                }
+                if (removedUser.watchedMovies[i].favorite) {
+                    favoriteMovieIds.push(removedUser.watchedMovies[i].movieId);
+                }
+            }
+            delete removedUser.watchedMovies;
+            const updateMovieCounts = await Promise.allSettled([
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: likeMovieIds,
+                        }
+                    },
+                    data: {
+                        likes_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: dislikeMovieIds,
+                        }
+                    },
+                    data: {
+                        dislikes_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: followMovieIds,
+                        }
+                    },
+                    data: {
+                        follow_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: watchListMovieIds,
+                        }
+                    },
+                    data: {
+                        watchlist_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: droppedMovieIds,
+                        }
+                    },
+                    data: {
+                        dropped_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: finishedMovieIds,
+                        }
+                    },
+                    data: {
+                        finished_count: {decrement: 1},
+                    }
+                }),
+                prisma.movie.updateMany({
+                    where: {
+                        id: {
+                            in: favoriteMovieIds,
+                        }
+                    },
+                    data: {
+                        favorite_count: {decrement: 1},
+                    }
+                })
+            ]);
+            likeMovieIds = null;
+            dislikeMovieIds = null;
+            followMovieIds = null;
+            watchListMovieIds = null;
+            droppedMovieIds = null;
+            finishedMovieIds = null;
+            favoriteMovieIds = null;
+
+            // staff counts update
+            let followStaffIds = removedUser.followStaff.map(f => f.staffId);
+            delete removedUser.followStaff;
+            let likeStaffIds = [];
+            let dislikeStaffIds = [];
+            for (let i = 0; i < removedUser.likeDislikeStaff.length; i++) {
+                if (removedUser.likeDislikeStaff[i].type === 'like') {
+                    likeStaffIds.push(removedUser.likeDislikeStaff[i].staffId);
+                } else {
+                    dislikeStaffIds.push(removedUser.likeDislikeStaff[i].staffId);
+                }
+            }
+            delete removedUser.likeDislikeStaff;
+            const updateStaffCounts = await Promise.all([
+                prisma.staff.updateMany({
+                    where: {
+                        id: {
+                            in: followStaffIds,
+                        }
+                    },
+                    data: {
+                        follow_count: {decrement: 1},
+                    }
+                }),
+                prisma.staff.updateMany({
+                    where: {
+                        id: {
+                            in: likeStaffIds,
+                        }
+                    },
+                    data: {
+                        likes_count: {decrement: 1},
+                    }
+                }),
+                prisma.staff.updateMany({
+                    where: {
+                        id: {
+                            in: dislikeStaffIds,
+                        }
+                    },
+                    data: {
+                        dislikes_count: {decrement: 1},
+                    }
+                })
+            ]);
+            followStaffIds = null;
+            likeStaffIds = null;
+            dislikeStaffIds = null;
+
+            // character counts update
+            let favoriteCharacterIds = removedUser.favoriteCharacters.map(f => f.characterId);
+            delete removedUser.favoriteCharacters;
+            let likeCharacterIds = [];
+            let dislikeCharacterIds = [];
+            for (let i = 0; i < removedUser.likeDislikeCharacter.length; i++) {
+                if (removedUser.likeDislikeCharacter[i].type === 'like') {
+                    likeCharacterIds.push(removedUser.likeDislikeCharacter[i].characterId);
+                } else {
+                    dislikeCharacterIds.push(removedUser.likeDislikeCharacter[i].characterId);
+                }
+            }
+            delete removedUser.likeDislikeCharacter;
+            const updateCharacterCounts = await Promise.all([
+                prisma.character.updateMany({
+                    where: {
+                        id: {
+                            in: favoriteCharacterIds,
+                        }
+                    },
+                    data: {
+                        favorite_count: {decrement: 1},
+                    }
+                }),
+                prisma.character.updateMany({
+                    where: {
+                        id: {
+                            in: likeCharacterIds,
+                        }
+                    },
+                    data: {
+                        likes_count: {decrement: 1},
+                    }
+                }),
+                prisma.character.updateMany({
+                    where: {
+                        id: {
+                            in: dislikeCharacterIds,
+                        }
+                    },
+                    data: {
+                        dislikes_count: {decrement: 1},
+                    }
+                })
+            ]);
+            favoriteCharacterIds = null;
+            likeCharacterIds = null;
+            dislikeCharacterIds = null;
+
+            return removedUser;
+        },{
+            timeout: 15000,
+            maxWait: 15000,
+        });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}

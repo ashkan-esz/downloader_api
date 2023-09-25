@@ -285,4 +285,14 @@ router.delete('/movies/relatedTitle/remove/:id1/:id2',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/remove/:removeType/:id
+router.delete('/remove/:removeType/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['removeType', 'id']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin']), adminControllers.removeDocsRows);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;

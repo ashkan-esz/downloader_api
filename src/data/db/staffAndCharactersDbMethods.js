@@ -660,3 +660,38 @@ export async function addCastImageDb(id, type, data) {
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
+
+export async function removeStaffById(id) {
+    try {
+        return await prisma.staff.delete({
+            where: {
+                id: id,
+            },
+        });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeCharacterById(id) {
+    try {
+        return await prisma.character.delete({
+            where: {
+                id: id,
+            },
+        });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------

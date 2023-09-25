@@ -6,6 +6,8 @@ import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js"
 import * as serverAnalysisDbMethods from "../data/db/serverAnalysisDbMethods.js";
 import * as botsDbMethods from "../data/db/botsDbMethods.js";
 import * as moviesDbMethods from "../data/db/moviesDbMethods.js";
+import * as staffAndCharactersDbMethods from "../data/db/staffAndCharactersDbMethods.js";
+import * as usersDbMethods from "../data/db/usersDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
@@ -13,12 +15,14 @@ import {safeFieldsToEdit_array} from "../config/configsDb.js";
 import * as RemoteHeadlessBrowserMethods from "../crawlers/remoteHeadlessBrowser.js";
 import {createHash} from "node:crypto";
 import {saveError} from "../error/saveError.js";
-import {removeAppFileFromS3} from "../data/cloudStorage.js";
+import {removeAppFileFromS3, removeProfileImageFromS3} from "../data/cloudStorage.js";
 import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 import {checkImdbApiKeys} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
 import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
 import {getCronJobsStatus, startCronJobByName} from "../utils/cronJobsStatus.js";
+import {setRedis} from "../data/redis.js";
+import config from "../config/index.js";
 
 
 export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
@@ -466,6 +470,54 @@ export async function removeRelatedTitle(id1, id2) {
     let result = await moviesDbMethods.removeRelatedMovies(id1, id2);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+    return generateServiceResult({}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function removeDocsRows(removeType, id) {
+    let result;
+    if (removeType === 'movie') {
+        result = await moviesDbMethods.removeMovieById(id);
+    } else if (removeType === 'staff') {
+        if (isNaN(id)) {
+            result = "invalid id";
+        } else {
+            result = await staffAndCharactersDbMethods.removeStaffById(Number(id));
+        }
+    } else if (removeType === 'character') {
+        if (isNaN(id)) {
+            result = "invalid id";
+        } else {
+            result = await staffAndCharactersDbMethods.removeCharacterById(Number(id));
+        }
+    } else if (removeType === 'user') {
+        if (isNaN(id)) {
+            result = "invalid id";
+        } else {
+            result = await usersDbMethods.removeUserById(Number(id));
+            if (result !== 'notfound' && result !== 'error') {
+                //remove profileImages from s3
+                for (let i = 0; i < result.profileImages.length; i++) {
+                    let imageFileName = result.profileImages[i].url.split('/').pop();
+                    await removeProfileImageFromS3(imageFileName);
+                }
+                //blacklist tokens
+                for (let i = 0; i < result.activeSessions.length; i++) {
+                    await setRedis('jwtKey:' + result.activeSessions[i].refreshToken, 'removeUser', config.jwt.accessTokenExpireSeconds);
+                }
+            }
+        }
+    }
+
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === "invalid id") {
+        return generateServiceResult({}, 400, 'Invalid id');
+    } else if (result === "notfound") {
+        return generateServiceResult({}, 404, errorMessage.documentNotFound);
     }
     return generateServiceResult({}, 200, '');
 }

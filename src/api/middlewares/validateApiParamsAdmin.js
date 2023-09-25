@@ -6,6 +6,7 @@ import {relations} from "../../data/db/moviesDbMethods.js";
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const mutateType = ['enable', 'disable'];
+const removeTypes = ['movie', 'staff', 'character', 'user'];
 
 const validations = Object.freeze({
 
@@ -71,6 +72,10 @@ const validations = Object.freeze({
     mutateType: param('mutateType')
         .trim().toLowerCase()
         .isIn(mutateType).withMessage(`Invalid parameter mutateType :: (${mutateType.join('|')})`),
+
+    removeType: param('removeType')
+        .trim()
+        .isIn(removeTypes).withMessage(`Invalid parameter removeType :: (${removeTypes.join('|')})`),
 
     serverAnalysisFieldName: param('serverAnalysisFieldName')
         .trim()

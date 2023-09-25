@@ -136,25 +136,6 @@ export async function updateMovieByIdDB(id, updateFields) {
     }
 }
 
-export async function removeMovieById(id) {
-    try {
-        let collection = await getCollection('movies');
-        await collection.deleteOne({_id: id});
-        await prisma.movie.delete({
-            where: {
-                movieId: id.toString(),
-            },
-            select: {
-                movieId: true,
-            }
-        });
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
 //-----------------------------------
 //-----------------------------------
 

@@ -1,7 +1,4 @@
 
-//todo : 13. add api to remove user/staff/character
-//todo : 14. add api to remove movie
-//todo : 15. adminPanel: add (13),(14)
 //todo : 16. crawler: add more anime sources (something like torrent sites)
 //todo : 17. remoteBrowser: add feature to download from torrent
 //todo : 18. crawler: crawl torrent sites
@@ -38,7 +35,10 @@
 //todo : 131. add personality type to user data, and api to find same character
 //todo : 134. add feature: upload fanArt
 //todo : 135. check fastify
+//todo : 135.1 check bun
 //todo : 136. smart suggestion method
 //todo : 137. fix duplicate titles bug
 //todo : 140. add graphql
 //todo : 141. add login by telegram
+//todo : 141.0 add telegram bot
+//todo : 142. add chat section with golang

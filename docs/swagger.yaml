@@ -3274,6 +3274,42 @@ paths:
                   data:
                     type: string
 
+  /admin/remove/{removeType}/{id}:
+    delete:
+      tags:
+        - Admin-Remove
+      summary: Remove Docs/Rows
+      description: Removes movieSource/movie/staff/character/user/. cannot remove users with role=admin
+      operationId: admin-removeDocsRows
+      parameters:
+        - name: removeType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - movie
+              - staff
+              - character
+              - user
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: string
+
 
 security:
   - accessToken: [ ]
