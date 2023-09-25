@@ -83,6 +83,11 @@ export async function editSource(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function removeSource(req, res) {
+    let result = await adminServices.removeSource(req.params.sourceName, req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
 export async function addSource(req, res) {
     let {sourceName, movie_url, serial_url, crawlCycle, disabled, cookies} = req.body;
     let result = await adminServices.addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies);

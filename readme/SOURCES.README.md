@@ -17,14 +17,21 @@
            expire: Int(Date) //0 means no expire
         }),
         disabled: Boolean,
+        isManualDisable: Boolean,
         disabledDate: Date,
         addDate: Date,
         lastDomainChangeDate: Date,
+        lastConfigUpdateDate: Date,
         userData: {
             userId: Int,
             role: String,
             rawUsername: String,
-        }
+        },
+        description: '',
+        status: {
+            notRespondingFrom: Date,
+            lastCheck: Date,
+        },
     },
 }
 

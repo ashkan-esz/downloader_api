@@ -115,6 +115,13 @@ router.put('/crawler/editSource/:sourceName',
     mongoSanitize(),
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.editSource);
 
+//admin/crawler/removeSource/:sourceName
+router.delete('/crawler/removeSource/:sourceName',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['sourceName_param']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.removeSource);
+
 //admin/crawler/addSource
 router.put('/crawler/addSource',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

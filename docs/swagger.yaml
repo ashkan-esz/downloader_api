@@ -2542,6 +2542,28 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
 
+  /admin/crawler/removeSource/{sourceName}:
+    delete:
+      tags:
+        - Admin-Crawler
+      summary: Remove Crawler Source
+      description: remove links/poster/trailer/... related to this source.
+      operationId: admin-crawler-removeSource
+      parameters:
+        - name: sourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /admin/crawler/addSource:
     put:
       tags:

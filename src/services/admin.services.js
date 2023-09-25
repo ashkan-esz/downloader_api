@@ -184,6 +184,17 @@ export async function editSource(sourceName, movie_url, serial_url, crawlCycle, 
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function removeSource(sourceName, userData) {
+    let result = await adminCrawlerDbMethods.removeSource(sourceName, userData, true);
+
+    if (result === "error") {
+        return generateServiceResult({data: null}, 500, errorMessage.serverError);
+    } else if (result === "notfound") {
+        return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
 export async function addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.addSourceDB(sourceName, {
         movie_url,

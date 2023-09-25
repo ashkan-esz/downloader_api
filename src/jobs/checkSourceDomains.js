@@ -31,6 +31,9 @@ export async function checkCrawlerDomainsJobFunc() {
             if (['_id', 'title'].includes(keys[i])) {
                 continue;
             }
+            if (result[keys[i]].disabled && result[keys[i]].isManualDisable){
+                continue;
+            }
             sources.push({
                 sourceName: keys[i],
                 ...result[keys[i]],

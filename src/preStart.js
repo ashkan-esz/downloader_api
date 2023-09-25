@@ -12,9 +12,11 @@ export async function preStart(force = false) {
     if (config.admin.user && config.admin.pass) {
         await createAdminUser();
     }
-    console.log('====> adding movies to postgres');
-    await addMoviesFromMongodbToPostgres();
-    console.log('====> movies added to postgres');
+    if (config.nodeEnv !== 'dev') {
+        console.log('====> adding movies to postgres');
+        await addMoviesFromMongodbToPostgres();
+        console.log('====> movies added to postgres');
+    }
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();
