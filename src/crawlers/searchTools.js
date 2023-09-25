@@ -30,7 +30,6 @@ axiosRetry(axios, {
         return retryCount * 1000; // time interval between retries
     },
     onRetry: (retryCount, error, config) => {
-        // todo : check fixed on axios 1.3.6
         // delete config.headers;
     },
     retryCondition: (error) => (
