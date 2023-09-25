@@ -4,7 +4,7 @@ import {checkUrlWork} from "../crawlers/domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {crawler} from "../crawlers/crawler.js";
-import {updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
+import {removeSource, updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
 import {getDatesBetween} from "../crawlers/utils/utils.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 
@@ -31,7 +31,8 @@ export async function checkCrawlerDomainsJobFunc() {
             if (['_id', 'title'].includes(keys[i])) {
                 continue;
             }
-            if (result[keys[i]].disabled && result[keys[i]].isManualDisable){
+            if (result[keys[i]].disabled && result[keys[i]].isManualDisable) {
+                //ignore source if disabled manually
                 continue;
             }
             sources.push({
@@ -57,7 +58,11 @@ export async function checkCrawlerDomainsJobFunc() {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                 if (checkUrlResult === "error") {
                     await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
-                    await updateSourceResponseStatus(sources[i].sourceName, false);
+                    let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, false);
+                    if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 6) {
+                        //source is not working for 6 days
+                        await removeSource(sources[i].sourceName, null, false);
+                    }
                 } else if (checkUrlResult === "ok") {
                     await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
                     await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);

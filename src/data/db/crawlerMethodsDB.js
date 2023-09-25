@@ -3,8 +3,6 @@ import * as usersDbMethods from "./usersDbMethods.js";
 import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
-//todo : npm install express-mongo-sanitize
-
 export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
     try {
         let collection = await getCollection('movies');

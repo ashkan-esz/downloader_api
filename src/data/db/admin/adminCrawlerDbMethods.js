@@ -116,6 +116,7 @@ export async function updateSourceResponseStatus(sourceName, isResponsible) {
                 //source Deactivated
                 sourceData.status.notRespondingFrom = new Date();
             }
+            temp = sourceData.status.notRespondingFrom;
         }
 
         await collection.updateOne({title: 'sources'}, {
@@ -184,9 +185,11 @@ export async function removeSource(sourceName, userData, isManualRemove) {
         } else if (isManualRemove) {
             sourceData.isManualDisable = true;
         }
-        sourceData.userData = {
-            userId: userData.userId,
-            role: userData.role,
+        if (isManualRemove) {
+            sourceData.userData = {
+                userId: userData.userId,
+                role: userData.role,
+            }
         }
         sourceData.lastConfigUpdateDate = new Date();
 
