@@ -8,6 +8,7 @@ import * as botsDbMethods from "../data/db/botsDbMethods.js";
 import * as moviesDbMethods from "../data/db/moviesDbMethods.js";
 import * as staffAndCharactersDbMethods from "../data/db/staffAndCharactersDbMethods.js";
 import * as usersDbMethods from "../data/db/usersDbMethods.js";
+import * as adminDbMethods from "../data/db/admin/adminDbMethods.js";
 import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getServerResourcesStatus} from "../utils/serverStatus.js";
 import {pauseCrawler_manual, resumeCrawler_manual, stopCrawler_manual} from "../crawlers/status/crawlerController.js";
@@ -91,6 +92,24 @@ export async function crawlUrl(sourceName, url, title, type) {
             message: 'number of founded download links: ' + result,
         }
     }, 200, '');
+}
+
+export async function duplicateTitles(preCheck, autoRemove) {
+    let result = await adminDbMethods.getDuplicateTitles(preCheck);
+    if (result === 'error') {
+        return generateServiceResult({data: []}, 500, errorMessage.serverError);
+    }
+    if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, errorMessage.movieNotFound);
+    }
+    if (preCheck && autoRemove) {
+        for (let i = 0; i < result.length; i++) {
+            for (let j = 0; j < result[i].ids.length; j++) {
+                await moviesDbMethods.removeMovieById(result[i].ids[j]);
+            }
+        }
+    }
+    return generateServiceResult({data: result}, 200, '');
 }
 
 //---------------------------------------------------

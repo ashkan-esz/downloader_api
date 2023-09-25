@@ -154,6 +154,22 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter all :: (true|false)')
         .toBoolean(),
 
+    preCheck: query('preCheck')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter preCheck :: (true|false)')
+        .toBoolean(),
+
+    autoRemove: query('autoRemove')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter autoRemove :: (true|false)')
+        .toBoolean(),
+
     appData: query('appData')
         .exists().withMessage('AppData cannot be empty')
         .custom((value, {req, loc, path}) => {

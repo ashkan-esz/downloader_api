@@ -60,6 +60,13 @@ router.put('/crawler/crawlUrl',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.crawlUrl);
 
+//admin/crawler/duplicateTitles
+router.get('/crawler/duplicateTitles',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['preCheck', 'autoRemove']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.duplicateTitles);
+
 //---------------------------------------------------
 //---------------------------------------------------
 

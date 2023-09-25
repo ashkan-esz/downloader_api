@@ -895,7 +895,7 @@ export async function removeMovieById(id) {
         mongoRemoveResult = await collection.deleteOne({_id: new mongodb.ObjectId(id)});
         await prisma.movie.delete({
             where: {
-                movieId: id,
+                movieId: id.toString(),
             },
             select: {
                 movieId: true,

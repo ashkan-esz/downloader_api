@@ -18,6 +18,12 @@ export async function crawlUrl(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function duplicateTitles(req, res) {
+    let {preCheck, autoRemove} = req.query;
+    let result = await adminServices.duplicateTitles(preCheck, autoRemove);
+    return sendResponse(req, res, result);
+}
+
 export async function manualPauseCrawler(req, res) {
     let {duration} = req.params;
     let result = await adminServices.manualPauseCrawler(duration);

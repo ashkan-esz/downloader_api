@@ -44,7 +44,7 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 .split('')
                 .map(item => {
                     if (item === ' ') {
-                        item = ':?' + item;
+                        item = ':?-?\\s?';
                     } else {
                         item = item + '\\\'?';
                     }
@@ -53,7 +53,7 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 .join('')
                 .replace(/\*/g, '\\*');
             searchObj['$or'].push({
-                alternateTitles: new RegExp('^' + temp2 + '$')
+                alternateTitles: new RegExp('^' + temp2 + '!?$', 'i')
             });
         } catch (error2) {
             saveError(error2);

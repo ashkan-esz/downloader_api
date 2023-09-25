@@ -2643,6 +2643,36 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
 
+  /admin/crawler/duplicateTitles:
+    get:
+      tags:
+        - Admin-Crawler
+      summary: Duplicate Titles
+      description: Get duplicated titles
+      operationId: admin-crawler-duplicateTitles
+      parameters:
+        - name: preCheck
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: autoRemove
+          in: query
+          required: false
+          description: removes duplicated titles found by preCheck function. only work when preCheck=true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /admin/analysis/{serverAnalysisFieldName}/{startTime}/{endTime}/{skip}/{limit}:
     get:
       tags:
