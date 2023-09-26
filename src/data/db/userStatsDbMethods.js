@@ -21,6 +21,7 @@ export const statTypes = Object.freeze({
         'like_character', 'dislike_character',
         'follow_staff', 'favorite_character',
         'finish_movie', 'follow_movie', 'watchlist_movie',
+        'episode_release', 'related_movie',
     ]),
 });
 
@@ -1465,6 +1466,12 @@ export async function getUserStatsListDB(userId, statType, sortBy, favoritesOnly
         if (statType === 'follow_movie') {
             return await getUserStatsList_followMovies(userId, sortBy, skip, limit, noUserStats);
         }
+        if (statType === 'episode_release') {
+            return await getUserStatsList_episodeRelease(userId, skip, limit, noUserStats);
+        }
+        if (statType === 'related_movie') {
+            return await getUserStatsList_relatedMovies(userId, skip, limit, noUserStats);
+        }
         return [];
     } catch (error) {
         saveError(error);
@@ -1766,6 +1773,103 @@ function getUserStatsList_movies_query(userId, sortBy, groupName, skip, limit, n
             date: sortBy === 'date' ? undefined : 'desc',
         }],
     });
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function getUserStatsList_episodeRelease(userId, skip, limit, noUserStats) {
+    try {
+        return await prisma.followMovie.findMany({
+            where: {
+                userId: userId,
+            },
+            include: noUserStats ? undefined : {
+                movie: {
+                    include: {
+                        likeDislikeMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                type: true,
+                            }
+                        },
+                    }
+                },
+            },
+            orderBy: {
+                date: 'desc',
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUserStatsList_relatedMovies(userId, skip, limit, noUserStats) {
+    try {
+        return await prisma.relatedMovie.findMany({
+            where: {
+                //relatedId: in watchedMovie
+                //movieId: not in watchedMovie
+                //movieId: not in followMovies
+                //movieId: not in watchListMovie
+                relatedMovie: {
+                    watchedMovies: {
+                        some: {
+                            userId: userId,
+                        }
+                    }
+                },
+                movie: {
+                    watchedMovies: {
+                        none: {
+                            userId: userId,
+                        }
+                    },
+                    followMovies: {
+                        none: {
+                            userId: userId,
+                        }
+                    },
+                    watchListMovies: {
+                        none: {
+                            userId: userId,
+                        }
+                    }
+                },
+                relation: {
+                    in: ['prequel', 'sequel', 'spin_off', 'side_story', 'full_story', 'summary', 'parent_story']
+                }
+            },
+            include: noUserStats ? undefined : {
+                movie: {
+                    include: {
+                        likeDislikeMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                type: true,
+                            }
+                        },
+                    }
+                },
+            },
+            skip: skip,
+            take: limit,
+            orderBy: {
+                date: 'desc',
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
 }
 
 //-----------------------------------------------------

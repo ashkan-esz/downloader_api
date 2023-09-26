@@ -17,8 +17,6 @@
 //todo : 79. add filter for 'hentai' and 'pornography' on api results
 //todo : 80. add feature: share movies between users
 //todo : 81.2 add api for forget password
-//todo : 83. add api to check for new episode release on movies that user follow
-//todo : 84. add api to check for relatedTitles that user follow
 //todo : 85. add feature: send notification to users
 //todo : 122. add aniList api
 //todo : 123. automate omdb key production

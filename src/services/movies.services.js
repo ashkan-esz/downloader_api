@@ -534,7 +534,7 @@ export async function userStatsCollectionMovies(userId, collectionName, dataLeve
 
     await addStaffAndCharacterDataToMovie(result, embedStaffAndCharacter);
     normalizeMoviesUserStats(result, 'collection_movie', noUserStats);
-    await addMovieDataToUserStatsList(result, dataLevelConfig[dataLevel]);
+    await addMovieDataToUserStatsList(result, 'user_collection', dataLevelConfig[dataLevel]);
 
     return generateServiceResult({data: result}, 200, '');
 }
@@ -621,7 +621,14 @@ export async function getUserStatsList(userId, statType, dataLevel, sortBy, favo
     } else {
         await addStaffAndCharacterDataToMovie(userStatsList, embedStaffAndCharacter);
         normalizeMoviesUserStats(userStatsList, statType, noUserStats);
-        await addMovieDataToUserStatsList(userStatsList, dataLevelConfig[dataLevel]);
+        await addMovieDataToUserStatsList(userStatsList, statType, dataLevelConfig[dataLevel]);
+        if (statType === 'episode_release') {
+            userStatsList = userStatsList
+                .filter(item => item.latestData.season > item.userStats_extra.watch_season ||
+                    (item.latestData.season === item.userStats_extra.watch_season && item.latestData.episode > item.userStats_extra.watch_episode)
+                )
+                .slice(skip, skip + limit);
+        }
     }
 
     return generateServiceResult({data: userStatsList}, 200, '');
@@ -1110,10 +1117,14 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
         delete movies[i].movie;
         delete movies[i].group_name;
         delete movies[i].collection_name;
+        delete movies[i].relatedId;
     }
 }
 
-async function addMovieDataToUserStatsList(movies, projection) {
+async function addMovieDataToUserStatsList(movies, statType, projection) {
+    if (statType === 'episode_release' && Object.keys(projection).length > 0) {
+        projection = {...projection, latestData: 1};
+    }
     let moviesData = await moviesDbMethods.getMoviesDataInBatch(movies.map(m => m.movieId), projection);
     for (let i = 0; i < movies.length; i++) {
         let movie = moviesData.find(m => m._id.toString() === movies[i].movieId);

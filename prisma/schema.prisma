@@ -355,6 +355,7 @@ model UserCollection {
 }
 
 model RelatedMovie {
+  date         DateTime      @default(now())
   movieId      String
   relatedId    String
   relation     titleRelation

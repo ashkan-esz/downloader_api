@@ -739,6 +739,17 @@ export async function addRelatedMovies(id1, id2, relation) {
                     movieId: true,
                 }
             });
+        } else if (relation === 'spin_off' || relation === 'side_story') {
+            await prisma.relatedMovie.create({
+                data: {
+                    movieId: id2,
+                    relatedId: id1,
+                    relation: relation,
+                },
+                select: {
+                    movieId: true,
+                }
+            });
         }
 
         return 'ok';
