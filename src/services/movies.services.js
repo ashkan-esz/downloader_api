@@ -969,7 +969,7 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
             }
             return movies;
         } else if (movies.length > 1) {
-            const userStats = await userStatsDbMethods.getMoviesUserStats_likeDislike(userId, movies.map(m => m._id.toString()));
+            const userStats = await userStatsDbMethods.getMoviesUserStats_likeDislikeFollow(userId, movies.map(m => m._id.toString()));
             for (let i = 0; i < movies.length; i++) {
                 let statsData = userStats.find(u => u.movieId === movies[i]._id.toString());
                 if (statsData) {
@@ -986,10 +986,18 @@ async function addUserStatsDataToMovie(userId, movies, noUserStats, isGuest) {
                         view_month_count: statsData.view_month_count,
                         like: false,
                         dislike: false,
+                        follow: false,
                     }
                     if (statsData.likeDislikeMovies[0]) {
                         movies[i].userStats.like = statsData.likeDislikeMovies[0].type === 'like';
                         movies[i].userStats.dislike = statsData.likeDislikeMovies[0].type === 'dislike';
+                    }
+                    if (statsData.followMovies[0]) {
+                        movies[i].userStats.follow = true;
+                        movies[i].userStats_extra = defaultUserStats_extra;
+                        movies[i].userStats_extra.watch_season = statsData.followMovies[0].watch_season;
+                        movies[i].userStats_extra.watch_episode = statsData.followMovies[0].watch_episode;
+                        movies[i].userStats_extra.myScore = statsData.followMovies[0].score;
                     }
                 } else {
                     movies[i].userStats = defaultUserStats;
@@ -1061,6 +1069,16 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
         if (noUserStats) {
             movies[i].userStats = null;
             movies[i].userStats_extra = null;
+            if (statType === 'episode_release') {
+                movies[i].userStats_extra = {
+                    watch_start: movies[i].startDate || '',
+                    watch_end: movies[i].startDate ? movies[i].date || '' : '',
+                    watch_season: movies[i].watch_season || 0,
+                    watch_episode: movies[i].watch_episode || 0,
+                    myScore: movies[i].score || 0,
+                    watchlist_groupName: movies[i].group_name || '',
+                }
+            }
         } else {
             let statsData = movies[i].movie;
             movies[i].userStats = {
@@ -1075,6 +1093,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
                 view_month_count: statsData.view_month_count,
                 like: false,
                 dislike: false,
+                follow: false,
             }
             if (statsData.likeDislikeMovies && statsData.likeDislikeMovies[0]) {
                 movies[i].userStats.like = statsData.likeDislikeMovies[0].type === 'like';
@@ -1087,7 +1106,7 @@ function normalizeMoviesUserStats(movies, statType, noUserStats) {
 
             if (statType === 'watchlist_movie') {
                 movies[i].userStats.watchlist = true;
-            } else if (statType === 'follow_movie') {
+            } else if ((statsData.followMovies && statsData.followMovies[0]) || statType === 'follow_movie' || statType === 'episode_release') {
                 movies[i].userStats.follow = true;
             } else if (statType === 'finish_movie') {
                 movies[i].userStats.dropped = movies[i].dropped;

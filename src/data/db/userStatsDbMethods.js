@@ -1045,6 +1045,17 @@ export async function getCollectionMovies(userId, collectionName, skip, limit, n
                                 type: true,
                             }
                         },
+                        followMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                watch_season: true,
+                                watch_episode: true,
+                                score: true,
+                            }
+                        },
                     }
                 },
             },
@@ -1707,6 +1718,17 @@ async function getUserStatsList_finishedMovies(userId, sortBy, favoritesOnly, dr
                                 type: true,
                             }
                         },
+                        followMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                watch_season: true,
+                                watch_episode: true,
+                                score: true,
+                            }
+                        },
                     }
                 },
             },
@@ -1764,6 +1786,17 @@ function getUserStatsList_movies_query(userId, sortBy, groupName, skip, limit, n
                             type: true,
                         }
                     },
+                    followMovies: {
+                        where: {
+                            userId: userId,
+                        },
+                        take: 1,
+                        select: {
+                            watch_season: true,
+                            watch_episode: true,
+                            score: true,
+                        }
+                    },
                 }
             },
         },
@@ -1794,6 +1827,17 @@ export async function getUserStatsList_episodeRelease(userId, skip, limit, noUse
                             take: 1,
                             select: {
                                 type: true,
+                            }
+                        },
+                        followMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                watch_season: true,
+                                watch_episode: true,
+                                score: true,
                             }
                         },
                     }
@@ -1855,6 +1899,17 @@ export async function getUserStatsList_relatedMovies(userId, skip, limit, noUser
                             take: 1,
                             select: {
                                 type: true,
+                            }
+                        },
+                        followMovies: {
+                            where: {
+                                userId: userId,
+                            },
+                            take: 1,
+                            select: {
+                                watch_season: true,
+                                watch_episode: true,
+                                score: true,
                             }
                         },
                     }
@@ -1936,7 +1991,7 @@ export async function getMovieFullUserStats(userId, movieId) {
     }
 }
 
-export async function getMoviesUserStats_likeDislike(userId, movieIds) {
+export async function getMoviesUserStats_likeDislikeFollow(userId, movieIds) {
     try {
         return await prisma.movie.findMany({
             where: {
@@ -1952,6 +2007,17 @@ export async function getMoviesUserStats_likeDislike(userId, movieIds) {
                     take: 1,
                     select: {
                         type: true,
+                    }
+                },
+                followMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        watch_season: true,
+                        watch_episode: true,
+                        score: true,
                     }
                 },
             }
