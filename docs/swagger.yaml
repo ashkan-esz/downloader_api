@@ -384,6 +384,28 @@ paths:
                   type: string
                   required: true
                   description: can be empty
+                mbtiType:
+                  type: string
+                  required: false
+                  nullable: true
+                  description: can be null
+                  enum:
+                    - ISTJ
+                    - ISFJ
+                    - INFJ
+                    - INTJ
+                    - ISTP
+                    - ISFP
+                    - INFP
+                    - INTP
+                    - ESTP
+                    - ESFP
+                    - ENFP
+                    - ENTP
+                    - ESTJ
+                    - ESFJ
+                    - ENFJ
+                    - ENTJ
       responses:
         200:
           description: Ok
@@ -3697,6 +3719,8 @@ security:
         emailVerified:
           type: boolean
         bio:
+          type: string
+        mbtiType:
           type: string
         profileImages:
           type: array

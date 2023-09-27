@@ -62,6 +62,7 @@ export async function getUserProfile(userId, refreshToken) {
                 profileImages: true,
                 registrationDate: true,
                 favoriteGenres: true,
+                mbtiType: true,
                 activeSessions: {
                     where: {
                         refreshToken: refreshToken
@@ -910,3 +911,13 @@ export async function removeUserById(id) {
         return 'error';
     }
 }
+
+//----------------------------
+//----------------------------
+
+export const mbtiTypes = Object.freeze([
+    'ISTJ', 'ISFJ', 'INFJ', 'INTJ',
+    'ISTP', 'ISFP', 'INFP', 'INTP',
+    'ESTP', 'ESFP', 'ENFP', 'ENTP',
+    'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ',
+]);

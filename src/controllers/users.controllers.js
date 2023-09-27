@@ -129,8 +129,8 @@ export async function getUserProfile(req, res) {
 }
 
 export async function editProfile(req, res) {
-    const {username, publicName, bio, email} = req.body;
-    let result = await usersServices.editProfile(req.jwtUserData, username, publicName, bio, email);
+    const {username, publicName, bio, mbtiType, email} = req.body;
+    let result = await usersServices.editProfile(req.jwtUserData, username, publicName, bio, mbtiType, email);
     return sendResponse(req, res, result);
 }
 

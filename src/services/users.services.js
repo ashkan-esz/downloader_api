@@ -212,7 +212,7 @@ export async function getUserProfile(jwtUserData, refreshToken) {
     }
 }
 
-export async function editProfile(jwtUserData, username, publicName, bio, email) {
+export async function editProfile(jwtUserData, username, publicName, bio, mbtiType, email) {
     try {
         let findUserResult = await usersDbMethods.findUser(username, email);
         if (findUserResult === 'error') {
@@ -228,6 +228,7 @@ export async function editProfile(jwtUserData, username, publicName, bio, email)
 
         let updateFields = {
             bio: bio,
+            mbtiType: mbtiType,
         };
         if (username !== findUserResult.username) {
             updateFields.username = username.toLowerCase();

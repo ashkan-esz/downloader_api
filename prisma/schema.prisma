@@ -26,6 +26,7 @@ model User {
   defaultProfile          String                   @default("")
   favoriteGenres          String[]
   ComputedStatsLastUpdate BigInt                   @default(0)
+  mbtiType                MbtiType?
   profileImages           ProfileImage[]
   movieSettings           MovieSettings?
   notificationSettings    NotificationSettings?
@@ -407,4 +408,23 @@ enum titleRelation {
   other
   alternative_setting
   alternative_version
+}
+
+enum MbtiType {
+  ISTJ
+  ISFJ
+  INFJ
+  INTJ
+  ISTP
+  ISFP
+  INFP
+  INTP
+  ESTP
+  ESFP
+  ENFP
+  ENTP
+  ESTJ
+  ESFJ
+  ENFJ
+  ENTJ
 }

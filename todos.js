@@ -9,8 +9,6 @@
 //todo : 47. add landscape posters for movies
 //todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
 //todo : 52. change the way of data update to dont change original data object
-//todo : 57. add documentation for codes
-//todo : 58. add more tests
 //todo : 74. add feature: users chats
 //todo : 76. add socket
 //todo : 78. add feature 'comments' to movies
@@ -24,7 +22,6 @@
 //todo : 127. add schema validator
 //todo : 128. add schema for models and add related methods to it
 //todo : 130. add new sources
-//todo : 131. add personality type to user data, and api to find same character
 //todo : 134. add feature: upload fanArt
 //todo : 135. check fastify
 //todo : 135.1 check bun

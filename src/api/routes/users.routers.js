@@ -38,7 +38,7 @@ router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.auth.block
 //users/editProfile
 router.post('/editProfile',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['username_body', 'publicName_body', 'bio_body', 'email_body']),
+    middlewares.validateApiParams.checkApiParams(['username_body', 'publicName_body', 'bio_body', 'email_body', 'mbtiType_body']),
     middlewares.validateApiParams.apiParams_sendError,
     mongoSanitize(),
     usersControllers.editProfile);

@@ -1,5 +1,6 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {statTypes} from "../../data/db/userStatsDbMethods.js";
+import {mbtiTypes} from "../../data/db/usersDbMethods.js";
 
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
@@ -731,6 +732,11 @@ const validations = Object.freeze({
     bio_body: body('bio')
         .isString().withMessage("Bio must be string")
         .isLength({max: 100}).withMessage("Bio length must be less than 100")
+        .trim().escape(),
+
+    mbtiType_body: body('mbtiType')
+        .isString().withMessage("mbtiType must be string")
+        .isIn(mbtiTypes).withMessage(`Invalid parameter mbtiType :: (${mbtiTypes.join('|')})`)
         .trim().escape(),
 
     email_body: body('email')
