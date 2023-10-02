@@ -188,6 +188,7 @@ async function searchOnCollection(titleObj, year, type) {
         summary: 1,
         posters: 1,
         poster_s3: 1,
+        poster_wide_s3: 1,
         trailer_s3: 1,
         trailers: 1,
         subtitles: 1,

@@ -128,12 +128,20 @@ dataLevel = {
         premiered: String,
         posters: Array(#POSTER),
         poster_s3: null || {
-        url: String,
-        originalUrl: String,
-        originalSize: Int,
-        size: Int,
-        vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
-        thumbnail: String,
+            url: String,
+            originalUrl: String,
+            originalSize: Int,
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+            thumbnail: String,
+        },
+        poster_wide_s3: null || {
+            url: String,
+            originalUrl: String,
+            originalSize: Int,
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+            thumbnail: String,
         },
         genres: Array(String),
         summary: {
@@ -229,6 +237,14 @@ dataLevel = {
         apiUpdateDate: Date,
         castUpdateDate: Date,
         poster_s3: null || {
+            url: String,
+            originalUrl: String,
+            originalSize: Int,
+            size: Int,
+            vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
+            thumbnail: String,
+        },
+        poster_wide_s3: null || {
             url: String,
             originalUrl: String,
             originalSize: Int,

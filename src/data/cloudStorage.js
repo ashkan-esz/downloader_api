@@ -14,7 +14,7 @@ import {
 import {Upload} from "@aws-sdk/lib-storage";
 import ytdl from "ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
-import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB} from "./db/s3FilesDB.js";
+import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB, getAllS3WidePostersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
 import {getArrayBufferResponse, getFileSize} from "../crawlers/utils/axiosUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
@@ -164,9 +164,10 @@ export async function uploadSubtitleToS3ByURl(fileName, cookie, originalUrl, ret
     }
 }
 
-export async function uploadTitlePosterToS3(title, type, year, originalUrl, forceUpload = false) {
+export async function uploadTitlePosterToS3(title, type, year, originalUrl, forceUpload = false, isWide = false) {
     try {
-        const fileName = getFileName(title, type, year, '', 'jpg');
+        const extra = isWide ? 'wide' : '';
+        const fileName = getFileName(title, type, year, extra, 'jpg');
         const fileUrl = `https://${bucketNamesObject.poster}.${bucketsEndpointSuffix}/${fileName}`;
         return await uploadImageToS3(bucketNamesObject.poster, fileName, fileUrl, originalUrl, forceUpload);
     } catch (error) {
@@ -635,10 +636,14 @@ export async function deleteUnusedFiles(retryCounter = 0) {
             // files that are in use
             if (checkBuckets[k] === bucketNamesObject.poster) {
                 dataBaseFiles = await getAllS3PostersDB();
-                if (!dataBaseFiles) {
+                let widePosters = await getAllS3WidePostersDB();
+                if (!dataBaseFiles && !widePosters) {
                     continue;
                 }
-                dataBaseFiles = dataBaseFiles.map(item => item.poster_s3.url.split('/').pop());
+                dataBaseFiles = [
+                    ...(dataBaseFiles || []).map(item => item.poster_s3.url.split('/').pop()),
+                    ...(widePosters || []).map(item => item.poster_wide_s3.url.split('/').pop()),
+                ];
             } else if (checkBuckets[k] === bucketNamesObject.downloadTrailer) {
                 dataBaseFiles = await getAllS3TrailersDB();
                 if (!dataBaseFiles) {

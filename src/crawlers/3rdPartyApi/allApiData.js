@@ -159,6 +159,14 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                     titleModel.posters = sortPosters(titleModel.posters);
                 }
             }
+
+            if (kitsuApiFields.kitsuPosterCover && titleModel.poster_wide_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingKitsuWidePosterToS3);
+                let s3WidePoster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, kitsuApiFields.kitsuPosterCover, false, true);
+                if (s3WidePoster) {
+                    titleModel.poster_wide_s3 = s3WidePoster;
+                }
+            }
         }
     }
 
@@ -315,6 +323,15 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                     });
                     db_data.posters = sortPosters(db_data.posters);
                     updateFields.posters = db_data.posters;
+                }
+            }
+
+            if (kitsuApiFields.kitsuPosterCover && db_data.poster_wide_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingKitsuWidePosterToS3);
+                let s3WidePoster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, kitsuApiFields.kitsuPosterCover, false, true);
+                if (s3WidePoster) {
+                    db_data.poster_wide_s3 = s3WidePoster;
+                    updateFields.poster_wide_s3 = s3WidePoster;
                 }
             }
         }

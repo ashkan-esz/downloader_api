@@ -17,6 +17,8 @@ import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveError} from "../../error/saveError.js";
 import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
+import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
+import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
 
 const rateLimitConfig = {
     minuteLimit: 60,
@@ -482,7 +484,9 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
                 castUpdateDate: 1,
                 endYear: 1,
                 poster_s3: 1,
+                poster_wide_s3: 1,
                 trailer_s3: 1,
+                kitsuID: 1,
             });
             if (titleDataFromDB) {
                 const saveRank = rank;
@@ -569,6 +573,20 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
             await uploadTitlePosterAndAddToTitleModel(titleDataFromDB, imageUrl, updateFields, true);
         }
 
+        if (titleDataFromDB.poster_wide_s3 === null) {
+            let kitsuApiData = await getKitsuApiData(titleDataFromDB.title, titleDataFromDB.year, titleDataFromDB.type, titleDataFromDB.kitsuID);
+            if (kitsuApiData) {
+                let kitsuApiFields = getKitsuApiFields(kitsuApiData);
+                if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
+                    let s3WidePoster = await uploadTitlePosterToS3(titleDataFromDB.title, titleDataFromDB.type, titleDataFromDB.year, kitsuApiFields.kitsuPosterCover, false, true);
+                    if (s3WidePoster) {
+                        titleDataFromDB.poster_wide_s3 = s3WidePoster;
+                        updateFields.poster_wide_s3 = s3WidePoster;
+                    }
+                }
+            }
+        }
+
         if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
             await uploadTitleYoutubeTrailerAndAddToTitleModel(titleDataFromDB, semiJikanData.trailer.url, updateFields);
         }
@@ -633,6 +651,18 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
         titleModel.summary.english = jikanApiFields.summary_en.replace(/([.…])+$/, '');
         titleModel.summary.english_source = 'jikan';
         titleModel.genres = jikanApiFields.genres;
+
+        let kitsuApiData = await getKitsuApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.kitsuID);
+        if (kitsuApiData) {
+            let kitsuApiFields = getKitsuApiFields(kitsuApiData);
+            if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
+                let s3WidePoster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, kitsuApiFields.kitsuPosterCover, false, true);
+                if (s3WidePoster) {
+                    titleModel.poster_wide_s3 = s3WidePoster;
+                }
+            }
+        }
+
         let insertedId = await crawlerMethodsDB.insertMovieToDB(titleModel);
 
         if (insertedId && jikanApiFields) {

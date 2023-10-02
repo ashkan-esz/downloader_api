@@ -44,6 +44,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             thumbnail: "",
         }].filter(item => item.url),
         poster_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
+        poster_wide_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
         trailer_s3: null, // {url,originalUrl,size,vpnStatus}
         summary: {
             persian: persianSummary,
@@ -115,6 +116,7 @@ export const dataLevelConfig = Object.freeze({
         rawTitle: 1,
         rating: 1,
         latestData: 1,
+        poster_wide_s3: 1,
     }),
     telbot: Object.freeze({
         rawTitle: 1,
@@ -123,6 +125,7 @@ export const dataLevelConfig = Object.freeze({
         premiered: 1,
         posters: 1,
         poster_s3: 1,
+        poster_wide_s3: 1,
         genres: 1,
         summary: 1,
         rating: 1,

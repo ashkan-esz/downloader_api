@@ -3894,6 +3894,8 @@ security:
           type: array
           items:
             $ref: '#/components/schemas/Poster'
+        poster_wide_s3:
+          $ref: '#/components/schemas/Poster_wide_s3'
         type:
           type: string
           enum: [ 'movie', 'serial', 'anime_movie', 'anime_serial' ]
@@ -3930,6 +3932,8 @@ security:
             $ref: '#/components/schemas/Poster'
         poster_s3:
           $ref: '#/components/schemas/Poster_s3'
+        poster_wide_s3:
+          $ref: '#/components/schemas/Poster_wide_s3'
         genres:
           $ref: '#/components/schemas/StringArray'
         summary:
@@ -4076,6 +4080,8 @@ security:
           $ref: '#/components/schemas/DateString'
         poster_s3:
           $ref: '#/components/schemas/Poster_s3'
+        poster_wide_s3:
+          $ref: '#/components/schemas/Poster_wide_s3'
         trailer_s3:
           $ref: '#/components/schemas/Trailer_s3'
         endYear:
@@ -4836,6 +4842,22 @@ security:
           type: string
 
     Poster_s3:
+      type: object
+      properties:
+        url:
+          type: string
+        originalUrl:
+          type: string
+        originalSize:
+          type: integer
+        size:
+          type: integer
+        vpnStatus:
+          $ref: '#/components/schemas/VpnStatus'
+        thumbnail:
+          type: string
+
+    Poster_wide_s3:
       type: object
       properties:
         url:
