@@ -7,6 +7,12 @@ import {addTrailersFromYoutubeJobFunc} from "../jobs/youtubeTrailers.js";
 import {saveError} from "../error/saveError.js";
 import {updateMovieRanksJobFunc} from "../jobs/movieRanks.js";
 import {backupDbJobFunc, restoreBackupDbJobFunc} from "../jobs/dbBackup.js";
+import {
+    removeS3PosterJobFunc,
+    removeS3ProfileImageJobFunc,
+    removeS3TrailerJobFunc,
+    removeS3WidePosterJobFunc
+} from "../jobs/s3Files.js";
 
 const cronJobsStatus = {
     checkCrawlerDomains: {
@@ -104,6 +110,38 @@ const cronJobsStatus = {
         value: '',
         description: '',
         startFunc: restoreBackupDbJobFunc,
+    },
+    removeS3Poster: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: removeS3PosterJobFunc,
+    },
+    removeS3WidePoster: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: removeS3WidePosterJobFunc,
+    },
+    removeS3Trailer: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: removeS3TrailerJobFunc,
+    },
+    removeS3ProfileImage: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: removeS3ProfileImageJobFunc,
     },
 }
 

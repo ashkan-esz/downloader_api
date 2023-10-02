@@ -605,6 +605,16 @@ export async function removeProfileImageFromS3(fileName, retryCounter = 0) {
     return result;
 }
 
+export async function deletePosterFromS3(fileName, retryCounter = 0) {
+    let result = await deleteFileFromS3(bucketNamesObject.poster, fileName);
+    if (result === 'error' && retryCounter < 2) {
+        retryCounter++;
+        await new Promise((resolve => setTimeout(resolve, 200)));
+        return await deletePosterFromS3(fileName, retryCounter);
+    }
+    return result === 'ok';
+}
+
 export async function deleteTrailerFromS3(fileName, retryCounter = 0) {
     let result = await deleteFileFromS3(bucketNamesObject.downloadTrailer, fileName);
     if (result === 'error' && retryCounter < 2) {

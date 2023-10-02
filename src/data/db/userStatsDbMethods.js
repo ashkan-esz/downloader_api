@@ -2073,9 +2073,6 @@ export async function resetMoviesMonthView() {
             data: {
                 view_month_count: 0,
             },
-            select: {
-                view_month_count: true,
-            }
         });
     } catch (error) {
         saveError(error);
