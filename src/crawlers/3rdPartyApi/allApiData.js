@@ -9,6 +9,7 @@ import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from
 import {getFileSize} from "../utils/axiosUtils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
 import {changePageLinkStateFromCrawlerStatus, linkStateMessages} from "../status/crawlerStatus.js";
+import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
@@ -47,9 +48,9 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
-    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMaze);
-    let {omdbApiData, tvmazeApiData} = await handleApiCalls(titleModel);
-    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
+    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsu);
+    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel);
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, titleModel.type);
@@ -113,11 +114,59 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (kitsuApiData !== null) {
+        kitsuApiFields = getKitsuApiFields(kitsuApiData);
+        if (kitsuApiFields) {
+            if (kitsuApiFields.youtubeTrailer && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
+                let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, kitsuApiFields.youtubeTrailer, {});
+                titleModel = {...titleModel, ...trailerUploadFields};
+            }
+
+            titleModel.kitsuID = kitsuApiFields.kitsuID;
+            if (titleModel.status === 'unknown' || !titleModel.type.includes('anime')) {
+                titleModel.status = kitsuApiFields.status;
+                titleModel.endYear = kitsuApiFields.endYear;
+            }
+            if (kitsuApiFields.rated && (!titleModel.rated || titleModel.rated === 'Not Rated')) {
+                titleModel.rated = kitsuApiFields.rated;
+            }
+            if (kitsuApiFields.duration && kitsuApiFields.duration !== '0 min' && (!titleModel.duration || titleModel.duration === '0 min')) {
+                titleModel.duration = kitsuApiFields.duration;
+            }
+
+            const checkKeys = ['year', 'premiered', 'totalDuration', 'animeType'];
+            for (let i = 0; i < checkKeys.length; i++) {
+                if (kitsuApiFields[checkKeys[i]] && !titleModel[checkKeys[i]]) {
+                    titleModel[checkKeys[i]] = kitsuApiFields[checkKeys[i]];
+                }
+            }
+
+            updateSpecificFields(titleModel, titleModel, kitsuApiFields, 'kitsu');
+
+            if (kitsuApiFields.kitsuPoster && titleModel.poster_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingKitsuPosterToS3);
+                let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, kitsuApiFields.kitsuPoster);
+                if (s3poster) {
+                    titleModel.poster_s3 = s3poster;
+                    titleModel.posters.push({
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                        vpnStatus: s3poster.vpnStatus,
+                        thumbnail: s3poster.thumbnail,
+                    });
+                    titleModel.posters = sortPosters(titleModel.posters);
+                }
+            }
+        }
+    }
 
     return {
         titleModel,
         allApiData: {
-            omdbApiFields, tvmazeApiFields, jikanApiFields
+            omdbApiFields, tvmazeApiFields,
+            jikanApiFields, kitsuApiFields,
         }
     };
 }
@@ -143,9 +192,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
-    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMaze);
-    let {omdbApiData, tvmazeApiData} = await handleApiCalls(db_data);
-    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null;
+    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsu);
+    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data);
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
@@ -213,10 +262,69 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (kitsuApiData !== null) {
+        kitsuApiFields = getKitsuApiFields(kitsuApiData);
+        if (kitsuApiFields) {
+            if (kitsuApiFields.youtubeTrailer && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
+                let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, kitsuApiFields.youtubeTrailer, {});
+                db_data = {...db_data, ...trailerUploadFields};
+                updateFields = {...updateFields, ...trailerUploadFields};
+            }
+
+            if (db_data.status === 'unknown' || !db_data.type.includes('anime')) {
+                db_data.status = kitsuApiFields.status;
+                updateFields.status = kitsuApiFields.status;
+                db_data.endYear = kitsuApiFields.endYear;
+                updateFields.endYear = kitsuApiFields.endYear;
+            }
+            if (kitsuApiFields.rated && (!db_data.rated || db_data.rated === 'Not Rated')) {
+                db_data.rated = kitsuApiFields.rated;
+                updateFields.rated = kitsuApiFields.rated;
+            }
+            if (kitsuApiFields.duration && kitsuApiFields.duration !== '0 min' && (!db_data.duration || db_data.duration === '0 min')) {
+                db_data.duration = kitsuApiFields.duration;
+                updateFields.duration = kitsuApiFields.duration;
+            }
+
+            const checkKeys = ['year', 'premiered', 'totalDuration', 'animeType'];
+            for (let i = 0; i < checkKeys.length; i++) {
+                if (kitsuApiFields[checkKeys[i]] && !db_data[checkKeys[i]]) {
+                    db_data[checkKeys[i]] = kitsuApiFields[checkKeys[i]];
+                    updateFields[checkKeys[i]] = kitsuApiFields[checkKeys[i]];
+                }
+            }
+
+            updateSpecificFields(db_data, updateFields, kitsuApiFields, 'kitsu');
+
+            if (kitsuApiFields.kitsuPoster && (
+                (db_data.poster_s3 === null) ||
+                (db_data.type.includes('anime') && await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))
+            )) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingKitsuPosterToS3);
+                let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, kitsuApiFields.kitsuPoster);
+                if (s3poster) {
+                    db_data.poster_s3 = s3poster;
+                    updateFields.poster_s3 = s3poster;
+                    db_data.posters.push({
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                        vpnStatus: s3poster.vpnStatus,
+                        thumbnail: s3poster.thumbnail,
+                    });
+                    db_data.posters = sortPosters(db_data.posters);
+                    updateFields.posters = db_data.posters;
+                }
+            }
+        }
+    }
+
     return {
         updateFields,
         allApiData: {
-            omdbApiFields, tvmazeApiFields, jikanApiFields
+            omdbApiFields, tvmazeApiFields,
+            jikanApiFields, kitsuApiFields,
         }
     };
 }
@@ -286,27 +394,40 @@ function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
 }
 
 async function handleApiCalls(titleData) {
-    let omdbApiData, tvmazeApiData;
+    let omdbApiData, tvmazeApiData, kitsuApiData;
     if (titleData.type.includes('serial')) {
         let results = await Promise.allSettled([
             handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
-            handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze')
+            handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze'),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu'),
         ]);
         omdbApiData = results[0].value;
         tvmazeApiData = results[1].value;
+        kitsuApiData = results[2].value;
     } else {
-        omdbApiData = await handle_OMDB_TvMaze_ApiCall(titleData, 'omdb');
+        let results = await Promise.allSettled([
+            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu'),
+        ]);
+        omdbApiData = results[0].value;
+        kitsuApiData = results[1].value;
         tvmazeApiData = null;
     }
-    return {omdbApiData, tvmazeApiData};
+    return {omdbApiData, tvmazeApiData, kitsuApiData};
 }
 
 async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
     let searchTitle = (apiName === 'omdb') ? titleData.rawTitle || titleData.title : titleData.title;
-    let result = (apiName === 'omdb')
-        ? await getOMDBApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
-        : await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
-    if (result) {
+    let result;
+    if (apiName === 'omdb') {
+        result = await getOMDBApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type);
+    } else if (apiName === 'tvmaze') {
+        result = await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
+    } else if (apiName === 'kitsu') {
+        result = await getKitsuApiData(searchTitle, titleData.year, titleData.type, titleData.kitsuID);
+    }
+
+    if (result || apiName === 'kitsu') {
         return result;
     } else {
         let japaneseRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/gi;
@@ -339,9 +460,9 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
         updateFields.summary = oldData.summary;
     }
     //---------------------
-    let isAnime = (apiName === 'jikan' || ((apiName === 'tvmaze' || apiName === 'omdb') && apiFields.isAnime));
+    let isAnime = (apiName === 'jikan' || apiName === 'kitsu' || ((apiName === 'tvmaze' || apiName === 'omdb') && apiFields.isAnime));
     let isAnimation = (apiName === 'tvmaze' && apiFields.isAnimation);
-    let newGenres = getNewGenres(oldData, apiFields.genres, isAnime, isAnimation);
+    let newGenres = getNewGenres(oldData, apiFields.genres || [], isAnime, isAnimation);
     if (newGenres) {
         oldData.genres = newGenres;
         updateFields.genres = newGenres;

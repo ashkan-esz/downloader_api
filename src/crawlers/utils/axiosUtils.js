@@ -7,12 +7,15 @@ export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter =
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
-        let response = await client.head(url);
+        let response = await client.head(url, {timeout: 5000});
         if (response.headers['content-type'].includes('text/html')) {
             return 0;
         }
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
+        if (error.message === 'timeout of 5000ms exceeded') {
+            return 0;
+        }
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
             decodeURIComponent(url) === url && retryCounter < 1) {
             retryCounter++;

@@ -181,6 +181,7 @@ async function searchOnCollection(titleObj, year, type) {
         imdbID: 1,
         tvmazeID: 1,
         jikanID: 1,
+        kitsuID: 1,
         qualities: 1,
         seasons: 1,
         sources: 1,
@@ -198,6 +199,8 @@ async function searchOnCollection(titleObj, year, type) {
         latestData: 1,
         nextEpisode: 1,
         releaseDay: 1,
+        animeType: 1,
+        rated: 1,
     };
 
     let searchTypes = [type];

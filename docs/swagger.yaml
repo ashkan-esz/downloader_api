@@ -4096,6 +4096,8 @@ security:
           type: integer
         jikanID:
           type: integer
+        kitsuID:
+          type: integer
         totalSeasons:
           type: integer
         boxOffice:

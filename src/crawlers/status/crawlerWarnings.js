@@ -24,6 +24,9 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             },
             jikan: {
                 lotsOfApiCall: `lots of jikan api call`,
+            },
+            kitsu:{
+                lotsOfApiCall: `lots of kitsu api call`,
             }
         },
         trailerUploadHighWait: `High wait for trailer upload to start (${data1})`,
