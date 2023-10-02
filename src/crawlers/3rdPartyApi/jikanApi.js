@@ -1,3 +1,4 @@
+import config from "../../config/index.js";
 import axios from "axios";
 import {LRUCache} from "lru-cache";
 import * as crawlerMethodsDB from "../../data/db/crawlerMethodsDB.js";
@@ -179,8 +180,8 @@ export function getJikanApiFields(data) {
                 animeSeason: data.season?.toLowerCase() || '',
             }
         };
-        if (apiFields.duration === '0 min' && apiFields.animeType.toLowerCase() === 'tv') {
-            apiFields.duration = '24 min';
+        if (apiFields.updateFields.duration === '0 min' && apiFields.updateFields.animeType.toLowerCase() === 'tv') {
+            apiFields.updateFields.duration = '24 min';
         }
         if (!apiFields.releaseDay && apiFields.premiered && apiFields.animeType.toLowerCase() === 'tv') {
             let dayNumber = new Date(data.aired.from).getDay();
@@ -608,6 +609,9 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
         if (jikanApiFields) {
             titleModel = {...titleModel, ...jikanApiFields.updateFields};
             titleModel.status = jikanApiFields.status;
+            if (config.ignoreHentai && jikanApiFields.updateFields.rated === 'Rx - Hentai') {
+                return 'ignore hentai';
+            }
         }
 
         let imageUrl = getImageUrl(jikanApiData);
