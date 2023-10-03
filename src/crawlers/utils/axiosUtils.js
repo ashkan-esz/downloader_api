@@ -1,3 +1,4 @@
+import https from "https";
 import axios from "axios";
 import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
@@ -62,8 +63,6 @@ export async function downloadImage(url, retryCounter = 0) {
 }
 
 export async function getResponseWithCookie(url, cookie, timeout = null) {
-    const jar = new CookieJar();
-    const client = wrapper(axios.create({jar}));
     let config = {
         headers: {
             Cookie: cookie,
@@ -72,26 +71,50 @@ export async function getResponseWithCookie(url, cookie, timeout = null) {
     if (timeout) {
         config.timeout = timeout;
     }
-    return await client.get(url, config);
+    try {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        return await client.get(url, config);
+    } catch (error) {
+        if (error.message === 'certificate has expired') {
+            const agent = new https.Agent({
+                rejectUnauthorized: false,
+            });
+            return await axios.get(url, {
+                ...config,
+                httpsAgent: agent,
+            });
+        } else {
+            throw error;
+        }
+    }
 }
 
 export async function getArrayBufferResponse(url, cookie = null) {
-    const jar = new CookieJar();
-    const client = wrapper(axios.create({jar}));
-    let config = {
-        responseType: "arraybuffer",
-        responseEncoding: "binary"
-    };
-    if (cookie) {
-        config.headers = {
-            Cookie: cookie,
+    try {
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let config = {
+            responseType: "arraybuffer",
+            responseEncoding: "binary"
+        };
+        if (cookie) {
+            config.headers = {
+                Cookie: cookie,
+            }
+        }
+        let result = await client.get(url, config);
+        if (result.headers['content-type'] === "text/html") {
+            return null;
+        }
+        return result;
+    } catch (error) {
+        if (error.message === 'certificate has expired') {
+            return null;
+        } else {
+            throw error;
         }
     }
-    let result = await client.get(url, config);
-    if (result.headers['content-type'] === "text/html") {
-        return null;
-    }
-    return result;
 }
 
 export async function getResponseUrl(url) {

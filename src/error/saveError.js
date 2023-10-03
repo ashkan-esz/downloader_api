@@ -8,7 +8,8 @@ export async function saveErrorIfNeeded(error) {
         error.code !== 'ENOTFOUND' &&
         error.code !== 'EPROTO' &&
         error.code !== 'Z_BUF_ERROR' &&
-        error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT'
+        error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT' &&
+        error.message !== 'certificate has expired'
     ) {
         await saveError(error);
     }
