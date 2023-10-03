@@ -8,72 +8,78 @@ import {replaceSpecialCharacters} from "../utils/utils.js";
 
 
 export async function getKitsuApiData(title, year, type, kitsuID) {
-    let yearMatch = title.match(/\(?\d\d\d\d\)?/g);
-    yearMatch = yearMatch ? yearMatch.pop() : null;
-    if (yearMatch && !year) {
-        title = title.replace(yearMatch, '').trim();
-        year = yearMatch;
-    }
+    try {
+        let yearMatch = title.match(/\(?\d\d\d\d\)?/g);
+        yearMatch = yearMatch ? yearMatch.pop() : null;
+        if (yearMatch && !year) {
+            title = title.replace(yearMatch, '').trim();
+            year = yearMatch;
+        }
 
-    title = title.toLowerCase()
-        .replace(' all seasons', '')
-        .replace(' all', '')
-        .replace(' full episodes', '');
-    title = replaceSpecialCharacters(title);
+        title = title.toLowerCase()
+            .replace(' all seasons', '')
+            .replace(' all', '')
+            .replace(' full episodes', '');
+        title = replaceSpecialCharacters(title);
 
-    if (kitsuID) {
-        let animeUrl = "https://kitsu.io/api/edge/anime/" + kitsuID;
-        let fullData = await handleApiCall(animeUrl);
-        if (fullData) {
-            addTitleObjToKitsuData(fullData, year);
-            if (checkTitle(title, year, fullData)) {
-                return fullData;
+        if (kitsuID) {
+            let animeUrl = "https://kitsu.io/api/edge/anime/" + kitsuID;
+            let fullData = await handleApiCall(animeUrl);
+            if (fullData) {
+                fullData = fullData.data;
+                addTitleObjToKitsuData(fullData, year);
+                if (checkTitle(title, year, fullData)) {
+                    return fullData;
+                }
             }
         }
-    }
 
-    const url = `https://kitsu.io/api/edge/anime?filter[text]=${decodeURIComponent(title)}`;
-    let searchResult = await handleApiCall(url);
-    if (!searchResult || !searchResult.data) {
-        return null;
-    }
-    searchResult = searchResult.data;
+        const url = `https://kitsu.io/api/edge/anime?filter[text]=${decodeURIComponent(title)}`;
+        let searchResult = await handleApiCall(url);
+        if (!searchResult || !searchResult.data) {
+            return null;
+        }
+        searchResult = searchResult.data;
 
-    if (!year && searchResult.length > 1) {
-        return null;
-    }
-
-    for (let i = 0; i < searchResult.length; i++) {
-        if (
-            (
-                type.includes('serial') &&
-                searchResult[i].attributes?.startDate?.split('-')[0] !== year &&
-                Number(searchResult[i].attributes.episodeCount) === 0
-            ) ||
-            (type.includes('serial') && searchResult[i].attributes.subtype === 'movie') ||
-            (type.includes('movie') && Number(searchResult[i].attributes.episodeCount) > 1) ||
-            (searchResult[i].attributes.subtype === 'music')
-        ) {
-            continue;
+        if (!year && searchResult.length > 1) {
+            return null;
         }
 
-        //check year
-        if (!searchResult[i].attributes.startDate) {
-            continue;
-        }
-        if (year) {
-            let apiYear = Number(searchResult[i].attributes.startDate.split('-')[0]);
-            if (Math.abs(apiYear - Number(year)) > 1) {
+        for (let i = 0; i < searchResult.length; i++) {
+            if (
+                (
+                    type.includes('serial') &&
+                    searchResult[i].attributes?.startDate?.split('-')[0] !== year &&
+                    Number(searchResult[i].attributes.episodeCount) === 0
+                ) ||
+                (type.includes('serial') && searchResult[i].attributes.subtype === 'movie') ||
+                (type.includes('movie') && Number(searchResult[i].attributes.episodeCount) > 1) ||
+                (searchResult[i].attributes.subtype === 'music')
+            ) {
                 continue;
             }
-        }
 
-        addTitleObjToKitsuData(searchResult[i], year);
-        if (checkTitle(title, year, searchResult[i])) {
-            return searchResult[i];
+            //check year
+            if (!searchResult[i].attributes.startDate) {
+                continue;
+            }
+            if (year) {
+                let apiYear = Number(searchResult[i].attributes.startDate.split('-')[0]);
+                if (Math.abs(apiYear - Number(year)) > 1) {
+                    continue;
+                }
+            }
+
+            addTitleObjToKitsuData(searchResult[i], year);
+            if (checkTitle(title, year, searchResult[i])) {
+                return searchResult[i];
+            }
         }
+        return null;
+    } catch (error) {
+        saveError(error);
+        return null;
     }
-    return null;
 }
 
 function checkTitle(title, year, apiData) {
@@ -203,9 +209,12 @@ async function handleApiCall(url) {
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
-            let response = await axios.get(url);
+            let response = await axios.get(url, {timeout: 20000});
             return response.data;
         } catch (error) {
+            if (error.message === 'timeout of 20000ms exceeded') {
+                return null;
+            }
             if (error.response && error.response.status === 429) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));

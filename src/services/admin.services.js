@@ -393,6 +393,7 @@ export async function check3rdPartApisWorking() {
         {name: 'jikan', totalKeys: 0, badKeys: [], noKeyNeed: true},
         {name: 'omdb', totalKeys: res[1].value.totalKeys, badKeys: res[1].value.badKeys, noKeyNeed: false},
         {name: 'tvmaze', totalKeys: 0, badKeys: [], noKeyNeed: true},
+        {name: 'kitsu', totalKeys: 0, badKeys: [], noKeyNeed: true},
     ];
     return generateServiceResult({data: result}, 200, '');
 }

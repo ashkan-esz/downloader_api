@@ -349,7 +349,7 @@ async function handleApiCall(url, timeoutSec = 0) {
                     data: response.data.data,
                 }
             }
-            cache.set(url, data);
+            cache.set(url, {...data});
             return data;
         } catch (error) {
             if (error.response && error.response.status === 429) {

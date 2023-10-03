@@ -13,7 +13,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
         .replace(' all', '')
         .replace(' full episodes', '');
     title = replaceSpecialCharacters(title);
-    const url = `https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
+    const url = `https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast&embed[]=images`;
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
@@ -82,7 +82,7 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
     for (let i = 0; i < data.length; i++) {
         let thisTitleData = data[i].show;
         if (checkTitle(thisTitleData, title, alternateTitles, titleSynonyms, imdbID, premiered)) {
-            let titleUrl = `https://api.tvmaze.com/shows/${thisTitleData.id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast`;
+            let titleUrl = `https://api.tvmaze.com/shows/${thisTitleData.id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast&embed[]=images`;
             let titleData = await handleApiCall(titleUrl);
             if (titleData && checkTitle(titleData, title, alternateTitles, titleSynonyms, imdbID, premiered)) {
                 return titleData;
@@ -95,6 +95,7 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
 export function getTvMazeApiFields(data) {
     try {
         let apiFields = {
+            backgroundPosters: (data._embedded.images || []).filter(item => item.type === 'background'),
             cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),
             episodes: getEpisodes(data),
@@ -133,9 +134,12 @@ async function handleApiCall(url) {
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
-            let response = await axios.get(url);
+            let response = await axios.get(url, {timeout: 20000});
             return response.data;
         } catch (error) {
+            if (error.message === 'timeout of 20000ms exceeded') {
+                return null;
+            }
             if (error.response && error.response.status === 429) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));

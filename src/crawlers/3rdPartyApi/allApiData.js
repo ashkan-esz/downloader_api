@@ -8,7 +8,11 @@ import {checkNeedTrailerUpload, uploadTitleYoutubeTrailerAndAddToTitleModel} fro
 import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from "../utils/utils.js";
 import {getFileSize} from "../utils/axiosUtils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
-import {changePageLinkStateFromCrawlerStatus, linkStateMessages} from "../status/crawlerStatus.js";
+import {
+    changePageLinkStateFromCrawlerStatus,
+    linkStateMessages,
+    partialChangePageLinkStateFromCrawlerStatus
+} from "../status/crawlerStatus.js";
 import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
@@ -49,7 +53,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     }
 
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsu);
-    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel);
+    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
 
     if (omdbApiData !== null) {
@@ -71,6 +75,20 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         if (tvmazeApiFields) {
             titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
             updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
+
+            if (tvmazeApiFields.backgroundPosters.length > 0 && titleModel.poster_wide_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingTvmazeWidePosterToS3);
+                let imageUrl = tvmazeApiFields.backgroundPosters[1]?.resolutions?.original?.url ||
+                    tvmazeApiFields.backgroundPosters[0].resolutions.original?.url ||
+                    tvmazeApiFields.backgroundPosters[1]?.resolutions?.medium?.url ||
+                    tvmazeApiFields.backgroundPosters[0].resolutions.medium?.url;
+                if (imageUrl) {
+                    let s3WidePoster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, imageUrl, false, true);
+                    if (s3WidePoster) {
+                        titleModel.poster_wide_s3 = s3WidePoster;
+                    }
+                }
+            }
         }
     }
 
@@ -201,7 +219,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     }
 
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsu);
-    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data);
+    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
 
     if (omdbApiData !== null) {
@@ -225,6 +243,21 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         if (tvmazeApiFields) {
             updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
             updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
+
+            if (tvmazeApiFields.backgroundPosters.length > 0) {
+                let imageUrl = tvmazeApiFields.backgroundPosters[1]?.resolutions?.original?.url ||
+                    tvmazeApiFields.backgroundPosters[0].resolutions.original?.url ||
+                    tvmazeApiFields.backgroundPosters[1]?.resolutions?.medium?.url ||
+                    tvmazeApiFields.backgroundPosters[0].resolutions.medium?.url;
+                if (imageUrl && (db_data.poster_wide_s3 === null || (db_data.poster_wide_s3.originalUrl && db_data.poster_wide_s3.originalUrl !== imageUrl))) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingTvmazeWidePosterToS3);
+                    let s3WidePoster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, imageUrl, true, true);
+                    if (s3WidePoster) {
+                        db_data.poster_wide_s3 = s3WidePoster;
+                        updateFields.poster_wide_s3 = s3WidePoster;
+                    }
+                }
+            }
         }
     }
 
@@ -410,21 +443,21 @@ function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
     return temp;
 }
 
-async function handleApiCalls(titleData) {
+async function handleApiCalls(titleData, pageLink) {
     let omdbApiData, tvmazeApiData, kitsuApiData;
     if (titleData.type.includes('serial')) {
         let results = await Promise.allSettled([
-            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
-            handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze'),
-            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu'),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb', pageLink),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze', pageLink),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu', pageLink),
         ]);
         omdbApiData = results[0].value;
         tvmazeApiData = results[1].value;
         kitsuApiData = results[2].value;
     } else {
         let results = await Promise.allSettled([
-            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb'),
-            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu'),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'omdb', pageLink),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu', pageLink),
         ]);
         omdbApiData = results[0].value;
         kitsuApiData = results[1].value;
@@ -433,7 +466,7 @@ async function handleApiCalls(titleData) {
     return {omdbApiData, tvmazeApiData, kitsuApiData};
 }
 
-async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
+async function handle_OMDB_TvMaze_ApiCall(titleData, apiName, pageLink) {
     let searchTitle = (apiName === 'omdb') ? titleData.rawTitle || titleData.title : titleData.title;
     let result;
     if (apiName === 'omdb') {
@@ -445,6 +478,7 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
     }
 
     if (result || apiName === 'kitsu') {
+        partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
         return result;
     } else {
         let japaneseRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/gi;
@@ -460,10 +494,12 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName) {
                 ? await getOMDBApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
                 : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
             if (result) {
+                partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
                 return result;
             }
         }
     }
+    partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
     return null;
 }
 

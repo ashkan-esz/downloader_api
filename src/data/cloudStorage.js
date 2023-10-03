@@ -295,7 +295,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         if (error.statusCode === 410 || error.statusCode === 403) {
             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, false);
         }
-        if (error.name !== "AbortError") {
+        if (error.name !== "AbortError" && error.message !== 'Video unavailable') {
             saveError(error);
         }
         return null;

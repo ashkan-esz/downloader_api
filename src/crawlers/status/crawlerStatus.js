@@ -158,6 +158,7 @@ export const linkStateMessages = Object.freeze({
         uploadingPosterToS3: 'new title: uploading poster to s3',
         uploadingKitsuPosterToS3: 'new title: uploading kitsu poster to s3',
         uploadingKitsuWidePosterToS3: 'new title: uploading kitsu wide poster to s3',
+        uploadingTvmazeWidePosterToS3: 'new title: uploading tvmaze wide poster to s3',
         generatingThumbnail: 'new title: generating thumbnail',
         callingOmdbTvMazeKitsu: 'new title: calling omdb/tvmaze/kitsu apis',
         handlingSeasonFields: 'new title: handling seasons fields',
@@ -175,6 +176,7 @@ export const linkStateMessages = Object.freeze({
         uploadingPosterToS3: 'update title: uploading poster to s3',
         uploadingKitsuPosterToS3: 'update title: uploading kitsu poster to s3',
         uploadingKitsuWidePosterToS3: 'update title: uploading kitsu wide poster to s3',
+        uploadingTvmazeWidePosterToS3: 'update title: uploading tvmaze wide poster to s3',
         callingOmdbTvMazeKitsu: 'update title: calling omdb/tvmaze/kitsu apis',
         handlingSeasonFields: 'update title: handling seasons fields',
         callingJikan: 'update title: calling jikan api',
@@ -215,6 +217,14 @@ export function changePageLinkStateFromCrawlerStatus(pageLink, state) {
     if (data) {
         data.state = state;
         data.stateTime = new Date();
+    }
+}
+
+export function partialChangePageLinkStateFromCrawlerStatus(pageLink, findValue, changeValue) {
+    pageLink = getDecodedLink(pageLink);
+    let data = crawlerStatus.pageLinks.find(item => item.url === pageLink);
+    if (data) {
+        data.state = data.state.replace(findValue, changeValue);
     }
 }
 

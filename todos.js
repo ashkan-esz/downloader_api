@@ -6,10 +6,6 @@
 //todo : 20. crawler: add new movie sources to replace 'digimoviez'
 //todo : 39. better emails
 //todo : 46. add more staff and character
-//todo : 47. add landscape posters for movies
-//todo : 51. merge two functions: 'addApiData', 'updateApiData' from 'allApiData' module
-//todo : 52. change the way of data update to dont change original data object
-//todo : 126. refactor allApiData file
 //todo : 79. add filter for 'hentai' and 'pornography' on api results
 //todo : 80. add feature: share movies between users
 //todo : 81.2 add api for forget password

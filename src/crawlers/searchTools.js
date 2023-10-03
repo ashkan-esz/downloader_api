@@ -412,7 +412,7 @@ function addSourceToAxiosBlackList(sourceName) {
             sourceData.totalErrorCounter++;
         }
         sourceData.lastErrorTime = Date.now();
-        if (sourceData.errorCounter >= 10) {
+        if (sourceData.errorCounter >= 15) {
             sourceData.isBlocked = true;
         }
     } else {
