@@ -123,6 +123,27 @@ export async function forceLogoutAll(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function sendDeleteAccountEmail(req, res) {
+    const host = req.protocol + '://' + req.get('host');
+    let result = await usersServices.sendDeleteAccountEmail(req.jwtUserData, host);
+    return sendResponse(req, res, result);
+}
+
+export async function deleteAccount(req, res) {
+    let result = await usersServices.deleteAccount(Number(req.params.userId), req.params.token);
+
+    if (result.responseData.code >= 200 && result.responseData.code < 300) {
+        res.cookie('refreshToken', '', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            expires: new Date(0),
+            maxAge: 0,
+        });
+    }
+    return sendResponse(req, res, result);
+}
+
 export async function getUserProfile(req, res) {
     let result = await usersServices.getUserProfile(req.jwtUserData, req.refreshToken);
     return sendResponse(req, res, result);

@@ -11,41 +11,52 @@ datasource db {
 // ----------------------------------------------------------------
 
 model User {
-  userId                  Int                      @id @unique @default(autoincrement())
-  password                String
-  publicName              String
-  rawUsername             String
-  registrationDate        DateTime                 @default(now())
-  role                    userRole                 @default(user)
-  username                String                   @unique
-  bio                     String                   @default("")
-  email                   String                   @unique
-  emailVerified           Boolean                  @default(false)
-  emailVerifyToken        String                   @default("")
-  emailVerifyToken_expire BigInt                   @default(0)
-  defaultProfile          String                   @default("")
-  favoriteGenres          String[]
-  ComputedStatsLastUpdate BigInt                   @default(0)
-  mbtiType                MbtiType?
-  profileImages           ProfileImage[]
-  movieSettings           MovieSettings?
-  notificationSettings    NotificationSettings?
-  downloadLinksSettings   DownloadLinksSettings?
-  activeSessions          ActiveSession[]
-  computedFavoriteGenres  ComputedFavoriteGenres[]
-  likeDislikeStaff        LikeDislikeStaff[]
-  followStaff             FollowStaff[]
-  favoriteCharacters      FavoriteCharacter[]
-  likeDislikeCharacter    LikeDislikeCharacter[]
-  watchListMovies         WatchListMovie[]
-  watchedMovies           WatchedMovie[]
-  followMovies            FollowMovie[]
-  likeDislikeMovies       LikeDislikeMovie[]
-  /// Could not determine type: the field only had null or empty values in the sample set.
-  friends                 Json?
-  WatchListGroup          WatchListGroup[]
-  UserCollectionMovie     UserCollectionMovie[]
-  UserCollection          UserCollection[]
+  userId                          Int                      @id @unique @default(autoincrement())
+  password                        String
+  publicName                      String
+  rawUsername                     String
+  registrationDate                DateTime                 @default(now())
+  role                            userRole                 @default(user)
+  username                        String                   @unique
+  bio                             String                   @default("")
+  email                           String                   @unique
+  emailVerified                   Boolean                  @default(false)
+  emailVerifyToken                String                   @default("")
+  emailVerifyToken_expire         BigInt                   @default(0)
+  deleteAccountVerifyToken        String                   @default("")
+  deleteAccountVerifyToken_expire BigInt                   @default(0)
+  defaultProfile                  String                   @default("")
+  favoriteGenres                  String[]
+  ComputedStatsLastUpdate         BigInt                   @default(0)
+  mbtiType                        MbtiType?
+  profileImages                   ProfileImage[]
+  movieSettings                   MovieSettings?
+  notificationSettings            NotificationSettings?
+  downloadLinksSettings           DownloadLinksSettings?
+  activeSessions                  ActiveSession[]
+  computedFavoriteGenres          ComputedFavoriteGenres[]
+  likeDislikeStaff                LikeDislikeStaff[]
+  followStaff                     FollowStaff[]
+  favoriteCharacters              FavoriteCharacter[]
+  likeDislikeCharacter            LikeDislikeCharacter[]
+  watchListMovies                 WatchListMovie[]
+  watchedMovies                   WatchedMovie[]
+  followMovies                    FollowMovie[]
+  likeDislikeMovies               LikeDislikeMovie[]
+  followers                       Follow[]                 @relation("followers")
+  following                       Follow[]                 @relation("following")
+  WatchListGroup                  WatchListGroup[]
+  UserCollectionMovie             UserCollectionMovie[]
+  UserCollection                  UserCollection[]
+}
+
+model Follow {
+  userId1 Int
+  userId2 Int
+  user1   User @relation(fields: [userId1], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "followers")
+  user2   User @relation(fields: [userId2], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "following")
+
+  @@unique([userId1, userId2])
 }
 
 model ProfileImage {

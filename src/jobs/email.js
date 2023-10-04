@@ -105,4 +105,24 @@ export default function (agenda) {
         // todo :
         // Etc
     });
+
+    agenda.define("delete account",{concurrency: 50}, async (job) => {
+        // todo : delete account page design
+        try {
+            let {userId, email, rawUsername, deleteAccountVerifyToken, host} = job.attrs.data;
+            const mailOptions = {
+                from: config.email.username,
+                to: email,
+                subject: 'Delete Account',
+                text: `user ${rawUsername}, open this link to delete your account --> ${host}/users/deleteAccount/${userId}/${deleteAccountVerifyToken}`,
+                html: `<a href="${host}/users/deleteAccount/${userId}/${deleteAccountVerifyToken}">user ${rawUsername}, click this link to delete your account<a/>
+                        <p>if you don't know what's this, ignore.</p>`,
+            };
+            let result = await transporter.sendMail(mailOptions);
+            return {delivered: 1, status: 'ok'};
+        } catch (error) {
+            saveError(error);
+            return {delivered: 0, status: 'error'};
+        }
+    });
 }

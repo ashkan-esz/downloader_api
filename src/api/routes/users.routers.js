@@ -32,6 +32,12 @@ router.put('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middleware
 //users/forceLogoutAll
 router.put('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogoutAll);
 
+//users/deleteAccount
+router.delete('/deleteAccount', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.sendDeleteAccountEmail);
+
+//users/deleteAccount:userId/:token
+router.get('/deleteAccount/:userId/:token', middlewares.rateLimit.rateLimit_2, usersControllers.deleteAccount);
+
 //users/myProfile
 router.get('/myProfile', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.getUserProfile);
 
