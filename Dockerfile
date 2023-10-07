@@ -22,7 +22,8 @@ COPY --from=build /usr/app /
 COPY --from=build /usr/app/prisma ./prisma
 
 EXPOSE 3000
-CMD [ "node", "src/server.js"]
+CMD ["npm", "run", "deploy"]
+#CMD [ "node", "src/server.js"]
 #CMD [ "node", "src/tracing.js"]
 
 #HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1

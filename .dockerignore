@@ -20,5 +20,4 @@ manualTest.http
 .db
 signoz
 nginx
-prisma/migrations
 db-backups
