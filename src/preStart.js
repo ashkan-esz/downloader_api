@@ -11,6 +11,7 @@ import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
 export async function preStart(force = false) {
     if (config.admin.user && config.admin.pass) {
         await createAdminUser();
+        await createTestUser();
     }
     if (config.nodeEnv !== 'dev') {
         console.log('====> adding movies to postgres');

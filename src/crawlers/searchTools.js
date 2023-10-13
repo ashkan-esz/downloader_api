@@ -292,6 +292,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 error.code === "ERR_BAD_REQUEST" &&
                 !error.response.data.includes("مطلبی که به دنبال آن بودید یافت نشد") &&
                 !error.response.data.includes("صفحه ای که به دنبال آن می گردید حذف یا اصلا وجود نداشته باشد") &&
+                error.message !== 'certificate has expired' &&
                 retryCounter < 1) {
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
                 retryCounter++;

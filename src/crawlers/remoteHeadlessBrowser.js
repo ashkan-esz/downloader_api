@@ -399,7 +399,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.response && error.response.status) {
             addSourceToAxiosBlackList(sourceName);
         }
-        if (error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded') {
+        if (error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded' && error.message !== 'certificate has expired') {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
                 error.url = url;
