@@ -107,19 +107,20 @@ services:
     restart: always
 
   telegrambot:
-    image: ashkanaz2828/python-telegrambot-docker
+    image: ashkanaz2828/downloader_telegrambot
     network_mode: host
     depends_on:
       - api
     env_file: ./telegrambot.env
     environment:
-      - SERVER_ADDRESS=https://api.movietracker.mom
+      - API_URL=https://api.movietracker.mom
+      - WEB_URL=https://movietracker.mom
     volumes:
       - telegrambot
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.2"
           memory: 150M
         reservations:
           memory: 50M
@@ -213,11 +214,11 @@ services:
           memory: 300M
         reservations:
           memory: 100M
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U postgres"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 10
     restart: always
 
 volumes:

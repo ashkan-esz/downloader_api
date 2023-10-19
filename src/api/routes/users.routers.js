@@ -8,19 +8,18 @@ const router = Router();
 //users/signup
 router.post('/signup',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized,
-    middlewares.validation.signupValidation, mongoSanitize(),
+    middlewares.validation.signupValidation,
     middlewares.auth.addFingerPrint(), usersControllers.signup);
 
 //users/login
 router.post('/login',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockAuthorized,
-    middlewares.validation.loginValidation, mongoSanitize(),
+    middlewares.validation.loginValidation,
     middlewares.auth.addFingerPrint(), usersControllers.login);
 
 //users/getToken
 router.put('/getToken',
     middlewares.auth.isAuth_refreshToken, middlewares.validation.getTokenValidation,
-    mongoSanitize(),
     middlewares.auth.addFingerPrint(), usersControllers.getToken);
 
 //users/logout
