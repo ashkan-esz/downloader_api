@@ -540,7 +540,7 @@ export function getCleanLinkInfo(info) {
         .replace(/^\d\d\d\d?p\.\d\d\d\d?p/, (res) => res.split('.')[0])
         .replace(/^\d\d\d\d?p\.\d+$/i, res => res.split('.')[0])
         .replace(/[ًًًٌٍَُِ]/g, '')
-        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m|ITSat|DV)(?=(\.|\[|$))/gi, '')
+        .replace(/\.(nf|ir|(\[?ss]?)|g|h|ng|gm|hmax|ip|HULU|AAC|1ch|2ch|co|ma|60FPS|Bia2m|ITSat|DV|HC)(?=(\.|\[|$))/gi, '')
         .replace(/\.(\[(StartDL|(Anime\.?20Dubbing)|RubixFa)])/gi, '')
         .replace(/([.\-])Fixed/i, '')
         .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
@@ -670,6 +670,7 @@ export function purgeSizeText(sizeText) {
         .replace(/(GBB|GBGB|HB)$/i, 'GB')
         .replace(/(BMB)$/i, 'MB')
         .replace(/(?<=\d)[MB]$/i, 'MB') // 150M, 150B
+        .replace(/MM$/i, 'MB')
         .toUpperCase();
 
     if (result.match(/(mb|gb)\d+/gi)) {
@@ -729,6 +730,7 @@ export function purgeEncoderText(encoderText) {
         .replace(/yifi/gi, 'YIFI')
         .replace(/WEB-?DL/gi, 'WEB-DL')
         .replace(/Gal(ax|xa|ag)y[\sRG]*(TV)?/i, 'GalaxyRG')
+        .replace('Galaxy.TV', 'GalaxyTv')
         .replace(/sparks/i, 'SPARKS')
         .replace('af,72', 'afm72')
         .replace(/playWEB|HEVC(?!Bay)\s*|AAC5\s*1\s*/i, '')

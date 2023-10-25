@@ -19,7 +19,7 @@ export function getTrailers($, sourceName, sourceVpnStatus) {
         if (sourceName !== 'film2movie') {
             for (let i = 0, len = $video.length; i < len; i++) {
                 const sourceChild = $($video[i]).children()[0];
-                if (sourceChild) {
+                if (sourceChild && sourceChild.attribs?.src) {
                     const src = sourceChild.attribs.src
                         .replace('دانلود', '')
                         .replace('دانلو', '');

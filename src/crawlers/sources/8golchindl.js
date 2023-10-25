@@ -477,7 +477,8 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
             .replace('REAL.', '')
             .replace('DD%202.0.H.264monkee', 'monkee')
             .replace('[AioFilm.com]', '')
-            .replace('.Anime.20Dubbing', '');
+            .replace('.Anime.20Dubbing', '')
+            .replace(/Galaxy\.Tv/i, 'GalaxyTv');
 
         const hardSub = pageHref.match(/softsub|hardsub/gi);
         let info = hardSub ? (quality + '.' + hardSub.pop()) : quality;

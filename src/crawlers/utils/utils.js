@@ -174,7 +174,7 @@ export function getSeasonEpisode(input, isLinkInput = false) {
             return {season: 0, episode: 0, isNormalCase: false}
         }
 
-        input = input.toLowerCase().replace(/https?:\/\//, '');
+        input = input.toLowerCase().replace(/https?:\/\//, '').split('md5')[0];
         const slashIndex = input.indexOf('/');
         if (slashIndex !== -1) {
             input = input.substring(slashIndex + 1);
@@ -186,25 +186,32 @@ export function getSeasonEpisode(input, isLinkInput = false) {
 
         let season = 0, episode = 0;
 
-        const case1 = input.match(/(?<!([a-z]))s\d+([-.]|%20)*e\d+/gi);
-        if (case1) {
-            const temp = case1.pop();
-            const seasonEpisode = temp.replace(/[-.]|%20/g, '');
-            [season, episode] = seasonEpisode.split('e').map(str => str.replace('s', ''));
-            if (temp.match(/^s\d\d\.?e\d\d$/i)) {
-                return {season: Number(season), episode: Number(episode), isNormalCase: true}
-            } else if (temp.match(/^s20\d\de\d\d$/i)) {
-                return {season: 1, episode: Number(episode), isNormalCase: true}
-            }
+        const case0 = input.match(/_\d+th_season_\d+/g); //_5th_Season_02.720p
+        if (case0) {
+            let temp = case0.pop().split('th_season_');
+            season = temp[0].replace('_', '');
+            episode = temp[1];
         } else {
-            // e01e05 | s01s01
-            const case2 = input.match(/\.([se])\d+([se])\d+\./gi);
-            if (case2) {
-                [, season, episode] = case2.pop().replace(/^\.|\.$/gi, '').split(/[se]/gi);
+            const case1 = input.match(/(?<!([a-z]))s\d+([-.]|%20)*e\d+/gi);
+            if (case1) {
+                const temp = case1.pop();
+                const seasonEpisode = temp.replace(/[-.]|%20/g, '');
+                [season, episode] = seasonEpisode.split('e').map(str => str.replace('s', ''));
+                if (temp.match(/^s\d\d\.?e\d\d$/i)) {
+                    return {season: Number(season), episode: Number(episode), isNormalCase: true}
+                } else if (temp.match(/^s20\d\de\d\d$/i)) {
+                    return {season: 1, episode: Number(episode), isNormalCase: true}
+                }
             } else {
-                const case3 = input.match(/(%20)s\d+(%20)?b\d+(%20)/gi);
-                if (case3) {
-                    [, season, episode] = case3.pop().replace(/%20/gi, '').split(/[sb]/gi);
+                // e01e05 | s01s01
+                const case2 = input.match(/\.([se])\d+([se])\d+\./gi);
+                if (case2) {
+                    [, season, episode] = case2.pop().replace(/^\.|\.$/gi, '').split(/[se]/gi);
+                } else {
+                    const case3 = input.match(/(%20)s\d+(%20)?b\d+(%20)/gi);
+                    if (case3) {
+                        [, season, episode] = case3.pop().replace(/%20/gi, '').split(/[sb]/gi);
+                    }
                 }
             }
         }
