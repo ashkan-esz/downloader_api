@@ -179,8 +179,6 @@ dataLevel = {
             comingSoon: Int,
             inTheaters: Int,
             boxOffice: Int,
-            top: Int,
-            popular: Int,
         },
         alternateTitles: Array(String),
         summary: {

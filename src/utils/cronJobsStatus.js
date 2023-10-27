@@ -1,7 +1,7 @@
 import {removeServerOldLogsJobFunc, saveTotalUsersCountJobFunc} from "../jobs/userAnalysisJob.js";
 import {computeUsersFavoriteGenresJobFunc} from "../jobs/computeUserJob.js";
 import {checkCrawlerDomainsJobFunc} from "../jobs/checkSourceDomains.js";
-import {removeS3UnusedFilesJobFunc, resetMonthLikesJobFunc, updateJikanImdbDataJobFunc} from "../agenda/index.js";
+import {removeS3UnusedFilesJobFunc, resetMonthLikesJobFunc, updateJikanDataJobFunc} from "../agenda/index.js";
 import {createThumbnails} from "../data/db/admin/thumbnailDbMethods.js";
 import {addTrailersFromYoutubeJobFunc} from "../jobs/youtubeTrailers.js";
 import {saveError} from "../error/saveError.js";
@@ -23,13 +23,13 @@ const cronJobsStatus = {
         description: 'Every hour - **:15',
         startFunc: checkCrawlerDomainsJobFunc,
     },
-    updateJikanImdbData: {
+    updateJikanData: {
         running: false,
         startDate: 0,
         state: '',
         value: '',
         description: 'Every day at 12:00 and 24:00',
-        startFunc: updateJikanImdbDataJobFunc,
+        startFunc: updateJikanDataJobFunc,
     },
     updateMovieRanks: {
         running: false,

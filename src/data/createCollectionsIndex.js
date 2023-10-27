@@ -40,8 +40,6 @@ export async function createCollectionsAndIndexes() {
             'rank.comingSoon': 1,
             'rank.inTheaters': 1,
             'rank.boxOffice': 1,
-            'rank.top': 1,
-            'rank.popular': 1,
             'rank.like': 1,
             'rank.like_month': 1,
             'rank.follow_month': 1,

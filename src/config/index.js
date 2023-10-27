@@ -32,7 +32,6 @@ export default Object.freeze({
     }),
     sentryDns: process.env.SENTRY_DNS,
     apiKeys: Object.freeze({
-        imdbApiKey: process.env.IMDB_API_KEY ? process.env.IMDB_API_KEY.split('-') : [],
         omdbApiKeys: getOmdbApiKeys(),
         googleApiKey: process.env.GOOGLE_API_KEY || '',
     }),

@@ -295,7 +295,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         if (error.statusCode === 410 || error.statusCode === 403) {
             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, false);
         }
-        if (error.name !== "AbortError" && error.message !== 'Video unavailable') {
+        if (error.name !== "AbortError" && error.message !== 'Video unavailable' && !error.message.includes('This is a private video')) {
             saveError(error);
         }
         return null;

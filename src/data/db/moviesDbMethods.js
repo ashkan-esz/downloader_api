@@ -176,10 +176,6 @@ export async function getSortedMovies(sortBase, types, imdbScores, malScores, sk
             searchBase = "rank.inTheaters";
         } else if (sortBase === 'boxoffice') {
             searchBase = "rank.boxOffice";
-        } else if (sortBase === 'top') {
-            searchBase = "rank.top";
-        } else if (sortBase === 'popular') {
-            searchBase = "rank.popular";
         } else if (sortBase === 'like') {
             searchBase = "rank.like";
         } else if (sortBase === 'like_month') {

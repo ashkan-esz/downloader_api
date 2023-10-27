@@ -1,7 +1,6 @@
 import config from "../config/index.js";
 import Agenda from "agenda";
 import {crawler, crawlerCycle} from "../crawlers/crawler.js";
-import {updateImdbData} from "../crawlers/3rdPartyApi/imdbApi.js";
 import {updateJikanData} from "../crawlers/3rdPartyApi/jikanApi.js";
 import {deleteUnusedFiles} from "../data/cloudStorage.js";
 import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
@@ -36,8 +35,8 @@ export async function startAgenda() {
             }
         });
 
-        agenda.define("update jikan/imdb data", {concurrency: 1, priority: "high"}, async (job) => {
-            await updateJikanImdbDataJobFunc();
+        agenda.define("update jikan data", {concurrency: 1, priority: "high"}, async (job) => {
+            await updateJikanDataJobFunc();
         });
 
         agenda.define("reset month likes", async (job) => {
@@ -59,7 +58,7 @@ export async function startAgenda() {
         await agenda.every("0 2 * * *", "start crawler cycle", {}, {timezone: "Asia/Tehran"}); //At 02:00.
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("15 * * * *", "check movie source domains", {}, {timezone: "Asia/Tehran"});// Every hour - **:15
-        await agenda.every("0 */12 * * *", "update jikan/imdb data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
+        await agenda.every("0 */12 * * *", "update jikan data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
         await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30
         await agenda.every("30 11 1 * *", "reset month likes", {}, {timezone: "Asia/Tehran"});
         await agenda.every("0 0 * * 0", "remove unused files from s3", {}, {timezone: "Asia/Tehran"}); //At 00:00 on Sunday.
@@ -83,16 +82,13 @@ async function removeCompletedJobs() {
 }
 
 
-export async function updateJikanImdbDataJobFunc() {
-    updateCronJobsStatus('updateJikanImdbData', 'start');
+export async function updateJikanDataJobFunc() {
+    updateCronJobsStatus('updateJikanData', 'start');
     if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
         await removeCompletedJobs();
-        await Promise.allSettled([
-            updateImdbData(),
-            updateJikanData(),
-        ]);
+        await updateJikanData();
     }
-    updateCronJobsStatus('updateJikanImdbData', 'end');
+    updateCronJobsStatus('updateJikanData', 'end');
 }
 
 export async function resetMonthLikesJobFunc() {

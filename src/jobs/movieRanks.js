@@ -16,7 +16,7 @@ export async function updateMovieRanksJobFunc() {
     try {
         updateCronJobsStatus('updateMovieRanks', 'start');
         let cronJobsStatus = getCronJobsStatus();
-        if (cronJobsStatus.find(job => job.jobName === 'updateJikanImdbData')?.running) {
+        if (cronJobsStatus.find(job => job.jobName === 'updateJikanData')?.running) {
             updateCronJobsStatus('updateMovieRanks', 'end');
             return {status: 'ok'};
         }

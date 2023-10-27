@@ -10,11 +10,6 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         domainChange: `Source (${data1}) domain changed to (${data2})`,
         crawlerPauseLimit: `Maximum allowed duration for crawler pause exceeded (${data1}min) (crawler need more resource)`,
         apiCalls: {
-            imdb: {
-                invalid: `Invalid imdb api key: ${data1}`,
-                maxUsage: `Reached imdb api maximum daily usage: ${data1}`,
-                lotsOfApiCall: `lots of imdb api call`,
-            },
             omdb: {
                 invalid: `Invalid omdb api key: ${data1}, (${data2})`,
                 moreApiKeyNeeded: 'More omdb api keys are needed',
