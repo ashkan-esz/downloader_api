@@ -67,9 +67,9 @@ export function getS3Client() {
 
 export const s3VpnStatus = 'allOk';
 
-export const trailerUploadConcurrency = 5;
-export const saveWarningTimeout = 60 * 1000; //60s
-const crawlerWarningMessages = getCrawlerWarningMessages(60);
+export const trailerUploadConcurrency = 6;
+export const saveWarningTimeout = 70 * 1000; //70s
+const crawlerWarningMessages = getCrawlerWarningMessages(70);
 let uploadingTrailer = 0;
 
 async function waitForTrailerUpload() {
