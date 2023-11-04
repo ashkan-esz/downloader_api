@@ -50,7 +50,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             english: '',
             english_source: '',
         },
-        trailers: trailers.length > 0 ? trailers : null, // [{'url,info,vpnStatus'}]
+        trailers: trailers, // [{'url,info,vpnStatus'}]
         trailerDate: trailers.length > 0 ? Date.now() : 0,
         subtitles: groupSubtitles(subtitles),
         latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink
@@ -145,6 +145,7 @@ export const dataLevelConfig = Object.freeze({
         year: 1,
         premiered: 1,
         posters: 1,
+        poster_wide_s3: 1,
         alternateTitles: 1,
         rating: 1,
         summary: 1,

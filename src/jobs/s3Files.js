@@ -109,6 +109,7 @@ export async function removeS3TrailerJobFunc() {
                 projection: {
                     trailers: 1,
                     trailer_s3: 1,
+                    trailerDate: 1,
                 }
             }).toArray();
             if (movies.length === 0) {
@@ -117,14 +118,13 @@ export async function removeS3TrailerJobFunc() {
 
             for (let i = 0; i < movies.length; i++) {
                 promiseQueue.add(() => deleteTrailerFromS3(movies[i].trailer_s3.url.split('/').pop()).then(async () => {
-                    let newTrailers = movies[i].trailers ? movies[i].trailers.filter(item => !item.info.includes('s3Trailer')) : null;
-                    if (newTrailers && newTrailers.length === 0) {
-                        newTrailers = null;
-                    }
+                    let newTrailers = movies[i].trailers.filter(item => !item.info.includes('s3Trailer'));
+                    let trailerDate = newTrailers.length === 0 ? 0 : movies[i].trailerDate;
                     await collection.updateOne({_id: movies[i]._id}, {
                         $set: {
                             trailers: newTrailers,
                             trailer_s3: null,
+                            trailerDate: trailerDate,
                         }
                     });
                     removedCounter++;

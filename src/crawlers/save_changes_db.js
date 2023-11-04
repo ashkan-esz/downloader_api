@@ -191,6 +191,7 @@ async function searchOnCollection(titleObj, year, type) {
         poster_wide_s3: 1,
         trailer_s3: 1,
         trailers: 1,
+        trailerDate: 1,
         subtitles: 1,
         genres: 1,
         rating: 1,
@@ -310,6 +311,8 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.trailers = db_data.trailers;
             if (subUpdates.newTrailer) {
                 updateFields.trailerDate = Date.now();
+            } else if (updateFields.trailers.length === 0) {
+                updateFields.trailerDate = 0;
             }
         }
 
@@ -332,7 +335,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.castUpdateDate = new Date();
         }
 
-        if (db_data.trailer_s3 && db_data.trailers) {
+        if (db_data.trailer_s3 && db_data.trailers.length > 0) {
             if (!checkNeedTrailerUpload(null, db_data.trailers)) {
                 //remove trailer from s3
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.removingS3Trailer);
@@ -369,8 +372,9 @@ async function removeS3Trailer(db_data, updateFields) {
     let removeS3Trailer = await deleteTrailerFromS3(fileName);
     if (removeS3Trailer) {
         db_data.trailers = db_data.trailers.filter(item => !item.info.includes('s3Trailer') && item.url !== db_data.trailer_s3.url);
-        if (db_data.trailers && db_data.trailers.length === 0) {
-            db_data.trailers = null;
+        if (db_data.trailers.length === 0) {
+            db_data.trailerDate = 0;
+            updateFields.trailerDate = 0;
         }
         updateFields.trailers = db_data.trailers;
         db_data.trailer_s3 = null;

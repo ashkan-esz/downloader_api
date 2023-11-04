@@ -25,7 +25,7 @@ export async function uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, tr
                 addS3TrailerToTitleModel(updateFields, s3Trailer, titleModel.trailers);
                 return updateFields;
             } else {
-                addS3TrailerToTitleModel(titleModel, s3Trailer);
+                addS3TrailerToTitleModel(titleModel, s3Trailer, []);
                 return titleModel;
             }
         }
@@ -47,16 +47,15 @@ export function addS3PosterToTitleModel(titleModel, s3Poster) {
     return titleModel;
 }
 
-export function addS3TrailerToTitleModel(titleModel, s3Trailer, prevTrailers = null) {
+export function addS3TrailerToTitleModel(titleModel, s3Trailer, prevTrailers = []) {
     if (s3Trailer) {
         titleModel.trailer_s3 = s3Trailer;
-        let trailers = prevTrailers ? prevTrailers : [];
-        trailers.push({
+        prevTrailers.push({
             url: s3Trailer.url,
             info: 's3Trailer-720p',
             vpnStatus: s3Trailer.vpnStatus,
         });
-        titleModel.trailers = sortTrailers(trailers);
+        titleModel.trailers = sortTrailers(prevTrailers);
         titleModel.trailerDate = Date.now();
     }
     return titleModel;
@@ -66,7 +65,7 @@ export function checkNeedTrailerUpload(s3Trailer, trailers) {
     if (s3Trailer) {
         return false;
     }
-    if (!trailers) {
+    if (trailers.length === 0) {
         return true;
     }
     let sources = [];

@@ -218,10 +218,9 @@ export async function removeSource(sourceName, userData, isManualRemove) {
                 let updateFields = {
                     sources: result[i].sources.filter(item => item.sourceName !== sourceName),
                     posters: result[i].posters.filter(item => !item.info.includes(sourceName)),
-                    trailers: result[i].trailers ? result[i].trailers.filter(item => !item.info.includes(sourceName)) : result[i].trailers,
+                    trailers: result[i].trailers.filter(item => !item.info.includes(sourceName)),
                 };
-                if (updateFields.trailers && updateFields.trailers.length === 0) {
-                    updateFields.trailers = null;
+                if (updateFields.trailers.length === 0) {
                     updateFields.trailerDate = 0;
                 }
                 //------------------------------------------

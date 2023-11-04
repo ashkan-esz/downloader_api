@@ -7,7 +7,7 @@ const router = Router();
 //movies/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page
 router.get('/:apiName/:types/:dataLevel/:imdbScores/:malScores/:page',
     (req, res, next) => {
-        if (req.params.apiName === 'addUserStats') {
+        if (req.params.apiName === 'addUserStats' || req.params.apiName.toLowerCase() === 'seriesofday') {
             return next('route');
         }
         next();

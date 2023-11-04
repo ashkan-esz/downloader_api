@@ -7,7 +7,7 @@ import {saveError} from "../error/saveError.js";
 export async function handleSubUpdates(db_data, poster, trailers, sourceName, sourceVpnStatus) {
     try {
         let posterChange = await handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus);
-        let {trailerChange, newTrailer} = handleTrailerUpdate(db_data, trailers);
+        let {trailerChange, newTrailer} = handleTrailerUpdate(db_data, trailers, sourceName);
 
         return {
             posterChange,
@@ -148,13 +148,9 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
     return (posterUpdated || !posterExist || s3PosterUpdate || prevLength !== db_data.posters.length || prevSort !== newSort);
 }
 
-function handleTrailerUpdate(db_data, site_trailers) {
+function handleTrailerUpdate(db_data, site_trailers, sourceName) {
     let trailerChange = false;
     let newTrailer = false;
-    if (db_data.trailers === null && site_trailers.length > 0) {
-        db_data.trailers = site_trailers;
-        return {trailerChange: true, newTrailer: true};
-    }
     for (let i = 0; i < site_trailers.length; i++) {
         let trailer_exist = false;
         for (let j = 0; j < db_data.trailers.length; j++) {
@@ -177,15 +173,19 @@ function handleTrailerUpdate(db_data, site_trailers) {
             newTrailer = true;
         }
     }
-    if (db_data.trailers !== null) {
-        db_data.trailers = removeDuplicateLinks(db_data.trailers);
-        let prevSort = db_data.trailers.map(item => item.url).join(',');
-        db_data.trailers = sortTrailers(db_data.trailers);
-        let newSort = db_data.trailers.map(item => item.url).join(',');
-        if (prevSort !== newSort) {
-            trailerChange = true;
-        }
+
+    db_data.trailers = removeDuplicateLinks(db_data.trailers);
+    let prevSort = db_data.trailers.map(item => item.url).join(',');
+    if (site_trailers.length === 0) {
+        //remove prev source trailers
+        db_data.trailers = db_data.trailers.filter(item => !item.info.includes(sourceName));
     }
+    db_data.trailers = sortTrailers(db_data.trailers);
+    let newSort = db_data.trailers.map(item => item.url).join(',');
+    if (prevSort !== newSort) {
+        trailerChange = true;
+    }
+
     return {trailerChange, newTrailer};
 }
 

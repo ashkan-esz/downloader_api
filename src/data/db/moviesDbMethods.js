@@ -103,9 +103,8 @@ export async function getNewTrailers(types, imdbScores, malScores, skip, limit, 
         let collection = await getCollection('movies');
 
         return await collection.find({
-            releaseState: {$ne: "done"},
             ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
-            trailers: {$ne: null},
+            trailerDate: {$ne: 0},
         }, {
             projection: projection
         })
@@ -132,7 +131,7 @@ export async function getMoviesWithNoTrailer(types, limit) {
 
         return await collection.find({
             type: {$in: types},
-            trailers: null,
+            trailerDate: {$eq: 0},
         }, {
             projection: {
                 title: 1,
@@ -141,6 +140,7 @@ export async function getMoviesWithNoTrailer(types, limit) {
                 year: 1,
                 trailers: 1,
                 trailer_s3: 1,
+                trailerDate: 1,
             }
         })
             .sort({

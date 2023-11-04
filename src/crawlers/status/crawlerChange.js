@@ -43,7 +43,7 @@ export async function checkAndHandleSourceChange() {
     if (changesStatus.badPersianSummary.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName, changesStatus.badPersianSummary.length);
         await saveCrawlerWarning(warningMessages.sourceStatus.badPersianSummary);
-        reasons.push('trailers');
+        reasons.push('persianSummary');
     }
 
     if (Math.max(changesStatus.badDownloadLinks.length, changesStatus.badPosters.length, changesStatus.badPersianSummary.length) >= 30) {
