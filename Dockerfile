@@ -21,6 +21,9 @@ RUN apk add --no-cache --update nodejs npm
 COPY --from=build /usr/app /
 COPY --from=build /usr/app/prisma ./prisma
 
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max_old_space_size=1024
+
 EXPOSE 3000
 CMD ["npm", "run", "deploy"]
 #CMD [ "node", "src/server.js"]

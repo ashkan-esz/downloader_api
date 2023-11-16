@@ -933,6 +933,13 @@ export async function addMoviesFromMongodbToPostgres() {
             },
         }).toArray();
         rr = rr.map(item => ({movieId: item._id.toString()}));
+        await prisma.movie.deleteMany({
+            where: {
+                movieId: {
+                    notIn: rr.map(m => m.movieId),
+                }
+            }
+        });
         await prisma.movie.createMany({
             data: rr,
             skipDuplicates: true,

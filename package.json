@@ -20,7 +20,7 @@
     "clinic_profiler_doctor": "clinic doctor --on-port=’autocannon -c100 -d120 http://localhost:3000/updates/movie/news/false/true/1’ -- node src/server.js",
     "create_sourcemap": "rollup --config rollup.config.js --file bundle.js",
     "upload_sourceamp": "sentry-cli releases files 1 upload-sourcemaps bundle.js",
-    "deploy": "prisma migrate deploy && node src/server.js"
+    "deploy": "prisma migrate deploy && NODE_ENV=production node src/server.js"
   },
   "dependencies": {
     "@aws-sdk/abort-controller": "^3.374.0",

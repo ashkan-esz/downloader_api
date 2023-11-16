@@ -6,7 +6,9 @@ import {v4 as uuidv4} from "uuid";
 import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";
 import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
+import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
 
+export let testUserCreated = false;
 
 export async function preStart(force = false) {
     if (config.admin.user && config.admin.pass) {
@@ -14,75 +16,75 @@ export async function preStart(force = false) {
         await createTestUser();
     }
     if (config.nodeEnv !== 'dev') {
-        console.log('====> adding movies to postgres');
+        console.log('====> [[Adding Movies To Postgres]]');
         await addMoviesFromMongodbToPostgres();
-        console.log('====> movies added to postgres');
+        console.log('====> [[Adding Movies to Postgres: Done]]');
+
+        console.log('====> [[Restoring PostgresDb Backup]]');
+        let res = await restoreBackupDbJobFunc(true);
+        if (res?.status === 'error') {
+            console.log('====> [[Restoring PostgresDb Backup: Error]]');
+        } else if (res?.status === 'empty') {
+            console.log('====> [[Restoring PostgresDb Backup: Backup Not Found]]');
+        } else if (res?.status === 'not empty') {
+            console.log('====> [[Restoring PostgresDb Backup: Bypass Because Not Needed]]');
+        } else {
+            console.log('====> [[Restoring PostgresDb Backup: Done]]');
+        }
     }
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();
-        await createTestUser();
+        if (!testUserCreated) {
+            await createTestUser();
+        }
     }
 }
 
 async function createTestUser() {
-    console.log('creating test user');
+    console.log('====> [[Creating Guest User]]');
     try {
         let hashedPassword = await bcrypt.hash('$$test_user_password$$', 12);
         let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, 'test_user', '0', 0, defaultProfileImage);
         if (userData === 'username exist' || userData === 'email exist') {
             //test user already exist
-            let findUserResult = await usersDbMethods.findUser('$$test_user$$', '');
-            console.log('test user data (already exist): ', {
-                username: findUserResult.username,
-                rawUsername: findUserResult.rawUsername,
-                userId: findUserResult.userId,
-                role: findUserResult.role,
-            });
+            console.log('====> [[Creating Guest User: Already Exists]]');
+            testUserCreated = true;
             return;
         }
         if (!userData) {
-            console.log('error on creating test user');
+            console.log('====> [[Creating Guest User: Error]]');
             return;
         }
         const user = getJwtPayload(userData);
         const tokens = generateAuthTokens(user, '10000d', '10000d');
         const deviceId = uuidv4();
         await usersDbMethods.addSession(userData.userId, {}, deviceId, tokens.refreshToken); //deviceInfo, deviceId
-        console.log('test user data: ', {
-            accessToken: tokens.accessToken,
-            accessToken_expire: tokens.accessToken_expire,
-            refreshToken: tokens.refreshToken,
-            username: userData.username,
-            rawUsername: userData.rawUsername,
-            userId: userData.userId,
-            role: userData.role,
-        });
+        console.log('====> [[Creating Guest User: Done]]');
+        testUserCreated = true;
         //---------------------------------
         //---------------------------------
     } catch (error) {
-        console.log('error on creating test user');
+        console.log('====> [[Creating Guest User: Error]]');
         saveError(error);
     }
 }
 
 async function createAdminUser() {
-    console.log('====> creating admin user');
+    console.log('====> [[Creating Admin User]]');
     try {
         let hashedPassword = await bcrypt.hash(config.admin.pass, 12);
         const email = config.admin.user + '@gmail.com';
         let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword, 'admin', '', 0, defaultProfileImage);
         if (userData === 'username exist' || userData === 'email exist') {
-            console.log('====> admin user already exist');
-            return;
-        }
-        if (userData) {
-            console.log('====> admin user created!');
+            console.log('====> [[Creating Admin User: Already Exists]]');
+        } else if (userData) {
+            console.log('====> [[Creating Admin User: Done]]');
         } else {
-            console.log('====> error on creating admin user');
+            console.log('====> [[Creating Admin User: Error]]');
         }
     } catch (error) {
-        console.log('====> error on creating admin user');
+        console.log('====> [[Creating Admin User: Error]]');
         saveError(error);
     }
 }
