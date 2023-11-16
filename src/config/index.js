@@ -68,6 +68,7 @@ export default Object.freeze({
         pass: process.env.ADMIN_PASS || '',
     }),
     ignoreHentai: process.env.IGNORE_HENTAI !== 'false',
+    serverStartTime: Date.now(),
 });
 
 function getRemoteBrowsers() {

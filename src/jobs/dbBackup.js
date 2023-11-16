@@ -20,6 +20,8 @@ try {
 
 const backupDir = './db-backups';
 const _daysToKeepBackUpFiles = 7;
+const _encryptAlgorythm = 'aes-256-ctr';
+const _iv = "5183666c72eec9e4";
 
 export default function (agenda) {
     agenda.define("backup db", {concurrency: 1}, async (job) => {
@@ -27,9 +29,32 @@ export default function (agenda) {
     });
 }
 
-export async function backupDbJobFunc() {
+const _modelNames = Object.freeze([
+    'user', 'follow', 'activeSession', 'profileImage', 'computedFavoriteGenres',
+    'movieSettings', 'downloadLinksSettings', 'notificationSettings',
+    'staff', 'likeDislikeStaff', 'followStaff',
+    'character', 'likeDislikeCharacter', 'favoriteCharacter',
+    'castImage',
+    'movie', 'relatedMovie', 'credit',
+    'likeDislikeMovie', 'watchedMovie', 'followMovie',
+    'watchListGroup', 'watchListMovie',
+    'userCollection', 'userCollectionMovie',
+]);
+
+export async function backupDbJobFunc(isManualStart = false) {
     try {
         updateCronJobsStatus('backupDb', 'start');
+
+        if (!isManualStart && (Date.now() - config.serverStartTime < 30 * 60 * 1000)) {
+            //don't start backup process if server just started
+            updateCronJobsStatus('backupDb', 'end');
+            return;
+        }
+        if (await checkPostgresEmpty()) {
+            //don't start backup process if postgres is empty
+            updateCronJobsStatus('backupDb', 'end');
+            return;
+        }
 
         updateCronJobsStatus('backupDb', 'removing old backups');
         await removeOldBackups();
@@ -39,38 +64,34 @@ export async function backupDbJobFunc() {
             return this.toString()
         }
 
-        const modelNames = [
-            'movieSettings', 'activeSession', 'downloadLinksSettings', 'notificationSettings',
-            'computedFavoriteGenres', 'user', 'profileImage',
-            'watchListMovie', 'watchedMovie', 'likeDislikeMovie', 'followMovie', 'relatedMovie',
-            'watchListGroup', 'userCollectionMovie', 'userCollection', 'movie',
-            'character', 'credit', 'staff', 'castImage', 'likeDislikeStaff',
-            'likeDislikeCharacter', 'followStaff', 'favoriteCharacter',
-        ];
-        for (let i = 0; i < modelNames.length; i++) {
-            updateCronJobsStatus('backupDb', modelNames[i] + ': downloading');
-            let data = await prisma[modelNames[i]].findMany();
-            updateCronJobsStatus('backupDb', modelNames[i] + ': stringify');
+        for (let i = 0; i < _modelNames.length; i++) {
+            updateCronJobsStatus('backupDb', _modelNames[i] + ': downloading');
+            let data = await prisma[_modelNames[i]].findMany();
+            updateCronJobsStatus('backupDb', _modelNames[i] + ': stringify');
             let temp = JSON.stringify(data);
+            data = null;
             await new Promise((resolve, reject) => {
-                updateCronJobsStatus('backupDb', modelNames[i] + ': compress with gzip');
+                updateCronJobsStatus('backupDb', _modelNames[i] + ': compress with gzip');
                 zlib.gzip(temp, async (error, compressedData) => {
+                    temp = null;
                     if (error) {
                         saveError(error);
                         return reject(error);
                     }
 
-                    updateCronJobsStatus('backupDb', modelNames[i] + ': encrypting data');
-                    const password = config.dataBases.backupPassword;
-                    const cipher = crypto.createCipher('aes-256-cbc', password);
+                    updateCronJobsStatus('backupDb', _modelNames[i] + ': encrypting data');
+                    const password = crypto.createHash('sha256').update(config.dataBases.backupPassword).digest('base64').slice(0, 32);
+                    const cipher = crypto.createCipheriv(_encryptAlgorythm, password, _iv);
                     let encryptedData = cipher.update(compressedData);
+                    compressedData = null;
                     encryptedData = Buffer.concat([encryptedData, cipher.final()]);
 
-                    updateCronJobsStatus('backupDb', modelNames[i] + ': write file');
-                    const fileName = `backup-${modelNames[i]}-${dateString}.gz`;
+                    updateCronJobsStatus('backupDb', _modelNames[i] + ': write file');
+                    const fileName = `backup-${_modelNames[i]}-${dateString}.gz`; //backup-modelName-date.gz
                     await fs.promises.writeFile(`${backupDir}/${fileName}`, encryptedData);
-                    updateCronJobsStatus('backupDb', modelNames[i] + ': uploading to s3');
+                    updateCronJobsStatus('backupDb', _modelNames[i] + ': uploading to s3');
                     await uploadDbBackupFileToS3(encryptedData, fileName);
+                    encryptedData = null;
                     return resolve();
                 });
             });
@@ -88,9 +109,14 @@ export async function backupDbJobFunc() {
 //----------------------------------------------------------------
 //----------------------------------------------------------------
 
-export async function restoreBackupDbJobFunc() {
+export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
     try {
         updateCronJobsStatus('restoreBackupDb', 'start');
+
+        if (autoStartOnServerUp && !(await checkPostgresEmpty())) {
+            updateCronJobsStatus('restoreBackupDb', 'end');
+            return {status: 'not empty'};
+        }
 
         updateCronJobsStatus('restoreBackupDb', 'fetching backup files list');
         let s3Files = await getDbBackupFilesList();
@@ -107,36 +133,54 @@ export async function restoreBackupDbJobFunc() {
                 lastBackUpDate = fileDate;
             }
         }
-        const backupFiles = s3Files.filter(item => item.Key.includes(lastBackUpDate));
+        const backupFiles = s3Files.filter(item => item.Key.includes(lastBackUpDate))
+            .sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
+
+        if (backupFiles.length === 0) {
+            updateCronJobsStatus('restoreBackupDb', 'end');
+            return {status: 'empty'};
+        }
 
         for (let i = 0; i < backupFiles.length; i++) {
-            const modelName = backupFiles[i].Key.split('-')[1];
+            const modelName = backupFiles[i].Key.split('-')[1]; //backup-modelName-date.gz
             updateCronJobsStatus('restoreBackupDb', modelName + ': downloading file');
-            const encryptedData = await getDbBackupFile(backupFiles[i].Key);
+            let encryptedData = await getDbBackupFile(backupFiles[i].Key); //buffer
 
             updateCronJobsStatus('restoreBackupDb', modelName + ': decrypt file');
-            const password = config.dataBases.backupPassword;
-            const decipher = crypto.createDecipher('aes-256-cbc', password);
+            const password = crypto.createHash('sha256').update(config.dataBases.backupPassword).digest('base64').slice(0, 32);
+            const decipher = crypto.createDecipheriv(_encryptAlgorythm, password, _iv);
             let decryptedData = decipher.update(encryptedData);
+            encryptedData = null;
             decryptedData = Buffer.concat([decryptedData, decipher.final()]);
 
             await new Promise((resolve, reject) => {
                 updateCronJobsStatus('restoreBackupDb', modelName + ': gunzip file');
                 zlib.gunzip(decryptedData, async (error, uncompressedData) => {
+                    decryptedData = null;
                     if (error) {
                         saveError(error);
                         return reject(error);
                     }
 
                     updateCronJobsStatus('restoreBackupDb', modelName + ': JSON parse');
-                    const data = JSON.parse(uncompressedData);
+                    let data = JSON.parse(uncompressedData);
+                    uncompressedData = null;
 
-                    updateCronJobsStatus('restoreBackupDb', modelName + ': adding to db');
-                    try {
-                        await prisma[modelName].createMany({data: data, skipDuplicates: true});
-                    } catch (error2) {
-                        saveError(error2);
+                    let totalSize = data.length;
+                    let loopCounter = 0;
+                    let loopSize = 100;
+                    while (data.length > 0) {
+                        updateCronJobsStatus('restoreBackupDb', modelName + `: adding to db (${loopCounter * loopSize}/${totalSize})`);
+                        loopCounter++;
+                        let insertData = data.splice(0, loopSize);
+                        try {
+                            await prisma[modelName].createMany({data: insertData, skipDuplicates: true});
+                        } catch (error2) {
+                            saveError(error2);
+                        }
                     }
+
+                    data = null;
                     return resolve();
                 });
             });
@@ -148,6 +192,32 @@ export async function restoreBackupDbJobFunc() {
         saveError(error);
         updateCronJobsStatus('restoreBackupDb', 'end');
         return {status: 'error'};
+    }
+}
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
+export async function checkPostgresEmpty() {
+    try {
+        const modelNames = [
+            'staff', 'likeDislikeStaff', 'followStaff',
+            'character', 'likeDislikeCharacter', 'favoriteCharacter',
+            'castImage', 'relatedMovie', 'credit',
+            'likeDislikeMovie', 'watchedMovie', 'followMovie',
+            'watchListGroup', 'watchListMovie',
+            'userCollection', 'userCollectionMovie',
+        ];
+        for (let i = 0; i < modelNames.length; i++) {
+            let count = await prisma[modelNames[i]].count();
+            if (count > 0) {
+                return false;
+            }
+        }
+        return true;
+    } catch (error) {
+        saveError(error);
+        return true;
     }
 }
 
