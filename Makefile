@@ -26,7 +26,7 @@ redis-stat:
 	docker-compose -f ./redis-stat.docker-compose.yml up --build
 
 push-image:
-	docker tag downloader-api ashkanaz2828/downloader_api
+	docker tag downloader-api-docker ashkanaz2828/downloader_api
 	docker push ashkanaz2828/downloader_api
 
 run-postgresDb:

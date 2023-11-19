@@ -16,7 +16,12 @@ import {safeFieldsToEdit_array} from "../config/configsDb.js";
 import * as RemoteHeadlessBrowserMethods from "../crawlers/remoteHeadlessBrowser.js";
 import {createHash} from "node:crypto";
 import {saveError} from "../error/saveError.js";
-import {removeAppFileFromS3, removeProfileImageFromS3} from "../data/cloudStorage.js";
+import {
+    bucketNamesObject,
+    bucketsEndpointSuffix,
+    removeAppFileFromS3,
+    removeProfileImageFromS3
+} from "../data/cloudStorage.js";
 import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
 import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
@@ -326,6 +331,11 @@ export async function addNewAppVersion(appData, appFileData, userData) {
             return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
         }
 
+        //https://download-app.s3.com/ttt-ttt%401.0.0.apk
+        //s3.com/download-app/ttt-ttt@1.0.0.apk
+        if (appFileData.location.includes('/' + bucketNamesObject.downloadApp + '/')){
+            appFileData.location = `https://${bucketNamesObject.downloadApp}.${bucketsEndpointSuffix}/${appFileData.location.split('/').pop()}`;
+        }
         let response = await getArrayBufferResponse(appFileData.location);
         appData.fileData = {
             url: appFileData.location,
