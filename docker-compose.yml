@@ -82,7 +82,7 @@ services:
     network_mode: host
     env_file: ./remotebrowser.env
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - CRAWLER_BROWSER_TAB_COUNT=3
       - TOTAL_MEMORY_AMOUNT=800
       - TOTAL_DISK_SPACE=2000

@@ -9,7 +9,8 @@ export async function saveErrorIfNeeded(error) {
         error.code !== 'EPROTO' &&
         error.code !== 'Z_BUF_ERROR' &&
         error.code !== 'DEPTH_ZERO_SELF_SIGNED_CERT' &&
-        error.message !== 'certificate has expired'
+        error.message !== 'certificate has expired' &&
+        error.code !== "ERR_TLS_CERT_ALTNAME_INVALID"
     ) {
         await saveError(error);
     }

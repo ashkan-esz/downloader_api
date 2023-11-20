@@ -76,7 +76,7 @@ export async function getResponseWithCookie(url, cookie, timeout = null) {
         const client = wrapper(axios.create({jar}));
         return await client.get(url, config);
     } catch (error) {
-        if (error.message === 'certificate has expired') {
+        if (error.message === 'certificate has expired' || error.code === "ERR_TLS_CERT_ALTNAME_INVALID") {
             const agent = new https.Agent({
                 rejectUnauthorized: false,
             });
@@ -109,7 +109,7 @@ export async function getArrayBufferResponse(url, cookie = null) {
         }
         return result;
     } catch (error) {
-        if (error.message === 'certificate has expired') {
+        if (error.message === 'certificate has expired' || error.code === "ERR_TLS_CERT_ALTNAME_INVALID") {
             return null;
         } else {
             throw error;

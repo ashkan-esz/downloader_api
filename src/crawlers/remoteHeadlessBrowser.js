@@ -399,7 +399,10 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.response && error.response.status) {
             addSourceToAxiosBlackList(sourceName);
         }
-        if (error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded' && error.message !== 'certificate has expired') {
+        if (
+            error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded' &&
+            error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID"
+        ) {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
                 error.url = url;
