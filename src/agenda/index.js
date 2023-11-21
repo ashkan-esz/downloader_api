@@ -22,14 +22,14 @@ export async function startAgenda() {
             priority: "highest",
             shouldSaveResult: true
         }, async (job) => {
-            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
                 await removeCompletedJobs();
                 await crawlerCycle();
             }
         });
 
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
                 await removeCompletedJobs();
                 await crawler('', {crawlMode: 0});
             }
