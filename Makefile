@@ -11,7 +11,7 @@ build-dev:
 	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
 
 up-dev:
-	docker-compose up --build
+	docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.dev.yml --compatibility up --build
 
 up-prod:
 	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build

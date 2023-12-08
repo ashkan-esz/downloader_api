@@ -4,9 +4,9 @@ import {updateDisableTestUserRequestsMiddleWareData} from "../api/middlewares/is
 import {updateDevelopmentFazeMiddleWareData} from "../api/middlewares/developmentFaze.js";
 
 
-var configsDB = Object.freeze(await getServerConfigs());
+var configsDB = await getServerConfigs();
 setInterval(async () => {
-    configsDB = Object.freeze(await getServerConfigs());
+    configsDB = await getServerConfigs();
 }, 30 * 60 * 1000); //30 min
 
 export function getServerConfigsDb() {
@@ -21,7 +21,7 @@ export function checkCrawlerIsDisabledByConfigsDb() {
 }
 
 export async function updateServerConfigsDb() {
-    configsDB = Object.freeze(await getServerConfigs());
+    configsDB = await getServerConfigs();
     updateCorsAllowedOriginsMiddleWareData(configsDB.corsAllowedOrigins);
     updateDisableTestUserRequestsMiddleWareData(configsDB.disableTestUserRequests);
     updateDevelopmentFazeMiddleWareData(configsDB.developmentFaze);

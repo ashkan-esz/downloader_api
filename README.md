@@ -129,9 +129,9 @@ To run this project, you will need to add the following environment variables to
 - Open [configs schema](readme/CONFIGS.README.md).
 
 ## Clients
-- [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter)
+- [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter -Old)
 - [downloader_app](https://github.com/ashkan-esz/downloader_app) (React Native)
-- [movietracker_bot](https://github.com/amir-7979/movietracker_bot) (Telegram Bot)
+- [movietracker_bot](https://github.com/ashkan-esz/downloader_telegrambot) (Telegram Bot)
 
 ## Contributing
 
@@ -148,7 +148,6 @@ Give a ⭐️ if you like this project!
 ## Related
 
 - [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
-- [downloader_app](https://github.com/ashkan-esz/downloader_app/)
 - [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
 
 ## Extra

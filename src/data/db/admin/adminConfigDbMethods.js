@@ -10,8 +10,7 @@ import {removeAppFileFromS3} from "../../cloudStorage.js";
 export async function getServerConfigs() {
     try {
         let collection = await getCollection('configs');
-        let result = await collection.findOne({title: 'server configs'});
-        return Object.freeze(result);
+        return await collection.findOne({title: 'server configs'});
     } catch (error) {
         saveError(error);
         return null;

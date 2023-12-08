@@ -7,11 +7,15 @@ import {crawler} from "../crawlers/crawler.js";
 import {removeSource, updateSourceResponseStatus} from "../data/db/admin/adminCrawlerDbMethods.js";
 import {getDatesBetween} from "../crawlers/utils/utils.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
+import config from "../config/index.js";
+import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 
 
 export default function (agenda) {
     agenda.define("check movie source domains", {concurrency: 1}, async (job) => {
-        await checkCrawlerDomainsJobFunc();
+        if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
+            await checkCrawlerDomainsJobFunc();
+        }
     });
 }
 
