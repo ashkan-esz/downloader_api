@@ -3,7 +3,7 @@ import {getSourcesArray} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils/utils.js";
 import {getResponseUrl} from "./utils/axiosUtils.js";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {
@@ -79,13 +79,13 @@ async function checkSourcesUrl(sourcesUrls) {
                         error2.url = homePageLink;
                         error2.url2 = url;
                         error2.filePath = 'domainChangeHandler';
-                        await saveError(error2);
+                        await saveErrorIfNeeded(error2);
                         sourcesUrls[i].checked = true;
                         sourcesUrls[i].errorMessage = error2.message || '';
                         continue;
                     }
                 } else {
-                    await saveError(error);
+                    await saveErrorIfNeeded(error);
                     sourcesUrls[i].checked = true;
                     sourcesUrls[i].errorMessage = error.message || '';
                     continue;
@@ -102,7 +102,7 @@ async function checkSourcesUrl(sourcesUrls) {
         }
         return changedSources;
     } catch (error) {
-        await saveError(error);
+        await saveErrorIfNeeded(error);
         return [];
     }
 }
@@ -129,17 +129,17 @@ export async function checkUrlWork(sourceName, sourceUrl) {
                     error2.url = homePageLink;
                     error2.url2 = url;
                     error2.filePath = 'domainChangeHandler';
-                    await saveError(error2);
+                    await saveErrorIfNeeded(error2);
                 }
             } else {
-                await saveError(error);
+                await saveErrorIfNeeded(error);
             }
             return "error";
         }
         responseUrl = responseUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
         return homePageLink === responseUrl ? "ok" : responseUrl;
     } catch (error) {
-        await saveError(error);
+        await saveErrorIfNeeded(error);
         return "error";
     }
 }

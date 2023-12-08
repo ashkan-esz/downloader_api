@@ -311,7 +311,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 error.isAxiosError = true;
                 error.url = url;
                 error.filePath = 'searchTools';
-                await saveError(error);
+                await saveErrorIfNeeded(error);
             } else {
                 if (!sourceLinkData) {
                     addSourceToAxiosBlackList(sourceConfig.sourceName);
@@ -325,7 +325,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     const warningMessages = getCrawlerWarningMessages('10s', sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
                 } else {
-                    saveErrorIfNeeded(error);
+                    await saveErrorIfNeeded(error);
                 }
             }
         }
@@ -338,7 +338,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
         }
         return {$, links, cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
     } catch (error) {
-        await saveError(error);
+        await saveErrorIfNeeded(error);
         return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
     }
 }
@@ -375,7 +375,7 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
         }
         return !(pageNumber === 1 || responseUrl.includes('page'));
     } catch (error) {
-        saveError(error);
+        saveErrorIfNeeded(error);
         return true;
     }
 }

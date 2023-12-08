@@ -16,7 +16,7 @@ COPY . .
 RUN npx prisma generate
 
 # stage 2
-FROM alpine
+FROM alpine:3.17.2
 RUN apk add --no-cache --update nodejs npm
 COPY --from=build /usr/app /
 COPY --from=build /usr/app/prisma ./prisma

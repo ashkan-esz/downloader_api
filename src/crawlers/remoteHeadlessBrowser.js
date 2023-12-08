@@ -5,7 +5,7 @@ import {v4 as uuidv4} from "uuid";
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils/utils.js"
 import {getResponseWithCookie} from "./utils/axiosUtils.js";
-import {saveError} from "../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 
@@ -418,7 +418,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
                 error.url = url;
                 error.filePath = 'remoteHeadlessBrowser > useAxiosGet 2';
             }
-            saveError(error);
+            saveErrorIfNeeded(error);
         }
         return result;
     }
