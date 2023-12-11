@@ -390,9 +390,7 @@ async function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
         concurrencyNumber = Number(config.crawler.concurrency);
     }
     if (concurrencyNumber === 0) {
-        concurrencyNumber = (sourceName === "animelist" || sourceName === "golchindl" || needHeadlessBrowser)
-            ? 9
-            : 12;
+        concurrencyNumber = needHeadlessBrowser ? 9 : 12;
     }
     if (await checkServerIsIdle()) {
         //use higher concurrency when mode is 0 and server is idle

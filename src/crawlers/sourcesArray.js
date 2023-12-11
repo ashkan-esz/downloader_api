@@ -1,23 +1,17 @@
 import * as digimoviez from "./sources/1digimoviez.js";
 import * as film2movie from "./sources/3film2movie.js";
-import * as salamdl from "./sources/4salamdl.js";
 import * as avamovie from "./sources/5avamovie.js";
-import * as golchindl from "./sources/8golchindl.js";
-import * as bia2anime from "./sources/10bia2anime.js";
 import * as anime20 from "./sources/anime20.js";
 
-export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'salamdl', 'avamovie', 'golchindl', 'bia2anime', 'anime20']);
-export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 'golchindl', 's3Poster', 'bia2anime', 'salamdl', 'anime20']);
-export const sortTrailersOrder = Object.freeze(['film2movie', 'bia2anime', 'golchindl', 's3Trailer', 'digimoviez', 'avamovie', 'salamdl', 'anime20']);
+export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'avamovie', 'anime20']);
+export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20']);
+export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20']);
 
 export function getSourcesMethods() {
     return ({
         digimoviez: digimoviez,
         film2movie: film2movie,
-        salamdl: salamdl,
         avamovie: avamovie,
-        golchindl: golchindl,
-        bia2anime: bia2anime,
         anime20: anime20,
     });
 }
@@ -39,27 +33,9 @@ export function getSourcesArray(sourcesObj, crawlMode) {
             }
         },
         {
-            name: 'salamdl',
-            starter: () => {
-                return salamdl.default(sourcesObj.salamdl, pageCount);
-            }
-        },
-        {
             name: 'avamovie',
             starter: () => {
                 return avamovie.default(sourcesObj.avamovie, pageCount);
-            }
-        },
-        {
-            name: 'golchindl',
-            starter: () => {
-                return golchindl.default(sourcesObj.golchindl, pageCount);
-            }
-        },
-        {
-            name: 'bia2anime',
-            starter: () => {
-                return bia2anime.default(sourcesObj.bia2anime, pageCount);
             }
         },
         {

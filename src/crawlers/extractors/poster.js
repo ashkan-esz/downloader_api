@@ -13,30 +13,30 @@ export function getPoster($, sourceName) {
     try {
         const $img = $('img');
 
-        if (sourceName === "golchindl") {
-            for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-                const parent = $img[i].parent;
-                if (parent.name === 'a' && ($(parent).hasClass('thumb') || $(parent).hasClass('photo'))) {
-                    const href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                    if (href && (href.includes('uploads') || href.includes('cdn.'))) {
-                        return purgePoster(href);
-                    }
-                }
-            }
-            return "";
-        }
+        // if (sourceName === "golchindl") {
+        //     for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
+        //         const parent = $img[i].parent;
+        //         if (parent.name === 'a' && ($(parent).hasClass('thumb') || $(parent).hasClass('photo'))) {
+        //             const href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+        //             if (href && (href.includes('uploads') || href.includes('cdn.'))) {
+        //                 return purgePoster(href);
+        //             }
+        //         }
+        //     }
+        //     return "";
+        // }
 
-        if (sourceName === "bia2anime" || sourceName === "bia2hd") {
-            for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-                if ($($img[i]).hasClass('wp-post-image')) {
-                    const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                    if (src && src.includes('uploads')) {
-                        return purgePoster(src);
-                    }
-                }
-            }
-            return "";
-        }
+        // if (sourceName === "bia2anime" || sourceName === "bia2hd") {
+        //     for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
+        //         if ($($img[i]).hasClass('wp-post-image')) {
+        //             const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+        //             if (src && src.includes('uploads')) {
+        //                 return purgePoster(src);
+        //             }
+        //         }
+        //     }
+        //     return "";
+        // }
 
         if (sourceName === "film2movie") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {

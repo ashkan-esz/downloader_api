@@ -1,5 +1,5 @@
-import config from "../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../searchTools.js";
+import config from "../../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../../searchTools.js";
 import {
     getDecodedLink,
     persianWordToNumber,
@@ -7,14 +7,14 @@ import {
     replacePersianNumbers,
     sortLinks,
     validateYear,
-} from "../utils/utils.js";
-import {getTitleAndYear} from "../movieTitle.js";
-import {fixLinkInfo, fixLinkInfoOrder, purgeQualityText, purgeSizeText} from "../linkInfoUtils.js";
-import {summaryExtractor, posterExtractor, trailerExtractor} from "../extractors/index.js";
-import save from "../save_changes_db.js";
-import {getSubtitleModel} from "../../models/subtitle.js";
-import {subtitleFormatsRegex} from "../subtitle.js";
-import {saveError} from "../../error/saveError.js";
+} from "../../utils/utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
+import {fixLinkInfo, fixLinkInfoOrder, purgeQualityText, purgeSizeText} from "../../linkInfoUtils.js";
+import {summaryExtractor, posterExtractor, trailerExtractor} from "../../extractors/index.js";
+import save from "../../save_changes_db.js";
+import {getSubtitleModel} from "../../../models/subtitle.js";
+import {subtitleFormatsRegex} from "../../subtitle.js";
+import {saveError} from "../../../error/saveError.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "bia2anime",
