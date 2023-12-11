@@ -5,7 +5,7 @@ export function replaceSpecialCharacters(input) {
     return input
         .replace('&#39;', '')
         .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
-        .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥♡△Ωωψ‎]/g, '')
+        .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥♡△∽Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
@@ -174,7 +174,10 @@ export function getSeasonEpisode(input, isLinkInput = false) {
             return {season: 0, episode: 0, isNormalCase: false}
         }
 
-        input = input.toLowerCase().replace(/https?:\/\//, '').split('md5')[0];
+        input = input.toLowerCase()
+            .replace(/https?:\/\//, '')
+            .replace(/se\d+e\d+/, res => res.replace('se', 's'))
+            .split('md5')[0];
         const slashIndex = input.indexOf('/');
         if (slashIndex !== -1) {
             input = input.substring(slashIndex + 1);
@@ -292,6 +295,12 @@ export function getSeasonEpisode(input, isLinkInput = false) {
                     if (episodeMatch2 && episodeMatch2.length === 1) {
                         season = '1';
                         episode = episodeMatch2[0].match(/\d+/)[0];
+                    } else if (isLinkInput) {
+                        const episodeMatch3 = decodeLink.match(/[a-z]e\d\d?[\s.]/gi);
+                        if (episodeMatch3 && episodeMatch3.length === 1) {
+                            season = '1';
+                            episode = episodeMatch3[0].match(/\d+/)[0];
+                        }
                     }
                 }
             }

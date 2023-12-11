@@ -109,7 +109,7 @@ function purgePersianSummary(persianSummary, title, year) {
                 if (item !== " ") {
                     item = item + ':?’?-?';
                 } else {
-                    item = "(\\s|-)";
+                    item = "(\\s|\\-)";
                 }
                 return item;
             })

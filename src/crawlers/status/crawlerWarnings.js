@@ -31,6 +31,7 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         crawlerCancelled: 'Crawling cancelled : sourcesObj is null',
         crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
         axiosTimeoutError: `Axios timeout error (${data1}): ${data2}`,
+        axiosAbortError: `Axios aborted error: ${data1}`,
         crawlerBadLink: `Crawler generated badLink (${data1})`,
         sourceLastPage: `Source (${data1}) lastPage: ${data2}`,
         sourceDisabled: `Source (${data1}): Disabled, reasons: ${data2}`,

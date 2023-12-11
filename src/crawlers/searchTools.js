@@ -272,7 +272,8 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     let sourcesObject = await getAxiosSourcesObject();
                     let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName].cookies : [];
                     const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
-                    let response = await getResponseWithCookie(url, cookie, 10 * 1000);
+                    let responseTimeout = pageType === 'sourcePage' ? 15 * 1000 : 10 * 1000;
+                    let response = await getResponseWithCookie(url, cookie, responseTimeout);
                     responseUrl = response.request.res.responseUrl;
                     if (response.data.includes('<title>Security Check ...</title>') && pageType === 'movieDataPage') {
                         $ = null;
@@ -323,6 +324,9 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 checkGoogleCache = true;
                 if (error.message === 'timeout of 10000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('10s', sourceConfig.sourceName);
+                    await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                } else if (error.message === 'timeout of 15000ms exceeded') {
+                    const warningMessages = getCrawlerWarningMessages('15s', sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
                 } else {
                     await saveErrorIfNeeded(error);

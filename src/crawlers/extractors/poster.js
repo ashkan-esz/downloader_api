@@ -16,7 +16,7 @@ export function getPoster($, sourceName) {
         if (sourceName === "golchindl") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
                 const parent = $img[i].parent;
-                if (parent.name === 'a' && $(parent).hasClass('thumb')) {
+                if (parent.name === 'a' && ($(parent).hasClass('thumb') || $(parent).hasClass('photo'))) {
                     const href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                     if (href && (href.includes('uploads') || href.includes('cdn.'))) {
                         return purgePoster(href);

@@ -11,21 +11,22 @@ export const encodersRegex = new RegExp([
     /|anoXmous|Judas|ETRG|jbr|Kick|STRiFE|LIMITED|SUNSCREEN|CMRG|sujaidr|[Ss]ilence|xTv|BTRG|TURG|HdT|KRT|DJT|REMARKABLE|[Bb][Tt][Xx]/,
     /|AMRAP|SiGMA|i[Kk][Aa]|LLG|FGT|MkvHub|MW|WiKi|Hon3y|JYK|AME|ELR|NT[GB]|[Nn][Tt]b|eSc|associate|[Ss]c[Oo]rp|RDH|AMZN|afm7[23]/,
     /|Jalucian|muhHD|GAN|AC3|[Ww]orldmkv|AiRLiNE|DEFiNiTE|HazMatt|FiDELiO|AR|monkee|vsenc|BDP|D3FiL3R|watcher|ISRA|[Mm][Kk][Vv][Cc][Aa][Gg][Ee]/,
-    /|SaNiG|Frontline|TNTVillage|LordVako|LoRD|titler|rDX|w4f|HighCode|TuGAZx|GCJM|BONE|Qman|Micromkv|d3g|NVEE|AViATOR|GECKOS/,
+    /|SaNiG|Frontline|TNTVillage|LordVako|LoRD|titler|rDX|w4f|HighCode|TuGAZx|GCJM|BONE|Qman|Micromkv|d3g|NVEE|AViATOR|GECKOS|HUZZAH/,
     /|SUJAIDR|r00t|MovCr|ACOOL|N[Oo]GRP|AAA(UHD)?|DAA|BRSHNKV|HEVCBay|TTL|NBY|KamiKaze|TEPES|MZABI|DEEP|RSG|GOOZ|[Aa][Rr][Ii][Ee][Ss]/,
     /|Tom[Dd]oc|POIASD|SUECOS|Garshasp|SARTRE|Budgetbits|[Pp]rof?|LiBRARiANS|m2g|FreetheFish|[Nn]ickarad|AnimeRG|TombDoc|EDITH|ETHEL/,
     /|FRISKY|3dg|SAMPA|Vyndros|ANONA911|Natty|GetSchwifty|Obey|GSFTX|RONIN|UNK|Bandi|QxR|Paso7[27]|Slinece|SPARKS|PCOK|orenji|LowFatMilk/,
-    /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV|BRISK/,
-    /|[Aa]pekat|LION|imSamir|KIMO?|Telly|TeamMCU|Grashasp|YOGI|HDSTAr|ViZNU|DREDD|TM[VK]|MHB|EXT|ION10|SECRECY|[RH]?TM|HORiZON/,
-    /|Bollycine|InSaNe|ESubs|Lover|FC|COALiTiON|RUSTED|LCK|iExTv|[Ff]2[MmNn]|SH0W|GECK|AMIABLE|KatmovieHD|REM|PRiME|NEZU|TFP|DON/,
-    /|SMAHAWUG|CRiSC|STRONTiUM|BdC|HDC|LAZY|FraMeSToR|BAM|Felony|SECTOR7|CADAVER|YOL0W|Replica|KaKa|SPRiNTER|Sprinter|Rapta|REWARD/,
+    /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV|BRISK|CZ530/,
+    /|[Aa]pekat|LION|imSamir|KIMO?|Telly|TeamMCU|Grashasp|YOGI|HDSTAr|ViZNU|DREDD|TM[VK]|MHB|EXT|ION10|SECRECY|[RH]?TM|HORiZON|AccomplishedYak/,
+    /|Bollycine|InSaNe|ESubs|Lover|FC|COALiTiON|RUSTED|LCK|iExTv|[Ff]2[MmNn]|SH0W|GECK|AMIABLE|KatmovieHD|REM|PRiME|NEZU|TFP|DON|HDH/,
+    /|SMAHAWUG|CRiSC|STRONTiUM|BdC|HDC|LAZY|FraMeSToR|BAM|Felony|SECTOR7|CADAVER|YOL0W|Replica|KaKa|SPRiNTER|Sprinter|Rapta|REWARD|KEWPiE/,
     /|ROVERS|EPSiLON|SAPHiRE|DEFLATE|BRMP|HET|BLOW|DDR|HDL|HAiKU|CiNEFiLE|SNG|FLAME|[Ii][Ff][Tt]|[Tt][Bb][Ss]|EGEN|TOMMY|Tommy|AvoHD|MRN/,
-    /|PLUTONiUM|TiTAN|JiO|SKGTV|QPEL|NM|HV|VETO|YST|SHeRiF|C1NEM4|AN0NYM0US|CROOKS|ALTEREGO|SiNNERS|FiCO|mSD|PoOlLa|MAX|GETiT|IFR/,
+    /|PLUTONiUM|TiTAN|JiO|SKGTV|QPEL|NM|HV|VETO|YST|SHeRiF|C1NEM4|AN0NYM0US|CROOKS|ALTEREGO|SiNNERS|FiCO|mSD|PoOlLa|MAX|GETiT|IFR|Raphael/,
     /|ALLiANCE|DiAMOND|Team-x265|PECULATE|TIMECUT|MRCS|NAISU|PMV|SCENI|Atmos|PSYCHD|DEMAND|GOPISAHI|MkHub|VFX|[Xx][Ll][Ff]|RBX|DSNP|VIU/,
     /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo|GDL/,
-    /|Teamx265|[Mm]TEAM|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP|XEBEC|IC/,
+    /|Teamx265|[Mm]T[Ee][Aa][Mm]|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP|XEBEC|IC/,
+    /|PiGNUS|CUPCAKES|TASTETV|RiGHTNOW|Gooz|HAMR|DZ0N3/,
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
@@ -171,6 +172,8 @@ export function purgeQualityText(qualityText) {
         .replace('لينک مستقيم', '')
         .replace('لینک مستقیم', '') //its not duplicate
         .replace('لینک مستقم', '')
+        .replace('لینک مستق', '')
+        .replace('یم', '')
         .replace(/قسمت \d\d?\d?((\s*([و٫]|تا)\s*)?\d?\d?\d?)+/, '')
         .replace(/قسمت ها \d+/g, '')
         .replace(/\d+ دقیقه/g, '')
@@ -207,8 +210,8 @@ export function purgeQualityText(qualityText) {
         .replace('مراسم فرش قرمز', 'Red-Carpet')
         .replace(/\.(DDP?|AAC)?\d\.\d(\.H)?(\.264)?(?!((\d\d\d?p)|(ch)))/i, '')
         .replace(/bluray/gi, 'BluRay')
-        .replace(/weba?[-_]*d(l|$)/gi, 'WEB-DL')
-        .replace(/weba?[-_]*d\s/gi, 'WEB-DL ')
+        .replace(/weba?[-_]*[dl](l|$)/gi, 'WEB-DL')
+        .replace(/weba?[-_]*[dl]\s/gi, 'WEB-DL ')
         .replace(/web[.\-]*rip/gi, 'WEB-RIP')
         .replace(/BR(-)?RIP/gi, 'BR-RIP')
         .replace(/BD(-)?RIP/gi, 'BD-RIP')
@@ -485,7 +488,7 @@ function fixInfoWrongQualityResolution(info) {
         .replace(/\.(1080|80p|720|72p|70?p?|20p|480|40p|48p|128|0p|04)(?=(\.|$))/, '')
         .replace(/\.720$/, '')
         .replace(/\.?\[\d\d\d\d?p?]/i, '')
-        .replace(/\d\d\d\d?px264/, (res) => res.replace('x264', ''))
+        .replace(/\d\d\d\d?px26[45]/, (res) => res.replace('x264', '').replace('x265', ''))
         .replace(/(UHD\.)?4k/gi, '4K')
         .replace(/1080p\.(UHD|4k)/i, '1080p')
         .replace('WEB-DL.FULL-HD', 'WEB-DL')
@@ -506,6 +509,8 @@ function fixInfoDubAndSub(info) {
         .replace(/(Dual|Dubbed)\.Audio/i, 'dubbed')
         .replace(/ENG\.Dub(bed)?/i, 'dubbed(english)')
         .replace(/dubbed(\.HardSub)?\.dubbed(?=(\.|$))/i, 'dubbed')
+        .replace(/EXTENDEDFarsi(\.dubbed)?/i, 'EXTENDED.dubbed')
+        .replace(/BluRayFarsi/i, 'BluRay.dubbed')
         //softSub
         .replace(/soft?sub/gi, 'SoftSub')
         .replace(/(?<!(\.|^))SoftSub/, '.SoftSub')
@@ -517,7 +522,7 @@ function fixInfoDubAndSub(info) {
         .replace(/\.NOT\.SUB(BED)?(\.SoftSub)?/i, '')
         .replace(/\.NOT\.SoftSubSub/i, '')
         //hardSub
-        .replace(/hardsub/gi, 'HardSub')
+        .replace(/hardsub?/gi, 'HardSub')
         .replace(/Hard?Sub(\.HardSub)+/gi, 'HardSub')
         .replace('.SoftSub.HardSub', '.SoftSub')
         .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'dubbed')
@@ -644,6 +649,7 @@ export function purgeSizeText(sizeText) {
         .replace('میانگین', '')
         .replace('فایل', '')
         .replace('گیگابایت', 'GB')
+        .replace('گیکابایت', 'GB')
         .replace('گیگا بایت', 'GB')
         .replace('گیگابیت', 'GB')
         .replace('گیابایت', 'GB')

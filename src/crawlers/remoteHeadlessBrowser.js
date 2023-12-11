@@ -375,7 +375,8 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
         const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
-        let timeout = sourceAuthStatus === 'login-cookie' ? 7000 : 4000;
+        // let timeout = sourceAuthStatus === 'login-cookie' ? 7000 : 4000;
+        let timeout = 10000;
         let response = await getResponseWithCookie(url, cookie, timeout);
         let $ = cheerio.load(response.data);
         let links = $('a');
@@ -399,10 +400,14 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.response && error.response.status) {
             addSourceToAxiosBlackList(sourceName);
         }
-        if (
-            error.message !== 'timeout of 7000ms exceeded' && error.message !== 'timeout of 4000ms exceeded' &&
-            error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID"
-        ) {
+
+        if (error.message === 'timeout of 10000ms exceeded') {
+            const warningMessages = getCrawlerWarningMessages('10s', sourceName);
+            await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+        } else if (error.message === 'aborted') {
+            const warningMessages = getCrawlerWarningMessages(sourceName);
+            await saveCrawlerWarning(warningMessages.axiosAbortError);
+        } else if (error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID") {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
                 error.url = url;
