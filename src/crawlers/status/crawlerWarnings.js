@@ -13,14 +13,16 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             omdb: {
                 invalid: `Invalid omdb api key: ${data1}, (${data2})`,
                 moreApiKeyNeeded: 'More omdb api keys are needed',
+                eaiError: 'EAI_AGAIN error on omdb api call',
             },
             tvmaze: {
                 lotsOfApiCall: `lots of tvmaze api call`,
             },
             jikan: {
                 lotsOfApiCall: `lots of jikan api call`,
+                eaiError: 'EAI_AGAIN error on jikan api call',
             },
-            kitsu:{
+            kitsu: {
                 lotsOfApiCall: `lots of kitsu api call`,
             }
         },
@@ -32,9 +34,13 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
         crawlerCycleCancelled: 'Crawler cycle cancelled : sourcesObj is null',
         axiosTimeoutError: `Axios timeout error (${data1}): ${data2}`,
         axiosAbortError: `Axios aborted error: ${data1}`,
+        axiosEaiError: `Axios EAI_AGAIN error: ${data1}`,
         crawlerBadLink: `Crawler generated badLink (${data1})`,
         sourceLastPage: `Source (${data1}) lastPage: ${data2}`,
         sourceDisabled: `Source (${data1}): Disabled, reasons: ${data2}`,
+        sourceErrors: {
+            axios403: `Source (${data1}): 403 Error (Axios)`,
+        },
         sourceStatus: {
             badDownloadLinks: `Source (${data1}): badDownloadLinks: ${data2}`,
             badPosters: `Source (${data1}): badPosters: ${data2}`,

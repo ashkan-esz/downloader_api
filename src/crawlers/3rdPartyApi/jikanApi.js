@@ -358,6 +358,11 @@ async function handleApiCall(url, timeoutSec = 0) {
                 waitCounter++;
                 await new Promise((resolve => setTimeout(resolve, waitTime)));
             } else {
+                if (error.code === 'EAI_AGAIN') {
+                    const warningMessages = getCrawlerWarningMessages('');
+                    await saveCrawlerWarning(warningMessages.apiCalls.jikan.eaiError);
+                    return null;
+                }
                 if (error.message === 'hard timeout') {
                     return null;
                 }

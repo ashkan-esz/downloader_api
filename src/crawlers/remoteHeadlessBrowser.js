@@ -407,6 +407,12 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         } else if (error.message === 'aborted') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
             await saveCrawlerWarning(warningMessages.axiosAbortError);
+        } else if (error.code === 'EAI_AGAIN') {
+            const warningMessages = getCrawlerWarningMessages(sourceName);
+            await saveCrawlerWarning(warningMessages.axiosEaiError);
+        } else if (error.message === 'Request failed with status code 403') {
+            const warningMessages = getCrawlerWarningMessages(sourceName);
+            await saveCrawlerWarning(warningMessages.sourceErrors.axios403);
         } else if (error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID") {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;

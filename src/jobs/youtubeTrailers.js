@@ -1,3 +1,4 @@
+import config from "../config/index.js";
 import {getMoviesWithNoTrailer} from "../data/db/moviesDbMethods.js";
 import {updateMovieByIdDB} from "../data/db/crawlerMethodsDB.js";
 import {uploadTitleYoutubeTrailerAndAddToTitleModel} from "../crawlers/posterAndTrailer.js";
@@ -10,7 +11,7 @@ import {getTrailerFromYoutube} from "../crawlers/3rdPartyApi/googleYoutubeApi.js
 
 export default function (agenda) {
     agenda.define("add trailers from youtube", {concurrency: 1}, async (job) => {
-        if (!checkIsCrawling()) {
+        if (!checkIsCrawling() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
             await addTrailersFromYoutubeJobFunc();
         }
     });

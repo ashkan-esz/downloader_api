@@ -119,7 +119,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: 150M
+          memory: 100M
         reservations:
           memory: 10M
     restart: always

@@ -415,7 +415,7 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
             thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
         };
     } catch (error) {
-        if (error.code === 'ENOTFOUND' && retryCounter < 2) {
+        if ((error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 200)));
             return await uploadImageToS3(bucketName, fileName, fileUrl, originalUrl, forceUpload, retryCounter, retryWithSleepCounter);
@@ -441,7 +441,9 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
             await saveError(error);
             return null;
         }
-        saveErrorIfNeeded(error);
+        if (error.code !== 'EAI_AGAIN') {
+            saveErrorIfNeeded(error);
+        }
         return null;
     }
 }

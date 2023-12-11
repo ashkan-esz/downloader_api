@@ -321,7 +321,11 @@ async function handle_OMDB_ApiCall(url) {
                     await saveError(error);
                     return null;
                 } else {
-                    if (!error.response || error.response.status !== 500) {
+                    if (error.code === 'EAI_AGAIN') {
+                        const warningMessages = getCrawlerWarningMessages('');
+                        await saveCrawlerWarning(warningMessages.apiCalls.omdb.eaiError);
+                        continue;
+                    } else if (!error.response || error.response.status !== 500) {
                         saveError(error);
                     }
                     return null;

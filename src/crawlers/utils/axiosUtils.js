@@ -14,7 +14,7 @@ export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter =
         }
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
-        if (error.message === 'timeout of 5000ms exceeded') {
+        if (error.message === 'timeout of 5000ms exceeded' || error.message === 'socket hang up' || error.code === 'EAI_AGAIN') {
             return 0;
         }
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&

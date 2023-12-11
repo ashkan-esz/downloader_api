@@ -225,7 +225,7 @@ async function handleApiCall(url) {
                 await saveError(error);
                 return null;
             } else {
-                if (error.response && error.response.status !== 404) {
+                if (error.response && error.response.status !== 404 && error.response.status !== 503) {
                     await saveError(error);
                 }
                 return null;
