@@ -49,6 +49,7 @@ export const errorMessage = Object.freeze({
     //----------------------
     badRequestBody: 'Incorrect request body',
     //----------------------
+    userIdAlreadyExist: 'This userId already exists',
     usernameAlreadyExist: 'This username already exists',
     emailAlreadyExist: 'This email already exists',
     alreadyExist: 'Already exist',

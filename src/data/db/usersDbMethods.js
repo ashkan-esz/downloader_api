@@ -147,6 +147,9 @@ export async function addUser(username, email, hashedPassword, role, emailVerify
             if (error.meta.target[0] === 'username') {
                 return 'username exist';
             }
+            if (error.meta.target[0] === 'userId') {
+                return 'userId exist';
+            }
         }
         saveError(error);
         return null;

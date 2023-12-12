@@ -27,6 +27,9 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         emailVerifyToken = emailVerifyToken.replace(/\//g, '');
         let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
         let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', emailVerifyToken, emailVerifyToken_expire, defaultProfileImage);
+        if (userData === 'userId exist') {
+            return generateServiceResult({}, 403, errorMessage.userIdAlreadyExist);
+        }
         if (userData === 'username exist') {
             return generateServiceResult({}, 403, errorMessage.usernameAlreadyExist);
         }

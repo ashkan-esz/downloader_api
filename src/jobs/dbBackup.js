@@ -133,8 +133,13 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
                 lastBackUpDate = fileDate;
             }
         }
-        const backupFiles = s3Files.filter(item => item.Key.includes(lastBackUpDate))
+        let backupFiles = s3Files.filter(item => item.Key.includes(lastBackUpDate))
             .sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
+
+        if (autoStartOnServerUp) {
+            //dont restore movie table
+            backupFiles = backupFiles.filter(b => b.Key.split('-')[1] !== 'movie');
+        }
 
         if (backupFiles.length === 0) {
             updateCronJobsStatus('restoreBackupDb', 'end');

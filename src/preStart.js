@@ -11,10 +11,6 @@ import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
 export let testUserCreated = false;
 
 export async function preStart(force = false) {
-    if (config.admin.user && config.admin.pass) {
-        await createAdminUser();
-        await createTestUser();
-    }
     if (config.nodeEnv !== 'dev') {
         console.log('====> [[Adding Movies To Postgres]]');
         await addMoviesFromMongodbToPostgres();
@@ -32,6 +28,12 @@ export async function preStart(force = false) {
             console.log('====> [[Restoring PostgresDb Backup: Done]]');
         }
     }
+    if (config.admin.user && config.admin.pass) {
+        await Promise.allSettled([
+            createAdminUser(),
+            createTestUser(),
+        ]);
+    }
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();
@@ -46,7 +48,7 @@ async function createTestUser() {
     try {
         let hashedPassword = await bcrypt.hash('$$test_user_password$$', 12);
         let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, 'test_user', '0', 0, defaultProfileImage);
-        if (userData === 'username exist' || userData === 'email exist') {
+        if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             //test user already exist
             console.log('====> [[Creating Guest User: Already Exists]]');
             testUserCreated = true;
@@ -76,7 +78,7 @@ async function createAdminUser() {
         let hashedPassword = await bcrypt.hash(config.admin.pass, 12);
         const email = config.admin.user + '@gmail.com';
         let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword, 'admin', '', 0, defaultProfileImage);
-        if (userData === 'username exist' || userData === 'email exist') {
+        if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             console.log('====> [[Creating Admin User: Already Exists]]');
         } else if (userData) {
             console.log('====> [[Creating Admin User: Done]]');
