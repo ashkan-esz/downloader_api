@@ -203,6 +203,7 @@ services:
     image: postgres:16.0-alpine3.18
     env_file: ./.env
     network_mode: service:api
+#    network_mode: host
     container_name: downloader_postgres
     environment:
       - POSTGRES_USER=postgres

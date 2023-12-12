@@ -148,6 +148,9 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
 
         for (let i = 0; i < backupFiles.length; i++) {
             const modelName = backupFiles[i].Key.split('-')[1]; //backup-modelName-date.gz
+            if (autoStartOnServerUp) {
+                console.log(`====> [[Restoring PostgresDb Backup: ${modelName}]]`);
+            }
             updateCronJobsStatus('restoreBackupDb', modelName + ': downloading file');
             let encryptedData = await getDbBackupFile(backupFiles[i].Key); //buffer
 
@@ -179,6 +182,19 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
                         loopCounter++;
                         let insertData = data.splice(0, loopSize);
                         try {
+                            if (['staff', 'character', 'credit', 'user'].includes(modelName)) {
+                                if (modelName === 'user') {
+                                    insertData = insertData.map(d => {
+                                        delete d.userId;
+                                        return d;
+                                    });
+                                } else {
+                                    insertData = insertData.map(d => {
+                                        delete d.id;
+                                        return d;
+                                    });
+                                }
+                            }
                             await prisma[modelName].createMany({data: insertData, skipDuplicates: true});
                         } catch (error2) {
                             saveError(error2);
