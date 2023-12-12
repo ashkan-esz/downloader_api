@@ -53,10 +53,6 @@ export function stopCrawler_manual() {
 //--------------------------------------------------------
 //--------------------------------------------------------
 
-export function checkNeedForceStopCrawler() {
-    return checkForceStopCrawler();
-}
-
 export async function pauseCrawler() {
     while (Date.now() < manualPauseUntil) {
         if (checkForceStopCrawler()) {

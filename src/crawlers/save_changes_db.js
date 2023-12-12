@@ -12,11 +12,11 @@ import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
 import {getDatesBetween} from "./utils/utils.js";
 import {getFileSize} from "./utils/axiosUtils.js";
 import {
-    changePageLinkStateFromCrawlerStatus,
+    changePageLinkStateFromCrawlerStatus, checkForceStopCrawler,
     linkStateMessages,
     removePageLinkToCrawlerStatus
 } from "./status/crawlerStatus.js";
-import {checkNeedForceStopCrawler, pauseCrawler} from "./status/crawlerController.js";
+import {pauseCrawler} from "./status/crawlerController.js";
 import {saveError} from "../error/saveError.js";
 import PQueue from "p-queue";
 import {getLinksDoesntMatchLinkRegex} from "./extractors/downloadLinks.js";
@@ -53,13 +53,16 @@ export default async function save(title, type, year, sourceData, pageNumber) {
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
         await pauseCrawler();
+
+        if (checkForceStopCrawler()) {
+            return removePageLinkToCrawlerStatus(pageLink);
+        }
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
         await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.sourceName, sourceConfig.vpnStatus);
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
-        if (checkNeedForceStopCrawler()) {
-            removePageLinkToCrawlerStatus(pageLink);
-            return;
+        if (checkForceStopCrawler()) {
+            return removePageLinkToCrawlerStatus(pageLink);
         }
 
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
@@ -71,11 +74,13 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
                 await pauseCrawler();
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.newTitle);
-                if (checkNeedForceStopCrawler()) {
-                    removePageLinkToCrawlerStatus(pageLink);
-                    return;
+                if (checkForceStopCrawler()) {
+                    return removePageLinkToCrawlerStatus(pageLink);
                 }
                 let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName, pageLink);
+                if (checkForceStopCrawler()) {
+                    return removePageLinkToCrawlerStatus(pageLink);
+                }
                 if (result.titleModel.type.includes('movie')) {
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
                 }
@@ -86,8 +91,15 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
                         await handleAnimeRelatedTitles(insertedId, result.allApiData.jikanApiFields.jikanRelatedTitles);
                     }
+
+                    if (checkForceStopCrawler()) {
+                        return removePageLinkToCrawlerStatus(pageLink);
+                    }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
                     await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate);
+                    if (checkForceStopCrawler()) {
+                        return removePageLinkToCrawlerStatus(pageLink);
+                    }
                     await updateMovieByIdDB(insertedId, {
                         castUpdateDate: new Date(),
                     });
@@ -100,11 +112,13 @@ export default async function save(title, type, year, sourceData, pageNumber) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
         await pauseCrawler();
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updateTitle);
-        if (checkNeedForceStopCrawler()) {
-            removePageLinkToCrawlerStatus(pageLink);
-            return;
+        if (checkForceStopCrawler()) {
+            return removePageLinkToCrawlerStatus(pageLink);
         }
         let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink);
+        if (checkForceStopCrawler()) {
+            return removePageLinkToCrawlerStatus(pageLink);
+        }
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.sourceName, sourceConfig.vpnStatus);
         await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink);
         removePageLinkToCrawlerStatus(pageLink);
@@ -328,11 +342,17 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.update_date = new Date();
         }
 
+        if (checkForceStopCrawler()) {
+            return;
+        }
         let {_handleCastUpdate} = await import("./crawler.js");
         if (apiData && _handleCastUpdate) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingCast);
             await addStaffAndCharacters(db_data._id, apiData.allApiData, db_data.castUpdateDate);
             updateFields.castUpdateDate = new Date();
+        }
+        if (checkForceStopCrawler()) {
+            return;
         }
 
         if (db_data.trailer_s3 && db_data.trailers.length > 0) {

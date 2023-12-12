@@ -9,7 +9,7 @@ import {removeDuplicateElements, replaceSpecialCharacters, getDatesBetween} from
 import {getFileSize} from "../utils/axiosUtils.js";
 import {getImageThumbnail} from "../../utils/sharpImageMethods.js";
 import {
-    changePageLinkStateFromCrawlerStatus,
+    changePageLinkStateFromCrawlerStatus, checkForceStopCrawler,
     linkStateMessages,
     partialChangePageLinkStateFromCrawlerStatus
 } from "../status/crawlerStatus.js";
@@ -52,6 +52,9 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsu);
     let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
@@ -97,12 +100,18 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         titleModel.type = 'anime_' + titleModel.type;
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (titleModel.type.includes('serial')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.handlingSeasonFields);
         let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (titleModel.type.includes('anime')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingJikan);
         let jikanApiData = await getJikanApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.jikanID);
@@ -132,6 +141,10 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (kitsuApiData !== null) {
         kitsuApiFields = getKitsuApiFields(kitsuApiData);
         if (kitsuApiFields) {
@@ -218,6 +231,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsu);
     let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
@@ -266,12 +282,18 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         updateFields.type = db_data.type;
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (db_data.type.includes('serial')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.handlingSeasonFields);
         let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (db_data.type.includes('anime') || siteType.includes('anime')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingJikan);
         let jikanApiData = await getJikanApiData(db_data.title, db_data.year, db_data.type, db_data.jikanID);
@@ -303,6 +325,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
     if (kitsuApiData !== null) {
         kitsuApiFields = getKitsuApiFields(kitsuApiData);
         if (kitsuApiFields) {

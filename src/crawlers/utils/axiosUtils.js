@@ -50,14 +50,16 @@ export async function downloadImage(url, retryCounter = 0) {
         if (error.response?.statusText === "Forbidden") {
             return null;
         }
-        if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
+        if ((error.response?.status === 404 || error.code === 'ERR_UNESCAPED_CHARACTERS' || error.message === 'socket hang up' || error.code === 'EAI_AGAIN') &&
             decodeURIComponent(url) === url && retryCounter < 1) {
             retryCounter++;
             let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await downloadImage(url, retryCounter);
         }
-        saveErrorIfNeeded(error);
+        if (error.code !== 'EAI_AGAIN') {
+            saveErrorIfNeeded(error);
+        }
         return null;
     }
 }

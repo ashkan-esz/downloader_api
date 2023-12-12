@@ -7,12 +7,11 @@ import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {
-    changeDomainChangeHandlerState, linkStateMessages,
+    changeDomainChangeHandlerState, checkForceStopCrawler, linkStateMessages,
     updateCrawlerStatus_domainChangeHandlerCrashed,
     updateCrawlerStatus_domainChangeHandlerEnd,
     updateCrawlerStatus_domainChangeHandlerStart
 } from "./status/crawlerStatus.js";
-import {checkNeedForceStopCrawler} from "./status/crawlerController.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
@@ -53,7 +52,7 @@ async function checkSourcesUrl(sourcesUrls) {
             let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
             changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls + ` || ${sourcesUrls[i].sourceName} || ${homePageLink}`);
             try {
-                if (checkNeedForceStopCrawler()) {
+                if (checkForceStopCrawler()) {
                     return [];
                 }
                 let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName);

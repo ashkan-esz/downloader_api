@@ -14,12 +14,12 @@ import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 import {
     addPageLinkToCrawlerStatus,
     changePageLinkStateFromCrawlerStatus,
-    changeSourcePageFromCrawlerStatus,
+    changeSourcePageFromCrawlerStatus, checkForceStopCrawler,
     linkStateMessages,
     removePageLinkToCrawlerStatus,
     updatePageNumberCrawlerStatus
 } from "./status/crawlerStatus.js";
-import {checkNeedForceStopCrawler, checkServerIsIdle, pauseCrawler} from "./status/crawlerController.js";
+import {checkServerIsIdle, pauseCrawler} from "./status/crawlerController.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 
@@ -59,7 +59,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; (pageCount === null || i <= pageCount); i++) {
-            if (checkNeedForceStopCrawler()) {
+            if (checkForceStopCrawler()) {
                 break;
             }
             await pauseCrawler();
@@ -86,7 +86,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
                     break;
                 }
                 for (let j = 0, _length = links.length; j < _length; j++) {
-                    if (checkNeedForceStopCrawler()) {
+                    if (checkForceStopCrawler()) {
                         break;
                     }
                     await pauseCrawler();
@@ -114,7 +114,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
         if (!sourceLinkData) {
             addPageLinkToCrawlerStatus(page_link, pageNumber);
         }
-        if (checkNeedForceStopCrawler()) {
+        if (checkForceStopCrawler()) {
             removePageLinkToCrawlerStatus(page_link);
             return null;
         }
@@ -125,7 +125,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
             cookies,
             pageContent,
         } = await getLinks(page_link, sourceConfig, 'movieDataPage', sourceLinkData);
-        if ($ === null || $ === undefined || checkNeedForceStopCrawler()) {
+        if ($ === null || $ === undefined || checkForceStopCrawler()) {
             removePageLinkToCrawlerStatus(page_link);
             return null;
         }
@@ -232,7 +232,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
         let $, links = [];
 
         try {
-            if (checkNeedForceStopCrawler()) {
+            if (checkForceStopCrawler()) {
                 return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
             }
             await pauseCrawler();
@@ -328,6 +328,15 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 } else if (error.message === 'timeout of 15000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('15s', sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                } else if (error.message === 'aborted') {
+                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    await saveCrawlerWarning(warningMessages.axiosAbortError);
+                } else if (error.code === 'EAI_AGAIN') {
+                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    await saveCrawlerWarning(warningMessages.axiosEaiError);
+                } else if (error.message === 'Request failed with status code 403') {
+                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    await saveCrawlerWarning(warningMessages.sourceErrors.axios403);
                 } else {
                     await saveErrorIfNeeded(error);
                 }
