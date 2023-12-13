@@ -30,13 +30,11 @@ import {setRedis} from "../data/redis.js";
 import config from "../config/index.js";
 
 
-export async function startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate) {
-    let result = await crawler(sourceName, {
-        crawlMode: mode,
+export async function startCrawler(crawlerOptions) {
+    let result = await crawler(crawlerOptions.sourceName, {
+        ...crawlerOptions,
+        crawlMode: crawlerOptions.mode,
         isManualStart: true,
-        handleDomainChange,
-        handleCastUpdate,
-        handleDomainChangeOnly,
     });
     if (result.isError) {
         return generateServiceResult({data: result}, 500, result.message);
@@ -200,7 +198,7 @@ export async function editSource(sourceName, movie_url, serial_url, crawlCycle, 
             crawlMode: 2,
             isManualStart: true,
             handleDomainChange: false,
-            handleCastUpdate: false,
+            castUpdateState: 'ignore',
         });
     }
 
@@ -333,7 +331,7 @@ export async function addNewAppVersion(appData, appFileData, userData) {
 
         //https://download-app.s3.com/ttt-ttt%401.0.0.apk
         //s3.com/download-app/ttt-ttt@1.0.0.apk
-        if (appFileData.location.includes('/' + bucketNamesObject.downloadApp + '/')){
+        if (appFileData.location.includes('/' + bucketNamesObject.downloadApp + '/')) {
             appFileData.location = `https://${bucketNamesObject.downloadApp}.${bucketsEndpointSuffix}/${appFileData.location.split('/').pop()}`;
         }
         let response = await getArrayBufferResponse(appFileData.location);

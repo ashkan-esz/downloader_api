@@ -9,10 +9,14 @@ import {saveError} from "../../../error/saveError.js";
 const _maxStaffOrCharacterSize = 150;
 
 
-export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate) {
+export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate, extraConfigs = null) {
     try {
         movieId = movieId.toString();
-        if (utils.getDatesBetween(new Date(), new Date(castUpdateDate)).days < 30) {
+        //castUpdateState is none|ignore|force
+        if (extraConfigs?.castUpdateState === 'ignore') {
+            return null;
+        }
+        if (utils.getDatesBetween(new Date(), new Date(castUpdateDate)).days < 30 && extraConfigs?.castUpdateState !== 'force') {
             return null;
         }
 

@@ -28,7 +28,7 @@ export let blackListSources = [];
 
 let errorsAndTimes = [];
 
-export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useAxiosFirst = false, cookieOnly = false, prevUsedBrowsers = []) {
+export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatus = 'ok', useAxiosFirst = false, cookieOnly = false, prevUsedBrowsers = []) {
     let decodedUrl = getDecodedLink(url);
     if (decodedUrl === url) {
         url = encodeURIComponent(url);
@@ -101,10 +101,10 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         let data = response.data;
         if (!data || !data.pageContent || data.error) {
-            addSourceErrorToBrowserServer(selectedBrowser, sourceName);
+            addSourceErrorToBrowserServer(selectedBrowser, sourceName, extraConfigs);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
             await new Promise(resolve => setTimeout(resolve, 2000));
-            return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
+            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         } else {
             resetSourceErrorOfBrowserServer(selectedBrowser, sourceName);
         }
@@ -121,20 +121,20 @@ export async function getPageData(url, sourceName, sourceAuthStatus = 'ok', useA
 
         return data;
     } catch (error) {
-        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName);
+        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName, extraConfigs);
         if (selectedBrowser) {
             selectedBrowser.apiCallCount--;
             selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
         }
         if (handleErrorResult === "retry") {
             await new Promise(resolve => setTimeout(resolve, 3000));
-            return await getPageData(url, sourceName, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
+            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         }
         return null;
     }
 }
 
-export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) {
+export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = [], extraConfigs = null) {
     let decodedUrl = getDecodedLink(youtubeUrl);
     if (decodedUrl === youtubeUrl) {
         youtubeUrl = encodeURIComponent(youtubeUrl);
@@ -185,19 +185,19 @@ export async function getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers = []) 
         if (!data || data.error) {
             prevUsedBrowsers.push(selectedBrowser.endpoint);
             await new Promise(resolve => setTimeout(resolve, 2000));
-            return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers);
+            return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers, extraConfigs);
         }
         //{downloadUrl, youtubeUrl}
         return data.res;
     } catch (error) {
-        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, youtubeUrl, prevUsedBrowsers, "");
+        let handleErrorResult = await handleBrowserCallErrors(error, selectedBrowser, youtubeUrl, prevUsedBrowsers, "", extraConfigs);
         if (selectedBrowser) {
             selectedBrowser.apiCallCount--;
             selectedBrowser.urls = selectedBrowser.urls.filter(item => item.url !== decodedUrl);
         }
         if (handleErrorResult === "retry") {
             await new Promise(resolve => setTimeout(resolve, 3000));
-            return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers);
+            return await getYoutubeDownloadLink(youtubeUrl, prevUsedBrowsers, extraConfigs);
         }
         return null;
     }
@@ -275,7 +275,7 @@ export async function checkSourceOnAllRemoteBrowsers(sourceName, url) {
     }
 }
 
-async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName) {
+async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrowsers, sourceName, extraConfigs) {
     if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
         error.isAxiosError2 = true;
         error.isAxiosError = true;
@@ -284,7 +284,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
     }
     if (selectedBrowser && (error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
         if (sourceName) {
-            addSourceErrorToBrowserServer(selectedBrowser, sourceName);
+            addSourceErrorToBrowserServer(selectedBrowser, sourceName, extraConfigs);
         }
         await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
         prevUsedBrowsers.push(selectedBrowser.endpoint);
@@ -296,7 +296,7 @@ async function handleBrowserCallErrors(error, selectedBrowser, url, prevUsedBrow
                 timeout: 40 * 1000, //40s timeout
             });
             if (sourceName) {
-                addSourceErrorToBrowserServer(selectedBrowser, sourceName);
+                addSourceErrorToBrowserServer(selectedBrowser, sourceName, extraConfigs);
             }
             await checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, prevUsedBrowsers);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
@@ -461,13 +461,14 @@ function checkAnyBrowserServerCanHandleSource(sourceName) {
     return false;
 }
 
-function addSourceErrorToBrowserServer(selectedBrowser, sourceName) {
+function addSourceErrorToBrowserServer(selectedBrowser, sourceName, extraConfigs) {
     let sourceData = selectedBrowser.sourcesData.find(item => item.sourceName === sourceName);
     if (sourceData) {
         sourceData.errorCounter++;
         sourceData.totalErrorCounter++;
         sourceData.lastErrorTime = Date.now();
-        if (sourceData.errorCounter >= 15) {
+        const errorBlockCount = Number(extraConfigs?.remoteBrowserBlockThreshHold || 15);
+        if (sourceData.errorCounter >= errorBlockCount) {
             sourceData.isBlocked = true;
         }
     } else {

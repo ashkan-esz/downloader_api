@@ -16,9 +16,6 @@ import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {checkAndHandleSourceChange} from "./status/crawlerChange.js";
 
 
-export let _handleCastUpdate = true;
-
-
 export async function crawlerCycle() {
     try {
         while (checkIsCrawling()) {
@@ -82,11 +79,26 @@ export async function crawler(sourceName, {
     isManualStart = false,
     handleDomainChangeOnly = false,
     handleDomainChange = true,
-    handleCastUpdate = true
-} = {}) {
+    crawlerConcurrency = 0,
+    dontUseRemoteBrowser = false,
+    axiosBlockThreshHold = 0,
+    remoteBrowserBlockThreshHold = 0,
+    castUpdateState = 'none',
+    apiUpdateState = 'none',
+    trailerUploadState = 'none',
+}) {
+
+    let extraConfigs = {
+        crawlerConcurrency,
+        dontUseRemoteBrowser,
+        axiosBlockThreshHold,
+        remoteBrowserBlockThreshHold,
+        castUpdateState,
+        apiUpdateState,
+        trailerUploadState,
+    }
 
     try {
-        _handleCastUpdate = handleCastUpdate;
         if (checkIsCrawling()) {
             return {
                 isError: true,
@@ -108,7 +120,7 @@ export async function crawler(sourceName, {
         }
 
         const sourcesNames = Object.keys(sourcesObj);
-        let sourcesArray = getSourcesArray(sourcesObj, crawlMode);
+        let sourcesArray = getSourcesArray(sourcesObj, crawlMode, extraConfigs);
         sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
         let fullyCrawledSources = [];
 
@@ -173,7 +185,7 @@ export async function crawler(sourceName, {
 
         let domainChangeDuration = 0;
         if (handleDomainChangeOnly || handleDomainChange) {
-            domainChangeDuration = await domainChangeHandler(sourcesObj, fullyCrawledSources);
+            domainChangeDuration = await domainChangeHandler(sourcesObj, fullyCrawledSources, extraConfigs);
         }
 
         const endTime = new Date();

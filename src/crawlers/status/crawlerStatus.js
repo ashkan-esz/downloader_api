@@ -73,6 +73,7 @@ const crawlerStatus = {
         default: [], //sourceName, errorCounter, lastErrorTime, isBlocked, totalErrorCounter
         remoteBrowsers: [], //sourceName, lastErrorTime, isBlocked, linksCount
     },
+    extraConfigs: {},
 };
 
 const crawlerLog = () => ({
@@ -192,10 +193,11 @@ export const linkStateMessages = Object.freeze({
     }),
 });
 
-export function updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber) {
+export function updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber, extraConfigs) {
     crawlerStatus.pageNumber = pageNumber;
     crawlerStatus.pageCount = pageCount;
     crawlerStatus.constValues.concurrencyNumber = concurrencyNumber;
+    crawlerStatus.extraConfigs = extraConfigs;
 }
 
 export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
@@ -373,6 +375,7 @@ export async function updateCrawlerStatus_crawlerEnd(endTime, crawlDuration) {
     await saveCrawlerLog(crawlerLog());
     crawlerStatus.isCrawlCycle = false;
     crawlerStatus.isManualStart = false;
+    crawlerStatus.extraConfigs = {};
 }
 
 export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
@@ -386,6 +389,7 @@ export async function updateCrawlerStatus_crawlerCrashed(errorMessage) {
     await saveCrawlerLog(crawlerLog());
     crawlerStatus.isCrawlCycle = false;
     crawlerStatus.isManualStart = false;
+    crawlerStatus.extraConfigs = {};
 }
 
 //-----------------------------------------

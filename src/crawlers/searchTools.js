@@ -50,13 +50,13 @@ axiosRetry(axios, {
 
 export const axiosBlackListSources = [];
 
-export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
+export async function wrapper_module(sourceConfig, url, pageCount, searchCB, extraConfigs) {
     let lastPageNumber = 0;
     try {
         if (!url || pageCount === 0) {
             return lastPageNumber;
         }
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser);
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; (pageCount === null || i <= pageCount); i++) {
             if (checkForceStopCrawler()) {
@@ -71,9 +71,9 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage');
+                } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage', extraConfigs);
                 changeSourcePageFromCrawlerStatus(url + `${i}`, linkStateMessages.sourcePage.fetchingEnd);
-                updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber);
+                updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber, extraConfigs);
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
                     if (i !== 2 || pageCount !== 1) {
@@ -91,7 +91,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
                     }
                     await pauseCrawler();
                     await promiseQueue.onSizeLessThan(50);
-                    promiseQueue.add(() => searchCB($(links[j]), i, $, url));
+                    promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs));
                 }
             } catch (error) {
                 saveError(error);
@@ -107,7 +107,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB) {
     }
 }
 
-export async function search_in_title_page(sourceConfig, title, type, page_link, pageNumber, getFileData,
+export async function search_in_title_page(sourceConfig, extraConfigs, title, type, page_link, pageNumber, getFileData,
                                            getQualitySample = null, extraChecker = null, getSeasonEpisodeFromInfo = false,
                                            extraSearchMatch = null, extraSearch_getFileData = null, sourceLinkData = null) {
     try {
@@ -124,7 +124,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
             links,
             cookies,
             pageContent,
-        } = await getLinks(page_link, sourceConfig, 'movieDataPage', sourceLinkData);
+        } = await getLinks(page_link, sourceConfig, 'movieDataPage', extraConfigs, sourceLinkData);
         if ($ === null || $ === undefined || checkForceStopCrawler()) {
             removePageLinkToCrawlerStatus(page_link);
             return null;
@@ -178,7 +178,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
                 extraSearchLinks.push(link);
 
                 let newPageLink = sourceLinkData ? (page_link + link) : link;
-                let resultPromise = search_in_title_page(sourceConfig, title, type, newPageLink, pageNumber, extraSearch_getFileData,
+                let resultPromise = search_in_title_page(sourceConfig, extraConfigs, title, type, newPageLink, pageNumber, extraSearch_getFileData,
                     getQualitySample, extraChecker, false,
                     extraSearchMatch, extraSearch_getFileData, {
                         $,
@@ -217,7 +217,7 @@ export async function search_in_title_page(sourceConfig, title, type, page_link,
     }
 }
 
-async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retryCounter = 0) {
+async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData = null, retryCounter = 0) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -237,9 +237,9 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
             }
             await pauseCrawler();
             let pageData = null;
-            if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+            if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                 saveLinksStatus(pageLink, pageType, 'fetchingStart');
-                pageData = await getPageData(url, sourceConfig.sourceName, sourceConfig.sourceAuthStatus, true);
+                pageData = await getPageData(url, sourceConfig.sourceName, extraConfigs, sourceConfig.sourceAuthStatus, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -257,13 +257,13 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     links = [];
                 } else {
                     if (pageType === 'sourcePage') {
-                        if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                        if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryAxiosCookie);
                         } else {
                             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart_axios);
                         }
                     } else {
-                        if (sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                        if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryAxiosCookie);
                         } else {
                             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData_axios);
@@ -284,7 +284,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                         links = $('a');
                     }
                     if (links.length < 5 && !sourceLinkData) {
-                        addSourceToAxiosBlackList(sourceConfig.sourceName);
+                        addSourceToAxiosBlackList(sourceConfig.sourceName, extraConfigs);
                     }
                 }
             }
@@ -298,7 +298,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
                 retryCounter++;
                 saveLinksStatus(pageLink, pageType, 'retryOnNotFound');
-                return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
+                return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
             }
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 if (decodeURIComponent(url) === url) {
@@ -306,7 +306,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                     if (temp) {
                         url = url.replace(temp, encodeURIComponent(temp));
                         saveLinksStatus(pageLink, pageType, 'retryUnEscapedCharacters');
-                        return await getLinks(url, sourceConfig, pageType, sourceLinkData, retryCounter);
+                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 }
                 error.isAxiosError = true;
@@ -315,7 +315,7 @@ async function getLinks(url, sourceConfig, pageType, sourceLinkData = null, retr
                 await saveErrorIfNeeded(error);
             } else {
                 if (!sourceLinkData) {
-                    addSourceToAxiosBlackList(sourceConfig.sourceName);
+                    addSourceToAxiosBlackList(sourceConfig.sourceName, extraConfigs);
                 }
                 saveLinksStatus(pageLink, pageType, 'fromCache');
                 let cacheResult = await getFromGoogleCache(url);
@@ -393,9 +393,11 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
     }
 }
 
-async function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
+async function getConcurrencyNumber(sourceName, needHeadlessBrowser, extraConfigs) {
     let concurrencyNumber = 0;
-    if (config.crawler.concurrency) {
+    if (extraConfigs?.crawlerConcurrency) {
+        concurrencyNumber = Number(extraConfigs?.crawlerConcurrency);
+    } else if (config.crawler.concurrency) {
         concurrencyNumber = Number(config.crawler.concurrency);
     }
     if (concurrencyNumber === 0) {
@@ -411,7 +413,7 @@ async function getConcurrencyNumber(sourceName, needHeadlessBrowser) {
 //---------------------------------------------
 //---------------------------------------------
 
-function addSourceToAxiosBlackList(sourceName) {
+function addSourceToAxiosBlackList(sourceName, extraConfigs) {
     let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceName);
     if (sourceData) {
         if (Date.now() - sourceData.lastErrorTime > 5 * 60 * 1000) {
@@ -424,7 +426,8 @@ function addSourceToAxiosBlackList(sourceName) {
             sourceData.totalErrorCounter++;
         }
         sourceData.lastErrorTime = Date.now();
-        if (sourceData.errorCounter >= 15) {
+        const errorBlockCount = Number(extraConfigs?.axiosBlockThreshHold || 15);
+        if (sourceData.errorCounter >= errorBlockCount) {
             sourceData.isBlocked = true;
         }
     } else {

@@ -29,12 +29,12 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function golchindl({movie_url}, pageCount) {
-    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
+export default async function golchindl({movie_url}, pageCount, extraConfigs) {
+    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
     return [p1];
 }
 
-async function search_title(link, pageNumber, $) {
+async function search_title(link, pageNumber, $, url, extraConfigs) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود') && link.parent()[0].name === 'h2') {
@@ -62,7 +62,7 @@ async function search_title(link, pageNumber, $) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                     null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (pageSearchResult) {
@@ -71,7 +71,7 @@ async function search_title(link, pageNumber, $) {
                     if (type.includes('serial') && downloadLinks.length > 0 &&
                         downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
@@ -81,7 +81,7 @@ async function search_title(link, pageNumber, $) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                             null, null, false,
                             extraSearchMatch, extraSearch_getFileData);
                         if (!pageSearchResult) {
@@ -109,7 +109,7 @@ async function search_title(link, pageNumber, $) {
                         subtitles: [],
                         cookies
                     };
-                    await save(title, type, year, sourceData, pageNumber);
+                    await save(title, type, year, sourceData, pageNumber, extraConfigs);
                 }
             }
         }
@@ -118,13 +118,13 @@ async function search_title(link, pageNumber, $) {
     }
 }
 
-export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, isCollection = false, isCeremony = false) {
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, extraConfigs, isCollection = false, isCeremony = false) {
     try {
         title = title.toLowerCase();
         let year;
         ({title, year} = getTitleAndYear(title, year, type));
 
-        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
             null, null, false,
             extraSearchMatch, extraSearch_getFileData);
         if (pageSearchResult) {
@@ -133,7 +133,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, i
             if (type.includes('serial') && downloadLinks.length > 0 &&
                 downloadLinks[0].link.replace(/\.(mkv|mp4)|\.HardSub|\.x264|:/gi, '') === downloadLinks[0].info.replace(/\.HardSub|\.x264/gi, '')) {
                 type = type.replace('serial', 'movie');
-                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                     null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (!pageSearchResult) {
@@ -143,7 +143,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, i
             }
             if (type.includes('movie') && downloadLinks.length > 0 && downloadLinks[0].link.match(/s\d+e\d+/gi)) {
                 type = type.replace('movie', 'serial');
-                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                     null, null, false,
                     extraSearchMatch, extraSearch_getFileData);
                 if (!pageSearchResult) {
@@ -171,7 +171,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, i
                 subtitles: [],
                 cookies
             };
-            await save(title, type, year, sourceData, pageNumber);
+            await save(title, type, year, sourceData, pageNumber, extraConfigs);
             return downloadLinks.length;
         }
         return 0;

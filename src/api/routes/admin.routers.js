@@ -25,7 +25,9 @@ router.put('/getToken',
 router.put('/crawler/start',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParamsAdmin.checkApiParams(
-        ['sourceName_query', 'crawlerMode', 'handleDomainChange', 'handleDomainChangeOnly', 'handleCastUpdate']),
+        ['sourceName_query', 'crawlerMode', 'handleDomainChange', 'handleDomainChangeOnly',
+            'crawlerConcurrency', 'dontUseRemoteBrowser', 'axiosBlockThreshHold', 'remoteBrowserBlockThreshHold',
+            'castUpdateState', 'apiUpdateState', 'trailerUploadState']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']), adminControllers.startCrawler);
 

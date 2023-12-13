@@ -16,32 +16,32 @@ export function getSourcesMethods() {
     });
 }
 
-export function getSourcesArray(sourcesObj, crawlMode) {
+export function getSourcesArray(sourcesObj, crawlMode, extraConfigs) {
     const pageCount = crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : null;
 
     return [
         {
             name: 'digimoviez',
             starter: () => {
-                return digimoviez.default(sourcesObj.digimoviez, pageCount);
+                return digimoviez.default(sourcesObj.digimoviez, pageCount, extraConfigs);
             },
         },
         {
             name: 'film2movie',
             starter: () => {
-                return film2movie.default(sourcesObj.film2movie, pageCount);
+                return film2movie.default(sourcesObj.film2movie, pageCount, extraConfigs);
             }
         },
         {
             name: 'avamovie',
             starter: () => {
-                return avamovie.default(sourcesObj.avamovie, pageCount);
+                return avamovie.default(sourcesObj.avamovie, pageCount, extraConfigs);
             }
         },
         {
             name: 'anime20',
             starter: () => {
-                return anime20.default(sourcesObj.anime20, pageCount);
+                return anime20.default(sourcesObj.anime20, pageCount, extraConfigs);
             }
         },
     ];

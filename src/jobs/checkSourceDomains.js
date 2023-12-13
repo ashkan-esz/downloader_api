@@ -20,7 +20,7 @@ export default function (agenda) {
 }
 
 
-export async function checkCrawlerDomainsJobFunc() {
+export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
     try {
         updateCronJobsStatus('checkCrawlerDomains', 'start');
         let result = await crawlerMethodsDB.getSourcesObjDB();
@@ -58,7 +58,7 @@ export async function checkCrawlerDomainsJobFunc() {
         let needToCrawl = false;
         let promiseArray = [];
         for (let i = 0; i < sources.length; i++) {
-            let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url).then(async checkUrlResult => {
+            let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url, extraConfigs).then(async checkUrlResult => {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                 if (checkUrlResult === "error") {
                     await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
@@ -78,7 +78,7 @@ export async function checkCrawlerDomainsJobFunc() {
                             crawlMode: 2,
                             handleDomainChangeOnly: false,
                             handleDomainChange: false,
-                            handleCastUpdate: true,
+                            castUpdateState: 'none',
                         });
                     }
                 } else if (checkUrlResult !== "ok") {
@@ -94,7 +94,7 @@ export async function checkCrawlerDomainsJobFunc() {
             await crawler('', {
                 handleDomainChangeOnly: true,
                 handleDomainChange: true,
-                handleCastUpdate: false,
+                castUpdateState: 'ignore',
             });
         }
         updateCronJobsStatus('checkCrawlerDomains', 'end');

@@ -26,7 +26,7 @@ import {handleLatestDataUpdate} from "./latestData.js";
 import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
 
 
-export default async function save(title, type, year, sourceData, pageNumber) {
+export default async function save(title, type, year, sourceData, pageNumber, extraConfigs) {
     try {
         let {
             sourceConfig,
@@ -77,7 +77,7 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
-                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName, pageLink);
+                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName, pageLink, extraConfigs);
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
@@ -96,13 +96,15 @@ export default async function save(title, type, year, sourceData, pageNumber) {
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
-                    await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate);
+                    await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate, extraConfigs);
                     if (checkForceStopCrawler()) {
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
-                    await updateMovieByIdDB(insertedId, {
-                        castUpdateDate: new Date(),
-                    });
+                    if (extraConfigs?.castUpdateState !== 'ignore') {
+                        await updateMovieByIdDB(insertedId, {
+                            castUpdateDate: new Date(),
+                        });
+                    }
                 }
             }
             removePageLinkToCrawlerStatus(pageLink);
@@ -115,12 +117,12 @@ export default async function save(title, type, year, sourceData, pageNumber) {
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink);
+        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink, extraConfigs);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.sourceName, sourceConfig.vpnStatus);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink);
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);
@@ -257,7 +259,7 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, subtitles, type, apiData, pageLink) {
+async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, subtitles, type, apiData, pageLink, extraConfigs) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
@@ -338,18 +340,25 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
                 updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
             }
         }
-        if (latestDataUpdate && PrimaryLatestDataUpdate && getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
-            updateFields.update_date = new Date();
+        if (latestDataUpdate && PrimaryLatestDataUpdate) {
+            if (db_data.type.includes('serial')) {
+                if (db_data.latestData.updateReason !== 'quality' || getDatesBetween(new Date(), db_data.update_date).days < 90) {
+                    updateFields.update_date = new Date();
+                }
+            } else if (getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
+                updateFields.update_date = new Date();
+            }
         }
 
         if (checkForceStopCrawler()) {
             return;
         }
-        let {_handleCastUpdate} = await import("./crawler.js");
-        if (apiData && _handleCastUpdate) {
+        if (apiData) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingCast);
-            await addStaffAndCharacters(db_data._id, apiData.allApiData, db_data.castUpdateDate);
-            updateFields.castUpdateDate = new Date();
+            await addStaffAndCharacters(db_data._id, apiData.allApiData, db_data.castUpdateDate, extraConfigs);
+            if (extraConfigs?.castUpdateState !== 'ignore') {
+                updateFields.castUpdateDate = new Date();
+            }
         }
         if (checkForceStopCrawler()) {
             return;

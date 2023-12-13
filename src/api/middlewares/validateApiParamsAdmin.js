@@ -138,13 +138,61 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter handleDomainChangeOnly :: (true|false)')
         .toBoolean(),
 
-    handleCastUpdate: query('handleCastUpdate')
+    crawlerConcurrency: query('crawlerConcurrency')
+        .trim()
+        .customSanitizer(value => {
+            return value || 0
+        })
+        .isInt().withMessage('Invalid parameter crawlerConcurrency :: Number')
+        .toInt(),
+
+    dontUseRemoteBrowser: query('dontUseRemoteBrowser')
         .trim()
         .customSanitizer(value => {
             return value || false
         })
-        .isBoolean().withMessage('Invalid parameter handleCastUpdate :: (true|false)')
+        .isBoolean().withMessage('Invalid parameter dontUseRemoteBrowser :: (true|false)')
         .toBoolean(),
+
+    axiosBlockThreshHold: query('axiosBlockThreshHold')
+        .trim()
+        .customSanitizer(value => {
+            return value || 0
+        })
+        .isInt().withMessage('Invalid parameter axiosBlockThreshHold :: Number')
+        .toInt(),
+
+    remoteBrowserBlockThreshHold: query('remoteBrowserBlockThreshHold')
+        .trim()
+        .customSanitizer(value => {
+            return value || 0
+        })
+        .isInt().withMessage('Invalid parameter remoteBrowserBlockThreshHold :: Number')
+        .toInt(),
+
+    castUpdateState: query('castUpdateState')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'none'
+        })
+        .isIn(['none', 'ignore', 'force']).withMessage('Invalid parameter castUpdateState :: (none|ignore|force)')
+        .toLowerCase(),
+
+    apiUpdateState: query('apiUpdateState')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'none'
+        })
+        .isIn(['none', 'ignore', 'force']).withMessage('Invalid parameter apiUpdateState :: (none|ignore|force)')
+        .toLowerCase(),
+
+    trailerUploadState: query('trailerUploadState')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'none'
+        })
+        .isIn(['none', 'ignore', 'force']).withMessage('Invalid parameter trailerUploadState :: (none|ignore|force)')
+        .toLowerCase(),
 
     all: query('all')
         .trim()

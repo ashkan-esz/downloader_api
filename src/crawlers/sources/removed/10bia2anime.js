@@ -28,12 +28,12 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function bia2anime({movie_url}, pageCount) {
-    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
+export default async function bia2anime({movie_url}, pageCount, extraConfigs) {
+    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
     return [p1];
 }
 
-async function search_title(link, pageNumber) {
+async function search_title(link, pageNumber, $, url, extraConfigs) {
     try {
         let text = link.text();
         if (text && text.includes('دانلود') && link.parent().hasClass('postsFooter')) {
@@ -59,7 +59,7 @@ async function search_title(link, pageNumber) {
             }
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -67,7 +67,7 @@ async function search_title(link, pageNumber) {
                     }
                     if (type.includes('serial') && downloadLinks.length === 0) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -90,7 +90,7 @@ async function search_title(link, pageNumber) {
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         cookies
                     };
-                    await save(title, type, year, sourceData, pageNumber);
+                    await save(title, type, year, sourceData, pageNumber, extraConfigs);
                 }
             }
         }
@@ -99,13 +99,13 @@ async function search_title(link, pageNumber) {
     }
 }
 
-export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, extraConfigs) {
     try {
         title = title.toLowerCase();
         let year;
         ({title, year} = getTitleAndYear(title, year, type));
 
-        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
         if (pageSearchResult) {
             let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
             if (!year) {
@@ -113,7 +113,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
             }
             if (type.includes('serial') && downloadLinks.length === 0) {
                 type = type.replace('serial', 'movie');
-                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (!pageSearchResult) {
                     return;
                 }
@@ -136,7 +136,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
                 subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                 cookies
             };
-            await save(title, type, year, sourceData, pageNumber);
+            await save(title, type, year, sourceData, pageNumber, extraConfigs);
             return downloadLinks.length;
         }
         return 0;

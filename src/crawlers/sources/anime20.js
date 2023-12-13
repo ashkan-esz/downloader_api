@@ -19,12 +19,12 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function anime20({movie_url}, pageCount) {
-    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
+export default async function anime20({movie_url}, pageCount, extraConfigs) {
+    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
     return [p1];
 }
 
-async function search_title(link, pageNumber, $, url) {
+async function search_title(link, pageNumber, $, url, extraConfigs) {
     try {
         let title = link.text();
         if (title && link.parent()[0].name === 'div' && link.parent().hasClass('post_small_title')) {
@@ -40,12 +40,12 @@ async function search_title(link, pageNumber, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
                         type = type.replace('serial', 'movie');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -66,7 +66,7 @@ async function search_title(link, pageNumber, $, url) {
                         cookies
                     };
 
-                    await save(title, type, year, sourceData, pageNumber);
+                    await save(title, type, year, sourceData, pageNumber, extraConfigs);
                 }
             }
         }
@@ -75,18 +75,18 @@ async function search_title(link, pageNumber, $, url) {
     }
 }
 
-export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, extraConfigs) {
     try {
         title = title.toLowerCase();
         let year;
         ({title, year} = getTitleAndYear(title, year, type));
 
-        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
         if (pageSearchResult) {
             let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
             if (type.includes('serial') && downloadLinks.length > 0 && downloadLinks.every(item => item.season === 1 && item.episode === 0)) {
                 type = type.replace('serial', 'movie');
-                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData);
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (!pageSearchResult) {
                     return;
                 }
@@ -106,7 +106,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
                 subtitles: [],
                 cookies
             };
-            await save(title, type, year, sourceData, pageNumber);
+            await save(title, type, year, sourceData, pageNumber, extraConfigs);
             return downloadLinks.length;
         }
         return 0;

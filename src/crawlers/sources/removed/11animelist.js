@@ -19,12 +19,12 @@ const sourceName = "animelist";
 const needHeadlessBrowser = true;
 const sourceAuthStatus = 'ok';
 
-export default async function animelist({movie_url, serial_url}, pageCount) {
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, pageCount, search_title);
-    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, pageCount, search_title);
+export default async function animelist({movie_url, serial_url}, pageCount, extraConfigs) {
+    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, serial_url, pageCount, search_title, extraConfigs);
+    await wrapper_module(sourceName, needHeadlessBrowser, sourceAuthStatus, movie_url, pageCount, search_title, extraConfigs);
 }
 
-async function search_title(link, i, $, url) {
+async function search_title(link, i, $, url, extraConfigs) {
     try {
         let title = link.attr('title');
         if (title && title.includes('دانلود انیمه')) {
@@ -44,7 +44,7 @@ async function search_title(link, i, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '' && !isEmpty) {
-                let pageSearchResult = await search_in_title_page(sourceName, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
+                let pageSearchResult = await search_in_title_page(sourceName, extraConfigs, needHeadlessBrowser, sourceAuthStatus, title, pageLink, type,
                     getFileData, null, extraChecker, false,
                     extraSearchMatch, extraSearch_getFileData);
 
@@ -69,7 +69,7 @@ async function search_title(link, i, $, url) {
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
-                    await save(title, type, year, sourceData);
+                    await save(title, type, year, sourceData, i, extraConfigs);
                 }
             }
         }

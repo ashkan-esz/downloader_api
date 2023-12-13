@@ -14,7 +14,7 @@ import {
 } from "./status/crawlerStatus.js";
 
 
-export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
+export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extraConfigs) {
     try {
         await updateCrawlerStatus_domainChangeHandlerStart();
         delete sourcesObj._id;
@@ -29,7 +29,7 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
         }));
 
         changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls);
-        let changedSources = await checkSourcesUrl(sourcesUrls);
+        let changedSources = await checkSourcesUrl(sourcesUrls, extraConfigs);
 
         if (changedSources.length > 0) {
             await saveServerLog('start domain change handler');
@@ -44,7 +44,7 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources) {
     }
 }
 
-async function checkSourcesUrl(sourcesUrls) {
+async function checkSourcesUrl(sourcesUrls, extraConfigs) {
     let changedSources = [];
     try {
         for (let i = 0; i < sourcesUrls.length; i++) {
@@ -55,7 +55,7 @@ async function checkSourcesUrl(sourcesUrls) {
                 if (checkForceStopCrawler()) {
                     return [];
                 }
-                let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName);
+                let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName, extraConfigs);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {
@@ -106,12 +106,12 @@ async function checkSourcesUrl(sourcesUrls) {
     }
 }
 
-export async function checkUrlWork(sourceName, sourceUrl) {
+export async function checkUrlWork(sourceName, sourceUrl, extraConfigs) {
     try {
         let responseUrl;
         let homePageLink = sourceUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
         try {
-            let pageData = await getPageData(homePageLink, sourceName);
+            let pageData = await getPageData(homePageLink, sourceName, extraConfigs);
             if (pageData && pageData.pageContent) {
                 responseUrl = pageData.responseUrl;
             } else {

@@ -32,9 +32,9 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: false,
 });
 
-export default async function digimoviez({movie_url, serial_url}, pageCount) {
-    let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title);
-    let p2 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title);
+export default async function digimoviez({movie_url, serial_url}, pageCount, extraConfigs) {
+    let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title, extraConfigs);
+    let p2 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
     return [p1, p2];
 }
 
@@ -45,7 +45,7 @@ export function digimovie_checkTitle(text, title, url) {
     );
 }
 
-async function search_title(link, pageNumber, $, url) {
+async function search_title(link, pageNumber, $, url, extraConfigs) {
     try {
         let text = link.text();
         let title = link.attr('title');
@@ -66,7 +66,7 @@ async function search_title(link, pageNumber, $, url) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                     getQualitySample, linkCheck, true);
 
                 if (pageSearchResult) {
@@ -76,7 +76,7 @@ async function search_title(link, pageNumber, $, url) {
                     }
                     if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                             getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {
@@ -99,7 +99,7 @@ async function search_title(link, pageNumber, $, url) {
                         subtitles: [],
                         cookies
                     };
-                    await save(title, type, year, sourceData, pageNumber);
+                    await save(title, type, year, sourceData, pageNumber, extraConfigs);
                 }
             }
         }
@@ -108,13 +108,13 @@ async function search_title(link, pageNumber, $, url) {
     }
 }
 
-export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
+export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, extraConfigs) {
     try {
         title = title.toLowerCase();
         let year;
         ({title, year} = getTitleAndYear(title, year, type));
 
-        let pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
             getQualitySample, linkCheck, true);
 
         if (pageSearchResult) {
@@ -124,7 +124,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
             }
             if (type.includes('movie') && downloadLinks.length > 0 && (downloadLinks[0].season > 0 || downloadLinks[0].episode > 0)) {
                 type = type.replace('movie', 'serial');
-                pageSearchResult = await search_in_title_page(sourceConfig, title, type, pageLink, pageNumber, getFileData,
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData,
                     getQualitySample, linkCheck, true);
 
                 if (!pageSearchResult) {
@@ -147,7 +147,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0) {
                 subtitles: [],
                 cookies
             };
-            await save(title, type, year, sourceData, pageNumber);
+            await save(title, type, year, sourceData, pageNumber, extraConfigs);
             return downloadLinks.length;
         }
         return 0;

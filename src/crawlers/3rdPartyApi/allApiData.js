@@ -17,7 +17,7 @@ import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
-export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName, pageLink) {
+export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName, pageLink, extraConfigs) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
@@ -118,7 +118,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
-                if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
+                if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiFields.youtubeTrailer, {});
                     titleModel = {...titleModel, ...trailerUploadFields};
@@ -148,7 +148,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     if (kitsuApiData !== null) {
         kitsuApiFields = getKitsuApiFields(kitsuApiData);
         if (kitsuApiFields) {
-            if (kitsuApiFields.youtubeTrailer && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
+            if (kitsuApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
                 let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, kitsuApiFields.youtubeTrailer, {});
                 titleModel = {...titleModel, ...trailerUploadFields};
@@ -210,10 +210,13 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName, pageLink) {
+export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName, pageLink, extraConfigs) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
-    if (getDatesBetween(now, apiUpdateDate).hours < 8) {
+    if (extraConfigs?.apiUpdateState === 'ignore') {
+        return null;
+    }
+    if (getDatesBetween(now, apiUpdateDate).hours < 8 && extraConfigs?.apiUpdateState !== 'force') {
         return null;
     }
 
@@ -303,7 +306,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
             updateFields = {...updateFields, ...temp};
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
-                if (jikanApiFields.youtubeTrailer && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
+                if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, jikanApiFields.youtubeTrailer, {});
                     db_data = {...db_data, ...trailerUploadFields};
@@ -331,7 +334,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     if (kitsuApiData !== null) {
         kitsuApiFields = getKitsuApiFields(kitsuApiData);
         if (kitsuApiFields) {
-            if (kitsuApiFields.youtubeTrailer && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
+            if (kitsuApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
                 let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, kitsuApiFields.youtubeTrailer, {});
                 db_data = {...db_data, ...trailerUploadFields};

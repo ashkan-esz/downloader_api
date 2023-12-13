@@ -2,8 +2,7 @@ import {adminServices} from '../services/index.js';
 import {sendResponse} from "./controllerUtils.js";
 
 export async function startCrawler(req, res) {
-    let {sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate} = req.query;
-    let result = await adminServices.startCrawler(sourceName, mode, handleDomainChange, handleDomainChangeOnly, handleCastUpdate);
+    let result = await adminServices.startCrawler(req.query);
     return sendResponse(req, res, result);
 }
 
