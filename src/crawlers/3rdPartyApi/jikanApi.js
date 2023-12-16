@@ -19,6 +19,7 @@ import {saveError} from "../../error/saveError.js";
 import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
 import {uploadTitlePosterToS3} from "../../data/cloudStorage.js";
 import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
+import {updateCronJobsStatus} from "../../utils/cronJobsStatus.js";
 
 const rateLimitConfig = {
     minuteLimit: 60,
@@ -51,7 +52,7 @@ export async function getJikanApiData(title, year, type, jikanID) {
     try {
         let yearMatch = title.match(/\(?\d\d\d\d\)?/g);
         yearMatch = yearMatch ? yearMatch.pop() : null;
-        if (yearMatch && !year) {
+        if (yearMatch && !year && Number(yearMatch) < 3000) {
             title = title.replace(yearMatch, '').trim();
             year = yearMatch;
         }
@@ -75,7 +76,8 @@ export async function getJikanApiData(title, year, type, jikanID) {
         if (
             type.includes('serial') &&
             jikanSearchResult.length > 1 &&
-            jikanSearchResult[0].title.replace(/the|\(tv\)|\s+/gi, '') === jikanSearchResult[1].title.replace(/the|\(tv\)|\s+/gi, '') &&
+            (jikanSearchResult[0].title || jikanSearchResult[0].titles?.find(t => t.type === 'Default')?.title).replace(/the|\(tv\)|\s+/gi, '') ===
+            (jikanSearchResult[1].title || jikanSearchResult[1].titles?.find(t => t.type === 'Default')?.title).replace(/the|\(tv\)|\s+/gi, '') &&
             (jikanSearchResult[0].type.match(/ova|ona/gi) && Number(jikanSearchResult[0].episodes) < Number(jikanSearchResult[1].episodes))
         ) {
             jikanSearchResult.shift();
@@ -393,15 +395,15 @@ async function handleApiCall(url, timeoutSec = 0) {
 }
 
 function getTitlesFromData(fullData) {
-    let apiTitle = fullData.title;
+    let apiTitle = fullData.title || fullData.titles?.find(t => t.type === 'Default')?.title;
     let yearMatch = apiTitle?.match(/\(\d\d\d\d\)/g)?.pop() || null;
     if (yearMatch) {
         apiTitle = apiTitle.replace(yearMatch, '').trim();
     }
     let apiTitle_simple = utils.replaceSpecialCharacters(apiTitle?.toLowerCase() || '');
-    let apiTitleEnglish = (fullData.title_english || '').replace(/-....+-/g, '');
+    let apiTitleEnglish = (fullData.title_english || fullData.titles?.find(t => t.type === 'English')?.title || '').replace(/-....+-/g, '');
     let apiTitleEnglish_simple = utils.replaceSpecialCharacters(apiTitleEnglish.toLowerCase());
-    let japaneseTitle = (fullData.title_japanese || '').toLowerCase();
+    let japaneseTitle = (fullData.title_japanese || fullData.titles?.find(t => t.type === 'Japanese')?.title || '').toLowerCase();
     japaneseTitle = japaneseTitle.includes('movie')
         ? japaneseTitle
         : japaneseTitle.replace(/-....+-/g, '');
@@ -434,36 +436,52 @@ function getTitlesFromData(fullData) {
     };
 }
 
-export async function updateJikanData() {
+export async function updateJikanData(isJobFunction = false) {
+
+    if (isJobFunction) {
+        updateCronJobsStatus('updateJikanData', 'comingSoon');
+    }
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon', 'comingSoon_temp_anime', ['anime_movie', 'anime_serial']);
-    await add_comingSoon_topAiring_Titles('comingSoon', 8);
+    await add_comingSoon_topAiring_Titles('comingSoon', 8, isJobFunction);
     await crawlerMethodsDB.changeMoviesReleaseStateDB('comingSoon_temp_anime', 'waiting', ['anime_movie', 'anime_serial']);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopComingSoon', true);
 
+    if (isJobFunction) {
+        updateCronJobsStatus('updateJikanData', 'topAiring');
+    }
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('topAiring', 8);
+    await add_comingSoon_topAiring_Titles('topAiring', 8, isJobFunction);
     await crawlerMethodsDB.replaceRankWithTempRank('animeTopAiring', true);
 
+    if (isJobFunction) {
+        updateCronJobsStatus('updateJikanData', 'animeSeasonNow');
+    }
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('animeSeasonNow', 4);
+    await add_comingSoon_topAiring_Titles('animeSeasonNow', 4, isJobFunction);
     await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonNow', true);
 
+    if (isJobFunction) {
+        updateCronJobsStatus('updateJikanData', 'animeSeasonUpcoming');
+    }
     // reset temp rank
     await crawlerMethodsDB.resetTempRank(true);
-    await add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 4);
+    await add_comingSoon_topAiring_Titles('animeSeasonUpcoming', 4, isJobFunction);
     await crawlerMethodsDB.replaceRankWithTempRank('animeSeasonUpcoming', true);
 }
 
-async function add_comingSoon_topAiring_Titles(mode, numberOfPage) {
+async function add_comingSoon_topAiring_Titles(mode, numberOfPage, isJobFunction) {
     const updatePromiseQueue = new PQueue({concurrency: 25});
     const insertPromiseQueue = new PQueue({concurrency: 5});
 
     let rank = 0;
     for (let k = 1; k <= numberOfPage; k++) {
+        if (isJobFunction) {
+            updateCronJobsStatus('updateJikanData', `${mode}: page: ${k}/${numberOfPage}`);
+        }
         let url = '';
         if (mode === 'comingSoon') {
             url = `https://api.jikan.moe/v4/top/anime?filter=upcoming&page=${k}`;
@@ -534,7 +552,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         } else {
             //need related titles, doesnt exist in semiJikanData
             let type = semiJikanData.type === 'Movie' ? 'anime_movie' : 'anime_serial';
-            let title = utils.replaceSpecialCharacters(semiJikanData.title.toLowerCase());
+            let title = utils.replaceSpecialCharacters((semiJikanData.title || semiJikanData.titles?.find(t => t.type === 'Default')?.title).toLowerCase());
             let jikanData = await getJikanApiData(title, '', type, semiJikanData.mal_id);
             if (jikanData) {
                 jikanApiFields = getJikanApiFields(jikanData);
@@ -614,7 +632,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
 
 async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
     let type = semiJikanData.type === 'Movie' ? 'anime_movie' : 'anime_serial';
-    let title = utils.replaceSpecialCharacters(semiJikanData.title.toLowerCase());
+    let title = utils.replaceSpecialCharacters((semiJikanData.title || semiJikanData.titles?.find(t => t.type === 'Default')?.title).toLowerCase());
     let jikanApiData = await getJikanApiData(title, '', type, semiJikanData.mal_id);
 
     if (jikanApiData) {
