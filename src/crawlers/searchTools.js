@@ -90,7 +90,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                         break;
                     }
                     await pauseCrawler();
-                    await promiseQueue.onSizeLessThan(70);
+                    await promiseQueue.onSizeLessThan(60);
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs));
                 }
             } catch (error) {

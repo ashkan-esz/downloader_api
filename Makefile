@@ -14,7 +14,9 @@ up-dev:
 	docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.dev.yml --compatibility up --build
 
 up-prod:
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+	docker-compose down
+	docker container prune -f
+	docker-compose --compatibility up --build
 
 down:
 	docker-compose down

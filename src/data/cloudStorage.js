@@ -67,7 +67,7 @@ export function getS3Client() {
 
 export const s3VpnStatus = 'allOk';
 
-export const trailerUploadConcurrency = 7;
+export const trailerUploadConcurrency = 6;
 export const saveWarningTimeout = 70 * 1000; //70s
 const crawlerWarningMessages = getCrawlerWarningMessages(70);
 let uploadingTrailer = 0;
@@ -359,7 +359,9 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
         }
-        saveError(error);
+        if (error.response.status !== 403) {
+            saveError(error);
+        }
         return null;
     }
 }
