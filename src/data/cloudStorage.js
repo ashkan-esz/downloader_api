@@ -67,7 +67,7 @@ export function getS3Client() {
 
 export const s3VpnStatus = 'allOk';
 
-export const trailerUploadConcurrency = 6;
+export const trailerUploadConcurrency = 7;
 export const saveWarningTimeout = 70 * 1000; //70s
 const crawlerWarningMessages = getCrawlerWarningMessages(70);
 let uploadingTrailer = 0;
@@ -435,10 +435,12 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
                     return await uploadImageToS3(bucketName, fileName, fileUrl, url, forceUpload, retryCounter, retryWithSleepCounter);
                 }
             }
-            error.isAxiosError = true;
-            error.url = originalUrl;
-            error.filePath = 'cloudStorage > uploadImageToS3 > ' + bucketName;
-            await saveError(error);
+            if (error.response?.status !== 404) {
+                error.isAxiosError = true;
+                error.url = originalUrl;
+                error.filePath = 'cloudStorage > uploadImageToS3 > ' + bucketName;
+                await saveError(error);
+            }
             return null;
         }
         if (error.code !== 'EAI_AGAIN') {

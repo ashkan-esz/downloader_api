@@ -11,7 +11,7 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
     try {
         let yearMatch = title.match(/\(?\d\d\d\d\)?/g);
         yearMatch = yearMatch ? yearMatch.pop() : null;
-        if (yearMatch && !year) {
+        if (yearMatch && !year && Number(yearMatch) < 3000) {
             title = title.replace(yearMatch, '').trim();
             year = yearMatch;
         }

@@ -86,7 +86,7 @@ export async function updateJikanDataJobFunc() {
     updateCronJobsStatus('updateJikanData', 'start');
     if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
         await removeCompletedJobs();
-        await updateJikanData();
+        await updateJikanData(true);
     }
     updateCronJobsStatus('updateJikanData', 'end');
 }

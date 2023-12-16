@@ -10,7 +10,7 @@ export async function removeS3PosterJobFunc() {
         updateCronJobsStatus('removeS3Poster', 'start');
 
         let removedCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        const promiseQueue = new PQueue({concurrency: 60});
         const collection = await getCollection('movies');
         while (true) {
             updateCronJobsStatus('removeS3Poster', 'posters, removed: ' + removedCounter);
@@ -21,7 +21,7 @@ export async function removeS3PosterJobFunc() {
                     posters: 1,
                     poster_s3: 1,
                 }
-            }).toArray();
+            }).limit(150).toArray();
             if (movies.length === 0) {
                 break;
             }
@@ -39,7 +39,7 @@ export async function removeS3PosterJobFunc() {
                     updateCronJobsStatus('removeS3Poster', 'posters, removed: ' + removedCounter);
                 }));
             }
-            await promiseQueue.onIdle();
+            await promiseQueue.onSizeLessThan(150);
         }
         await promiseQueue.onIdle();
         updateCronJobsStatus('removeS3Poster', 'end', removedCounter.toString());
@@ -56,7 +56,7 @@ export async function removeS3WidePosterJobFunc() {
         updateCronJobsStatus('removeS3WidePoster', 'start');
 
         let removedCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        const promiseQueue = new PQueue({concurrency: 60});
         const collection = await getCollection('movies');
         while (true) {
             updateCronJobsStatus('removeS3WidePoster', 'widePosters, removed: ' + removedCounter);
@@ -66,7 +66,7 @@ export async function removeS3WidePosterJobFunc() {
                 projection: {
                     poster_wide_s3: 1,
                 }
-            }).toArray();
+            }).limit(150).toArray();
             if (movies.length === 0) {
                 break;
             }
@@ -82,7 +82,7 @@ export async function removeS3WidePosterJobFunc() {
                     updateCronJobsStatus('removeS3WidePoster', 'widePosters, removed: ' + removedCounter);
                 }));
             }
-            await promiseQueue.onIdle();
+            await promiseQueue.onSizeLessThan(150);
         }
         await promiseQueue.onIdle();
         updateCronJobsStatus('removeS3WidePoster', 'end', removedCounter.toString());
@@ -99,7 +99,7 @@ export async function removeS3TrailerJobFunc() {
         updateCronJobsStatus('removeS3Trailer', 'start');
 
         let removedCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        const promiseQueue = new PQueue({concurrency: 60});
         const collection = await getCollection('movies');
         while (true) {
             updateCronJobsStatus('removeS3Trailer', 'trailers, removed: ' + removedCounter);
@@ -111,7 +111,7 @@ export async function removeS3TrailerJobFunc() {
                     trailer_s3: 1,
                     trailerDate: 1,
                 }
-            }).toArray();
+            }).limit(150).toArray();
             if (movies.length === 0) {
                 break;
             }
@@ -131,7 +131,7 @@ export async function removeS3TrailerJobFunc() {
                     updateCronJobsStatus('removeS3Trailer', 'trailers, removed: ' + removedCounter);
                 }));
             }
-            await promiseQueue.onIdle();
+            await promiseQueue.onSizeLessThan(150);
         }
         await promiseQueue.onIdle();
         updateCronJobsStatus('removeS3Trailer', 'end', removedCounter.toString());
@@ -148,13 +148,13 @@ export async function removeS3ProfileImageJobFunc() {
         updateCronJobsStatus('removeS3ProfileImage', 'start');
 
         let removedCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        const promiseQueue = new PQueue({concurrency: 60});
 
         while (true) {
             updateCronJobsStatus('removeS3ProfileImage', 'profileImages, removed: ' + removedCounter);
             let profileImages = await prisma.profileImage.findMany({
                 where: {},
-                take: 50,
+                take: 150,
                 select: {
                     url: true,
                     userId: true,
@@ -175,7 +175,7 @@ export async function removeS3ProfileImageJobFunc() {
                     updateCronJobsStatus('removeS3ProfileImage', 'profileImages, removed: ' + removedCounter);
                 }));
             }
-            await promiseQueue.onIdle();
+            await promiseQueue.onSizeLessThan(150);
         }
         await promiseQueue.onIdle();
         updateCronJobsStatus('removeS3ProfileImage', 'end', removedCounter.toString());

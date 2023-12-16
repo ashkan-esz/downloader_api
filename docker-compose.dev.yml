@@ -37,7 +37,7 @@ services:
       resources:
         #also check --max_old_space_size in Dockerfile
         limits:
-          cpus: "0.5"
+          cpus: "0.6"
           memory: 900M
         reservations:
           memory: 50M

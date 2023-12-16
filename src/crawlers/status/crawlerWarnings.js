@@ -42,9 +42,9 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             axios403: `Source (${data1}): 403 Error (Axios)`,
         },
         sourceStatus: {
-            badDownloadLinks: `Source (${data1}): badDownloadLinks: ${data2}`,
-            badPosters: `Source (${data1}): badPosters: ${data2}`,
-            badPersianSummary: `Source (${data1}): badPersianSummary: ${data2}`,
+            badDownloadLinks: `Source (${data1}): badDownloadLinks`,
+            badPosters: `Source (${data1}): badPosters`,
+            badPersianSummary: `Source (${data1}): badPersianSummary`,
         },
     });
 }

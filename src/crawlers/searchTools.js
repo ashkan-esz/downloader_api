@@ -77,7 +77,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
                     if (i !== 2 || pageCount !== 1) {
-                        await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}/${pageCount}`);
+                        await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}::${pageCount}`);
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
                         const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName, i);
@@ -90,7 +90,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                         break;
                     }
                     await pauseCrawler();
-                    await promiseQueue.onSizeLessThan(50);
+                    await promiseQueue.onSizeLessThan(70);
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs));
                 }
             } catch (error) {
@@ -239,7 +239,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             let pageData = null;
             if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                 saveLinksStatus(pageLink, pageType, 'fetchingStart');
-                pageData = await getPageData(url, sourceConfig.sourceName, extraConfigs, sourceConfig.sourceAuthStatus, true);
+                pageData = await getPageData(url, sourceConfig.sourceName, extraConfigs, sourceConfig.sourceAuthStatus, pageType, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -325,12 +325,24 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                 if (error.message === 'timeout of 10000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('10s', sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                    if (pageType === 'sourcePage' && retryCounter < 2) {
+                        retryCounter++;
+                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                    }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('15s', sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                    if (pageType === 'sourcePage' && retryCounter < 2) {
+                        retryCounter++;
+                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                    }
                 } else if (error.message === 'aborted') {
                     const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosAbortError);
+                    if (pageType === 'sourcePage' && retryCounter < 2) {
+                        retryCounter++;
+                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                    }
                 } else if (error.code === 'EAI_AGAIN') {
                     const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosEaiError);

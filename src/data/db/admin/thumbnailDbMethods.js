@@ -14,6 +14,7 @@ export async function createThumbnails() {
     await createThumbnails_castImages();
     updateCronJobsStatus('createThumbnail', 'profileImages');
     await createThumbnails_profileImages();
+    updateCronJobsStatus('createThumbnail', 'end');
 }
 
 export async function createThumbnails_movies() {
@@ -111,7 +112,7 @@ export async function createThumbnails_castImages() {
         let badLinks = [];
         let noCreationCounter = 0;
         let loopCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        const promiseQueue = new PQueue({concurrency: 30});
 
         while (true) {
             updateCronJobsStatus('createThumbnail', `castImages, checked: ${loopCounter * 50} created: ${totalThumbnailsCreated}`);
@@ -175,10 +176,12 @@ export async function createThumbnails_profileImages() {
         let totalThumbnailsCreated = 0;
         let badLinks = [];
         let noCreationCounter = 0;
-        const promiseQueue = new PQueue({concurrency: 20});
+        let loopCounter = 0;
+        const promiseQueue = new PQueue({concurrency: 30});
 
         while (true) {
-            updateCronJobsStatus('createThumbnail', 'profileImages, created: ' + totalThumbnailsCreated);
+            updateCronJobsStatus('createThumbnail', `profileImages, checked: ${loopCounter * 50} created: ${totalThumbnailsCreated}`);
+            loopCounter++;
             let profileImages = await prisma.profileImage.findMany({
                 where: {
                     thumbnail: '',

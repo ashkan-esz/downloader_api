@@ -142,7 +142,7 @@ async function handleJikanStaff_voiceActors(movieId, jikanCharactersArray, credi
 }
 
 async function handleJikanStaff(movieId, jikanStaffArray, credits) {
-    const promiseQueue = new PQueue({concurrency: 7});
+    const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].person.mal_id).then(async (staffApiData) => {
             if (staffApiData) {
@@ -154,7 +154,7 @@ async function handleJikanStaff(movieId, jikanStaffArray, credits) {
 }
 
 async function handleJikanCharaters(movieId, jikanCharatersArray, credits) {
-    const promiseQueue = new PQueue({concurrency: 7});
+    const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanCharatersArray.length && i < _maxStaffOrCharacterSize; i++) {
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(async (characterApiData) => {
             if (characterApiData) {
@@ -283,7 +283,7 @@ async function handleCredits(credits) {
             }
         }
 
-        const promiseQueue = new PQueue({concurrency: 50});
+        const promiseQueue = new PQueue({concurrency: 60});
         for (let j = 0; j < result.length; j++) {
             promiseQueue.add(() => staffAndCharactersDbMethods.insertOrUpdateCredit(result[j].movieId, result[j].staffId, result[j].characterId, result[j].actorPositions, result[j].characterRole));
         }

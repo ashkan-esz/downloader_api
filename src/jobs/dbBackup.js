@@ -65,7 +65,7 @@ export async function backupDbJobFunc(isManualStart = false) {
         }
 
         for (let i = 0; i < _modelNames.length; i++) {
-            updateCronJobsStatus('backupDb', _modelNames[i] + ': downloading');
+            updateCronJobsStatus('backupDb', _modelNames[i]);
             let data = await prisma[_modelNames[i]].findMany();
             updateCronJobsStatus('backupDb', _modelNames[i] + ': stringify');
             let temp = JSON.stringify(data);

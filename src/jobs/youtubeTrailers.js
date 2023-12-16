@@ -22,7 +22,7 @@ export async function addTrailersFromYoutubeJobFunc() {
         updateCronJobsStatus('addTrailersFromYoutube', 'start');
         let result = 'ok';
         const _batchCount = 20;
-        const promiseQueue = new PQueue({concurrency: 3});
+        const promiseQueue = new PQueue({concurrency: 5});
 
         let loopCounter = 0;
         let notFoundCount = 0;

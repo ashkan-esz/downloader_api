@@ -415,7 +415,7 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
     if (sourceVpnStatus.downloadLink === 'noVpn') {
         return;
     }
-    const promiseQueue = new PQueue({concurrency: 15});
+    const promiseQueue = new PQueue({concurrency: 20});
     if (type.includes('movie')) {
         for (let j = 0, _length = downloadLinks.length; j < _length; j++) {
             if (!downloadLinks[j].info.includes(' - ')) {

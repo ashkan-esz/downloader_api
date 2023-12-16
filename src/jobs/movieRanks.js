@@ -56,7 +56,7 @@ export async function updateMovieRanksJobFunc() {
 
 async function updateRank(rankField) {
     try {
-        const updatePromiseQueue = new PQueue({concurrency: 25});
+        const updatePromiseQueue = new PQueue({concurrency: 200});
         let movies = [];
         if (rankField === 'like') {
             movies = await moviesDbMethods.getTopMoviesIdsByLikes();

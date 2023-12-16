@@ -106,7 +106,7 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
     }
 }
 
-export async function checkUrlWork(sourceName, sourceUrl, extraConfigs) {
+export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, retryCounter = 0) {
     try {
         let responseUrl;
         let homePageLink = sourceUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
@@ -130,6 +130,10 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs) {
                     error2.filePath = 'domainChangeHandler';
                     await saveErrorIfNeeded(error2);
                 }
+            } else if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
+                retryCounter++;
+                await new Promise((resolve => setTimeout(resolve, 2000)));
+                return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
             } else {
                 await saveErrorIfNeeded(error);
             }

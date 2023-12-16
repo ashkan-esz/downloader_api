@@ -28,7 +28,7 @@ export let blackListSources = [];
 
 let errorsAndTimes = [];
 
-export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatus = 'ok', useAxiosFirst = false, cookieOnly = false, prevUsedBrowsers = []) {
+export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatus = 'ok', pageType = '', useAxiosFirst = false, cookieOnly = false, prevUsedBrowsers = []) {
     let decodedUrl = getDecodedLink(url);
     if (decodedUrl === url) {
         url = encodeURIComponent(url);
@@ -36,7 +36,7 @@ export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatu
 
     let axiosResult = null;
     if (useAxiosFirst && !cookieOnly && !decodedUrl.match(/page([=\/])\d+/i) && !decodedUrl.match(/((\.[a-zA-Z]+)|((?<!-)series?\/?))$/i)) {
-        axiosResult = await useAxiosGet(decodedUrl, sourceName, sourceAuthStatus);
+        axiosResult = await useAxiosGet(decodedUrl, sourceName, sourceAuthStatus, pageType);
         if (axiosResult && axiosResult.pageContent && !axiosResult.isSus) {
             return axiosResult;
         }
@@ -104,7 +104,7 @@ export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatu
             addSourceErrorToBrowserServer(selectedBrowser, sourceName, extraConfigs);
             prevUsedBrowsers.push(selectedBrowser.endpoint);
             await new Promise(resolve => setTimeout(resolve, 2000));
-            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
+            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, pageType, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         } else {
             resetSourceErrorOfBrowserServer(selectedBrowser, sourceName);
         }
@@ -128,7 +128,7 @@ export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatu
         }
         if (handleErrorResult === "retry") {
             await new Promise(resolve => setTimeout(resolve, 3000));
-            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, useAxiosFirst, cookieOnly, prevUsedBrowsers);
+            return await getPageData(url, sourceName, extraConfigs, sourceAuthStatus, pageType, useAxiosFirst, cookieOnly, prevUsedBrowsers);
         }
         return null;
     }
@@ -354,7 +354,7 @@ export function manualMutateRemoteBrowser(mutateType, bid, all = false) {
 //--------------------------------------------------
 //--------------------------------------------------
 
-async function useAxiosGet(url, sourceName, sourceAuthStatus) {
+async function useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter = 0) {
     let result = {
         pageContent: null,
         responseUrl: '',
@@ -391,7 +391,7 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
                 let temp = url.replace(/\/$/, '').split('/').pop();
                 if (temp) {
                     url = url.replace(temp, encodeURIComponent(temp));
-                    return await useAxiosGet(url, sourceName, sourceAuthStatus);
+                    return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
                 }
             }
             error.isAxiosError = true;
@@ -404,9 +404,17 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus) {
         if (error.message === 'timeout of 10000ms exceeded') {
             const warningMessages = getCrawlerWarningMessages('10s', sourceName);
             await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+            if (pageType === 'sourcePage' && retryCounter < 2) {
+                retryCounter++;
+                return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
+            }
         } else if (error.message === 'aborted') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
             await saveCrawlerWarning(warningMessages.axiosAbortError);
+            if (pageType === 'sourcePage' && retryCounter < 2) {
+                retryCounter++;
+                return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
+            }
         } else if (error.code === 'EAI_AGAIN') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
             await saveCrawlerWarning(warningMessages.axiosEaiError);
