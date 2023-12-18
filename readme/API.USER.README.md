@@ -28,7 +28,7 @@
 - [PUT /users/logout](#put-userslogout)
 - [PUT /users/forceLogout/[deviceId]](#put-usersforcelogoutdeviceid)
 - [PUT /users/forceLogoutAll](#put-usersforcelogoutall)
-- [GET /users/myProfile](#get-usersmyprofile)
+- [GET /users/profile](#get-usersprofile)
 - [GET /users/activeSessions](#get-usersactivesessions)
 - [GET /users/sendVerifyEmail](#get-userssendverifyemail)
 - [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
@@ -214,10 +214,10 @@ Future<String> logInUser(String userName, String password) async {
 
 <br/>
 
-### GET /users/myProfile
+### GET /users/profile
 > return users profile data. ([profile schema](SCHEMA.README.md#Profile))
 
-Example: https://api.movietracker.mom/users/myProfile
+Example: https://api.movietracker.mom/users/profile
 
 <br/>
 

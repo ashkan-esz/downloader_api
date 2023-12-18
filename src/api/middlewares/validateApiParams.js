@@ -32,6 +32,16 @@ const validations = Object.freeze({
         .isInt().withMessage('Invalid parameter id_int :: Integer')
         .toInt(),
 
+    userId: param('userId')
+        .trim()
+        .isInt().withMessage('Invalid parameter userId :: Integer')
+        .toInt(),
+
+    followId: param('followId')
+        .trim()
+        .isInt().withMessage('Invalid parameter followId :: Integer')
+        .toInt(),
+
     types: param('types')
         .customSanitizer(value => {
             return value.split('-').map(item => item.toLowerCase().trim())

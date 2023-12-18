@@ -1,0 +1,28 @@
+FROM node:18.16.0-alpine AS build
+
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max_old_space_size=1024
+
+WORKDIR /usr/app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npx prisma generate
+
+# stage 2
+FROM alpine:3.17.2
+RUN apk add --no-cache --update nodejs npm
+COPY --from=build /usr/app /
+COPY --from=build /usr/app/prisma ./prisma
+
+ENV NODE_ENV=dev
+ENV NODE_OPTIONS=--max_old_space_size=1024
+
+RUN npm install nodemon -g
+
+EXPOSE 3000
+CMD ["npm", "run", "dev_deploy"]

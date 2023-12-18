@@ -6,7 +6,7 @@ services:
     depends_on:
       - redis
       - mailServer
-      - remoteBrowser
+#      - remoteBrowser
     network_mode: host
     build:
       context: .
@@ -16,18 +16,19 @@ services:
     volumes:
       - .:/usr/app
       - ./db-backups:/db-backups
+      - /usr/app/node_modules
     environment:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
-      REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
-      REMOTE_BROWSER_TABS_COUNT1: 2
-      DISABLE_CRAWLER: 'false'
+      _REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
+      _REMOTE_BROWSER_TABS_COUNT1: 2
+      DISABLE_CRAWLER: 'true'
       CRAWLER_CONCURRENCY: 13
       PAUSE_CRAWLER_ON_HIGH_LOAD: 'true'
       CRAWLER_TOTAL_MEMORY: 900
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
-      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost
+      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost
       MAILSERVER_HOST: localhost
       MAILSERVER_PORT: 587
       MAILSERVER_USERNAME: webmaster@movietracker.mom
@@ -77,52 +78,52 @@ services:
       retries: 3
       start_period: 20s
 
-  remoteBrowser:
-    image: ashkanaz2828/downloader_remotebrowser
-    network_mode: host
-    env_file: ./remotebrowser.env
-    environment:
-      - NODE_ENV=production
-      - CRAWLER_BROWSER_TAB_COUNT=2
-      - TOTAL_MEMORY_AMOUNT=600
-      - TOTAL_DISK_SPACE=2000
-      - SERVER_NAME=remoteBrowser-vps-1
-      - PRINT_ERRORS=true
-      - CRAWLER_PAUSE_DURATION_LIMIT=30
-      - DISABLE_UPLOAD_JOB=false
-      - BLACKHOLE_FILE_SIZE_LIMIT=768
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 500M
-        reservations:
-          memory: 50M
-    #    volumes:
-    #      - ./:/usr/app
-    #    ports:
-    #      - "5000:5000"
-    restart: always
+#  remoteBrowser:
+#    image: ashkanaz2828/downloader_remotebrowser
+#    network_mode: host
+#    env_file: ./remotebrowser.env
+#    environment:
+#      - NODE_ENV=production
+#      - CRAWLER_BROWSER_TAB_COUNT=2
+#      - TOTAL_MEMORY_AMOUNT=600
+#      - TOTAL_DISK_SPACE=2000
+#      - SERVER_NAME=remoteBrowser-vps-1
+#      - PRINT_ERRORS=true
+#      - CRAWLER_PAUSE_DURATION_LIMIT=30
+#      - DISABLE_UPLOAD_JOB=false
+#      - BLACKHOLE_FILE_SIZE_LIMIT=768
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: "0.5"
+#          memory: 500M
+#        reservations:
+#          memory: 50M
+#    #    volumes:
+#    #      - ./:/usr/app
+#    #    ports:
+#    #      - "5000:5000"
+#    restart: always
 
-  telegrambot:
-    image: ashkanaz2828/downloader_telegrambot
-    network_mode: host
-    depends_on:
-      - api
-    env_file: ./telegrambot.env
-    environment:
-      - API_URL=http://localhost:3000
-      - WEB_URL=http://localhost
-    volumes:
-      - telegrambot
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 100M
-        reservations:
-          memory: 10M
-    restart: always
+#  telegrambot:
+#    image: ashkanaz2828/downloader_telegrambot
+#    network_mode: host
+#    depends_on:
+#      - api
+#    env_file: ./telegrambot.env
+#    environment:
+#      - API_URL=http://localhost:3000
+#      - WEB_URL=http://localhost
+#    volumes:
+#      - telegrambot
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: "0.2"
+#          memory: 100M
+#        reservations:
+#          memory: 10M
+#    restart: always
 
   adminpanel:
     image: ashkanaz2828/downloader_adminpanel
@@ -166,8 +167,7 @@ services:
     #    ports:
     #      - '80:80'
     depends_on:
-      - api
-      - telegrambot
+#      - telegrambot
       - adminpanel
       - website
     deploy:
@@ -202,7 +202,7 @@ services:
   postgresDb:
     image: postgres:16.0-alpine3.18
     env_file: ./.env
-    network_mode: service:api
+    network_mode: host
 #    network_mode: host
     container_name: downloader_postgres
     environment:

@@ -53,6 +53,7 @@ export const errorMessage = Object.freeze({
     usernameAlreadyExist: 'This username already exists',
     emailAlreadyExist: 'This email already exists',
     alreadyExist: 'Already exist',
+    alreadyFollowed: 'Already followed',
     //----------------------
     botIsDisabled: 'This bot is disabled',
     //----------------------

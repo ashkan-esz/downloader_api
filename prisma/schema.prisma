@@ -43,20 +43,23 @@ model User {
   watchedMovies                   WatchedMovie[]
   followMovies                    FollowMovie[]
   likeDislikeMovies               LikeDislikeMovie[]
-  followers                       Follow[]                 @relation("followers")
-  following                       Follow[]                 @relation("following")
+  followers                       Follow[]                 @relation("following")
+  following                       Follow[]                 @relation("followers")
   WatchListGroup                  WatchListGroup[]
   UserCollectionMovie             UserCollectionMovie[]
   UserCollection                  UserCollection[]
 }
 
 model Follow {
-  userId1 Int
-  userId2 Int
-  user1   User @relation(fields: [userId1], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "followers")
-  user2   User @relation(fields: [userId2], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "following")
+  // User A follow B
+  // followerId follow followingId
+  followerId    Int
+  followingId   Int
+  addDate       DateTime
+  followerUser  User     @relation(fields: [followerId], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "followers")
+  followingUser User     @relation(fields: [followingId], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "following")
 
-  @@unique([userId1, userId2])
+  @@id([followerId, followingId])
 }
 
 model ProfileImage {

@@ -40,7 +40,7 @@ export async function findUser(username, email, includeSessions = false) {
     }
 }
 
-export async function getUserProfile(userId, refreshToken) {
+export async function getUserProfile(userId, refreshToken, isMyProfile) {
     try {
         return await prisma.user.findFirst({
             where: {
@@ -50,20 +50,19 @@ export async function getUserProfile(userId, refreshToken) {
                 password: false,
                 emailVerifyToken: false,
                 emailVerifyToken_expire: false,
-                emailVerified: true,
+                emailVerified: isMyProfile,
                 rawUsername: true,
                 email: true,
                 role: true,
                 publicName: true,
                 userId: true,
-                username: true,
                 bio: true,
                 defaultProfile: true,
                 profileImages: true,
                 registrationDate: true,
                 favoriteGenres: true,
                 mbtiType: true,
-                activeSessions: {
+                activeSessions: isMyProfile ? {
                     where: {
                         refreshToken: refreshToken
                     },
@@ -79,19 +78,24 @@ export async function getUserProfile(userId, refreshToken) {
                         loginDate: true,
                         lastUseDate: true,
                     }
-                },
-                computedFavoriteGenres: {
+                } : undefined,
+                computedFavoriteGenres: isMyProfile ? {
                     select: {
                         genre: true,
                         count: true,
                         percent: true,
                     }
-                },
-                ComputedStatsLastUpdate: true,
-                movieSettings: true,
-                downloadLinksSettings: true,
-                notificationSettings: true,
-
+                } : undefined,
+                ComputedStatsLastUpdate: isMyProfile,
+                movieSettings: isMyProfile,
+                downloadLinksSettings: isMyProfile,
+                notificationSettings: isMyProfile,
+                _count: {
+                    select: {
+                        followers: true,
+                        following: true,
+                    }
+                }
             },
         });
     } catch (error) {
@@ -615,6 +619,128 @@ export async function changeUserSettingsDB(userId, settings, settingSectionName)
                 }
             });
         }
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//----------------------------
+//----------------------------
+
+export async function addUserFollowToDB(userId, followId) {
+    try {
+        return await prisma.follow.create({
+            data: {
+                followerId: userId,
+                followingId: followId,
+                addDate: new Date(),
+            },
+        });
+    } catch (error) {
+        if (error.code === "P2002") {
+            return 'already exist';
+        }
+        if (error.code === 'P2022' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeUserFollowFromDB(userId, followId) {
+    try {
+        return await prisma.follow.delete({
+            where: {
+                followerId_followingId: {
+                    followerId: userId,
+                    followingId: followId,
+                },
+            },
+            select: {
+                followerId: true,
+                followingId: true,
+            }
+        });
+    } catch (error) {
+        if (error.code === 'P2022' || error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUserFollowersDB(userId, skip, limit) {
+    try {
+        return await prisma.follow.findMany({
+            where: {
+                followingId: userId,
+            },
+            select: {
+                followerUser: {
+                    select: {
+                        userId: true,
+                        username: true,
+                        rawUsername: true,
+                        publicName: true,
+                        bio: true,
+                        profileImages: {
+                            select: {
+                                url: true,
+                                size: true,
+                                thumbnail: true,
+                            }
+                        },
+                    }
+                },
+            },
+            skip: skip,
+            take: limit,
+            orderBy: {
+                addDate: 'desc',
+            }
+        });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return 'notfound';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUserFollowingsDB(userId, skip, limit) {
+    try {
+        return await prisma.follow.findMany({
+            where: {
+                followerId: userId,
+            },
+            select: {
+                followingUser: {
+                    select: {
+                        userId: true,
+                        username: true,
+                        rawUsername: true,
+                        publicName: true,
+                        bio: true,
+                        profileImages: {
+                            select: {
+                                url: true,
+                                size: true,
+                                thumbnail: true,
+                            }
+                        },
+                    }
+                },
+            },
+            skip: skip,
+            take: limit,
+            orderBy: {
+                addDate: 'desc',
+            }
+        });
     } catch (error) {
         saveError(error);
         return 'error';

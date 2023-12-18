@@ -1259,7 +1259,7 @@ function normalizeStaffAndCharactersUserStats(type, data, statType, noUserStats)
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-function getSkipLimit(page, limit) {
+export function getSkipLimit(page, limit) {
     return {
         skip: limit * (page - 1),
         limit,

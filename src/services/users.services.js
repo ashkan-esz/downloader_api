@@ -7,9 +7,10 @@ import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {defaultProfileImage, removeProfileImageFromS3, uploadProfileImageToS3} from "../data/cloudStorage.js";
-import {getGenresFromUserStats, updateComputedFavoriteGenres} from "../data/db/computeUserData.js";
+import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
+import {getSkipLimit} from "./movies.services.js";
 
 //if (data.changedPasswordAfter(decoded.iat)) {
 // 			return res.status(401).json({
@@ -275,16 +276,16 @@ export async function deleteAccount(userId, token) {
     }
 }
 
-export async function getUserProfile(jwtUserData, refreshToken) {
+export async function getUserProfile(jwtUserData, refreshToken, userId) {
     try {
-        let userData = await usersDbMethods.getUserProfile(jwtUserData.userId, refreshToken);
+        let userData = await usersDbMethods.getUserProfile(userId || jwtUserData.userId, refreshToken, !userId);
         if (userData === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         }
 
-        userData.thisDevice = userData.activeSessions[0] || null;
+        userData.thisDevice = userData.activeSessions?.[0] || null;
         delete userData.activeSessions;
         userData.username = userData.rawUsername; //outside of server rawUsername is the actual username
         delete userData.rawUsername;
@@ -594,13 +595,13 @@ export async function changeUserSettings(jwtUserData, settings, settingName) {
 
 export async function computeUserStats(jwtUserData) {
     try {
-        let genres = await getGenresFromUserStats(jwtUserData.userId);
+        let genres = await computeUserData.getGenresFromUserStats(jwtUserData.userId);
         if (genres === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         }
 
         let now = new Date();
-        let updateGenresResult = await updateComputedFavoriteGenres(jwtUserData.userId, genres);
+        let updateGenresResult = await computeUserData.updateComputedFavoriteGenres(jwtUserData.userId, genres);
         if (updateGenresResult === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!updateGenresResult) {
@@ -613,6 +614,69 @@ export async function computeUserStats(jwtUserData) {
                 lastUpdate: now,
             }
         }, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
+export async function followUser(jwtUserData, followId) {
+    try {
+        let result = await usersDbMethods.addUserFollowToDB(jwtUserData.userId, followId);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (result === 'already exist') {
+            return generateServiceResult({}, 409, errorMessage.alreadyFollowed);
+        } else if (result === 'notfound') {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function unfollowUser(jwtUserData, followId) {
+    try {
+        let result = await usersDbMethods.removeUserFollowFromDB(jwtUserData.userId, followId);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        } else if (result === 'notfound') {
+            return generateServiceResult({}, 404, errorMessage.userNotFound);
+        }
+        return generateServiceResult({}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function getUserFollowers(userId, page) {
+    try {
+        let {skip, limit} = getSkipLimit(page, 12);
+        let result = await usersDbMethods.getUserFollowersDB(userId, skip, limit);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        }
+        return generateServiceResult({data: result}, 200, '');
+    } catch (error) {
+        saveError(error);
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+}
+
+export async function getUserFollowings(userId, page) {
+    try {
+        let {skip, limit} = getSkipLimit(page, 12);
+        let result = await usersDbMethods.getUserFollowingsDB(userId, skip, limit);
+        if (result === 'error') {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        }
+        return generateServiceResult({data: result}, 200, '');
     } catch (error) {
         saveError(error);
         return generateServiceResult({}, 500, errorMessage.serverError);

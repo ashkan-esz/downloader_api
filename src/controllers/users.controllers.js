@@ -145,7 +145,7 @@ export async function deleteAccount(req, res) {
 }
 
 export async function getUserProfile(req, res) {
-    let result = await usersServices.getUserProfile(req.jwtUserData, req.refreshToken);
+    let result = await usersServices.getUserProfile(req.jwtUserData, req.refreshToken, Number(req.query.userId));
     return sendResponse(req, res, result);
 }
 
@@ -220,6 +220,29 @@ export async function changeUserSettings(req, res) {
 
 export async function computeUserStats(req, res) {
     let result = await usersServices.computeUserStats(req.jwtUserData);
+    return sendResponse(req, res, result);
+}
+
+//----------------------------
+//----------------------------
+
+export async function followUser(req, res) {
+    let result = await usersServices.followUser(req.jwtUserData, req.params.followId);
+    return sendResponse(req, res, result);
+}
+
+export async function unfollowUser(req, res) {
+    let result = await usersServices.unfollowUser(req.jwtUserData, req.params.followId);
+    return sendResponse(req, res, result);
+}
+
+export async function getUserFollowers(req, res) {
+    let result = await usersServices.getUserFollowers(req.params.userId, req.params.page);
+    return sendResponse(req, res, result);
+}
+
+export async function getUserFollowings(req, res) {
+    let result = await usersServices.getUserFollowings(req.params.userId, req.params.page);
     return sendResponse(req, res, result);
 }
 
