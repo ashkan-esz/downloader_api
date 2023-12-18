@@ -226,7 +226,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
     try {
         const pageLink = url;
         url = url.replace(/\/page\/1(\/|$)|\?page=1$/g, '');
-        if (url.includes('/page/')) {
+        if (url.includes('/page/') && !url.endsWith('/')) {
             url = url + '/';
         }
         let $, links = [];
