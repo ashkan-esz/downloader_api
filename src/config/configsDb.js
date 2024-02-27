@@ -65,9 +65,14 @@ export const defaultConfigsDb = Object.freeze({
     disableCrawler: false,
     developmentFaze: false,
     developmentFazeStart: 0,
+    mediaFileSizeLimit: 100,
+    mediaFileExtensionLimit: 'jpg, jpeg, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
 });
 
-export const safeFieldsToEdit_array = Object.freeze(['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration', 'disableCrawler', 'developmentFaze']);
+export const safeFieldsToEdit_array = Object.freeze([
+    'corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration',
+    'disableCrawler', 'developmentFaze',
+    'mediaFileSizeLimit', 'mediaFileExtensionLimit']);
 export const safeFieldsToRead_array = Object.freeze(Object.keys(defaultConfigsDb).filter(item => item !== 'title'));
 export const safeFieldsToRead = Object.freeze(safeFieldsToRead_array.reduce((obj, item) => {
     obj[item] = 1

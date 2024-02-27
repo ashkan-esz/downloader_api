@@ -440,6 +440,14 @@ const validations = Object.freeze({
         .isBoolean().withMessage("Invalid parameter developmentFaze :: Boolean")
         .toBoolean(),
 
+    mediaFileSizeLimit: body('mediaFileSizeLimit')
+        .isInt({min: 1, max: 100}).withMessage("Invalid parameter mediaFileSizeLimit :: Integer{min: 1, max:100}")
+        .toInt(),
+
+    mediaFileExtensionLimit: body('mediaFileExtensionLimit')
+        .isString().withMessage("Invalid parameter mediaFileExtensionLimit :: String")
+        .toString(),
+
     ids: body('ids')
         .exists().withMessage("Missed parameter ids")
         .isArray({min: 1}).withMessage("ids Must be an not empty array")

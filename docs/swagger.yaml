@@ -3200,6 +3200,12 @@ paths:
                   type: boolean
                 developmentFaze:
                   type: boolean
+                mediaFileSizeLimit:
+                  type: integer
+                  default: 100
+                  description: it in mb
+                mediaFileExtensionLimit:
+                  type: string
       responses:
         200:
           description: Ok
@@ -4981,6 +4987,13 @@ security:
           type: string
           format: date
           default: 0
+        mediaFileSizeLimit:
+          type: integer
+          default: 100
+          description: its in mb
+        mediaFileExtensionLimit:
+          type: string
+          default: jpg, jpeg, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv
 
     Season:
       type: object
