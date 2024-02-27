@@ -140,7 +140,10 @@ export async function addUser(username, email, hashedPassword, role, emailVerify
                 },
                 downloadLinksSettings: {
                     create: {}
-                }
+                },
+                userMessageRead: {
+                    create: {}
+                },
             }
         });
     } catch (error) {
@@ -255,6 +258,7 @@ export async function addSession(userId, deviceInfo, deviceId, refreshToken) {
                 appName: deviceInfo.appName || '',
                 appVersion: deviceInfo.appVersion || '',
                 deviceOs: deviceInfo.os || '',
+                notifToken: deviceInfo.notifToken || '',
                 deviceModel: deviceInfo.deviceModel || '',
                 ipLocation: deviceInfo.ipLocation || '',
                 refreshToken: refreshToken,
@@ -276,14 +280,17 @@ export async function updateSession(userId, deviceInfo, deviceId, refreshToken) 
         const now = new Date();
         let res = await prisma.activeSession.upsert({
             where: {
-                userId: userId,
-                deviceId: deviceId,
+                userId_deviceId: {
+                    userId: userId,
+                    deviceId: deviceId,
+                },
             },
             update: {
                 appName: deviceInfo.appName || '',
                 appVersion: deviceInfo.appVersion || '',
                 deviceOs: deviceInfo.os || '',
                 deviceModel: deviceInfo.deviceModel || '',
+                notifToken: deviceInfo.notifToken || '',
                 ipLocation: deviceInfo.ipLocation || '',
                 lastUseDate: now,
                 refreshToken: refreshToken,
@@ -293,6 +300,7 @@ export async function updateSession(userId, deviceInfo, deviceId, refreshToken) 
                 appVersion: deviceInfo.appVersion || '',
                 deviceOs: deviceInfo.os || '',
                 deviceModel: deviceInfo.deviceModel || '',
+                notifToken: deviceInfo.notifToken || '',
                 ipLocation: deviceInfo.ipLocation || '',
                 loginDate: now,
                 lastUseDate: now,

@@ -48,10 +48,10 @@ async function handleGuestMode(req, res, next) {
 //----------------------------------------------
 //----------------------------------------------
 
-export function isAuth_refreshToken(req, res, next) {
+export async function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
-    if (!refreshToken) {
+    if (!refreshToken || (await redisKeyExist('jwtKey:' + refreshToken))) {
         return res.status(401).json({
             code: 401,
             errorMessage: 'Unauthorized',

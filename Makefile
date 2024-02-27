@@ -22,7 +22,7 @@ down:
 	docker-compose down
 
 run-postgres:
-	docker run --network=host --memory 500m -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
+	docker run --restart unless-stopped --network=host --memory 500m -v pgdata:/var/lib/postgresql/data -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
 
 run-redis:
 	docker run  --rm --network=host --memory 200m -e ALLOW_EMPTY_PASSWORD=yes redis:alpine
@@ -35,7 +35,7 @@ push-image:
 	docker push ashkanaz2828/downloader_api
 
 run-postgresDb:
-	docker run --network=host --rm --name postgresDb -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:15.4-alpine3.18
+	docker run --network=host --rm --name postgresDb -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
 
 signoz-install:
 	unzip ./signoz/signoz.zip -d ./signoz

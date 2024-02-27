@@ -48,7 +48,7 @@ const bucketNamePrefix = config.cloudStorage.bucketNamePrefix;
 const defaultProfileUrl = `https://${bucketNamePrefix}serverstatic.${bucketsEndpointSuffix}/defaultProfile.png`;
 export const defaultProfileImage = (await getFileSize(defaultProfileUrl)) > 0 ? defaultProfileUrl : '';
 
-export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image', 'download-app', 'downloader-db-backup'].map(item => bucketNamePrefix + item));
+export const bucketNames = Object.freeze(['serverstatic', 'cast', 'download-subtitle', 'poster', 'download-trailer', 'profile-image', 'download-app', 'downloader-db-backup', 'media-file'].map(item => bucketNamePrefix + item));
 
 export const bucketNamesObject = Object.freeze({
     staticFiles: bucketNamePrefix + 'serverstatic',
@@ -59,6 +59,7 @@ export const bucketNamesObject = Object.freeze({
     profileImage: bucketNamePrefix + 'profile-image',
     downloadApp: bucketNamePrefix + 'download-app',
     backup: bucketNamePrefix + 'downloader-db-backup',
+    mediaFile: bucketNamePrefix + 'media-file',
 });
 
 export function getS3Client() {

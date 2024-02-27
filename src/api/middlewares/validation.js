@@ -20,7 +20,7 @@ const Password_Cannot_Have_Space = 'Password Cannot Have Space';
 const DEVICE_INFO_IS_EMPTY = 'DeviceInfo Is Empty';
 const DEVICE_INFO_MUST_BE_OBJECT = 'DeviceInfo Must Be Object';
 
-const deviceInfoFields = ['appName', 'appVersion', 'os', 'deviceModel'];
+const deviceInfoFields = ['appName', 'appVersion', 'os', 'deviceModel', 'notifToken'];
 
 export const signupValidation = [
     body('username')

@@ -33,7 +33,7 @@ you can run npm script `npm run pre_start` to create collections and their index
 
 ### 4. Setup cloud storage
 
-Config your own preferred cloud storage provider (s3) and create buckets with names of [serverstatic, cast, download-subtitle, poster, download-trailer].
+Config your own preferred cloud storage provider (s3) and create buckets with names of [serverstatic, cast, download-subtitle, poster, download-trailer, media-file].
 
 you can run npm script `npm run pre_start` to create buckes automatically.
 > Don't forget to add file 'defaultProfile.png' in bucket 'serverstatic'.

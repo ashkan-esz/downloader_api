@@ -1,4 +1,5 @@
 
+//todo : 1. send push-notification on new-episode, new-sequel, ... that users follow
 //todo : 16. crawler: add more anime sources (something like torrent sites)
 //todo : 17. remoteBrowser: add feature to download from torrent
 //todo : 18. crawler: crawl torrent sites

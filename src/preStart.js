@@ -7,6 +7,7 @@ import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";
 import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
 import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
+import {addNotificationEntityTypes} from "./data/db/notificationDbMethods.js";
 
 export let testUserCreated = false;
 
@@ -40,6 +41,9 @@ export async function preStart(force = false) {
         if (!testUserCreated) {
             await createTestUser();
         }
+        console.log('====> [[Creating Notifications Entity Types]]');
+        await addNotificationEntityTypes();
+        console.log('====> [[Creating Notifications Entity Types: done]]');
     }
 }
 

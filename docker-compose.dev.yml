@@ -217,8 +217,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: 300M
+          cpus: "0.4"
+          memory: 400M
         reservations:
           memory: 50M
     #    healthcheck:

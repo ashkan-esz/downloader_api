@@ -77,7 +77,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
             const user = getJwtPayload(userData);
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
             deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
-            let deviceId = fingerprint.hash || uuidv4();
+            let deviceId = fingerprint.hash || (uuidv4() + '-' + user.generatedAt);
             let result = await usersDbMethods.updateSession(userData.userId, deviceInfo, deviceId, tokens.refreshToken);
             if (!result) {
                 return generateServiceResult({}, 500, errorMessage.serverError);
@@ -89,7 +89,8 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
                 });
                 const activeSessions = await usersDbMethods.getUserActiveSessions(userData.userId);
                 if (activeSessions.length > 5) {
-                    let lastUsedSession = activeSessions.sort((a, b) => new Date(a.lastUseDate).getTime() > new Date(b.lastUseDate).getTime())[0];
+                    let lastUsedSession = activeSessions.sort((a, b) =>
+                        (new Date(a.lastUseDate).getTime()) > (new Date(b.lastUseDate).getTime()) ? 1 : -1)[0];
                     await usersDbMethods.removeSession(userData.userId, lastUsedSession.refreshToken);
                 }
             }
@@ -127,8 +128,8 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
         return generateServiceResult({
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
-            username: result.user?.rawUsername,
             userId: jwtUserData.userId,
+            username: result.user?.rawUsername,
             profileImages: result.user?.profileImages,
         }, 200, '', tokens);
     } catch (error) {
@@ -625,6 +626,7 @@ export async function computeUserStats(jwtUserData) {
 
 export async function followUser(jwtUserData, followId) {
     try {
+        //todo : publish a notification
         let result = await usersDbMethods.addUserFollowToDB(jwtUserData.userId, followId);
         if (result === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);
