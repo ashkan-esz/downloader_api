@@ -203,21 +203,6 @@ export async function setFavoriteGenres(req, res) {
 //----------------------------
 //----------------------------
 
-export async function getAllUserSettings(req, res) {
-    let result = await usersServices.getAllUserSettings(req.jwtUserData);
-    return sendResponse(req, res, result);
-}
-
-export async function getUserSettings(req, res) {
-    let result = await usersServices.getUserSettings(req.jwtUserData, req.params.settingName);
-    return sendResponse(req, res, result);
-}
-
-export async function changeUserSettings(req, res) {
-    let result = await usersServices.changeUserSettings(req.jwtUserData, req.body.settings, req.params.settingName);
-    return sendResponse(req, res, result);
-}
-
 export async function computeUserStats(req, res) {
     let result = await usersServices.computeUserStats(req.jwtUserData);
     return sendResponse(req, res, result);

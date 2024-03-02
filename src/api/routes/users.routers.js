@@ -87,26 +87,6 @@ router.put('/setFavoriteGenres/:genres',
     mongoSanitize(),
     usersControllers.setFavoriteGenres);
 
-//users/allUserSettings
-router.get('/allUserSettings',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    usersControllers.getAllUserSettings);
-
-//users/userSettings/:settingName
-router.get('/userSettings/:settingName',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['settingName']),
-    middlewares.validateApiParams.apiParams_sendError,
-    usersControllers.getUserSettings);
-
-//users/changeUserSettings/:settingName
-router.put('/changeUserSettings/:settingName',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['settingName', 'setting_body']),
-    middlewares.validateApiParams.apiParams_sendError,
-    mongoSanitize(),
-    usersControllers.changeUserSettings);
-
 //users/computeUserStats
 router.put('/computeUserStats',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

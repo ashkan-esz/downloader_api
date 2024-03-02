@@ -523,43 +523,6 @@ export async function removeProfileImageDB(userId, fileName) {
 //----------------------------
 //----------------------------
 
-export async function getAllUserSettingsDB(userId) {
-    try {
-        let res = await Promise.allSettled([
-            prisma.movieSettings.findFirst({
-                where: {
-                    userId: userId,
-                },
-            }),
-            prisma.downloadLinksSettings.findFirst({
-                where: {
-                    userId: userId,
-                },
-            }),
-            prisma.notificationSettings.findFirst({
-                where: {
-                    userId: userId,
-                },
-            })
-        ]);
-
-        if (res.find(item => item.status !== 'fulfilled')) {
-            return 'error';
-        }
-        if (res.every(item => !item.value)) {
-            return null;
-        }
-        return {
-            movieSettings: res[0].value,
-            downloadLinksSettings: res[1].value,
-            notificationSettings: res[2].value,
-        }
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
 export async function getUserSettingsDB(userId, settingSectionName) {
     try {
         if (settingSectionName === 'movie') {
@@ -580,50 +543,6 @@ export async function getUserSettingsDB(userId, settingSectionName) {
             return await prisma.notificationSettings.findFirst({
                 where: {
                     userId: userId,
-                }
-            });
-        }
-    } catch (error) {
-        saveError(error);
-        return 'error';
-    }
-}
-
-export async function changeUserSettingsDB(userId, settings, settingSectionName) {
-    try {
-        if (settingSectionName === 'movie') {
-            return await prisma.movieSettings.upsert({
-                where: {
-                    userId: userId,
-                },
-                update: settings,
-                create: {
-                    userId: userId,
-                    ...settings,
-                }
-            });
-        }
-        if (settingSectionName === 'downloadLinks') {
-            return await prisma.downloadLinksSettings.upsert({
-                where: {
-                    userId: userId,
-                },
-                update: settings,
-                create: {
-                    userId: userId,
-                    ...settings,
-                }
-            });
-        }
-        if (settingSectionName === 'notification') {
-            return await prisma.notificationSettings.upsert({
-                where: {
-                    userId: userId,
-                },
-                update: settings,
-                create: {
-                    userId: userId,
-                    ...settings,
                 }
             });
         }

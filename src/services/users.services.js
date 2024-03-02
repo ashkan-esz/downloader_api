@@ -545,55 +545,6 @@ export async function setFavoriteGenres(jwtUserData, genres) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export async function getAllUserSettings(jwtUserData) {
-    try {
-        let result = await usersDbMethods.getAllUserSettingsDB(jwtUserData.userId);
-        if (result === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!result) {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-        return generateServiceResult({data: result}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-export async function getUserSettings(jwtUserData, settingName) {
-    try {
-        let result = await usersDbMethods.getUserSettingsDB(jwtUserData.userId, settingName);
-        if (result === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!result) {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-        delete result.userId;
-        return generateServiceResult({data: result}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-export async function changeUserSettings(jwtUserData, settings, settingName) {
-    try {
-        let result = await usersDbMethods.changeUserSettingsDB(jwtUserData.userId, settings, settingName);
-        if (result === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!result) {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-        return generateServiceResult({data: result}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
 export async function computeUserStats(jwtUserData) {
     try {
         let genres = await computeUserData.getGenresFromUserStats(jwtUserData.userId);
