@@ -226,29 +226,6 @@ export async function computeUserStats(req, res) {
 //----------------------------
 //----------------------------
 
-export async function followUser(req, res) {
-    let result = await usersServices.followUser(req.jwtUserData, req.params.followId);
-    return sendResponse(req, res, result);
-}
-
-export async function unfollowUser(req, res) {
-    let result = await usersServices.unfollowUser(req.jwtUserData, req.params.followId);
-    return sendResponse(req, res, result);
-}
-
-export async function getUserFollowers(req, res) {
-    let result = await usersServices.getUserFollowers(req.params.userId, req.params.page);
-    return sendResponse(req, res, result);
-}
-
-export async function getUserFollowings(req, res) {
-    let result = await usersServices.getUserFollowings(req.params.userId, req.params.page);
-    return sendResponse(req, res, result);
-}
-
-//----------------------------
-//----------------------------
-
 function removeDuplicateElements(input) {
     let result = [];
     for (let i = 0; i < input.length; i++) {

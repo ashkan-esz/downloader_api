@@ -113,32 +113,4 @@ router.put('/computeUserStats',
     middlewares.rateLimit.rateLimit_3,
     usersControllers.computeUserStats);
 
-//users/follow/:followId
-router.post('/follow/:followId',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['followId']),
-    middlewares.validateApiParams.apiParams_sendError,
-    usersControllers.followUser);
-
-//users/unfollow/:followId
-router.delete('/unfollow/:followId',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['followId']),
-    middlewares.validateApiParams.apiParams_sendError,
-    usersControllers.unfollowUser);
-
-//users/followers/:userId/:page
-router.get('/followers/:userId/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['userId', 'page']),
-    middlewares.validateApiParams.apiParams_sendError,
-    usersControllers.getUserFollowers);
-
-//users/followings/:userId/:page
-router.get('/followings/:userId/:page',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['userId', 'page']),
-    middlewares.validateApiParams.apiParams_sendError,
-    usersControllers.getUserFollowings);
-
 export default router;
