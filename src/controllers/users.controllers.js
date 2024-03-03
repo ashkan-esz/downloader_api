@@ -194,12 +194,6 @@ export async function removeProfileImage(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function setFavoriteGenres(req, res) {
-    let genres = removeDuplicateElements(req.params.genres);
-    let result = await usersServices.setFavoriteGenres(req.jwtUserData, genres);
-    return sendResponse(req, res, result);
-}
-
 //----------------------------
 //----------------------------
 

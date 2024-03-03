@@ -721,35 +721,6 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/setFavoriteGenres/{genres}:
-    put:
-      tags:
-        - Users
-      summary: Set Favorite Genres
-      description: Returns new profileImages array, maximum number of genres is 6, (error code 409).
-      operationId: users/setFavoriteGenres
-      security:
-        - accessToken: [ ]
-      parameters:
-        - name: genres
-          in: path
-          required: true
-          description: Array of String joined by '-'
-          example: action-sci_fi-drama
-          schema:
-            type: string
-            description: Array of String joined by '-'
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
   /users/computeUserStats:
     put:
       tags:

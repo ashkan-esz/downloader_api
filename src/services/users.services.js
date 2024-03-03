@@ -523,28 +523,6 @@ export async function removeProfileImage(jwtUserData, fileName) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export async function setFavoriteGenres(jwtUserData, genres) {
-    try {
-        if (genres.length > 6) {
-            return generateServiceResult({}, 409, errorMessage.exceedGenres);
-        }
-
-        let updateResult = await usersDbMethods.updateUserByID(jwtUserData.userId, {favoriteGenres: genres});
-        if (updateResult === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (updateResult === 'notfound') {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-        return generateServiceResult({}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
 export async function computeUserStats(jwtUserData) {
     try {
         let genres = await computeUserData.getGenresFromUserStats(jwtUserData.userId);

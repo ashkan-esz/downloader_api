@@ -79,14 +79,6 @@ router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.
 //users/removeProfileImage/:filename
 router.delete('/removeProfileImage/:filename', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.removeProfileImage);
 
-//users/setFavoriteGenres/:genres
-router.put('/setFavoriteGenres/:genres',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['genres']),
-    middlewares.validateApiParams.apiParams_sendError,
-    mongoSanitize(),
-    usersControllers.setFavoriteGenres);
-
 //users/computeUserStats
 router.put('/computeUserStats',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
