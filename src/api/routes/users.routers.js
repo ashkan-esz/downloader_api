@@ -63,9 +63,6 @@ router.put('/updatePassword',
 //     mongoSanitize(),
 //     usersControllers.resetPassword);
 
-//users/activeSessions
-router.get('/activeSessions', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.getUserActiveSessions);
-
 //users/sendVerifyEmail
 router.get('/sendVerifyEmail', middlewares.rateLimit.rateLimit_2, middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.sendVerifyEmail);
 

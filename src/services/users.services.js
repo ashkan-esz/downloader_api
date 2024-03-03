@@ -387,30 +387,6 @@ export async function updatePassword(jwtUserData, oldPassword, newPassword) {
 //     }
 // }
 
-export async function getUserActiveSessions(jwtUserData, refreshToken) {
-    try {
-        let result = await usersDbMethods.getUserActiveSessions(jwtUserData.userId);
-        if (result === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!result) {
-            return generateServiceResult({}, 404, errorMessage.sessionNotFound);
-        }
-
-        let thisDevice = result.find(item => item.refreshToken === refreshToken);
-        let activeSessions = result.filter(item => item.refreshToken !== refreshToken).map(item => {
-            delete item.userId;
-            delete item.refreshToken;
-            return item;
-        });
-        delete thisDevice.userId;
-        delete thisDevice.refreshToken;
-        return generateServiceResult({thisDevice, activeSessions}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
 export async function sendVerifyEmail(jwtUserData, host) {
     try {
         const findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {rawUsername: true, email: true});

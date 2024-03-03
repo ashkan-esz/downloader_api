@@ -167,11 +167,6 @@ export async function updatePassword(req, res) {
 //     return sendResponse(req, res, result);
 // }
 
-export async function getUserActiveSessions(req, res) {
-    let result = await usersServices.getUserActiveSessions(req.jwtUserData, req.refreshToken);
-    return sendResponse(req, res, result);
-}
-
 export async function sendVerifyEmail(req, res) {
     const host = req.protocol + '://' + req.get('host');
     let result = await usersServices.sendVerifyEmail(req.jwtUserData, host);

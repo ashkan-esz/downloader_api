@@ -525,40 +525,6 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/activeSessions:
-    get:
-      tags:
-        - Users
-      summary: Active Sessions
-      description: Return users current session and other active sections.
-      operationId: users/activeSessions
-      security:
-        - accessToken: [ ]
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  thisDevice:
-                    $ref: '#/components/schemas/Session'
-                  activeSessions:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Session'
-        404:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseCode'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
   /users/sendVerifyEmail:
     get:
       tags:
