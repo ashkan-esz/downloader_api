@@ -144,34 +144,11 @@ export async function deleteAccount(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function editProfile(req, res) {
-    const {username, publicName, bio, mbtiType, email} = req.body;
-    let result = await usersServices.editProfile(req.jwtUserData, username, publicName, bio, mbtiType, email);
-    return sendResponse(req, res, result);
-}
-
-export async function updatePassword(req, res) {
-    const {oldPassword, newPassword} = req.body;
-    let result = await usersServices.updatePassword(req.jwtUserData, oldPassword, newPassword);
-    return sendResponse(req, res, result);
-}
-
 // export async function resetPassword(req, res) {
 //     const {email} = req.body;
 //     let result = await usersServices.resetPassword(email);
 //     return sendResponse(req, res, result);
 // }
-
-export async function sendVerifyEmail(req, res) {
-    const host = req.protocol + '://' + req.get('host');
-    let result = await usersServices.sendVerifyEmail(req.jwtUserData, host);
-    return sendResponse(req, res, result);
-}
-
-export async function verifyEmail(req, res) {
-    let result = await usersServices.verifyEmail(Number(req.params.userId), req.params.token);
-    return sendResponse(req, res, result);
-}
 
 export async function uploadProfileImage(req, res) {
     let result = await usersServices.uploadProfileImage(req.jwtUserData, req.file);

@@ -12,6 +12,9 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+//todo : show page like :: https://unlayer.com/templates/account-activation
+//todo : show page like :: https://unlayer.com/templates/streaming-app-subscription
+
 export default function (agenda) {
     agenda.define("registration email", {concurrency: 50}, async (job) => {
         try {

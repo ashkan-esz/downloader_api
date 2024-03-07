@@ -37,34 +37,12 @@ router.delete('/deleteAccount', middlewares.auth.attachAuthFlag, middlewares.aut
 //users/deleteAccount:userId/:token
 router.get('/deleteAccount/:userId/:token', middlewares.rateLimit.rateLimit_2, usersControllers.deleteAccount);
 
-//users/editProfile
-router.post('/editProfile',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['username_body', 'publicName_body', 'bio_body', 'email_body', 'mbtiType_body']),
-    middlewares.validateApiParams.apiParams_sendError,
-    mongoSanitize(),
-    usersControllers.editProfile);
-
-//users/updatePassword
-router.put('/updatePassword',
-    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParams.checkApiParams(['oldPassword_body', 'newPassword_body']),
-    middlewares.validateApiParams.apiParams_sendError,
-    mongoSanitize(),
-    usersControllers.updatePassword);
-
 // //users/resetPassword
 // router.put('/resetPassword',
 //     middlewares.validateApiParams.checkApiParams(['email_body']),
 //     middlewares.validateApiParams.apiParams_sendError,
 //     mongoSanitize(),
 //     usersControllers.resetPassword);
-
-//users/sendVerifyEmail
-router.get('/sendVerifyEmail', middlewares.rateLimit.rateLimit_2, middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.sendVerifyEmail);
-
-//users/verifyEmail/:userId/:token
-router.get('/verifyEmail/:userId/:token', middlewares.rateLimit.rateLimit_2, usersControllers.verifyEmail);
 
 //users/uploadProfileImage
 router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

@@ -117,32 +117,6 @@ export async function updateUserByID(userId, updateFields) {
     }
 }
 
-export async function verifyUserEmail(userId, token) {
-    try {
-        return await prisma.user.update({
-            where: {
-                userId: userId,
-                emailVerifyToken: token,
-                emailVerifyToken_expire: {gte: Date.now()}
-            },
-            data: {
-                emailVerifyToken: '',
-                emailVerifyToken_expire: 0,
-                emailVerified: true,
-            },
-            select: {
-                emailVerified: true,
-            }
-        });
-    } catch (error) {
-        if (error.code === 'P2025') {
-            return 'notfound';
-        }
-        saveError(error);
-        return 'error';
-    }
-}
-
 export async function checkDeleteAccountToken(userId, token) {
     try {
         return await prisma.user.update({
