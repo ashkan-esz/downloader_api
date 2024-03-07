@@ -385,39 +385,6 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/profile:
-    get:
-      tags:
-        - Users
-      summary: Profile Data
-      description: Return users profile data. if dont provide userId, return current user profile
-      operationId: users/profile
-      security:
-        - accessToken: [ ]
-      parameters:
-        - name: userId
-          in: query
-          required: false
-          schema:
-            type: integer
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-                  - $ref: '#/components/schemas/Profile'
-        404:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseCode'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
   /users/editProfile:
     post:
       tags:

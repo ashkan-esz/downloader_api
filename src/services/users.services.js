@@ -277,26 +277,6 @@ export async function deleteAccount(userId, token) {
     }
 }
 
-export async function getUserProfile(jwtUserData, refreshToken, userId) {
-    try {
-        let userData = await usersDbMethods.getUserProfile(userId || jwtUserData.userId, refreshToken, !userId);
-        if (userData === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!userData) {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-
-        userData.thisDevice = userData.activeSessions?.[0] || null;
-        delete userData.activeSessions;
-        userData.username = userData.rawUsername; //outside of server rawUsername is the actual username
-        delete userData.rawUsername;
-        return generateServiceResult(userData, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
 export async function editProfile(jwtUserData, username, publicName, bio, mbtiType, email) {
     try {
         let findUserResult = await usersDbMethods.findUser(username, email);

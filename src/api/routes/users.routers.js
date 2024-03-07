@@ -37,9 +37,6 @@ router.delete('/deleteAccount', middlewares.auth.attachAuthFlag, middlewares.aut
 //users/deleteAccount:userId/:token
 router.get('/deleteAccount/:userId/:token', middlewares.rateLimit.rateLimit_2, usersControllers.deleteAccount);
 
-//users/profile
-router.get('/profile', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.getUserProfile);
-
 //users/editProfile
 router.post('/editProfile',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
