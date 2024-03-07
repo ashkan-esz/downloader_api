@@ -74,6 +74,7 @@ model ProfileImage {
   originalSize Int
   size         Int
   thumbnail    String
+  blurHash     String
   url          String   @id @unique
   userId       Int
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)

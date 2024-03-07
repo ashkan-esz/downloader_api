@@ -44,13 +44,6 @@ router.get('/deleteAccount/:userId/:token', middlewares.rateLimit.rateLimit_2, u
 //     mongoSanitize(),
 //     usersControllers.resetPassword);
 
-//users/uploadProfileImage
-router.post('/uploadProfileImage', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.userPermission.uploadProfileImage, middlewares.uploadUserProfile, usersControllers.uploadProfileImage);
-
-//users/removeProfileImage/:filename
-router.delete('/removeProfileImage/:filename', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.removeProfileImage);
-
 //users/computeUserStats
 router.put('/computeUserStats',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

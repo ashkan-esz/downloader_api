@@ -66,13 +66,17 @@ export const defaultConfigsDb = Object.freeze({
     developmentFaze: false,
     developmentFazeStart: 0,
     mediaFileSizeLimit: 100,
-    mediaFileExtensionLimit: 'jpg, jpeg, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
+    profileFileSizeLimit: 2,
+    profileImageCountLimit: 5,
+    mediaFileExtensionLimit: 'jpg, jpeg, png, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
+    profileImageExtensionLimit: 'jpg, jpeg, png, webp',
 });
 
 export const safeFieldsToEdit_array = Object.freeze([
     'corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration',
     'disableCrawler', 'developmentFaze',
-    'mediaFileSizeLimit', 'mediaFileExtensionLimit']);
+    'mediaFileSizeLimit', 'profileFileSizeLimit', 'profileImageCountLimit',
+    'mediaFileExtensionLimit', 'profileImageExtensionLimit']);
 export const safeFieldsToRead_array = Object.freeze(Object.keys(defaultConfigsDb).filter(item => item !== 'title'));
 export const safeFieldsToRead = Object.freeze(safeFieldsToRead_array.reduce((obj, item) => {
     obj[item] = 1

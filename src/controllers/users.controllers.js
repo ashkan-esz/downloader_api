@@ -150,17 +150,6 @@ export async function deleteAccount(req, res) {
 //     return sendResponse(req, res, result);
 // }
 
-export async function uploadProfileImage(req, res) {
-    let result = await usersServices.uploadProfileImage(req.jwtUserData, req.file);
-    return sendResponse(req, res, result);
-}
-
-export async function removeProfileImage(req, res) {
-    let fileName = req.params.filename;
-    let result = await usersServices.removeProfileImage(req.jwtUserData, fileName);
-    return sendResponse(req, res, result);
-}
-
 //----------------------------
 //----------------------------
 

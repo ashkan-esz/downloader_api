@@ -385,102 +385,6 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/uploadProfileImage:
-    post:
-      tags:
-        - Users
-      summary: Upload Profile Image
-      description: <p>
-        send data as formData and don't forget to set contentType <br/>
-        returns new profileImages array. <br/> <br/>
-        file size limited to `2mb` and accept [`jpg`, `jpeg`, `png`, `webp`] formats only, (error code 400). <br/>
-        20 profile image per user, (error code 409)
-        <p/>
-      operationId: users/uploadProfileImage
-      security:
-        - accessToken: [ ]
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                profileImage:
-                  type: string
-                  required: true
-                  format: binary
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  profileImages:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        url:
-                          type: string
-                        originalSize:
-                          type: integer
-                        size:
-                          type: integer
-                        thumbnail:
-                          type: string
-                        addDate:
-                          $ref: '#/components/schemas/DateString'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
-  /users/removeProfileImage/{filename}:
-    delete:
-      tags:
-        - Users
-      summary: Remove Profile Image
-      description: Returns new profileImages array
-      operationId: users/removeProfileImage
-      security:
-        - accessToken: [ ]
-      parameters:
-        - name: filename
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-                type: object
-                properties:
-                  profileImages:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        url:
-                          type: string
-                        originalSize:
-                          type: integer
-                        size:
-                          type: integer
-                        thumbnail:
-                          type: string
-                        addDate:
-                          $ref: '#/components/schemas/DateString'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
   /users/computeUserStats:
     put:
       tags:
@@ -2666,7 +2570,16 @@ paths:
                   type: integer
                   default: 100
                   description: it in mb
+                profileFileSizeLimit:
+                  type: integer
+                  default: 2
+                  description: it in mb
+                profileImageCountLimit:
+                  type: integer
+                  default: 5
                 mediaFileExtensionLimit:
+                  type: string
+                profileImageExtensionLimit:
                   type: string
       responses:
         200:
@@ -4453,9 +4366,19 @@ security:
           type: integer
           default: 100
           description: its in mb
+        profileFileSizeLimit:
+          type: integer
+          default: 2
+          description: its in mb
+        profileImageCountLimit:
+          type: integer
+          default: 5
         mediaFileExtensionLimit:
           type: string
-          default: jpg, jpeg, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv
+          default: jpg, jpeg, png, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv
+        profileImageExtensionLimit:
+          type: string
+          default: jpg, jpeg, png, webp
 
     Season:
       type: object

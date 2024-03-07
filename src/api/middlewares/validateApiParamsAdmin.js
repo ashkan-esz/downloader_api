@@ -444,8 +444,20 @@ const validations = Object.freeze({
         .isInt({min: 1, max: 100}).withMessage("Invalid parameter mediaFileSizeLimit :: Integer{min: 1, max:100}")
         .toInt(),
 
+    profileFileSizeLimit: body('profileFileSizeLimit')
+        .isInt({min: 1, max: 100}).withMessage("Invalid parameter profileFileSizeLimit :: Integer{min: 1, max:100}")
+        .toInt(),
+
+    profileImageCountLimit: body('profileImageCountLimit')
+        .isInt({min: 1, max: 100}).withMessage("Invalid parameter profileImageCountLimit :: Integer{min: 1, max:100}")
+        .toInt(),
+
     mediaFileExtensionLimit: body('mediaFileExtensionLimit')
         .isString().withMessage("Invalid parameter mediaFileExtensionLimit :: String")
+        .toString(),
+
+    profileImageExtensionLimit: body('profileImageExtensionLimit')
+        .isString().withMessage("Invalid parameter profileImageExtensionLimit :: String")
         .toString(),
 
     ids: body('ids')

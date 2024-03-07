@@ -289,62 +289,6 @@ export async function deleteAccount(userId, token) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export async function uploadProfileImage(jwtUserData, uploadFileData) {
-    try {
-        if (!uploadFileData) {
-            return generateServiceResult({data: null}, 400, errorMessage.badRequestBody);
-        }
-
-        const type = uploadFileData.mimetype === 'image/png' ? 'png' : 'jpg';
-        let s3ProfileImage = await uploadProfileImageToS3(jwtUserData.userId, type, uploadFileData.buffer);
-        if (!s3ProfileImage) {
-            return generateServiceResult({data: null}, 500, errorMessage.serverError);
-        }
-
-        let profileImages = await usersDbMethods.uploadProfileImageDB(jwtUserData.userId, s3ProfileImage);
-        if (profileImages === 'error' || profileImages.length === 0) {
-            const fileName = s3ProfileImage.url.split('/').pop();
-            await removeProfileImageFromS3(fileName);
-            return generateServiceResult({data: null}, 500, errorMessage.serverError);
-        }
-
-        return generateServiceResult({
-            data: {
-                profileImages: profileImages
-            }
-        }, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    }
-}
-
-export async function removeProfileImage(jwtUserData, fileName) {
-    try {
-        fileName = fileName.split('/').pop();
-        let profileImages = await usersDbMethods.removeProfileImageDB(jwtUserData.userId, fileName);
-        if (profileImages === 'error') {
-            return generateServiceResult({data: null}, 500, errorMessage.serverError);
-        } else if (!profileImages) {
-            return generateServiceResult({data: null}, 404, errorMessage.profileImageNotFound);
-        }
-
-        await removeProfileImageFromS3(fileName);
-
-        return generateServiceResult({
-            data: {
-                profileImages: profileImages
-            }
-        }, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({data: null}, 500, errorMessage.serverError);
-    }
-}
-
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
 export async function computeUserStats(jwtUserData) {
     try {
         let genres = await computeUserData.getGenresFromUserStats(jwtUserData.userId);

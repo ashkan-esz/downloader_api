@@ -147,7 +147,11 @@ router.put('/crawler/addSource',
 router.put('/configs/update',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParamsAdmin.checkApiParams(
-        ['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration', 'disableCrawler', 'developmentFaze', 'mediaFileSizeLimit', 'mediaFileExtensionLimit']),
+        ['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration',
+            'disableCrawler', 'developmentFaze',
+            'mediaFileSizeLimit', 'profileFileSizeLimit', 'profileImageCountLimit',
+            'mediaFileExtensionLimit', 'profileImageExtensionLimit'
+        ]),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']),
     mongoSanitize(),
