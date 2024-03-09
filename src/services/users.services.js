@@ -6,11 +6,10 @@ import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
 import {generateServiceResult, errorMessage} from "./serviceUtils.js";
-import {defaultProfileImage, removeProfileImageFromS3, uploadProfileImageToS3} from "../data/cloudStorage.js";
+import {defaultProfileImage} from "../data/cloudStorage.js";
 import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
-import {getSkipLimit} from "./movies.services.js";
 
 //if (data.changedPasswordAfter(decoded.iat)) {
 // 			return res.status(401).json({
@@ -196,95 +195,6 @@ export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
 }
-
-export async function sendDeleteAccountEmail(jwtUserData, host) {
-    try {
-        // send email with remove account link to user
-        const findUserResult = await usersDbMethods.findUserById(jwtUserData.userId, {rawUsername: true, email: true});
-        if (findUserResult === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!findUserResult) {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-
-        let deleteAccountVerifyToken = await bcrypt.hash(uuidv4(), 12);
-        deleteAccountVerifyToken = deleteAccountVerifyToken.replace(/\//g, '');
-        const deleteAccountVerifyToken_expire = Date.now() + (10 * 60 * 1000);  //10 min
-
-        const updateResult = await usersDbMethods.updateUserByID(jwtUserData.userId, {
-            deleteAccountVerifyToken: deleteAccountVerifyToken,
-            deleteAccountVerifyToken_expire: deleteAccountVerifyToken_expire,
-        });
-        if (updateResult === 'notfound') {
-            return generateServiceResult({}, 404, errorMessage.emailNotFound);
-        } else if (updateResult === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        }
-
-        await agenda.now('delete account', {
-            userId: jwtUserData.userId,
-            rawUsername: findUserResult.rawUsername,
-            email: findUserResult.email,
-            deleteAccountVerifyToken: deleteAccountVerifyToken,
-            host,
-        });
-        return generateServiceResult({}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-export async function deleteAccount(userId, token) {
-    try {
-        let verifyResult = await usersDbMethods.checkDeleteAccountToken(userId, token);
-        if (verifyResult === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!verifyResult || verifyResult === 'notfound') {
-            return generateServiceResult({}, 404, errorMessage.invalidToken);
-        }
-
-        let result = await usersDbMethods.removeUserById(Number(userId));
-        if (result === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (result === 'notfound') {
-            return generateServiceResult({}, 404, errorMessage.userNotFound);
-        }
-
-        //remove profileImages from s3
-        let imageRemovePromiseArray = [];
-        for (let i = 0; i < result.profileImages.length; i++) {
-            let imageFileName = result.profileImages[i].url.split('/').pop();
-            let prom = removeProfileImageFromS3(imageFileName);
-            imageRemovePromiseArray.push(prom);
-        }
-        await Promise.allSettled(imageRemovePromiseArray);
-        imageRemovePromiseArray = null;
-
-        //blacklist tokens
-        let blacklistPromiseArray = [];
-        for (let i = 0; i < result.activeSessions.length; i++) {
-            let prom = setRedis('jwtKey:' + result.activeSessions[i].refreshToken, 'removeUser', config.jwt.accessTokenExpireSeconds);
-            blacklistPromiseArray.push(prom);
-        }
-        await Promise.allSettled(blacklistPromiseArray);
-        blacklistPromiseArray = null;
-
-        return generateServiceResult({message: 'account removed'}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-// export async function resetPassword(email) {
-//     try {
-//
-//     } catch (error) {
-//         saveError(error);
-//         return generateServiceResult({}, 500, errorMessage.serverError);
-//     }
-// }
 
 //---------------------------------------------------------------
 //---------------------------------------------------------------

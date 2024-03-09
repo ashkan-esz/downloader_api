@@ -541,7 +541,7 @@ export async function removeDocsRows(removeType, id) {
                 }
                 //blacklist tokens
                 for (let i = 0; i < result.activeSessions.length; i++) {
-                    await setRedis('jwtKey:' + result.activeSessions[i].refreshToken, 'removeUser', config.jwt.accessTokenExpireSeconds);
+                    await setRedis('jwtKey:' + result.activeSessions[i].refreshToken, 'deleteAccount', config.jwt.accessTokenExpireSeconds);
                 }
             }
         }

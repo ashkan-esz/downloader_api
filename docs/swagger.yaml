@@ -328,63 +328,6 @@ paths:
         401:
           $ref: '#/components/responses/UnauthorizedError'
 
-  /users/deleteAccount:
-    delete:
-      tags:
-        - Users-Auth
-      summary: Delete Account
-      description: remove user account. send a email to the user with a link, if user open it, account gets removed. the link expires in 10 minutes
-      operationId: users/deleteAccountEmail
-      security:
-        - accessToken: [ ]
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
-  /users/deleteAccount/{userId}/{token}:
-    get:
-      tags:
-        - Users-Auth
-      summary: Delete Account
-      description: <p> > remove account link created on server and send to user by email, if user click this link the account will start to remove. <br/>
-        limited to 2 call per minute**
-        <p/>
-      operationId: users/deleteAccount
-      parameters:
-        - name: userId
-          required: true
-          in: path
-          schema:
-            type: integer
-        - name: token
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        200:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ResponseCode'
-        404:
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseCode'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-
   /users/computeUserStats:
     put:
       tags:

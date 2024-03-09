@@ -117,32 +117,6 @@ export async function updateUserByID(userId, updateFields) {
     }
 }
 
-export async function checkDeleteAccountToken(userId, token) {
-    try {
-        return await prisma.user.update({
-            where: {
-                userId: userId,
-                deleteAccountVerifyToken: token,
-                deleteAccountVerifyToken_expire: {gte: Date.now()}
-            },
-            data: {
-                deleteAccountVerifyToken: '',
-                deleteAccountVerifyToken_expire: 0,
-            },
-            select: {
-                deleteAccountVerifyToken: true,
-                deleteAccountVerifyToken_expire: true,
-            }
-        });
-    } catch (error) {
-        if (error.code === 'P2025') {
-            return 'notfound';
-        }
-        saveError(error);
-        return 'error';
-    }
-}
-
 //------------------------------------------------
 //------------------------------------------------
 
