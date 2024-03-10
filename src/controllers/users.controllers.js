@@ -113,16 +113,6 @@ export async function logout(req, res) {
     return sendResponse(req, res, result);
 }
 
-export async function forceLogout(req, res) {
-    let result = await usersServices.forceLogout(req.jwtUserData, req.params.deviceId, req.refreshToken);
-    return sendResponse(req, res, result);
-}
-
-export async function forceLogoutAll(req, res) {
-    let result = await usersServices.forceLogoutAll(req.jwtUserData, req.refreshToken);
-    return sendResponse(req, res, result);
-}
-
 //----------------------------
 //----------------------------
 

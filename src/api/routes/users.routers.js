@@ -25,12 +25,6 @@ router.put('/getToken',
 //users/logout
 router.put('/logout', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.logout);
 
-//users/forceLogout/:deviceId
-router.put('/forceLogout/:deviceId', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogout);
-
-//users/forceLogoutAll
-router.put('/forceLogoutAll', middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized, usersControllers.forceLogoutAll);
-
 //users/computeUserStats
 router.put('/computeUserStats',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

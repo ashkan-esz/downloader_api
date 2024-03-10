@@ -162,40 +162,6 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
     }
 }
 
-export async function forceLogout(jwtUserData, deviceId, prevRefreshToken) {
-    try {
-        let result = await usersDbMethods.removeAuthSession(jwtUserData.userId, deviceId, prevRefreshToken);
-        if (!result) {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (result === 'cannot find device') {
-            return generateServiceResult({}, 404, errorMessage.invalidDeviceId);
-        }
-        await setRedis('jwtKey:' + result.refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
-        return generateServiceResult({}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
-export async function forceLogoutAll(jwtUserData, prevRefreshToken) {
-    try {
-        let logOutedSessions = await usersDbMethods.removeAllAuthSession(jwtUserData.userId, prevRefreshToken);
-        if (!logOutedSessions) {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (logOutedSessions === 'cannot find device') {
-            return generateServiceResult({}, 403, errorMessage.invalidRefreshToken);
-        }
-        for (let i = 0; i < logOutedSessions.length; i++) {
-            await setRedis('jwtKey:' + logOutedSessions[i].refreshToken, 'logout', config.jwt.accessTokenExpireSeconds);
-        }
-        return generateServiceResult({}, 200, '');
-    } catch (error) {
-        saveError(error);
-        return generateServiceResult({}, 500, errorMessage.serverError);
-    }
-}
-
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
