@@ -39,6 +39,8 @@ const _modelNames = Object.freeze([
     'likeDislikeMovie', 'watchedMovie', 'followMovie',
     'watchListGroup', 'watchListMovie',
     'userCollection', 'userCollectionMovie',
+    "room", "message", "mediaFile", "userMessageRead",
+    "notificationEntityType", "notification",
 ]);
 
 export async function backupDbJobFunc(isManualStart = false) {

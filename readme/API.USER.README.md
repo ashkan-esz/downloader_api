@@ -26,18 +26,6 @@
 - [POST /users/login](#post-userslogin)
 - [PUT /users/getToken](#put-usersgettoken)
 - [PUT /users/logout](#put-userslogout)
-- [PUT /users/forceLogout/[deviceId]](#put-usersforcelogoutdeviceid)
-- [PUT /users/forceLogoutAll](#put-usersforcelogoutall)
-- [GET /users/profile](#get-usersprofile)
-- [GET /users/activeSessions](#get-usersactivesessions)
-- [GET /users/sendVerifyEmail](#get-userssendverifyemail)
-- [GET /users/verifyEmail/[token]](#get-usersverifyemailtoken)
-- [POST /users/uploadProfileImage](#post-usersuploadprofileimage)
-- [DELETE /users/removeProfileImage/[filename]](#delete-usersremoveprofileimagefilename)
-- [PUT /users/setFavoriteGenres/[genres]](#put-userssetfavoritegenresgenres)
-- [GET /users/allUserSettings](#get-usersallusersettings)
-- [GET /users/userSettings/[settingName]](#get-usersusersettingssettingname)
-- [PUT /users/changeUserSettings/[settingName]](#put-userschangeusersettingssettingname)
 
 
 ## Auth
@@ -202,53 +190,6 @@ Future<String> logInUser(String userName, String password) async {
 
 <br/>
 
-### PUT /users/forceLogout/[deviceId]
-> return remaining active sessions in field __activeSessions__. ([session schema](SCHEMA.README.md#Session))
-
-<br/>
-
-### PUT /users/forceLogoutAll
-> force logout all session except current session.
-> 
-> return __activeSessions__ as empty array.
-
-<br/>
-
-### GET /users/profile
-> return users profile data. ([profile schema](SCHEMA.README.md#Profile))
-
-Example: https://api.movietracker.mom/users/profile
-
-<br/>
-
-### GET /users/activeSessions
-> return users current session and other active sections. ([session schema](SCHEMA.README.md#Session))
-
-Example: https://api.movietracker.mom/users/activeSessions
-
-<br/>
-
-### GET /users/sendVerifyEmail
-> send an email with an activation link. the link will expire after 6 hour.
-> 
-> maybe email goes to spam folder.
->
-> **NOTE: limited to 2 call per minute**
-
-Example: https://api.movietracker.mom/users/sendVerifyEmail
-
-<br/>
-
-### GET /users/verifyEmail/[token]
-> verify given email token. create activation link on server side.
-> 
-> **NOTE: limited to 2 call per minute**
-
-Example: https://api.movietracker.mom/users/verifyEmail/tokkkkken
-
-<br/>
-
-
 ## Profile Image Api
 
 ### POST /users/uploadProfileImage
@@ -303,45 +244,6 @@ let r = await axios.post('BASE_URL/users/uploadProfileImage', data, {
 </details>
 
 <br/>
-
-
-### DELETE /users/removeProfileImage/[filename]
-> returns new profileImages array.
->
->> image url: https://profile-image.s3.xxxxx.com/user-userId-timestamp.type --> filename: user-userId-timestamp.type
-
-<br/>
-
-
-
-### PUT /users/setFavoriteGenres/[genres]
-> **Note: maximum number of genres is 6, (error code 409)**.
-
-<br/>
-
-
-
-## Settings Api
-
-### GET /users/allUserSettings
-> returns user settings for movies, downloadLinks and notifications.
-
-<br/>
-
-### GET /users/userSettings/[settingName]
-> returns user settings based on __settingName__.
-
-<br/>
-
-### PUT /users/changeUserSettings/[settingName]
-> receives object __settings__ in request body. ([profile schema](SCHEMA.README.md#Profile))
-> 
-> __settings__ fields depends on the value of __settingName__.
-> 
-> return updated value of setting.
-
-<br/>
-
 
 ## Compute User Stats
 **NOTE: every week at 01:00 of sunday, extract favorite genres from last 500 titles from [like, save, follow, finished] movies.**
