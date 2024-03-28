@@ -59,34 +59,35 @@ In few hours (almost every 3 hour) crawler start and populates database, also yo
 
 To run this project, you will need to add the following environment variables to your .env file
 
-| Prop                                   | Description                                                                                                                    | Required | Default Value |
-|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|----------|---------------|
-| **`PORT`**                             | server port                                                                                                                    | `false`  | 3000          |
-| **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                               | `true`   |               |
-| **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/)            | `true`   |               |
-| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                                 | `false`  | 7             |
-| **`MONGODB_DATABASE_URL`**             | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                           | `true`   |               |
-| **`POSTGRE_DATABASE_URL`**             | postgresSql url                                                                                                                | `true`   |               |
-| **`POSTGRES_PASSWORD`**                |                                                                                                                                | `true`   |               |
-| **`REDIS_URL`**                        | redis url                                                                                                                      | `true`   |               |
-| **`REDIS_PASSWORD`**                   | redis password                                                                                                                 | `true`   |               |
-| **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
-| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en)                                                  | `true`   |               |
-| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                                      | `true`   |               |
-| **`CLOUAD_STORAGE_ACCESS_KEY`**        |                                                                                                                                | `true`   |               |
-| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |                                                                                                                                | `true`   |               |
-| **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                              | `true`   |               |
-| **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                                    | `true`   |               |
-| **`MAILSERVER_HOST`**                  |                                                                                                                                | `false`  | localhost     |
-| **`MAILSERVER_PORT`**                  |                                                                                                                                | `false`  | 587           |
-| **`MAILSERVER_USERNAME`**              |                                                                                                                                | `false`  |               |
-| **`MAILSERVER_PASSWORD`**              |                                                                                                                                | `false`  |               |
-| **`ACCESS_TOKEN_SECRET`**              |                                                                                                                                | `true`   |               |
-| **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
-| **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                                       | `false`  |               |
-| **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                                  | `false`  |               |
-| **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
-| **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                               | `false`  |               |
+| Prop                                   | Description                                                                                                         | Required | Default Value |
+|----------------------------------------|---------------------------------------------------------------------------------------------------------------------|----------|---------------|
+| **`PORT`**                             | server port                                                                                                         | `false`  | 3000          |
+| **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                    | `true`   |               |
+| **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/) | `true`   |               |
+| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                      | `false`  | 7             |
+| **`MONGODB_DATABASE_URL`**             | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                | `true`   |               |
+| **`POSTGRE_DATABASE_URL`**             | postgresSql url                                                                                                     | `true`   |               |
+| **`POSTGRES_PASSWORD`**                |                                                                                                                     | `true`   |               |
+| **`REDIS_URL`**                        | redis url                                                                                                           | `true`   |               |
+| **`REDIS_PASSWORD`**                   | redis password                                                                                                      | `true`   |               |
+| **`RABBITMQ_URL`**                     |                                                                                                                     | `true`   |               |
+| **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                  | `false`  |               |
+| **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en)                                       | `true`   |               |
+| **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                           | `true`   |               |
+| **`CLOUAD_STORAGE_ACCESS_KEY`**        |                                                                                                                     | `true`   |               |
+| **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |                                                                                                                     | `true`   |               |
+| **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                   | `true`   |               |
+| **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                         | `true`   |               |
+| **`MAILSERVER_HOST`**                  |                                                                                                                     | `false`  | localhost     |
+| **`MAILSERVER_PORT`**                  |                                                                                                                     | `false`  | 587           |
+| **`MAILSERVER_USERNAME`**              |                                                                                                                     | `false`  |               |
+| **`MAILSERVER_PASSWORD`**              |                                                                                                                     | `false`  |               |
+| **`ACCESS_TOKEN_SECRET`**              |                                                                                                                     | `true`   |               |
+| **`REFRESH_TOKEN_SECRET`**             |                                                                                                                     | `true`   |               |
+| **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                            | `false`  |               |
+| **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                       | `false`  |               |
+| **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                       | `false`  |               |
+| **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                    | `false`  |               |
 
 >**NOTE: check [configs schema](readme/CONFIGS.README.md) for other configs that read from db.**
 >**NOTE: check [env variable](readme/ENV.README.md) for full list of environment variables.**
