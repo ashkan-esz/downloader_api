@@ -13,6 +13,7 @@ profile = {
         originalSize: Int,
         size: Int,
         thumbnail: String,
+        blurHash: String,
         addDate: Date,
     }),
     defaultProfile: String,
@@ -134,6 +135,7 @@ dataLevel = {
             size: Int,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
             thumbnail: String,
+            blurHash: String,
         },
         poster_wide_s3: null || {
             url: String,
@@ -142,6 +144,7 @@ dataLevel = {
             size: Int,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
             thumbnail: String,
+            blurHash: String,
         },
         genres: Array(String),
         summary: {
@@ -241,6 +244,7 @@ dataLevel = {
             size: Int,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
             thumbnail: String,
+            blurHash: String,
         },
         poster_wide_s3: null || {
             url: String,
@@ -249,6 +253,7 @@ dataLevel = {
             size: Int,
             vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
             thumbnail: String,
+            blurHash: String,
         },
         trailer_s3: null || {
             url: String,
@@ -361,6 +366,7 @@ dataLevel = {
     size: Int,
     vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
     thumbnail: String,
+    blurHash: String,
 }
 ```
 
@@ -431,6 +437,7 @@ staffData = {
         size: Int,
         vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         thumbnail: String,
+        blurHash: String,
     },
     originalImages: Array(String),
     credits: Array({
@@ -477,6 +484,7 @@ characterData = {
         size: Int,
         vpnStatus: String, //enum('vpnOnly', 'noVpn', 'allOK')
         thumbnail: String,
+        blurHash: String,
     },
     originalImages: Array(String),
     credits: Array({

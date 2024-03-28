@@ -13,6 +13,7 @@ To run this project, you will need to add the following environment variables to
 | **`POSTGRES_PASSWORD`**                |                                                                                                                                | `true`   |               |
 | **`REDIS_URL`**                        | redis url                                                                                                                      | `true`   |               |
 | **`REDIS_PASSWORD`**                   | redis password                                                                                                                 | `true`   |               |
+| **`RABBITMQ_URL`**                     |                                                                                                                                | `true`   |               |
 | **`SENTRY_DNS`**                       | see [sentry.io](https://sentry.io)                                                                                             | `false`  |               |
 | **`CLOUAD_STORAGE_ENDPOINT`**          | s3 sever url, for example see [arvancloud.com](https://www.arvancloud.com/en)                                                  | `true`   |               |
 | **`CLOUAD_STORAGE_WEBSITE_ENDPOINT`**  | s3 static website postfix                                                                                                      | `true`   |               |
@@ -45,3 +46,5 @@ To run this project, you will need to add the following environment variables to
 | **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
 | **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                               | `false`  |               |
 | **`IGNORE_HENTAI`**                    | dont add hentai to db                                                                                                          | `false`  | true          |
+
+>**NOTE: check [configs schema](CONFIGS.README.md) for other configs that read from db.**

@@ -10,6 +10,8 @@ export const blurHashExchangeType = "direct"
 export let rabbitmqPublishChannel = null
 export let rabbitmqConsumeChannel = null
 
+startRabbitmq();
+
 export async function startRabbitmq() {
     try {
         const connection = await amqp.connect(config.rabbitmqUrl)

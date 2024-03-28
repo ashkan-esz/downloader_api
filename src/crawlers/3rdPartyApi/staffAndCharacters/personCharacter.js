@@ -5,6 +5,7 @@ import {getCharacterInfo, getCharactersStaff, getPersonInfo} from "../jikanApi.j
 import * as utils from "../../utils/utils.js";
 import {extractStaffDataFromJikanAbout} from "../extractDataFields.js";
 import {saveError} from "../../../error/saveError.js";
+import * as rabbitmqPublisher from "../../../../rabbitmq/publish.js";
 
 const _maxStaffOrCharacterSize = 150;
 
@@ -89,6 +90,7 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    await rabbitmqPublisher.addBlurHashToQueue('staff', createStaffResult.id, castImage.url)
                 }
             }
         }
@@ -116,6 +118,7 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'character', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    await rabbitmqPublisher.addBlurHashToQueue('character', createCharacterResult.id, castImage.url)
                 }
             }
         }
@@ -231,6 +234,7 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    await rabbitmqPublisher.addBlurHashToQueue('staff', createStaffResult.id, castImage.url)
                 }
             }
         }
@@ -258,6 +262,7 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    await rabbitmqPublisher.addBlurHashToQueue('character', createCharacterResult.id, castImage.url)
                 }
             }
         }

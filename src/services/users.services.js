@@ -11,15 +11,6 @@ import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
 
-//if (data.changedPasswordAfter(decoded.iat)) {
-// 			return res.status(401).json({
-// 				message: 'User recently changed password! Please log in again',
-// 			});
-// 		}
-
-
-//todo : forget password
-
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
         let hashedPassword = await bcrypt.hash(password, 12);

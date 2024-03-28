@@ -30,6 +30,7 @@ export default Object.freeze({
         }),
         backupPassword: process.env.DB_BACKUP_PASSWORD || '',
     }),
+    rabbitmqUrl: process.env.RABBITMQ_URL,
     sentryDns: process.env.SENTRY_DNS,
     apiKeys: Object.freeze({
         omdbApiKeys: getOmdbApiKeys(),

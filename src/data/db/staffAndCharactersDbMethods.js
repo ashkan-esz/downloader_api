@@ -99,6 +99,7 @@ function getFieldsSelectionStage(type, dataLevel, userStatsQuery, noUserStats) {
                     originalSize: true,
                     originalUrl: true,
                     thumbnail: true,
+                    blurHash: true,
                     vpnStatus: true,
                 }
             },
@@ -116,6 +117,7 @@ function getFieldsSelectionStage(type, dataLevel, userStatsQuery, noUserStats) {
                     originalSize: true,
                     originalUrl: true,
                     thumbnail: true,
+                    blurHash: true,
                     vpnStatus: true,
                 }
             },
@@ -208,6 +210,7 @@ export async function getStaffById(userId, id, creditsCount, noUserStats, isGues
                         originalSize: true,
                         originalUrl: true,
                         thumbnail: true,
+                        blurHash: true,
                         vpnStatus: true,
                     }
                 },
@@ -231,6 +234,7 @@ export async function getStaffById(userId, id, creditsCount, noUserStats, isGues
                                     select: {
                                         size: true,
                                         thumbnail: true,
+                                        blurHash: true,
                                         url: true,
                                         vpnStatus: true,
                                     }
@@ -289,6 +293,7 @@ export async function getCharacterById(userId, id, creditsCount, noUserStats, is
                         originalSize: true,
                         originalUrl: true,
                         thumbnail: true,
+                        blurHash: true,
                         vpnStatus: true,
                     }
                 },
@@ -312,6 +317,7 @@ export async function getCharacterById(userId, id, creditsCount, noUserStats, is
                                     select: {
                                         size: true,
                                         thumbnail: true,
+                                        blurHash: true,
                                         url: true,
                                         vpnStatus: true,
                                     }
@@ -425,6 +431,7 @@ export async function getStaffAndCharacterOfMovie(movieId, skip, limit) {
                             select: {
                                 size: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 url: true,
                                 vpnStatus: true,
                             }
@@ -440,6 +447,7 @@ export async function getStaffAndCharacterOfMovie(movieId, skip, limit) {
                             select: {
                                 size: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 url: true,
                                 vpnStatus: true,
                             }
@@ -479,6 +487,7 @@ export async function getCreditsOfStaff(staffId, skip, limit) {
                             select: {
                                 size: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 url: true,
                                 vpnStatus: true,
                             }
@@ -523,6 +532,7 @@ export async function getCreditsOfCharacter(characterId, skip, limit) {
                             select: {
                                 size: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 url: true,
                                 vpnStatus: true,
                             }

@@ -1523,6 +1523,7 @@ async function getUserStatsList_likeDislikedStaff(userId, type, skip, limit, noU
                                 url: true,
                                 originalUrl: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 vpnStatus: true,
                             }
                         },
@@ -1569,6 +1570,7 @@ async function getUserStatsList_followStaff(userId, skip, limit, noUserStats) {
                                 url: true,
                                 originalUrl: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 vpnStatus: true,
                             }
                         },
@@ -1616,6 +1618,7 @@ async function getUserStatsList_likeDislikedCharacter(userId, type, skip, limit,
                                 url: true,
                                 originalUrl: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 vpnStatus: true,
                             }
                         },
@@ -1662,6 +1665,7 @@ async function getUserStatsList_favoriteCharacter(userId, skip, limit, noUserSta
                                 url: true,
                                 originalUrl: true,
                                 thumbnail: true,
+                                blurHash: true,
                                 vpnStatus: true,
                             }
                         },

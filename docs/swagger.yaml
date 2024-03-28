@@ -210,6 +210,8 @@ paths:
                           type: integer
                         thumbnail:
                           type: string
+                        blurHash:
+                          type: string
                         addDate:
                           $ref: '#/components/schemas/DateString'
         400:
@@ -1813,6 +1815,8 @@ paths:
                           type: integer
                         thumbnail:
                           type: string
+                        blurHash:
+                          type: string
                         addDate:
                           $ref: '#/components/schemas/DateString'
         400:
@@ -3261,6 +3265,8 @@ security:
                 type: integer
               thumbnail:
                 type: string
+              blurHash:
+                type: string
               addDate:
                 $ref: '#/components/schemas/DateString'
         defaultProfile:
@@ -3825,6 +3831,8 @@ security:
                   type: integer
                 thumbnail:
                   type: string
+                blurHash:
+                  type: string
                 url:
                   type: string
                 vpnStatus:
@@ -3845,6 +3853,8 @@ security:
                 size:
                   type: integer
                 thumbnail:
+                  type: string
+                blurHash:
                   type: string
                 url:
                   type: string
@@ -3994,6 +4004,8 @@ security:
               $ref: '#/components/schemas/VpnStatus'
             thumbnail:
               type: string
+            blurHash:
+              type: string
         originalImages:
           $ref: '#/components/schemas/StringArray'
         credits:
@@ -4053,6 +4065,8 @@ security:
               $ref: '#/components/schemas/VpnStatus'
             thumbnail:
               type: string
+            blurHash:
+              type: string
         originalImages:
           $ref: '#/components/schemas/StringArray'
         credits:
@@ -4094,6 +4108,8 @@ security:
                   type: integer
                 thumbnail:
                   type: string
+                blurHash:
+                  type: string
                 url:
                   type: string
                 vpnStatus:
@@ -4114,6 +4130,8 @@ security:
                 size:
                   type: integer
                 thumbnail:
+                  type: string
+                blurHash:
                   type: string
                 url:
                   type: string
@@ -4390,6 +4408,8 @@ security:
           $ref: '#/components/schemas/VpnStatus'
         thumbnail:
           type: string
+        blurHash:
+          type: string
 
     Poster_s3:
       type: object
@@ -4406,6 +4426,8 @@ security:
           $ref: '#/components/schemas/VpnStatus'
         thumbnail:
           type: string
+        blurHash:
+          type: string
 
     Poster_wide_s3:
       type: object
@@ -4421,6 +4443,8 @@ security:
         vpnStatus:
           $ref: '#/components/schemas/VpnStatus'
         thumbnail:
+          type: string
+        blurHash:
           type: string
 
     Trailer:
