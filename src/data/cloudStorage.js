@@ -204,6 +204,7 @@ export async function uploadProfileImageToS3(userId, type, dataBuffer, retryCoun
             originalSize: Number(dataBuffer.length),
             size: Number(compressedDataBuffer.length),
             thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+            blurHash: "",
         };
     } catch (error) {
         if (error.code === 'ENOTFOUND' && retryCounter < 2) {
@@ -387,6 +388,7 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
                     size: (thumbnailData && thumbnailData.fileSize) ? thumbnailData.fileSize : await getFileSize(s3Image),
                     vpnStatus: s3VpnStatus,
                     thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+                    blurHash: "",
                 };
             }
         }
@@ -416,6 +418,7 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
             size: Number(dataBuffer.length),
             vpnStatus: s3VpnStatus,
             thumbnail: thumbnailData ? thumbnailData.dataURIBase64 : '',
+            blurHash: "",
         };
     } catch (error) {
         if ((error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') && retryCounter < 2) {

@@ -75,6 +75,7 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
             size: fileSize,
             vpnStatus: sourceVpnStatus.poster,
             thumbnail: thumbnail,
+            blurHash: "",
         });
     }
 
@@ -104,6 +105,7 @@ async function handlePosterUpdate(db_data, poster, sourceName, sourceVpnStatus) 
                 size: db_data.poster_s3.size,
                 vpnStatus: db_data.poster_s3.vpnStatus,
                 thumbnail: db_data.poster_s3.thumbnail,
+                blurHash: db_data.poster_s3.blurHash,
             });
         } else {
             //check s3Poster updated/changed or need update

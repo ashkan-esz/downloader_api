@@ -89,8 +89,10 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
             if (!createStaffResult.imageData) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
-                    await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
-                    await rabbitmqPublisher.addBlurHashToQueue('staff', createStaffResult.id, castImage.url)
+                    let res = await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    if (res.blurHash === "") {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
+                    }
                 }
             }
         }
@@ -117,8 +119,10 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
             if (!createCharacterResult.imageData) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'character', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
-                    await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
-                    await rabbitmqPublisher.addBlurHashToQueue('character', createCharacterResult.id, castImage.url)
+                    let res = await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    if (res.blurHash === "") {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
+                    }
                 }
             }
         }
@@ -233,8 +237,10 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
             if (!createStaffResult.imageData) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
-                    await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
-                    await rabbitmqPublisher.addBlurHashToQueue('staff', createStaffResult.id, castImage.url)
+                    let res = await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
+                    if (res.blurHash === "") {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
+                    }
                 }
             }
         }
@@ -261,8 +267,10 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
             if (!createCharacterResult.imageData) {
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
-                    await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
-                    await rabbitmqPublisher.addBlurHashToQueue('character', createCharacterResult.id, castImage.url)
+                    let res = await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
+                    if (res.blurHash === "") {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
+                    }
                 }
             }
         }

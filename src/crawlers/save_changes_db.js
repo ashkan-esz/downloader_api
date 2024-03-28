@@ -24,6 +24,7 @@ import {saveCrawlerBadLink, saveCrawlerWarning} from "../data/db/serverAnalysisD
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {handleLatestDataUpdate} from "./latestData.js";
 import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
+import * as rabbitmqPublisher from "../../rabbitmq/publish.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber, extraConfigs) {
@@ -87,6 +88,16 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
                 let insertedId = await insertMovieToDB(result.titleModel);
                 if (insertedId) {
+                    if (result.titleModel.posters.length > 0) {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movie, insertedId, "")
+                    }
+                    if (result.titleModel.poster_s3) {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieS3, insertedId, result.titleModel.poster_s3.url)
+                    }
+                    if (result.titleModel.poster_wide_s3) {
+                        await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieWideS3, insertedId, result.titleModel.poster_wide_s3.url)
+                    }
+
                     if (type.includes('anime') && result.allApiData.jikanApiFields) {
                         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
                         await handleAnimeRelatedTitles(insertedId, result.allApiData.jikanApiFields.jikanRelatedTitles);
@@ -389,6 +400,16 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         if (Object.keys(updateFields).length > 0) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
             await updateMovieByIdDB(db_data._id, updateFields);
+
+            if (updateFields.posters && updateFields.posters.length > 0) {
+                await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movie, db_data._id, "")
+            }
+            if (updateFields.poster_s3) {
+                await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieS3, db_data._id, updateFields.poster_s3.url)
+            }
+            if (updateFields.poster_wide_s3) {
+                await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieWideS3, db_data._id, updateFields.poster_wide_s3.url)
+            }
         }
 
     } catch (error) {

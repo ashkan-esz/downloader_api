@@ -643,7 +643,7 @@ export async function addCastImageDb(id, type, data) {
                 where: {
                     staffId: id,
                 },
-                update: data,
+                update: {...data, blurHash: undefined},
                 create: {
                     ...data,
                     staffId: id,
@@ -655,7 +655,7 @@ export async function addCastImageDb(id, type, data) {
                 where: {
                     characterId: id,
                 },
-                update: data,
+                update: {...data, blurHash: undefined},
                 create: {
                     ...data,
                     staffId: null,

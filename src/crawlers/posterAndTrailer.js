@@ -42,6 +42,7 @@ export function addS3PosterToTitleModel(titleModel, s3Poster) {
             size: s3Poster.size,
             vpnStatus: s3Poster.vpnStatus,
             thumbnail: s3Poster.thumbnail,
+            blurHash: s3Poster.blurHash,
         }];
     }
     return titleModel;

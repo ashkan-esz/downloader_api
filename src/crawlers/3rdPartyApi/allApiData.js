@@ -39,6 +39,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                 size: s3poster.size,
                 vpnStatus: s3poster.vpnStatus,
                 thumbnail: s3poster.thumbnail,
+                blurHash: s3poster.blurHash,
             });
             titleModel.posters = sortPosters(titleModel.posters);
         }
@@ -186,6 +187,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                         size: s3poster.size,
                         vpnStatus: s3poster.vpnStatus,
                         thumbnail: s3poster.thumbnail,
+                        blurHash: s3poster.blurHash,
                     });
                     titleModel.posters = sortPosters(titleModel.posters);
                 }
@@ -381,6 +383,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                         size: s3poster.size,
                         vpnStatus: s3poster.vpnStatus,
                         thumbnail: s3poster.thumbnail,
+                        blurHash: s3poster.blurHash,
                     });
                     db_data.posters = sortPosters(db_data.posters);
                     updateFields.posters = db_data.posters;

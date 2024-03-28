@@ -40,9 +40,10 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
             size: 0,
             vpnStatus: sourceVpnStatus.poster,
             thumbnail: "",
+            blurHash: "",
         }].filter(item => item.url),
-        poster_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
-        poster_wide_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail}
+        poster_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail,blurHash}
+        poster_wide_s3: null, // {url,originalUrl,originalSize,size,vpnStatus,thumbnail,blurHash}
         trailer_s3: null, // {url,originalUrl,size,vpnStatus}
         summary: {
             persian: persianSummary,
