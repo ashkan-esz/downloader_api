@@ -7,6 +7,13 @@ export const blurHashBindingKey = "blurHash"
 export const blurHashExchange = "blurHashExchange"
 export const blurHashExchangeType = "direct"
 
+//-----------------------------
+export const emailQueue = "email"
+export const emailBindingKey = "email"
+export const emailExchange = "EmailExchange"
+export const emailExchangeType = "direct"
+//-----------------------------
+
 export let rabbitmqPublishChannel = null
 export let rabbitmqConsumeChannel = null
 
@@ -33,7 +40,7 @@ export async function startRabbitmq() {
     }
 }
 
-async function createExchangesAndQueues(channel){
+async function createExchangesAndQueues(channel) {
     // blurHash queue
     await channel.assertExchange(blurHashExchange, blurHashExchangeType, {
         durable: true
@@ -42,9 +49,17 @@ async function createExchangesAndQueues(channel){
         durable: true,
     });
     await channel.bindQueue(blurHashQueue, blurHashExchange, blurHashBindingKey);
+    //----------------------------
+    await channel.assertExchange(emailExchange, emailExchangeType, {
+        durable: true
+    })
+    await channel.assertQueue(emailQueue, {
+        durable: true,
+    });
+    await channel.bindQueue(emailQueue, emailExchange, emailBindingKey);
 }
 
-async function createConsumers(channel){
+async function createConsumers(channel) {
     // channel.consume(blurHashQueue, function (msg) {
     //     console.log(" [x] Received %s", msg.content.toString());
     //     channel.ack(msg)

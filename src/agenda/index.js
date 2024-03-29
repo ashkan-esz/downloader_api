@@ -13,7 +13,7 @@ let agenda = new Agenda({
     processEvery: '1 minute',
 });
 
-const jobTypes = Object.freeze(["email", "computeUserJob", "userAnalysisJob", "checkSourceDomains", "youtubeTrailers", "movieRanks", "dbBackup"]);
+const jobTypes = Object.freeze(["computeUserJob", "userAnalysisJob", "checkSourceDomains", "youtubeTrailers", "movieRanks", "dbBackup"]);
 
 export async function startAgenda() {
     try {

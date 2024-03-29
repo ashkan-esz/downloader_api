@@ -78,10 +78,6 @@ To run this project, you will need to add the following environment variables to
 | **`CLOUAD_STORAGE_SECRET_ACCESS_KEY`** |                                                                                                                     | `true`   |               |
 | **`OMDB_API_KEY{i}`**                  | `i` start from 1. like OMDB_API_KEY1, see [omdbapi.com](https://www.omdbapi.com/)                                   | `true`   |               |
 | **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                         | `true`   |               |
-| **`MAILSERVER_HOST`**                  |                                                                                                                     | `false`  | localhost     |
-| **`MAILSERVER_PORT`**                  |                                                                                                                     | `false`  | 587           |
-| **`MAILSERVER_USERNAME`**              |                                                                                                                     | `false`  |               |
-| **`MAILSERVER_PASSWORD`**              |                                                                                                                     | `false`  |               |
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                     | `true`   |               |
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                     | `true`   |               |
 | **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                            | `false`  |               |
@@ -144,15 +140,6 @@ Give a ⭐️ if you like this project!
 - docker repository is ashkanaz2828/downloader_api
 - Change `CMD [ "node", "src/server.js"]` to `CMD [ "node", "src/tracing.js"]` in Dockerfile to enable opentelemetry.
 - Run `make signoz-install` to instakk and start signoz apm dashboard. (http://localhost:3301)
-
-- mailServer:
-    1. https://hub.docker.com/r/boky/postfix
-    2. https://docker-mailserver.github.io/docker-mailserver/latest/usage/
-    3. create subdomain 'mail' point to server ip. example:: A   mail   SERVER_IP
-    4. create record 'MX' with name of domain and point to subdomain. example:: MX   movietracker.mom   mail.movietracker.mom  DNS only
-    5. add rDNS or PTR record to point to domain. example:: PTR   SERVER_IP   movietracker.mom  DNS only
-    6. add rDNS or PTR in server to point to domain. exmaple:: movietracker.mom
-    7. add SPF record to dns. example:: TXT   movietracker.mom   v=spf1 ip4:SERVER_IP include:movietracker.mom +all  DNS only
 
 ## Author
 

@@ -26,11 +26,6 @@ To run this project, you will need to add the following environment variables to
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                            | `false`  | false         |
 | **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                                       | `false`  | false         |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                                | `false`  |               |
-| **`MAILSERVER_HOST`**                  |                                                                                                                                | `false`  | localhost     |
-| **`MAILSERVER_PORT`**                  |                                                                                                                                | `false`  | 587           |
-| **`MAILSERVER_USERNAME`**              |                                                                                                                                | `false`  |               |
-| **`MAILSERVER_PASSWORD`**              |                                                                                                                                | `false`  |               |
-| **`USER_SESSION_PAGE`**                |                                                                                                                                | `false`  |               |
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                                | `true`   |               |
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                                | `true`   |               |
 | **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                                       | `false`  |               |

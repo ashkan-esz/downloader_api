@@ -44,12 +44,6 @@ export default Object.freeze({
         bucketNamePrefix: process.env.BUCKET_NAME_PREFIX || '',
     }),
     remoteBrowser: getRemoteBrowsers(),
-    email: Object.freeze({
-        host: process.env.MAILSERVER_HOST || 'localhost',
-        port: Number(process.env.MAILSERVER_PORT || 587),
-        username: process.env.MAILSERVER_USERNAME,
-        password: process.env.MAILSERVER_PASSWORD,
-    }),
     jwt: Object.freeze({
         accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
         refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
@@ -62,7 +56,6 @@ export default Object.freeze({
         totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 1024),
         defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0),
     }),
-    userSessionsPage: process.env.USER_SESSION_PAGE,
     initDbsOnStart: process.env.INIT_DBS_ON_START === 'true',
     admin: Object.freeze({
         user: process.env.ADMIN_USER || '',

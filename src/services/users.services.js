@@ -1,7 +1,6 @@
 import config from "../config/index.js";
 import * as usersDbMethods from "../data/db/usersDbMethods.js";
 import * as bcrypt from "bcrypt";
-import agenda from "../agenda/index.js";
 import jwt from "jsonwebtoken";
 import {v4 as uuidv4} from 'uuid';
 import {saveError} from "../error/saveError.js";
@@ -14,10 +13,10 @@ import {setRedis} from "../data/redis.js";
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
         let hashedPassword = await bcrypt.hash(password, 12);
-        let emailVerifyToken = await bcrypt.hash(uuidv4(), 12);
-        emailVerifyToken = emailVerifyToken.replace(/\//g, '');
-        let emailVerifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', emailVerifyToken, emailVerifyToken_expire, defaultProfileImage);
+        let verifyToken = await bcrypt.hash(uuidv4(), 12);
+        verifyToken = verifyToken.replace(/\//g, '');
+        let verifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
+        let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', verifyToken, verifyToken_expire, defaultProfileImage);
         if (userData === 'userId exist') {
             return generateServiceResult({}, 403, errorMessage.userIdAlreadyExist);
         }
@@ -35,12 +34,6 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         const deviceId = fingerprint.hash || uuidv4();
         await usersDbMethods.addSession(userData.userId, deviceInfo, deviceId, tokens.refreshToken);
-        await agenda.schedule('in 5 seconds', 'registration email', {
-            rawUsername: userData.rawUsername,
-            email,
-            emailVerifyToken,
-            host,
-        });
         return generateServiceResult({
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
@@ -73,10 +66,6 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
                 return generateServiceResult({}, 500, errorMessage.serverError);
             }
             if (result.isNewDevice) {
-                agenda.schedule('in 4 seconds', 'login email', {
-                    deviceInfo,
-                    email: result.email,
-                });
                 const activeSessions = await usersDbMethods.getUserActiveSessions(userData.userId);
                 if (activeSessions.length > 5) {
                     let lastUsedSession = activeSessions.sort((a, b) =>
