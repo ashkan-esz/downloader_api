@@ -50,7 +50,7 @@ export async function preStart(force = false) {
 async function createTestUser() {
     console.log('====> [[Creating Guest User]]');
     try {
-        let hashedPassword = await bcrypt.hash('$$test_user_password$$', 12);
+        let hashedPassword = await bcrypt.hash('$$test_user_password$$', 11);
         let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, 'test_user', '0', 0, defaultProfileImage);
         if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             //test user already exist
@@ -79,7 +79,7 @@ async function createTestUser() {
 async function createAdminUser() {
     console.log('====> [[Creating Admin User]]');
     try {
-        let hashedPassword = await bcrypt.hash(config.admin.pass, 12);
+        let hashedPassword = await bcrypt.hash(config.admin.pass, 13);
         const email = config.admin.user + '@gmail.com';
         let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword, 'admin', '', 0, defaultProfileImage);
         if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {

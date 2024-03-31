@@ -12,8 +12,8 @@ import {setRedis} from "../data/redis.js";
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
-        let hashedPassword = await bcrypt.hash(password, 12);
-        let verifyToken = await bcrypt.hash(uuidv4(), 12);
+        let hashedPassword = await bcrypt.hash(password, 11);
+        let verifyToken = await bcrypt.hash(uuidv4(), 11);
         verifyToken = verifyToken.replace(/\//g, '');
         let verifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
         let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', verifyToken, verifyToken_expire, defaultProfileImage);
