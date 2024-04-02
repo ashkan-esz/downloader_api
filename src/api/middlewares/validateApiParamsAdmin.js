@@ -453,12 +453,10 @@ const validations = Object.freeze({
         .toInt(),
 
     mediaFileExtensionLimit: body('mediaFileExtensionLimit')
-        .isString().withMessage("Invalid parameter mediaFileExtensionLimit :: String")
-        .toString(),
+        .isString().withMessage("Invalid parameter mediaFileExtensionLimit :: String"),
 
     profileImageExtensionLimit: body('profileImageExtensionLimit')
-        .isString().withMessage("Invalid parameter profileImageExtensionLimit :: String")
-        .toString(),
+        .isString().withMessage("Invalid parameter profileImageExtensionLimit :: String"),
 
     ids: body('ids')
         .exists().withMessage("Missed parameter ids")

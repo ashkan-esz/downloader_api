@@ -28,7 +28,7 @@ services:
       CRAWLER_TOTAL_MEMORY: 900
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
-      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost
+      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
     #    ports:
     #      - "3000:3000"
     deploy:
@@ -175,25 +175,54 @@ services:
         reservations:
           memory: 10M
 
-  #more details in readme.md
-  mailServer:
-    image: boky/postfix
-    #    network_mode: host
+  chat:
+    image: ashkanaz2828/downloader_gochat
+    depends_on:
+      - rabbitmq
+    network_mode: host
+    env_file: ./chatservice.env
     environment:
-      - ALLOWED_SENDER_DOMAINS=localhost movietracker.mom
-    ports:
-      - "587:587"
-      - "25:25"
-    #    volumes:
-    #      - ./postfix/main.cf:/etc/postfix/main.cf
-    #      - ./postfix/virtual:/etc/postfix/virtual
+      PORT: 3002
+      MAIN_SERVER_ADDRESS: api.movieTracker.mom
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
+      LOG_PANIC_TRACE: 'true'
+    #    ports:
+    #      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: 150M
+        reservations:
+          memory: 20M
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq
+    network_mode: host
+    container_name: my-rabbitmq
+    build:
+      context: ./docker/rabbitmq
+      dockerfile: ./Dockerfile
+      network: host
+    env_file: ./chatservice.env
+    environment:
+      - PORT=5672
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_ERLANG_COOKIE=unique-erlang-cookie
+    #    ports:
+    #      - "5672:5672"
+    #      - "15672:15672"
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/
     deploy:
       resources:
         limits:
           cpus: "0.2"
-          memory: 100M
+          memory: 250M
         reservations:
-          memory: 10M
+          memory: 150M
     restart: always
 
   postgresDb:
@@ -227,6 +256,8 @@ services:
 
 volumes:
   redis:
+    driver: local
+  rabbitmq:
     driver: local
   telegrambot:
     driver: local

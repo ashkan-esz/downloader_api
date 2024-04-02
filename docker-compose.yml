@@ -5,7 +5,7 @@ services:
     image: downloader-api
     depends_on:
       - redis
-      - mailServer
+      - rabbitmq
 #      - remoteBrowser
     network_mode: host
     build:
@@ -27,7 +27,7 @@ services:
       CRAWLER_TOTAL_MEMORY: 900
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
     #    ports:
 #      - "3000:3000"
     deploy:
@@ -164,7 +164,7 @@ services:
 #      - '80:80'
     depends_on:
       - api
-      - telegrambot
+      - chat
       - adminpanel
       - website
     deploy:
@@ -175,15 +175,93 @@ services:
         reservations:
           memory: 10M
 
-  #more details in readme.md
+  chat:
+    image: ashkanaz2828/downloader_gochat
+    depends_on:
+      - redis
+      - rabbitmq
+      - postgresDb
+    network_mode: host
+    env_file: ./chatservice.env
+    environment:
+      PORT: 3002
+      MAIN_SERVER_ADDRESS: api.movieTracker.mom
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
+      LOG_PANIC_TRACE: 'true'
+    #    ports:
+    #      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: 150M
+        reservations:
+          memory: 20M
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq
+    network_mode: host
+    container_name: my-rabbitmq
+    build:
+      context: ./docker/rabbitmq
+      dockerfile: ./Dockerfile
+      network: host
+    env_file: ./chatservice.env
+    environment:
+      - PORT=5672
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_ERLANG_COOKIE=unique-erlang-cookie
+    #    ports:
+    #      - "5672:5672"
+    #      - "15672:15672"
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 250M
+        reservations:
+          memory: 150M
+    restart: always
+
+  mailService:
+    image: ashkanaz2828/downloader_email
+    depends_on:
+      - rabbitmq
+      - mailServer
+    network_mode: host
+    env_file: ./mailservice.env
+    environment:
+      MAIN_SERVER_ADDRESS: api.movieTracker.mom
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom  --- https://chat.movietracker.mom
+      MAILSERVER_HOST: localhost
+      MAILSERVER_PORT: 587
+      MAILSERVER_USERNAME: webmaster@movietracker.mom
+      LOG_PANIC_TRACE: 'true'
+      INITIAL_WAIT_FOR_MAIL_SERVER_SEC: 30
+    #    ports:
+    #      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 50M
+        reservations:
+          memory: 10M
+    restart: always
+
+  #more details in https://github.com/ashkan-esz/downloader_email
   mailServer:
     image: boky/postfix
 #    network_mode: host
     environment:
-      - ALLOWED_SENDER_DOMAINS=localhost movietracker.mom
+      - ALLOWED_SENDER_DOMAINS=localhost movietracker.mom chat.movietracker.mom
     ports:
       - "587:587"
-      - "25:25"
+      - "250:25"
 #    volumes:
 #      - ./postfix/main.cf:/etc/postfix/main.cf
 #      - ./postfix/virtual:/etc/postfix/virtual
@@ -226,6 +304,8 @@ services:
 
 volumes:
   redis:
+    driver: local
+  rabbitmq:
     driver: local
   telegrambot:
     driver: local

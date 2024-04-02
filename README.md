@@ -134,6 +134,7 @@ Give a ⭐️ if you like this project!
 - [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
 - [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
 - [downloader_gochat](https://github.com/ashkan-esz/downloader_gochat/)
+- [downloader_email](https://github.com/ashkan-esz/downloader_email/)
 
 ## Extra
 

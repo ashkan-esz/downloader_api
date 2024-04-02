@@ -150,7 +150,7 @@ router.put('/configs/update',
         ['corsAllowedOrigins', 'disableTestUserRequests', 'disableCrawlerForDuration',
             'disableCrawler', 'developmentFaze',
             'mediaFileSizeLimit', 'profileFileSizeLimit', 'profileImageCountLimit',
-            'mediaFileExtensionLimit', 'profileImageExtensionLimit'
+            'mediaFileExtensionLimit', 'profileImageExtensionLimit',
         ]),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']),

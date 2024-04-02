@@ -21,3 +21,4 @@ manualTest.http
 signoz
 nginx
 db-backups
+docker

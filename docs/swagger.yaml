@@ -12,6 +12,9 @@ info:
 "servers":
   - "url": 'https://api.movietracker.mom'
   - "url": 'http://localhost:3000'
+externalDocs:
+  description: --- Chat Service Doc ---
+  url: https://chat.movieTracker.mom/swagger
 
 paths:
   /users/signup:

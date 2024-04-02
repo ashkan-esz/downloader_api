@@ -51,3 +51,10 @@ signoz-start:
 signoz-uninstall:
 	cd signoz/signoz-0.23.0/deploy && docker-compose -f docker/clickhouse-setup/docker-compose.yaml down -v
 	cd ./signoz && sudo rm -rf signoz-0.23.0
+
+build_rabbitmq:
+	docker image build --network=host -t rabbitmq ./docker/rabbitmq
+
+run_rabbitmq:
+	#docker run -d --hostname rabbitmq --name rabbitmq -p 15672:15672 -p 5672:5672 --network rabbitnet -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq
+	docker run --restart unless-stopped --network=host --hostname rabbitmq --name rabbitmq -p 15672:15672 -p 5672:5672 -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq

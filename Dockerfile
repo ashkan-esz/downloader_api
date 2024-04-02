@@ -9,7 +9,7 @@ WORKDIR /usr/app
 COPY package*.json ./
 
 RUN npm install --omit=dev
-RUN npm install prisma --save-dev
+RUN npm install prisma@5.7.0 --save-dev
 
 COPY . .
 
