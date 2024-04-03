@@ -4,7 +4,7 @@ services:
   redis-stat:
     container_name: redis-stat
     network_mode: host
-    env_file: ./.env
+    env_file: ../env/.env
     hostname: redis-stat
     image: insready/redis-stat:latest
     command: --server localhost:6379 --auth ${REDIS_PASSWORD}

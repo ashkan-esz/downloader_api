@@ -17,7 +17,7 @@ Go to [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebro
 
 
 ### 2. Install dependencies and Environment variables
-First set all environment variables to .env file in your local environment or to server shell. then use npm script `npm install` to install dependencies.
+First set all environment variables to env/.env file in your local environment or to server shell. then use npm script `npm install` to install dependencies.
 
 ### 3. Setup Db collections
 
@@ -25,7 +25,7 @@ Collection information listed in [`src/data/createCollectionsIndex`](src/data/cr
 
 you can run npm script `npm run pre_start` to create collections and their indexes automatically.
 
-**NOTE: schema for movie sources used by crawler can be found in [sources schema](readme/SOURCES.README.md).
+**NOTE: schema for movie sources used by crawler can be found in [sources schema](docs/SOURCES.README.md).
 (this can be done from admin panel too)**
 
 > a file with the same name of [sourceName] exist in [sources](src/crawlers/sources)
@@ -57,7 +57,7 @@ In few hours (almost every 3 hour) crawler start and populates database, also yo
 
 ## Environment Variables
 
-To run this project, you will need to add the following environment variables to your .env file
+To run this project, you will need to add the following environment variables to your env/.env file
 
 | Prop                                   | Description                                                                                                         | Required | Default Value |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------|----------|---------------|
@@ -85,8 +85,8 @@ To run this project, you will need to add the following environment variables to
 | **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                       | `false`  |               |
 | **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                    | `false`  |               |
 
->**NOTE: check [configs schema](readme/CONFIGS.README.md) for other configs that read from db.**
->**NOTE: check [env variable](readme/ENV.README.md) for full list of environment variables.**
+>**NOTE: check [configs schema](docs/CONFIGS.README.md) for other configs that read from db.**
+>**NOTE: check [env variable](docs/ENV.README.md) for full list of environment variables.**
 
 
 ## Future updates
@@ -104,13 +104,13 @@ To run this project, you will need to add the following environment variables to
 ## API Routes
 - Open [swagger docs api](http://localhost:3000/docs). (always updated)
 - Open [swagger docs file](docs/swagger.yaml). (always updated)
-- Open [user api docs](readme/API.USER.README.md).
-- Open [movie api docs](readme/API.MOVIES.README.md).
-- Open [utils api docs](readme/API.UTILS.README.md).
-- Open [schema](readme/SCHEMA.README.md).
-- Open [sources schema](readme/SOURCES.README.md).
-- Open [configs schema](readme/CONFIGS.README.md).
-- Open [env variable](readme/ENV.README.md).
+- Open [user api docs](docs/API.USER.README.md).
+- Open [movie api docs](docs/API.MOVIES.README.md).
+- Open [utils api docs](docs/API.UTILS.README.md).
+- Open [schema](docs/SCHEMA.README.md).
+- Open [sources schema](docs/SOURCES.README.md).
+- Open [configs schema](docs/CONFIGS.README.md).
+- Open [env variable](docs/ENV.README.md).
 
 ## Clients
 - [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter -Old)

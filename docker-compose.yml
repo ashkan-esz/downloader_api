@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
       network: host
-    env_file: ./.env
+    env_file: ./env/.env
     volumes:
       - .:/usr/app
       - ./db-backups:/db-backups
@@ -49,7 +49,7 @@ services:
   redis:
     image: "redis:7.2.3-alpine"
     network_mode: host
-    env_file: ./.env
+    env_file: ./env/.env
     environment:
       - ALLOW_EMPTY_PASSWORD=no
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
@@ -77,7 +77,7 @@ services:
 #  remoteBrowser:
 #    image: ashkanaz2828/downloader_remotebrowser
 #    network_mode: host
-#    env_file: ./remotebrowser.env
+#    env_file: ./env/remotebrowser.env
 #    environment:
 #      - NODE_ENV=production
 #      - CRAWLER_BROWSER_TAB_COUNT=2
@@ -106,7 +106,7 @@ services:
     network_mode: host
     depends_on:
       - api
-    env_file: ./telegrambot.env
+    env_file: ./env/telegrambot.env
     environment:
       - API_URL=https://api.movietracker.mom
       - WEB_URL=https://movietracker.mom
@@ -159,7 +159,7 @@ services:
 
   nginx:
     network_mode: host
-    build: ./nginx
+    build: ./docker/nginx
 #    ports:
 #      - '80:80'
     depends_on:
@@ -181,7 +181,7 @@ services:
       - redis
       - rabbitmq
     network_mode: host
-    env_file: ./chatservice.env
+    env_file: env/chatservice.env
     environment:
       PORT: 3002
       MAIN_SERVER_ADDRESS: api.movieTracker.mom
@@ -206,7 +206,7 @@ services:
       context: ./docker/rabbitmq
       dockerfile: ./Dockerfile
       network: host
-    env_file: ./chatservice.env
+    env_file: env/chatservice.env
     environment:
       - PORT=5672
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
@@ -232,7 +232,7 @@ services:
       - rabbitmq
       - mailServer
     network_mode: host
-    env_file: ./mailservice.env
+    env_file: ./env/mailservice.env
     environment:
       MAIN_SERVER_ADDRESS: api.movieTracker.mom
       CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom  --- https://chat.movietracker.mom
@@ -275,7 +275,7 @@ services:
 
   postgresDb:
     image: postgres:16.0-alpine3.18
-    env_file: ./.env
+    env_file: ./env/.env
     network_mode: service:api
     container_name: downloader_postgres
     environment:
