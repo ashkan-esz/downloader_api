@@ -180,7 +180,6 @@ services:
     depends_on:
       - redis
       - rabbitmq
-      - postgresDb
     network_mode: host
     env_file: ./chatservice.env
     environment:

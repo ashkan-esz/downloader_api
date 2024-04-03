@@ -1,5 +1,5 @@
 # stage 1
-FROM node:18.16.0-alpine AS build
+FROM node:20.10.0-alpine AS build
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max_old_space_size=1024
@@ -9,7 +9,7 @@ WORKDIR /usr/app
 COPY package*.json ./
 
 RUN npm install --omit=dev
-RUN npm install prisma@5.7.0 --save-dev
+RUN npm install prisma@5.12.0 --save-dev
 
 COPY . .
 

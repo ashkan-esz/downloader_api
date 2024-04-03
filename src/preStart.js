@@ -54,9 +54,14 @@ async function createTestUser() {
         let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, 'test_user', '0', 0, defaultProfileImage);
         if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             //test user already exist
-            console.log('====> [[Creating Guest User: Already Exists]]');
-            testUserCreated = true;
-            return;
+            let testUserData = await usersDbMethods.findUser('$$test_user$$', '', true);
+            if (testUserData.activeSessions && testUserData.activeSessions.length > 0) {
+                console.log('====> [[Creating Guest User: Already Exists]]');
+                testUserCreated = true;
+                return;
+            } else {
+                userData = testUserData;
+            }
         }
         if (!userData) {
             console.log('====> [[Creating Guest User: Error]]');
