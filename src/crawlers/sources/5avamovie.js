@@ -34,15 +34,14 @@ export default async function avamovie({movie_url, serial_url}, pageCount, extra
 async function search_title(link, pageNumber, $, url, extraConfigs) {
     try {
         let title = link.attr('title');
-        if (
-            (title && title.includes('دانلود') && link.parent()[0].name === 'h2' && link.parent().hasClass('title')) ||
-            (url.includes('/serie') && link.parent()[0].name === 'article' && $(link.parent()[0]).hasClass('item'))
-        ) {
+        if (title && link.parent().hasClass('item-movie')) {
             let year;
             let pageLink = link.attr('href');
             let type = getType(title);
             if (type.includes('movie') && url.includes('/series/')) {
                 type = type.replace('movie', 'serial');
+            } else if (type.includes('serial') && url.includes('/movies/')) {
+                type = type.replace('serial', 'movie');
             }
             if (config.nodeEnv === 'dev') {
                 console.log(`avamovie/${type}/${pageNumber}/${title}  ========>  `);
@@ -50,7 +49,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title !== '') {
-                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData, getQualitySample);
+                let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {
                     let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
                     if (!year) {
@@ -63,7 +62,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');
-                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData, getQualitySample);
+                        pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
                             return;
                         }
@@ -98,7 +97,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
         let year;
         ({title, year} = getTitleAndYear(title, year, type));
 
-        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData, getQualitySample);
+        let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
         if (pageSearchResult) {
             let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
             if (!year) {
@@ -111,7 +110,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
             )) {
                 type = type.replace('movie', 'serial');
-                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData, getQualitySample);
+                pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (!pageSearchResult) {
                     return;
                 }
@@ -196,7 +195,7 @@ export function getFileData($, link, type) {
 }
 
 function getFileData_serial($, link, type) {
-    const infoNodeChildren = $($(link).parent().parent().parent().parent().prev()).children();
+    const infoNodeChildren = $($($(link).parent().parent().parent().prev()).children()[1]).children();
     const temp = $(infoNodeChildren[0]).text();
     const qualityText = (temp.match(/\d\d\d\d?p/i) || temp.includes('کیفیت')) ? temp : $(infoNodeChildren[1]).text();
     let quality = replacePersianNumbers(qualityText);
@@ -218,7 +217,7 @@ function getFileData_serial($, link, type) {
 
 function getFileData_movie($, link, type) {
     const containerText = $($(link).parent().parent().parent().parent().prev()).text().trim();
-    const infoNode = $(link).parent().next().children();
+    const infoNode = $(link).parent().parent().next().children()[0];
     const infoNodeChildren = $(infoNode[1]).children();
     let quality = replacePersianNumbers($(infoNode[0]).text());
     quality = quality.includes('نلود فیلم') ? '' : purgeQualityText(quality).replace(/\s+/g, '.');

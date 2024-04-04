@@ -3,7 +3,7 @@ import {getEpisodeModel_placeholder} from "../models/episode.js";
 
 export function check_format(link, title) {
     link = link.toLowerCase().trim();
-    const videoExtensionsRegex = /\.(avi|flv|m4v|mkv|mov|mp4|mpg|mpeg|rm|swf|wmv|3gp|3g2)(\?md\d=.+)?$/i;
+    const videoExtensionsRegex = /\.(avi|flv|m4v|mkv|mov|mp4|mpg|mpeg|rm|swf|wmv|3gp|3g2)(\?((md\d)|(par))=.+)?$/i;
     return (
         videoExtensionsRegex.test(link.replace(/\?\d+/g, '')) &&
         !link.includes('teaser') &&

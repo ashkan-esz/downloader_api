@@ -118,6 +118,10 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
 
 export function getFileData($, link, type) {
     try {
+        let prevElemName = $(link).prev()?.[0]?.name
+        if (prevElemName === "source" || prevElemName === "video" || prevElemName === "track") {
+            return "ignore";
+        }
         const infoNodeChildrenText = $($($(link).parent().prev()).children()).text();
         const sizeText = $($($(link).parent().prev()).children()[1]).text();
         const size = purgeSizeText(replacePersianNumbers(sizeText));

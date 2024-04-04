@@ -26,7 +26,8 @@ export const encodersRegex = new RegExp([
     /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
     /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo|GDL/,
     /|Teamx265|[Mm]T[Ee][Aa][Mm]|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP|XEBEC|IC/,
-    /|PiGNUS|CUPCAKES|TASTETV|RiGHTNOW|Gooz|HAMR|DZ0N3/,
+    /|PiGNUS|CUPCAKES|TASTETV|RiGHTNOW|Gooz|HAMR|DZ0N3|ASW|LilKim|LAMA|EthanCunt|UNRATED|DigiDigimoviezmoviez|DigimDigimoviezoviez/,
+    /|SupermanPeacemakerWalterWhite|DeviousZirconGrebeOfDiscourse|LessConfusingThanTenet|DontTakeCandyFromStrangers|IMABARBiEGiRL/
 ].map(item => item.source).join(''));
 
 export const linkInfoRegex = new RegExp([
@@ -54,7 +55,7 @@ export const linkInfoRegex = new RegExp([
     new RegExp(`(\\.(${releaseRegex.source}))?`), // --> /\.(releaseRegex)/
     new RegExp(`(\\.(${encodersRegex.source}))?`), // --> /(\.(encodersRegex))?/
     /(\.(Un)?Censored)?/,
-    /(\.(HardSub(\(.+\))?(\.dubbed)?|SoftSub(\(.+\))?(\.dubbed)?|dubbed(\(.+\))?))?/,
+    /(\.(HardSub(\(.+\))?(\.dubbed)?|SoftSub(\(.+\))?(\.dubbed(\(.+\))?)?|dubbed(\(.+\))?))?/,
     /(\.V2)?/,
     /((\.\d\d\d\d)?\.\d\d\.\d\d)?/,
     /(\.Round_\d+(\.Day_\d+(_\d+)?)?(\.(ReWatch|Preview))?)?/,
@@ -159,6 +160,7 @@ export function purgeQualityText(qualityText) {
         .replace('سه زبانه', '')
         .replace('زیرنویس', '')
         .replace('فارسی', '')
+        .replace('فاربسی', '')
         .replace('چسبیده', '')
         .replace('هاردساب', '')
         .replace('سافت ساب', '')
@@ -383,10 +385,12 @@ function handleMultiEpisode(linkHref, info) {
 }
 
 export function addDubAndSub(lowCaseLinkHref, info) {
-    if (lowCaseLinkHref.includes('dual.audio.jpn.eng')) {
+    if (lowCaseLinkHref.includes('dual.audio.jpn.eng') || lowCaseLinkHref.includes('dual.eng-ja')) {
         info += '.dubbed(japanese-english)';
+        info = info.replace(/(\.Dual\.Audio)|(\.?Audio\.Dual)/i, '');
     } else if (lowCaseLinkHref.includes('dual.audio.hindi.english')) {
         info += '.dubbed(hindi-english)';
+        info = info.replace(/\.Dual\.Audio/i, '');
     } else if (checkDubbed(lowCaseLinkHref, info)) {
         info += '.dubbed';
     }
@@ -565,7 +569,7 @@ export function getCleanLinkInfo(info) {
         .replace(/(Cut\.)?Alt[-.]?Universe([.-]Cut)?/i, 'ALT-UNIVERSE-CUT')
         .replace(/((Cut\.Directors?)|(DIRECTORS?\.CUT))(?=(\.|$))/i, 'DIRECTORS-CUT')
         .replace(/Encore\.Edition(?=(\.|$))/i, 'Encore-Edition')
-        .replace('.Unrated', '')
+        .replace(/\.unrated/i, '')
         .replace(/\.(MB|GB)[.\s]\d\d\d?\./, '.')
         .replace(/\.((\d\d\d?)|(\d\.\d\d?))[.\s](MB|GB)(?=(\.|$))/, '')
         .replace(/WEB?-?Rip?/i, 'WEB-RIP')
@@ -711,7 +715,10 @@ export function purgeSizeText(sizeText) {
     if (result.match(new RegExp(`(${encodersRegex.source})(MB|GB)`, 'i'))) {
         return '';
     }
-    result = result.replace(/\d\.\d\d\dGB/, (res) => res.replace(/\dGB/, 'GB'));
+    result = result
+        .replace(/\d\.\d\d\d?\.\d+GB/, (res) => res.replace(/\.\d+GB/, 'GB'))
+        .replace(/\d\.\d\d\dGB/, (res) => res.replace(/\dGB/, 'GB'))
+        .replace(/t/i, '');
     return result;
 }
 

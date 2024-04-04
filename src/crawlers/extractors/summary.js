@@ -42,7 +42,7 @@ export function getPersianSummary($, title, year) {
         //film2movie
         for (let i = 0, divLength = $div.length; i < divLength; i++) {
             const temp = $($div[i]).text();
-            if (temp && temp === 'خلاصه داستان :') {
+            if (temp && temp.trim() === 'خلاصه داستان :') {
                 return purgePersianSummary($($div[i]).next().text(), title, year);
             }
         }

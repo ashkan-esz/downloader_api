@@ -52,7 +52,8 @@ export function getType(title) {
         title.includes('تاک‌شو') ||
         title.includes('استندآپ') ||
         title.includes('استند آپ') ||
-        title.includes('دانلود مراسم')
+        title.includes('دانلود مراسم') ||
+        title.includes('دانلود کنسرت')
     ) {
         return 'movie';
     }

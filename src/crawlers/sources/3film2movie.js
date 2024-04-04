@@ -268,6 +268,9 @@ export function getFileData($, link, type) {
 }
 
 function getFileData_serial($, link, type) {
+    if ($(link).hasClass("wp-embedded-video")) {
+        return "ignore";
+    }
     let textNode = $(link).parent();
     let text = textNode.text();
     while (
