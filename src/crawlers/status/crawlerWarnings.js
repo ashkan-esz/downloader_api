@@ -24,6 +24,10 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             },
             kitsu: {
                 lotsOfApiCall: `lots of kitsu api call`,
+            },
+            amv: {
+                lotsOfApiCall: `lots of amv api call`,
+                eaiError: 'EAI_AGAIN error on amv api call',
             }
         },
         trailerUploadHighWait: `High wait for trailer upload to start (${data1})`,

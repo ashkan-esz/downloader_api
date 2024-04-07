@@ -151,6 +151,7 @@ export function getKitsuApiFields(data) {
                 .replace('finished', 'ended')
                 .replace('current', 'running')
                 .replace('unreleased', 'running')
+                .replace('releasing', 'running')
                 .replace('tba', 'to be determined'),
             endYear: data.attributes.endDate?.split('-')[0] || '',
             youtubeTrailer: data.attributes.youtubeVideoId ? `https://www.youtube.com/watch?v=${data.attributes.youtubeVideoId}` : '',

@@ -14,6 +14,7 @@ import {
     partialChangePageLinkStateFromCrawlerStatus
 } from "../status/crawlerStatus.js";
 import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
+import {getAmvApiData, getAmvApiFields} from "./amv.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
@@ -57,8 +58,8 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         return;
     }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsu);
-    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(titleModel, pageLink);
-    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
+    let {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(titleModel, pageLink);
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null, amvApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, titleModel.type);
@@ -215,11 +216,73 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
+    if (amvApiData !== null) {
+        amvApiFields = getAmvApiFields(amvApiData);
+        if (amvApiFields) {
+            if (amvApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
+                let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, amvApiFields.youtubeTrailer, {});
+                titleModel = {...titleModel, ...trailerUploadFields};
+            }
+
+            titleModel.apiIds.amvID = amvApiFields.amvID;
+            titleModel.apiIds.gogoID = amvApiFields.gogoID;
+            if (!titleModel.apiIds.jikanID && amvApiFields.jikanID){
+                titleModel.apiIds.jikanID = amvApiFields.jikanID;
+            }
+            if (titleModel.status === 'unknown' || !titleModel.type.includes('anime')) {
+                titleModel.status = amvApiFields.status;
+                titleModel.endYear = amvApiFields.endYear;
+            }
+            if (amvApiFields.duration && amvApiFields.duration !== '0 min' && (!titleModel.duration || titleModel.duration === '0 min')) {
+                titleModel.duration = amvApiFields.duration;
+            }
+
+            const checkKeys = ['year', 'premiered', 'totalDuration', 'animeType', 'officialSite', 'animeSeason'];
+            for (let i = 0; i < checkKeys.length; i++) {
+                if (amvApiFields[checkKeys[i]] && !titleModel[checkKeys[i]]) {
+                    titleModel[checkKeys[i]] = amvApiFields[checkKeys[i]];
+                }
+            }
+
+            updateSpecificFields(titleModel, titleModel, amvApiFields, 'amv');
+
+            if (amvApiFields.amvPoster && titleModel.poster_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingAmvPosterToS3);
+                let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, amvApiFields.amvPoster);
+                if (s3poster) {
+                    titleModel.poster_s3 = s3poster;
+                    titleModel.posters.push({
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                        vpnStatus: s3poster.vpnStatus,
+                        thumbnail: s3poster.thumbnail,
+                        blurHash: s3poster.blurHash,
+                    });
+                    titleModel.posters = sortPosters(titleModel.posters);
+                }
+            }
+
+            if (amvApiFields.amvPosterCover && titleModel.poster_wide_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingAmvWidePosterToS3);
+                let s3WidePoster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, amvApiFields.amvPosterCover, false, true);
+                if (s3WidePoster) {
+                    titleModel.poster_wide_s3 = s3WidePoster;
+                }
+            }
+        }
+    }
+
     return {
         titleModel,
         allApiData: {
             omdbApiFields, tvmazeApiFields,
-            jikanApiFields, kitsuApiFields,
+            jikanApiFields,
+            kitsuApiFields, amvApiFields,
         }
     };
 }
@@ -252,8 +315,8 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         return;
     }
     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsu);
-    let {omdbApiData, tvmazeApiData, kitsuApiData} = await handleApiCalls(db_data, pageLink);
-    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null;
+    let {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(db_data, pageLink);
+    let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null, amvApiFields = null;
 
     if (omdbApiData !== null) {
         omdbApiFields = getOMDBApiFields(omdbApiData, db_data.type);
@@ -435,11 +498,92 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
         }
     }
 
+    if (checkForceStopCrawler()) {
+        return;
+    }
+    if (amvApiData !== null) {
+        amvApiFields = getAmvApiFields(amvApiData);
+        if (amvApiFields) {
+            if (amvApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
+                let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(db_data, amvApiFields.youtubeTrailer, {});
+                db_data = {...db_data, ...trailerUploadFields};
+                updateFields = {...updateFields, ...trailerUploadFields};
+            }
+
+            if (db_data.apiIds.amvID !== amvApiFields.amvID && amvApiFields.amvID) {
+                db_data.apiIds.amvID = amvApiFields.amvID;
+                updateFields.apiIds = db_data.apiIds;
+            }
+            if (!db_data.apiIds.jikanID && amvApiFields.jikanID) {
+                db_data.apiIds.jikanID = amvApiFields.jikanID;
+                updateFields.apiIds = db_data.apiIds;
+            }
+            if (db_data.apiIds.gogoID !== amvApiFields.gogoID && amvApiFields.gogoID) {
+                db_data.apiIds.gogoID = amvApiFields.gogoID;
+                updateFields.apiIds = db_data.apiIds;
+            }
+            if (db_data.status === 'unknown' || !db_data.type.includes('anime')) {
+                db_data.status = amvApiFields.status;
+                updateFields.status = amvApiFields.status;
+                db_data.endYear = amvApiFields.endYear;
+                updateFields.endYear = amvApiFields.endYear;
+            }
+
+            if (amvApiFields.duration && amvApiFields.duration !== '0 min' && (!db_data.duration || db_data.duration === '0 min')) {
+                db_data.duration = amvApiFields.duration;
+                updateFields.duration = amvApiFields.duration;
+            }
+
+            const checkKeys = ['year', 'premiered', 'totalDuration', 'animeType', 'officialSite', 'animeSeason'];
+            for (let i = 0; i < checkKeys.length; i++) {
+                if (amvApiFields[checkKeys[i]] && !db_data[checkKeys[i]]) {
+                    db_data[checkKeys[i]] = amvApiFields[checkKeys[i]];
+                    updateFields[checkKeys[i]] = amvApiFields[checkKeys[i]];
+                }
+            }
+
+            updateSpecificFields(db_data, updateFields, amvApiFields, 'amv');
+
+            if (amvApiFields.amvPoster && (
+                (db_data.poster_s3 === null) ||
+                (db_data.type.includes('anime') && await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))
+            )) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingAmvPosterToS3);
+                let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, amvApiFields.amvPoster);
+                if (s3poster) {
+                    db_data.poster_s3 = s3poster;
+                    updateFields.poster_s3 = s3poster;
+                    db_data.posters.push({
+                        url: s3poster.url,
+                        info: 's3Poster',
+                        size: s3poster.size,
+                        vpnStatus: s3poster.vpnStatus,
+                        thumbnail: s3poster.thumbnail,
+                        blurHash: s3poster.blurHash,
+                    });
+                    db_data.posters = sortPosters(db_data.posters);
+                    updateFields.posters = db_data.posters;
+                }
+            }
+
+            if (amvApiFields.amvPosterCover && db_data.poster_wide_s3 === null) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingAmvWidePosterToS3);
+                let s3WidePoster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, amvApiFields.amvPosterCover, false, true);
+                if (s3WidePoster) {
+                    db_data.poster_wide_s3 = s3WidePoster;
+                    updateFields.poster_wide_s3 = s3WidePoster;
+                }
+            }
+        }
+    }
+
     return {
         updateFields,
         allApiData: {
             omdbApiFields, tvmazeApiFields,
-            jikanApiFields, kitsuApiFields,
+            jikanApiFields,
+            kitsuApiFields, amvApiFields,
         }
     };
 }
@@ -509,26 +653,30 @@ function handleTypeAndTitleUpdate(db_data, titleObj, siteType) {
 }
 
 async function handleApiCalls(titleData, pageLink) {
-    let omdbApiData, tvmazeApiData, kitsuApiData;
+    let omdbApiData, tvmazeApiData, kitsuApiData, amvApiData;
     if (titleData.type.includes('serial')) {
         let results = await Promise.allSettled([
             handle_OMDB_TvMaze_ApiCall(titleData, 'omdb', pageLink),
             handle_OMDB_TvMaze_ApiCall(titleData, 'tvmaze', pageLink),
             handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu', pageLink),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'amv', pageLink),
         ]);
         omdbApiData = results[0].value;
         tvmazeApiData = results[1].value;
         kitsuApiData = results[2].value;
+        amvApiData = results[3].value;
     } else {
         let results = await Promise.allSettled([
             handle_OMDB_TvMaze_ApiCall(titleData, 'omdb', pageLink),
             handle_OMDB_TvMaze_ApiCall(titleData, 'kitsu', pageLink),
+            handle_OMDB_TvMaze_ApiCall(titleData, 'amv', pageLink),
         ]);
         omdbApiData = results[0].value;
         kitsuApiData = results[1].value;
+        amvApiData = results[2].value;
         tvmazeApiData = null;
     }
-    return {omdbApiData, tvmazeApiData, kitsuApiData};
+    return {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData};
 }
 
 async function handle_OMDB_TvMaze_ApiCall(titleData, apiName, pageLink) {
@@ -540,9 +688,11 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName, pageLink) {
         result = await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.apiIds.imdbID, titleData.premiered, titleData.type);
     } else if (apiName === 'kitsu') {
         result = await getKitsuApiData(searchTitle, titleData.year, titleData.type, titleData.apiIds.kitsuID);
+    } else if (apiName === 'amv') {
+        result = await getAmvApiData(searchTitle, titleData.alternateTitles, titleData.year, titleData.type, titleData.apiIds.amvID);
     }
 
-    if (result || apiName === 'kitsu') {
+    if (result || apiName === 'kitsu' || apiName === 'amv') {
         partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
         return result;
     } else {
@@ -578,7 +728,7 @@ function updateSpecificFields(oldData, updateFields, apiFields, apiName) {
         updateFields.summary = oldData.summary;
     }
     //---------------------
-    let isAnime = (apiName === 'jikan' || apiName === 'kitsu' || ((apiName === 'tvmaze' || apiName === 'omdb') && apiFields.isAnime));
+    let isAnime = (apiName === 'jikan' || apiName === 'kitsu' || apiName === 'amv' || ((apiName === 'tvmaze' || apiName === 'omdb') && apiFields.isAnime));
     let isAnimation = (apiName === 'tvmaze' && apiFields.isAnimation);
     let newGenres = getNewGenres(oldData, apiFields.genres || [], isAnime, isAnimation);
     if (newGenres) {
