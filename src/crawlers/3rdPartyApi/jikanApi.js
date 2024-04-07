@@ -170,7 +170,6 @@ export function getJikanApiFields(data) {
             myAnimeListScore: Number(data.score) || 0,
             youtubeTrailer: data.trailer.url,
             updateFields: {
-                jikanID: data.mal_id,
                 rawTitle: data.titleObj.rawTitle.replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',
                 year: data.aired.from ? data.aired.from.split(/[-–]/g)[0] : '',
@@ -501,15 +500,14 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage, isJobFunction
         let comingSoon_topAiring_titles = apiData.data;
         for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
             rank++;
-            let titleDataFromDB = await crawlerMethodsDB.searchOnMovieCollectionDB({jikanID: comingSoon_topAiring_titles[i].mal_id}, {
+            let titleDataFromDB = await crawlerMethodsDB.searchOnMovieCollectionDB({"apiIds.jikanID": comingSoon_topAiring_titles[i].mal_id}, {
                 ...dataLevelConfig['medium'],
-                jikanID: 1,
+                apiIds: 1,
                 castUpdateDate: 1,
                 endYear: 1,
                 poster_s3: 1,
                 poster_wide_s3: 1,
                 trailer_s3: 1,
-                kitsuID: 1,
             });
             if (titleDataFromDB) {
                 const saveRank = rank;
@@ -567,11 +565,16 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                 }
             }
 
-            const keys2 = ['genres', 'jikanID', 'status', 'endYear'];
+            const keys2 = ['genres', 'status', 'endYear'];
             for (let i = 0; i < keys2.length; i++) {
                 if (!isEqual(titleDataFromDB[keys2[i]], jikanApiFields[keys2[i]])) {
                     updateFields[keys2[i]] = jikanApiFields[keys2[i]];
                 }
+            }
+
+            if (titleDataFromDB.apiIds.jikanID !== jikanApiFields.jikanID){
+                titleDataFromDB.apiIds.jikanID = jikanApiFields.jikanID;
+                updateFields.apiIds = titleDataFromDB.apiIds;
             }
 
             if (titleDataFromDB.rating.myAnimeList !== jikanApiFields.myAnimeListScore) {
@@ -597,7 +600,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         }
 
         if (titleDataFromDB.poster_wide_s3 === null) {
-            let kitsuApiData = await getKitsuApiData(titleDataFromDB.title, titleDataFromDB.year, titleDataFromDB.type, titleDataFromDB.kitsuID);
+            let kitsuApiData = await getKitsuApiData(titleDataFromDB.title, titleDataFromDB.year, titleDataFromDB.type, titleDataFromDB.apiIds.kitsuID);
             if (kitsuApiData) {
                 let kitsuApiFields = getKitsuApiFields(kitsuApiData);
                 if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
@@ -617,7 +620,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         if (titleDataFromDB.castUpdateDate === 0) {
             let allApiData = {
                 jikanApiFields: jikanApiFields || {
-                    jikanID: titleDataFromDB.jikanID,
+                    jikanID: titleDataFromDB.apiIds.jikanID,
                 },
             };
             await addStaffAndCharacters(titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
@@ -653,6 +656,9 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
             if (config.ignoreHentai && jikanApiFields.updateFields.rated === 'Rx - Hentai') {
                 return 'ignore hentai';
             }
+            if (titleModel.apiIds.jikanID !== jikanApiFields.jikanID){
+                titleModel.apiIds.jikanID = jikanApiFields.jikanID;
+            }
         }
 
         let imageUrl = getImageUrl(jikanApiData);
@@ -675,7 +681,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
         titleModel.summary.english_source = 'jikan';
         titleModel.genres = jikanApiFields.genres;
 
-        let kitsuApiData = await getKitsuApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.kitsuID);
+        let kitsuApiData = await getKitsuApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.apiIds.kitsuID);
         if (kitsuApiData) {
             let kitsuApiFields = getKitsuApiFields(kitsuApiData);
             if (kitsuApiFields && kitsuApiFields.kitsuPosterCover) {
@@ -705,7 +711,7 @@ export async function handleAnimeRelatedTitles(titleId, jikanRelatedTitles) {
     try {
         for (let i = 0; i < jikanRelatedTitles.length; i++) {
             let searchResult = await crawlerMethodsDB.searchOnMovieCollectionDB(
-                {jikanID: jikanRelatedTitles[i].jikanID},
+                {"apiIds.jikanID": jikanRelatedTitles[i].jikanID},
                 {_id: 1}
             );
 

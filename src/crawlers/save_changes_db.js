@@ -151,7 +151,7 @@ async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
             rawTitle: db_data.rawTitle,
             alternateTitles: db_data.alternateTitles,
             titleSynonyms: db_data.titleSynonyms,
-            jikanID: db_data.jikanID,
+            jikanID: db_data.apiIds.jikanID,
         }
     } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
         titleObj = await getTitleObj(title, year, type, true);
@@ -205,10 +205,7 @@ async function searchOnCollection(titleObj, year, type) {
         update_date: 1,
         castUpdateDate: 1,
         status: 1,
-        imdbID: 1,
-        tvmazeID: 1,
-        jikanID: 1,
-        kitsuID: 1,
+        apiIds: 1,
         qualities: 1,
         seasons: 1,
         sources: 1,

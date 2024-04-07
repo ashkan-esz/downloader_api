@@ -3638,14 +3638,19 @@ security:
         totalDuration:
           type: string
           description: in format hh:mm example 14:11 === 14 hours and 11 min
-        imdbID:
-          type: string
-        tvmazeID:
-          type: integer
-        jikanID:
-          type: integer
-        kitsuID:
-          type: integer
+        apiIds:
+          type: object
+          properties:
+            imdbID:
+              type: string
+            tvmazeID:
+              type: integer
+            jikanID:
+              type: integer
+            kitsuID:
+              type: integer
+            amvID:
+              type: integer
         totalSeasons:
           type: integer
         boxOffice:

@@ -126,6 +126,7 @@ function getEditedTitle(title) {
 export function getOMDBApiFields(data, type) {
     try {
         let apiFields = {
+            imdbID: data.imdbID,
             directorsNames: data.Director.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             writersNames: data.Writer.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
             actorsNames: data.Actors.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
@@ -137,7 +138,6 @@ export function getOMDBApiFields(data, type) {
             yearIgnored: data.yearIgnored,
             year: data.Year.split(/[-–]/g)[0],
             updateFields: {
-                imdbID: data.imdbID,
                 rawTitle: data.Title.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 duration: data.Runtime || '0 min',
                 totalSeasons: (type.includes('movie')) ? 0 : Number(data.totalSeasons),

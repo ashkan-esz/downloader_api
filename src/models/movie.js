@@ -66,10 +66,14 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         duration: "0 min",
         totalDuration: '',
         //3rd party api data
-        imdbID: "",
-        tvmazeID: 0,
-        jikanID: titleObj.jikanID || 0,
-        kitsuID: 0,
+        apiIds: {
+            imdbID: "",
+            tvmazeID: 0,
+            jikanID: titleObj.jikanID || 0,
+            kitsuID: 0,
+            amvID: 0,
+            gogoID: "",
+        },
         totalSeasons: 0,
         boxOffice: "",
         boxOfficeData: {

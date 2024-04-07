@@ -71,6 +71,9 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                     titleModel.year = omdbApiFields.year;
                 }
             }
+            if (omdbApiFields.imdbID) {
+                titleModel.apiIds.imdbID = omdbApiFields.imdbID;
+            }
         }
     }
 
@@ -92,6 +95,12 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                         titleModel.poster_wide_s3 = s3WidePoster;
                     }
                 }
+            }
+            if (tvmazeApiFields.imdbID) {
+                titleModel.apiIds.imdbID = tvmazeApiFields.imdbID;
+            }
+            if (tvmazeApiFields.tvmazeID) {
+                titleModel.apiIds.tvmazeID = tvmazeApiFields.tvmazeID;
             }
         }
     }
@@ -115,7 +124,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     }
     if (titleModel.type.includes('anime')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingJikan);
-        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.jikanID);
+        let jikanApiData = await getJikanApiData(titleModel.title, titleModel.year, titleModel.type, titleModel.apiIds.jikanID);
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
@@ -136,6 +145,9 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                     titleModel.status = jikanApiFields.status;
                     titleModel.endYear = jikanApiFields.endYear;
                 }
+                if (jikanApiFields.jikanID) {
+                    titleModel.apiIds.jikanID = jikanApiFields.jikanID;
+                }
                 updateSpecificFields(titleModel, titleModel, jikanApiFields, 'jikan');
                 titleModel.rating.myAnimeList = jikanApiFields.myAnimeListScore;
             }
@@ -155,7 +167,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
                 titleModel = {...titleModel, ...trailerUploadFields};
             }
 
-            titleModel.kitsuID = kitsuApiFields.kitsuID;
+            titleModel.apiIds.kitsuID = kitsuApiFields.kitsuID;
             if (titleModel.status === 'unknown' || !titleModel.type.includes('anime')) {
                 titleModel.status = kitsuApiFields.status;
                 titleModel.endYear = kitsuApiFields.endYear;
@@ -256,6 +268,10 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                     updateFields.year = omdbApiFields.year;
                 }
             }
+            if (db_data.apiIds.imdbID !== omdbApiFields.imdbID && omdbApiFields.imdbID) {
+                db_data.apiIds.imdbID = omdbApiFields.imdbID;
+                updateFields.apiIds = db_data.apiIds;
+            }
         }
     }
 
@@ -279,6 +295,14 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                     }
                 }
             }
+            if (db_data.apiIds.imdbID !== tvmazeApiFields.imdbID && tvmazeApiFields.imdbID) {
+                db_data.apiIds.imdbID = tvmazeApiFields.imdbID;
+                updateFields.apiIds = db_data.apiIds;
+            }
+            if (db_data.apiIds.tvmazeID !== tvmazeApiFields.tvmazeID && tvmazeApiFields.tvmazeID) {
+                db_data.apiIds.tvmazeID = tvmazeApiFields.tvmazeID;
+                updateFields.apiIds = db_data.apiIds;
+            }
         }
     }
 
@@ -301,7 +325,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     }
     if (db_data.type.includes('anime') || siteType.includes('anime')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingJikan);
-        let jikanApiData = await getJikanApiData(db_data.title, db_data.year, db_data.type, db_data.jikanID);
+        let jikanApiData = await getJikanApiData(db_data.title, db_data.year, db_data.type, db_data.apiIds.jikanID);
         if (jikanApiData) {
             let temp = handleTypeAndTitleUpdate(db_data, jikanApiData.titleObj, siteType);
             db_data = {...db_data, ...temp};
@@ -319,6 +343,12 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                 if (db_data.type.includes('movie') && updateFields.year) {
                     updateFields.endYear = updateFields.year;
                 }
+
+                if (db_data.apiIds.jikanID !== jikanApiFields.jikanID && jikanApiFields.jikanID) {
+                    db_data.apiIds.jikanID = jikanApiFields.jikanID;
+                    updateFields.apiIds = db_data.apiIds;
+                }
+
                 updateSpecificFields(db_data, updateFields, jikanApiFields, 'jikan');
                 let currentRating = updateFields.rating ? updateFields.rating : db_data.rating;
                 currentRating.myAnimeList = jikanApiFields.myAnimeListScore;
@@ -343,6 +373,10 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
                 updateFields = {...updateFields, ...trailerUploadFields};
             }
 
+            if (db_data.apiIds.kitsuID !== kitsuApiFields.kitsuID && kitsuApiFields.kitsuID) {
+                db_data.apiIds.kitsuID = kitsuApiFields.kitsuID;
+                updateFields.apiIds = db_data.apiIds;
+            }
             if (db_data.status === 'unknown' || !db_data.type.includes('anime')) {
                 db_data.status = kitsuApiFields.status;
                 updateFields.status = kitsuApiFields.status;
@@ -503,9 +537,9 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName, pageLink) {
     if (apiName === 'omdb') {
         result = await getOMDBApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type);
     } else if (apiName === 'tvmaze') {
-        result = await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
+        result = await getTvMazeApiData(searchTitle, titleData.alternateTitles, titleData.titleSynonyms, titleData.apiIds.imdbID, titleData.premiered, titleData.type);
     } else if (apiName === 'kitsu') {
-        result = await getKitsuApiData(searchTitle, titleData.year, titleData.type, titleData.kitsuID);
+        result = await getKitsuApiData(searchTitle, titleData.year, titleData.type, titleData.apiIds.kitsuID);
     }
 
     if (result || apiName === 'kitsu') {
@@ -523,7 +557,7 @@ async function handle_OMDB_TvMaze_ApiCall(titleData, apiName, pageLink) {
         for (let i = 0; i < alternateTitles.length; i++) {
             result = (apiName === 'omdb')
                 ? await getOMDBApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.premiered, titleData.type)
-                : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.imdbID, titleData.premiered, titleData.type);
+                : await getTvMazeApiData(alternateTitles[i], newAlternateTitles, titleData.titleSynonyms, titleData.apiIds.imdbID, titleData.premiered, titleData.type);
             if (result) {
                 partialChangePageLinkStateFromCrawlerStatus(pageLink, apiName, apiName + ':done');
                 return result;

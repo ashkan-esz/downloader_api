@@ -95,6 +95,8 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
 export function getTvMazeApiFields(data) {
     try {
         let apiFields = {
+            imdbID: data.externals.imdb || '',
+            tvmazeID: Number(data.id) || 0,
             backgroundPosters: (data._embedded.images || []).filter(item => item.type === 'background'),
             cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),
@@ -104,8 +106,6 @@ export function getTvMazeApiFields(data) {
             isAnimation: (data.type.toLowerCase() === 'animation'),
             isAnime: (data.genres?.includes('anime') || data.genres?.includes('Anime')),
             updateFields: {
-                imdbID: data.externals.imdb || '',
-                tvmazeID: Number(data.id) || 0,
                 rawTitle: data.name.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 premiered: data.premiered || '',
                 year: data.premiered ? data.premiered.split(/[-–]/g)[0] : '',
