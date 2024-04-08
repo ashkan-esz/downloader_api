@@ -13,8 +13,6 @@ import {
 } from "../status/crawlerStatus.js";
 
 
-//todo : add method to crawl specific title or file
-
 export const sourceConfig = Object.freeze({
     sourceName: "tokyotosho",
     needHeadlessBrowser: false,
@@ -47,7 +45,7 @@ export default async function tokyotosho({movie_url, serial_url}, pageCount, ext
                 break;
             }
             const t = i;
-            promiseQueue.add(() => saveCrawlData(titles[t], movie_url, extraConfigs));
+            promiseQueue.add(() => saveCrawlData(titles[t], extraConfigs));
         }
 
         await promiseQueue.onEmpty();
@@ -59,12 +57,36 @@ export default async function tokyotosho({movie_url, serial_url}, pageCount, ext
     }
 }
 
-async function searchTitle(){
-    // https://www.tokyotosho.info/search.php?terms=mushoku&type=0&searchName=true&searchComment=true&size_min=&size_max=&username=
-    // https://www.tokyotosho.info/search.php?terms=mushoku&type=1&searchName=true&searchComment=false
+export async function searchByTitle(sourceUrl, title, extraConfigs = {}){
+    try {
+        let searchTitle = title.replace(/\s+/g, '+');
+        let searchUrl = `${sourceUrl.split('/?')[0]}/search.php?terms=${searchTitle}&type=1&searchName=true&searchComment=false`
+        saveLinksStatus(searchUrl,"sourcePage", "fetchingStart");
+        let res = await axios.get(searchUrl);
+        saveLinksStatus(searchUrl,"sourcePage", "fetchingEnd");
+
+        let $ = cheerio.load(res.data);
+        let titles = extractLinks($);
+        titles = titles.slice(0, 5);
+
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
+        for (let i = 0; i < titles.length; i++) {
+            await promiseQueue.onSizeLessThan(concurrencyNumber);
+            const t = i;
+            promiseQueue.add(() => saveCrawlData(titles[t], extraConfigs));
+        }
+
+        await promiseQueue.onEmpty();
+        await promiseQueue.onIdle();
+        return [1]; //pageNumber
+    } catch (error) {
+        saveError(error);
+        return [1];
+    }
 }
 
-async function saveCrawlData(titleData, movie_url, extraConfigs) {
+async function saveCrawlData(titleData, extraConfigs) {
     addPageLinkToCrawlerStatus("#" + titleData.title.replace(/\s+/g, '-'), 1);
     let sourceData = {
         sourceConfig,
