@@ -79,8 +79,10 @@ test('group links of movie titles', () => {
         }
     ];
 
+    let torrentLinks = [];
+
     let expectedResult = [
-        {quality: '2160p', links: [], watchOnlineLinks: []},
+        {quality: '2160p', links: [], watchOnlineLinks: [], torrentLinks: []},
         {
             quality: '1080p',
             links: [{
@@ -91,7 +93,8 @@ test('group links of movie titles', () => {
                 season: 0,
                 episode: 0,
             },],
-            watchOnlineLinks: []
+            watchOnlineLinks: [],
+            torrentLinks: []
         },
         {
             quality: '720p',
@@ -109,7 +112,8 @@ test('group links of movie titles', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
         {
             quality: '480p',
@@ -120,17 +124,18 @@ test('group links of movie titles', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
-        {quality: '360p', links: [], watchOnlineLinks: []},
-        {quality: 'others', links: [], watchOnlineLinks: []}
+        {quality: '360p', links: [], watchOnlineLinks: [], torrentLinks: []},
+        {quality: 'others', links: [], watchOnlineLinks: [], torrentLinks: []}
     ];
-    expect(groupMovieLinks(links, watchOnlineLinks)).toStrictEqual(expectedResult);
+    expect(groupMovieLinks(links, watchOnlineLinks, torrentLinks)).toStrictEqual(expectedResult);
 });
 
 test('update movies grouped links', () => {
     let prevGroupLinks = [
-        {quality: '2160p', links: [], watchOnlineLinks: []},
+        {quality: '2160p', links: [], watchOnlineLinks: [], torrentLinks: []},
         {
             quality: '1080p',
             links: [{
@@ -141,7 +146,8 @@ test('update movies grouped links', () => {
                 season: 0,
                 episode: 0,
             },],
-            watchOnlineLinks: []
+            watchOnlineLinks: [],
+            torrentLinks: []
         },
         {
             quality: '720p',
@@ -159,7 +165,8 @@ test('update movies grouped links', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
         {
             quality: '480p',
@@ -170,13 +177,14 @@ test('update movies grouped links', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
     ];
 
     let currentGroupLinks = [
-        {quality: '2160p', links: [], watchOnlineLinks: []},
-        {quality: '1080p', links: [], watchOnlineLinks: []},
+        {quality: '2160p', links: [], watchOnlineLinks: [], torrentLinks: []},
+        {quality: '1080p', links: [], watchOnlineLinks: [], torrentLinks: []},
         {
             quality: '720p',
             links: [{
@@ -187,7 +195,8 @@ test('update movies grouped links', () => {
                 season: 0,
                 episode: 0,
             },],
-            watchOnlineLinks: []
+            watchOnlineLinks: [],
+            torrentLinks: []
         },
         {
             quality: '480p',
@@ -198,15 +207,16 @@ test('update movies grouped links', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
-        {quality: '360p', links: [], watchOnlineLinks: []},
-        {quality: 'others', links: [], watchOnlineLinks: []}
+        {quality: '360p', links: [], watchOnlineLinks: [], torrentLinks: []},
+        {quality: 'others', links: [], watchOnlineLinks: [], torrentLinks: []}
     ];
 
     let newGroupLinks = [
-        {quality: '2160p', links: [], watchOnlineLinks: []},
-        {quality: '1080p', links: [], watchOnlineLinks: []},
+        {quality: '2160p', links: [], watchOnlineLinks: [], torrentLinks: []},
+        {quality: '1080p', links: [], watchOnlineLinks: [], torrentLinks: []},
         {
             quality: '720p',
             links: [
@@ -227,7 +237,8 @@ test('update movies grouped links', () => {
                     episode: 0,
                 },
             ],
-            watchOnlineLinks: []
+            watchOnlineLinks: [],
+            torrentLinks: []
         },
         {
             quality: '480p',
@@ -238,10 +249,11 @@ test('update movies grouped links', () => {
                 sourceName: 'sourceName1',
                 season: 0,
                 episode: 0,
-            },]
+            },],
+            torrentLinks: []
         },
-        {quality: '360p', links: [], watchOnlineLinks: []},
-        {quality: 'others', links: [], watchOnlineLinks: []}
+        {quality: '360p', links: [], watchOnlineLinks: [], torrentLinks: []},
+        {quality: 'others', links: [], watchOnlineLinks: [], torrentLinks: []}
     ];
     let result = updateMoviesGroupedLinks(prevGroupLinks, currentGroupLinks, 'sourceName1');
     expect(result).toEqual(true);
@@ -285,6 +297,8 @@ test('group links of serials titles', () => {
         }
     ];
 
+    let torrentLinks = [];
+
     let otherEpisodeFields = {
         title: 'unknown',
         released: 'unknown',
@@ -315,7 +329,8 @@ test('group links of serials titles', () => {
                         sourceName: 'sourceName1',
                         season: 1,
                         episode: 1,
-                    },]
+                    },],
+                    torrentLinks: []
                 }
             ]
         },
@@ -332,7 +347,8 @@ test('group links of serials titles', () => {
                         sourceName: 'sourceName1',
                         season: 2,
                         episode: 3,
-                    },]
+                    },],
+                    torrentLinks: []
                 }
             ]
         },
@@ -350,12 +366,13 @@ test('group links of serials titles', () => {
                         season: 3,
                         episode: 2,
                     },],
-                    watchOnlineLinks: []
+                    watchOnlineLinks: [],
+                    torrentLinks: []
                 },
             ]
         },
     ];
-    expect(groupSerialLinks(links, watchOnlineLinks)).toStrictEqual(expectedResult);
+    expect(groupSerialLinks(links, watchOnlineLinks, torrentLinks)).toStrictEqual(expectedResult);
 });
 
 test('update serial episode/movie quality links', () => {
@@ -402,7 +419,8 @@ test('update serial episode/movie quality links', () => {
                 season: 2,
                 episode: 1,
             },
-        ]
+        ],
+        torrentLinks: []
     }
 
     let prevLinks = episodeOrQuality.links.filter(item => item.sourceName === 'sourceName1');
@@ -468,10 +486,11 @@ test('update serial episode/movie quality links', () => {
                 season: 2,
                 episode: 1,
             },
-        ]
+        ],
+        torrentLinks: []
     };
 
-    let result = updateSerialLinks(episodeOrQuality, prevLinks, prevOnlineLinks, currentLinks, currentOnlineLinks);
+    let result = updateSerialLinks(episodeOrQuality, prevLinks, prevOnlineLinks, [], currentLinks, currentOnlineLinks, []);
     expect(result).toEqual(true);
     expect(episodeOrQuality).toStrictEqual(episodeOrQuality_new);
 });

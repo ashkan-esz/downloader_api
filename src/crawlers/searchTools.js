@@ -405,7 +405,7 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
     }
 }
 
-async function getConcurrencyNumber(sourceName, needHeadlessBrowser, extraConfigs) {
+export async function getConcurrencyNumber(sourceName, needHeadlessBrowser, extraConfigs = {}) {
     let concurrencyNumber = 0;
     if (extraConfigs?.crawlerConcurrency) {
         concurrencyNumber = Number(extraConfigs?.crawlerConcurrency);
@@ -467,7 +467,7 @@ function freeAxiosBlackListSources() {
 //---------------------------------------------
 //---------------------------------------------
 
-function saveLinksStatus(pageLink, pageType, state) {
+export function saveLinksStatus(pageLink, pageType, state) {
     if (state === 'fetchingStart') {
         if (pageType === 'sourcePage') {
             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart);

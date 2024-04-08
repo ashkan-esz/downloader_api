@@ -16,6 +16,7 @@ export const sourceConfig = Object.freeze({
         trailer: 'allOk',
         downloadLink: 'allOk',
     }),
+    isTorrent: false,
     replaceInfoOnDuplicate: true,
 });
 
@@ -59,6 +60,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
+                        torrentLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                         trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
@@ -100,6 +102,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 pageLink,
                 downloadLinks,
                 watchOnlineLinks: [],
+                torrentLinks: [],
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                 poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                 trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),

@@ -640,7 +640,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
 
     if (jikanApiData) {
         let titleModel = getMovieModel(
-            jikanApiData.titleObj, '', type, [],
+            jikanApiData.titleObj, '', type, [], [],
             '', '', '', '',
             [], [], [],
             {

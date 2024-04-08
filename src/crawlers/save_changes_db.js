@@ -34,6 +34,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             pageLink,
             downloadLinks,
             watchOnlineLinks,
+            torrentLinks,
             persianSummary,
             poster, trailers,
             subtitles,
@@ -50,7 +51,9 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             }
         }
 
-        checkCrawledDataForChanges(sourceConfig.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
+        if (!sourceConfig.isTorrent) {
+            checkCrawledDataForChanges(sourceConfig.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
+        }
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
         await pauseCrawler();
@@ -66,24 +69,25 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             return removePageLinkToCrawlerStatus(pageLink);
         }
 
-        let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks);
+        let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks, torrentLinks);
 
-        let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
+        let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, torrentLinks,
+            sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
 
         if (db_data === null) {//new title
-            if (downloadLinks.length > 0) {
+            if (downloadLinks.length > 0 || torrentLinks.length > 0) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
                 await pauseCrawler();
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.newTitle);
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
-                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, sourceConfig.sourceName, pageLink, extraConfigs);
+                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.sourceName, pageLink, extraConfigs);
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
                 if (result.titleModel.type.includes('movie')) {
-                    result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks);
+                    result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks, torrentLinks);
                 }
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
                 let insertedId = await insertMovieToDB(result.titleModel);
@@ -128,12 +132,12 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, type, poster, sourceConfig.sourceName, pageLink, extraConfigs);
+        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.sourceName, pageLink, extraConfigs);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
         let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.sourceName, sourceConfig.vpnStatus);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, torrentLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);
@@ -141,7 +145,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
     }
 }
 
-async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
+async function getTitleObjAndDbData(title, year, type, siteDownloadLinks, torrentLinks) {
     title = fixTitle(title);
     let titleObj = await getTitleObj(title, year, type, false);
     let db_data = await searchOnCollection(titleObj, year, type);
@@ -153,7 +157,7 @@ async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
             titleSynonyms: db_data.titleSynonyms,
             jikanID: db_data.apiIds.jikanID,
         }
-    } else if (type.includes('anime') && siteDownloadLinks.length > 0) {
+    } else if (type.includes('anime') && (siteDownloadLinks.length > 0 || torrentLinks.length > 0)) {
         titleObj = await getTitleObj(title, year, type, true);
         db_data = await searchOnCollection(titleObj, year, type);
     }
@@ -163,6 +167,8 @@ async function getTitleObjAndDbData(title, year, type, siteDownloadLinks) {
 function fixTitle(title) {
     if (title === 'go toubun no hanayome' || title === 'gotoubun no hanayome') {
         title = '5 toubun no hanayome';
+    } else if (title === "mushoku tensei") {
+        title = "mushoku tensei: jobless reincarnation"
     }
     return title;
 }
@@ -267,11 +273,11 @@ async function searchOnCollection(titleObj, year, type) {
     return db_data;
 }
 
-async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, subtitles, type, apiData, pageLink, extraConfigs) {
+async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, downloadLinks, watchOnlineLinks, torrentLinks, subtitles, type, apiData, pageLink, extraConfigs) {
     try {
         let updateFields = apiData ? apiData.updateFields : {};
 
-        if (db_data.releaseState !== 'done' && downloadLinks.length > 0) {
+        if (db_data.releaseState !== 'done' && (downloadLinks.length > 0 || torrentLinks.length > 0)) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.convertingToRelease);
             db_data.releaseState = 'done';
             updateFields.releaseState = 'done';
@@ -280,7 +286,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         }
 
         if (type.includes('serial') && !apiData) {
-            let seasonsUpdateFlag = handleSiteSeasonEpisodeUpdate(db_data, sourceName, downloadLinks, watchOnlineLinks);
+            let seasonsUpdateFlag = handleSiteSeasonEpisodeUpdate(db_data, sourceName, downloadLinks, watchOnlineLinks, torrentLinks);
             if (seasonsUpdateFlag) {
                 updateFields.seasons = db_data.seasons;
                 updateFields.totalDuration = getTotalDuration(db_data.seasons, db_data.latestData, db_data.type);
@@ -290,7 +296,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
         if (db_data.type.includes('movie')) {
             let prevGroupedLinks = db_data.qualities;
-            let currentGroupedLinks = groupMovieLinks(downloadLinks, watchOnlineLinks);
+            let currentGroupedLinks = groupMovieLinks(downloadLinks, watchOnlineLinks, torrentLinks);
             if (updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, sourceName)) {
                 updateFields.qualities = db_data.qualities;
             }
@@ -301,13 +307,16 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.subtitles = db_data.subtitles;
         }
 
-        if (!db_data.sources.find(s => s.sourceName === sourceName) && (downloadLinks.length > 0 || watchOnlineLinks.length > 0)) {
+        if (
+            !db_data.sources.find(s => s.sourceName === sourceName) &&
+            (downloadLinks.length > 0 || watchOnlineLinks.length > 0 || torrentLinks.length > 0)
+        ) {
             db_data.sources.push({sourceName: sourceName, pageLink: pageLink});
             updateFields.sources = db_data.sources;
         } else {
             const source = db_data.sources.find(s => s.sourceName === sourceName);
             if (source) {
-                if (downloadLinks.length === 0 && watchOnlineLinks.length === 0) {
+                if (downloadLinks.length === 0 && watchOnlineLinks.length === 0 && torrentLinks.length === 0) {
                     db_data.sources = db_data.sources.filter(item => item.sourceName !== sourceName);
                     updateFields.sources = db_data.sources;
                 } else if (source.pageLink !== pageLink) {

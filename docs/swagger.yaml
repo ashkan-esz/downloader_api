@@ -3612,8 +3612,6 @@ security:
                 type: integer
               episodes:
                 type: integer
-        view:
-          type: integer
         add_date:
           $ref: '#/components/schemas/DateString'
         apiUpdateDate:
@@ -4340,6 +4338,27 @@ security:
                       type: integer
                     episode:
                       type: integer
+              torrentLinks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    link:
+                      type: string
+                    info:
+                      type: string
+                    season:
+                      type: integer
+                    episode:
+                      type: integer
+                    sourceName:
+                      type: string
+                    type:
+                      type: string
+                    size:
+                      type: integer
+                    localLink:
+                      type: string
 
     Quality:
       type: object
@@ -4378,6 +4397,27 @@ security:
                 type: integer
               episode:
                 type: integer
+        torrentLinks:
+          type: array
+          items:
+            type: object
+            properties:
+              link:
+                type: string
+              info:
+                type: string
+              season:
+                type: integer
+              episode:
+                type: integer
+              sourceName:
+                type: string
+              type:
+                type: string
+              size:
+                type: integer
+              localLink:
+                type: string
 
     Subtitle:
       type: object

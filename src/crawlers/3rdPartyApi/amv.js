@@ -175,6 +175,10 @@ export function getAmvApiFields(data) {
             totalDuration: data.duration ? data.duration + ' min' : '',
             officialSite: data.siteUrl || "",
             animeSeason: data.season?.toLowerCase() || "",
+            genres: data.genres?.map(item => item.toLowerCase().trim()
+                .replace(/\s+/g, '-')
+                .replace('sports', 'sport'))
+                .filter(item => item !== 'n/a' && item !== 'anime') || [],
         };
         if (apiFields.duration === '0 min' && apiFields.animeType.toLowerCase() === 'tv') {
             apiFields.duration = '24 min';

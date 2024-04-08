@@ -1,8 +1,8 @@
 import {getLatestData} from "../crawlers/latestData.js";
 import {groupSubtitles} from "../crawlers/subtitle.js";
 
-export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceVpnStatus) {
-    let latestData = getLatestData(siteDownloadLinks, watchOnlineLinks, subtitles, type);
+export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, torrentLinks, sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceVpnStatus) {
+    let latestData = getLatestData(siteDownloadLinks, watchOnlineLinks, torrentLinks, subtitles, type);
 
     return {
         releaseState: 'done',
@@ -28,7 +28,6 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         seasons: [],
         sources: sourceName ? [{sourceName: sourceName, pageLink: page_link}] : [],
         seasonEpisode: [],
-        view: 0,
         add_date: new Date(),
         insert_date: new Date(),
         update_date: 0,
@@ -54,7 +53,7 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, sour
         trailers: trailers, // [{'url,info,vpnStatus'}]
         trailerDate: trailers.length > 0 ? Date.now() : 0,
         subtitles: groupSubtitles(subtitles),
-        latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink
+        latestData: latestData, //season, episode, quality, updateReason, hardSub, dubbed, censored, subtitle, watchOnlineLink, torrentLinks
         status: type.includes('movie') ? 'ended' : 'unknown',
         releaseDay: "",
         year: year.toString(),

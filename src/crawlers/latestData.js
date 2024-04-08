@@ -1,6 +1,6 @@
 import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils/utils.js";
 
-const latestDataKeys = ['season', 'episode', 'quality', 'hardSub', 'dubbed', 'censored', 'subtitle', 'watchOnlineLink'];
+const latestDataKeys = ['season', 'episode', 'quality', 'hardSub', 'dubbed', 'censored', 'subtitle', 'watchOnlineLink', 'torrentLinks'];
 
 export function handleLatestDataUpdate(db_data, type) {
     const newLatestData = reCreateLatestData(db_data, type);
@@ -31,6 +31,18 @@ export function handleLatestDataUpdate(db_data, type) {
         newLatestData.updateReason = 'quality';
         latestDataUpdate = true;
         PrimaryLatestDataUpdate = true;
+    }
+
+    if (checkLatestDataFieldUpdate(prevLatestData.torrentLinks, newLatestData.torrentLinks)) {
+        latestDataUpdate = true;
+        let se = getSeasonEpisode(newLatestData.torrentLinks);
+        if (newLatestData.season < se.season) {
+            newLatestData.updateReason = 'torrent-season';
+            PrimaryLatestDataUpdate = true;
+        } else if (newLatestData.season === se.season && newLatestData.episode < se.episode) {
+            newLatestData.updateReason = 'torrent-episode';
+            PrimaryLatestDataUpdate = true;
+        }
     }
 
     if (!latestDataUpdate) {
@@ -64,16 +76,18 @@ export function reCreateLatestData(db_data, type) {
     if (type.includes('movie')) {
         let links = db_data.qualities.map(e => e.links).flat(1);
         let watchOnlineLinks = db_data.qualities.map(e => e.watchOnlineLinks).flat(1);
-        return getLatestData(links, watchOnlineLinks, subtitles, type);
+        let torrentLinks = db_data.qualities.map(e => e.torrentLinks).flat(1);
+        return getLatestData(links, watchOnlineLinks, torrentLinks, subtitles, type);
     } else {
         let episodes = db_data.seasons.map(s => s.episodes).flat(1);
         let links = episodes.map(e => e.links).flat(1);
         let watchOnlineLinks = episodes.map(e => e.watchOnlineLinks).flat(1);
-        return getLatestData(links, watchOnlineLinks, subtitles, type);
+        let torrentLinks = episodes.map(e => e.torrentLinks).flat(1);
+        return getLatestData(links, watchOnlineLinks, torrentLinks, subtitles, type);
     }
 }
 
-export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type) {
+export function getLatestData(site_links, siteWatchOnlineLinks, siteTorrentLinks, subtitles, type) {
     let latestSeason = type.includes('movie') ? 0 : 1;
     let latestEpisode = type.includes('movie')
         ? 0
@@ -83,6 +97,7 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
     let dubbed = '';
     let censored = '';
     let onlineLink = (type.includes('movie') && siteWatchOnlineLinks.length > 0) ? 's1e1' : '';
+    let torrentLink = (type.includes('movie') && siteTorrentLinks.length > 0) ? 's1e1' : '';
     let subtitle = (type.includes('movie') && subtitles.length > 0) ? 's1e1' : '';
 
     // download links
@@ -144,6 +159,14 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
         onlineLink = `s${latestOnlineLink.season}e${episodeNumber}`;
     }
 
+    // torrent links
+    if (siteTorrentLinks.length > 0) {
+        let sortedTorrentLinks = sortLinkWithInfoCheck(siteTorrentLinks);
+        let latestTorrentLink = sortedTorrentLinks[sortedTorrentLinks.length - 1];
+        let episodeNumber = getEpisodeNumber(latestTorrentLink);
+        torrentLink = `s${latestTorrentLink.season}e${episodeNumber}`;
+    }
+
     // subtitles
     if (type.includes('serial') && subtitles.length > 0) {
         let sortedSubtitles = sortLinkWithInfoCheck(subtitles);
@@ -161,7 +184,8 @@ export function getLatestData(site_links, siteWatchOnlineLinks, subtitles, type)
         dubbed,
         censored,
         subtitle,
-        watchOnlineLink: onlineLink
+        watchOnlineLink: onlineLink,
+        torrentLinks: torrentLink,
     };
 }
 

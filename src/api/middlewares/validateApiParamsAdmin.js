@@ -194,6 +194,14 @@ const validations = Object.freeze({
         .isIn(['none', 'ignore', 'force']).withMessage('Invalid parameter trailerUploadState :: (none|ignore|force)')
         .toLowerCase(),
 
+    torrentState: query('torrentState')
+        .trim()
+        .customSanitizer(value => {
+            return value || 'none'
+        })
+        .isIn(['none', 'ignore', 'only']).withMessage('Invalid parameter torrentState :: (none|ignore|only)')
+        .toLowerCase(),
+
     all: query('all')
         .trim()
         .customSanitizer(value => {

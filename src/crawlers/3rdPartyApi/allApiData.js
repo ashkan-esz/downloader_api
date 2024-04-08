@@ -18,7 +18,7 @@ import {getAmvApiData, getAmvApiFields} from "./amv.js";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
 
-export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, sourceName, pageLink, extraConfigs) {
+export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, torrentLinks, sourceName, pageLink, extraConfigs) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
@@ -57,7 +57,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     if (checkForceStopCrawler()) {
         return;
     }
-    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsu);
+    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.callingOmdbTvMazeKitsuAmv);
     let {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(titleModel, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null, amvApiFields = null;
 
@@ -116,7 +116,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     }
     if (titleModel.type.includes('serial')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.handlingSeasonFields);
-        let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(titleModel, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, titleModel.totalSeasons, omdbApiFields, tvmazeApiFields, false);
         titleModel = {...titleModel, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -230,7 +230,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
 
             titleModel.apiIds.amvID = amvApiFields.amvID;
             titleModel.apiIds.gogoID = amvApiFields.gogoID;
-            if (!titleModel.apiIds.jikanID && amvApiFields.jikanID){
+            if (!titleModel.apiIds.jikanID && amvApiFields.jikanID) {
                 titleModel.apiIds.jikanID = amvApiFields.jikanID;
             }
             if (titleModel.status === 'unknown' || !titleModel.type.includes('anime')) {
@@ -287,7 +287,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, s
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, siteType, sitePoster, sourceName, pageLink, extraConfigs) {
+export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, torrentLinks, siteType, sitePoster, sourceName, pageLink, extraConfigs) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (extraConfigs?.apiUpdateState === 'ignore') {
@@ -314,7 +314,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     if (checkForceStopCrawler()) {
         return;
     }
-    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsu);
+    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.callingOmdbTvMazeKitsuAmv);
     let {omdbApiData, tvmazeApiData, kitsuApiData, amvApiData} = await handleApiCalls(db_data, pageLink);
     let omdbApiFields = null, tvmazeApiFields = null, jikanApiFields = null, kitsuApiFields = null, amvApiFields = null;
 
@@ -379,7 +379,7 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, s
     }
     if (db_data.type.includes('serial')) {
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.handlingSeasonFields);
-        let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
+        let seasonEpisodeFieldsUpdate = await updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, updateFields.totalSeasons, omdbApiFields, tvmazeApiFields, true);
         updateFields = {...updateFields, ...seasonEpisodeFieldsUpdate};
     }
 
@@ -764,12 +764,12 @@ function getNewGenres(data, apiGenres, isAnime, isAnimation) {
     }
 }
 
-async function updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
+async function updateSeasonsField(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist) {
     let fields = {};
     let {
         seasonsUpdateFlag,
         nextEpisodeUpdateFlag
-    } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
+    } = await handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist);
 
     if (seasonsUpdateFlag) {
         fields.seasons = db_data.seasons;

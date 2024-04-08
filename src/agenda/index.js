@@ -35,6 +35,15 @@ export async function startAgenda() {
             }
         });
 
+        agenda.define("start torrent crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
+                await crawler('', {
+                    crawlMode: 0,
+                    torrentState: 'only',
+                });
+            }
+        });
+
         agenda.define("update jikan data", {concurrency: 1, priority: "high"}, async (job) => {
             await updateJikanDataJobFunc();
         });
@@ -57,6 +66,7 @@ export async function startAgenda() {
         //for more info check https://crontab.guru
         await agenda.every("0 2 * * *", "start crawler cycle", {}, {timezone: "Asia/Tehran"}); //At 02:00.
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
+        await agenda.every("*/10 * * * *", "start torrent crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("15 * * * *", "check movie source domains", {}, {timezone: "Asia/Tehran"});// Every hour - **:15
         await agenda.every("0 */12 * * *", "update jikan data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
         await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30

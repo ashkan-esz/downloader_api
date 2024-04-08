@@ -27,7 +27,7 @@ router.put('/crawler/start',
     middlewares.validateApiParamsAdmin.checkApiParams(
         ['sourceName_query', 'crawlerMode', 'handleDomainChange', 'handleDomainChangeOnly',
             'crawlerConcurrency', 'dontUseRemoteBrowser', 'axiosBlockThreshHold', 'remoteBrowserBlockThreshHold',
-            'castUpdateState', 'apiUpdateState', 'trailerUploadState']),
+            'castUpdateState', 'apiUpdateState', 'trailerUploadState', 'torrentState']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']), adminControllers.startCrawler);
 

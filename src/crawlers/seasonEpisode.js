@@ -4,8 +4,8 @@ import {groupSerialLinks, updateSerialLinks} from "./link.js";
 import {replaceSpecialCharacters} from "./utils/utils.js";
 import {wordsToNumbers} from "words-to-numbers";
 
-export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
-    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks);
+export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
+    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);
     let seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
     let nextEpisodeUpdateFlag = false;
 
@@ -44,8 +44,8 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
     };
 }
 
-export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks) {
-    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks);
+export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks) {
+    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);
     let seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
 
     let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons);
@@ -86,6 +86,7 @@ function updateSeasonEpisodeData(db_seasons, currentEpisodes, apiName) {
                     ...currentEpisodes[i],
                     links: [],
                     watchOnlineLinks: [],
+                    torrentLinks: [],
                 });
                 updateFlag = true;
             }
@@ -98,6 +99,7 @@ function updateSeasonEpisodeData(db_seasons, currentEpisodes, apiName) {
                     ...currentEpisodes[i],
                     links: [],
                     watchOnlineLinks: [],
+                    torrentLinks: [],
                 }],
             });
             updateFlag = true;
@@ -176,9 +178,11 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
                     //get source links
                     let prevLinks = checkEpisode.links.filter(item => item.sourceName === sourceName);
                     let prevOnlineLinks = checkEpisode.watchOnlineLinks.filter(item => item.sourceName === sourceName);
+                    let prevTorrentLinks = checkEpisode.torrentLinks.filter(item => item.sourceName === sourceName);
                     let currentLinks = currentEpisodes[j].links;
                     let currentOnlineLinks = currentEpisodes[j].watchOnlineLinks;
-                    let linkUpdateResult = updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, currentLinks, currentOnlineLinks);
+                    let currentTorrentLinks = currentEpisodes[j].torrentLinks;
+                    let linkUpdateResult = updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, prevTorrentLinks, currentLinks, currentOnlineLinks, currentTorrentLinks);
                     updateFlag = linkUpdateResult || updateFlag;
                 } else {
                     //new episode
@@ -204,11 +208,14 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
             if (!episodes[j].checked) {
                 let prevLength = episodes[j].links.length;
                 let prevOnlineLength = episodes[j].watchOnlineLinks.length;
+                let prevTorrentLength = episodes[j].torrentLinks.length;
                 episodes[j].links = episodes[j].links.filter(link => link.sourceName !== sourceName);
                 episodes[j].watchOnlineLinks = episodes[j].watchOnlineLinks.filter(link => link.sourceName !== sourceName);
+                episodes[j].torrentLinks = episodes[j].torrentLinks.filter(link => link.sourceName !== sourceName);
                 let newLength = episodes[j].links.length;
                 let newOnlineLength = episodes[j].watchOnlineLinks.length;
-                if (prevLength !== newLength || prevOnlineLength !== newOnlineLength) {
+                let newTorrentLength = episodes[j].torrentLinks.length;
+                if (prevLength !== newLength || prevOnlineLength !== newOnlineLength || prevTorrentLength !== newTorrentLength) {
                     updateFlag = true;
                 }
             }
@@ -246,6 +253,7 @@ function handleMissedSeasonEpisode(db_seasons) {
                     ...episodeModel,
                     links: [],
                     watchOnlineLinks: [],
+                    torrentLinks: [],
                 });
                 missedSeasonEpisodeFlag = true;
             }
@@ -322,13 +330,15 @@ export function getTotalDuration(seasons, latestData, type) {
     let episodeCounter = 0;
     for (let i = 0; i < seasons.length; i++) {
         if (seasons[i].seasonNumber <= latestData.season ||
-            seasons[i].episodes.find(item => item.links.length > 0 || item.watchOnlineLinks.length > 0)) {
+            seasons[i].episodes.find(item => item.links.length > 0 || item.watchOnlineLinks.length > 0 || item.torrentLinks.length > 0)) {
             let episodes = seasons[i].episodes;
             for (let j = 0; j < episodes.length; j++) {
                 if (seasons[i].seasonNumber < latestData.season ||
                     episodes[j].episodeNumber <= latestData.episode ||
                     episodes[j].links.length > 0 ||
-                    episodes[j].watchOnlineLinks.length > 0) {
+                    episodes[j].watchOnlineLinks.length > 0 ||
+                    episodes[j].torrentLinks.length > 0
+                ) {
                     episodeCounter++;
                     totalDuration += Number(episodes[j].duration.replace('min', ''));
                 }

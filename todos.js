@@ -8,6 +8,7 @@
 //todo : 80. add feature: share movies between users
 //todo : 130. add new sources
 //todo : 135.1 check bun
+//todo : 135.2 check fastify
 //todo : 136. smart suggestion method
 //todo : 78. add feature 'comments' to movies
 //todo : 85. add feature: send notification to users (RabbitMQ)

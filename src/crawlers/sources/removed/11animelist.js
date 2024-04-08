@@ -63,6 +63,7 @@ async function search_title(link, i, $, url, extraConfigs) {
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
+                        torrentLinks: [],
                         persianSummary: getPersianSummary($2),
                         poster: getPoster($2),
                         trailers: [],

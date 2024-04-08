@@ -13,7 +13,7 @@ export function handleSubtitlesUpdate(db_subtitles, currentGroupedSubtitles, sou
                 checkSeason.checked = true;
                 let prevLinks = checkSeason.links.filter(item => item.sourceName === sourceName);
                 let currentLinks = currentGroupedSubtitles[i].links;
-                let linkUpdateResult = updateSerialLinks(checkSeason, prevLinks, [], currentLinks, []);
+                let linkUpdateResult = updateSerialLinks(checkSeason, prevLinks, [], [], currentLinks, [], []);
                 updateFlag = linkUpdateResult || updateFlag;
             } else {
                 //new season

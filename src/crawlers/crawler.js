@@ -86,6 +86,7 @@ export async function crawler(sourceName, {
     castUpdateState = 'none',
     apiUpdateState = 'none',
     trailerUploadState = 'none',
+    torrentState = 'none', // none|ignore|only
 }) {
 
     let extraConfigs = {
@@ -96,6 +97,7 @@ export async function crawler(sourceName, {
         castUpdateState,
         apiUpdateState,
         trailerUploadState,
+        torrentState,
     }
 
     try {
@@ -127,6 +129,12 @@ export async function crawler(sourceName, {
         if (!handleDomainChangeOnly) {
             if (!sourceName) {
                 for (let i = 0; i < sourcesArray.length; i++) {
+                    if (
+                        (torrentState === "ignore" && sourcesArray[i].configs.isTorrent) ||
+                        (torrentState === "only" && !sourcesArray[i].configs.isTorrent)
+                    ) {
+                        continue;
+                    }
                     const sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
                     const disabled = sourcesObj[sourcesArray[i].name].disabled;
                     const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
