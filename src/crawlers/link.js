@@ -1,4 +1,4 @@
-import {checkBetterQuality} from "./utils/utils.js";
+import {checkBetterQuality, removeDuplicateLinks} from "./utils/utils.js";
 import {getEpisodeModel_placeholder} from "../models/episode.js";
 
 export function check_format(link, title) {
@@ -269,14 +269,11 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
         if (!prevGroupedLinks[i].checked) {
             let prevLength = prevGroupedLinks[i].links.length;
             let prevOnlineLength = prevGroupedLinks[i].watchOnlineLinks.length;
-            let prevTorrentLength = prevGroupedLinks[i].torrentLinks.length;
             prevGroupedLinks[i].links = prevGroupedLinks[i].links.filter(link => link.sourceName !== sourceName);
             prevGroupedLinks[i].watchOnlineLinks = prevGroupedLinks[i].watchOnlineLinks.filter(link => link.sourceName !== sourceName);
-            prevGroupedLinks[i].torrentLinks = prevGroupedLinks[i].torrentLinks.filter(link => link.sourceName !== sourceName);
             let newLength = prevGroupedLinks[i].links.length;
             let newOnlineLength = prevGroupedLinks[i].watchOnlineLinks.length;
-            let newTorrentLength = prevGroupedLinks[i].torrentLinks.length;
-            if (prevLength !== newLength || prevOnlineLength !== newOnlineLength || prevTorrentLength !== newTorrentLength) {
+            if (prevLength !== newLength || prevOnlineLength !== newOnlineLength) {
                 updateFlag = true;
             }
         }
@@ -333,23 +330,11 @@ export function updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, prev
 
     //-----------------------------------------
 
-    let torrentLinksUpdateNeed = prevTorrentLinks.length !== currentTorrentLinks.length;
-    if (!torrentLinksUpdateNeed) {
-        for (let k = 0; k < prevTorrentLinks.length; k++) {
-            //check changed links
-            if (!checkEqualLinks(prevTorrentLinks[k], currentTorrentLinks[k])) {
-                torrentLinksUpdateNeed = true;
-                break;
-            }
-        }
-    }
-    if (torrentLinksUpdateNeed) {
-        //remove prev link
-        let removeLinks = prevTorrentLinks.map(item => item.link);
-        checkEpisode.torrentLinks = checkEpisode.torrentLinks.filter(item => !removeLinks.includes(item.link));
-        //add current links
-        checkEpisode.torrentLinks = [...checkEpisode.torrentLinks, ...currentTorrentLinks];
-        checkEpisode.torrentLinks = sortLinksByQuality(checkEpisode.torrentLinks);
+    let prevTorrentLength = prevTorrentLinks.length;
+    let newTorrentLinksArray = removeDuplicateLinks([...prevTorrentLinks, ...currentTorrentLinks]);
+    let newTorrentLength = newTorrentLinksArray.length;
+    if (prevTorrentLength !== newTorrentLength) {
+        checkEpisode.torrentLinks = sortLinksByQuality(newTorrentLinksArray);
         updateFlag = true;
     }
 

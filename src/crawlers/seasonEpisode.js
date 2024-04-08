@@ -208,14 +208,11 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
             if (!episodes[j].checked) {
                 let prevLength = episodes[j].links.length;
                 let prevOnlineLength = episodes[j].watchOnlineLinks.length;
-                let prevTorrentLength = episodes[j].torrentLinks.length;
                 episodes[j].links = episodes[j].links.filter(link => link.sourceName !== sourceName);
                 episodes[j].watchOnlineLinks = episodes[j].watchOnlineLinks.filter(link => link.sourceName !== sourceName);
-                episodes[j].torrentLinks = episodes[j].torrentLinks.filter(link => link.sourceName !== sourceName);
                 let newLength = episodes[j].links.length;
                 let newOnlineLength = episodes[j].watchOnlineLinks.length;
-                let newTorrentLength = episodes[j].torrentLinks.length;
-                if (prevLength !== newLength || prevOnlineLength !== newOnlineLength || prevTorrentLength !== newTorrentLength) {
+                if (prevLength !== newLength || prevOnlineLength !== newOnlineLength) {
                     updateFlag = true;
                 }
             }

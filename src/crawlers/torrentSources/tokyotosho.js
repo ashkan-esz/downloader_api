@@ -14,7 +14,6 @@ import {
 
 
 //todo : add method to crawl specific title or file
-//todo : dont remove previous torrent links
 
 export const sourceConfig = Object.freeze({
     sourceName: "tokyotosho",
