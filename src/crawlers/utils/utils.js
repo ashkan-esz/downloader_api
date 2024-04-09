@@ -5,7 +5,7 @@ export function replaceSpecialCharacters(input) {
     return input
         .replace('&#39;', '')
         .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
-        .replace(/[”“"'’‘٫.:?¿!¡#%,()~♥♡△∽Ωωψ‎]/g, '')
+        .replace(/[”“"'’‘٫.:?¿？!¡#%,()~♥♡△∽Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')

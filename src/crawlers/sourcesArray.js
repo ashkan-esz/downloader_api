@@ -4,10 +4,11 @@ import * as avamovie from "./sources/5avamovie.js";
 import * as anime20 from "./sources/anime20.js";
 import * as tokyotosho from "./torrentSources/tokyotosho.js";
 import * as shanaproject from "./torrentSources/shanaproject.js";
+import * as nyaa from "./torrentSources/nyaa.js";
 
-export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject']);
-export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20', 'tokyotosho', 'shanaproject']);
-export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject']);
+export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa']);
+export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa']);
+export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa']);
 
 export function getSourcesMethods() {
     return ({
@@ -17,6 +18,7 @@ export function getSourcesMethods() {
         anime20: anime20,
         tokyotosho: tokyotosho,
         shanaproject: shanaproject,
+        nyaa: nyaa,
     });
 }
 
@@ -64,6 +66,13 @@ export function getSourcesArray(sourcesObj, crawlMode, extraConfigs) {
             configs: shanaproject.sourceConfig,
             starter: () => {
                 return shanaproject.default(sourcesObj.shanaproject, pageCount, extraConfigs);
+            }
+        },
+        {
+            name: 'nyaa',
+            configs: nyaa.sourceConfig,
+            starter: () => {
+                return nyaa.default(sourcesObj.nyaa, pageCount, extraConfigs);
             }
         },
     ];

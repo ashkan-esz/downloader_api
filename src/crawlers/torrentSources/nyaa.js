@@ -14,7 +14,7 @@ import {
 
 
 export const sourceConfig = Object.freeze({
-    sourceName: "shanaproject",
+    sourceName: "nyaa",
     needHeadlessBrowser: false,
     sourceAuthStatus: 'ok',
     vpnStatus: Object.freeze({
@@ -26,7 +26,7 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function shanaproject({movie_url, serial_url}, pageCount, extraConfigs = {}) {
+export default async function nyaa({movie_url, serial_url}, pageCount, extraConfigs = {}) {
     try {
         saveLinksStatus(movie_url, "sourcePage", "fetchingStart");
         let res = await axios.get(movie_url);
@@ -61,7 +61,7 @@ export default async function shanaproject({movie_url, serial_url}, pageCount, e
 export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
     try {
         let searchTitle = title.replace(/\s+/g, '+');
-        let searchUrl = `${sourceUrl.split('/?')[0].replace(/\/$/, '')}/search/?title=${searchTitle}&subber=`;
+        let searchUrl = sourceUrl + searchTitle;
         saveLinksStatus(searchUrl, "sourcePage", "fetchingStart");
         let res = await axios.get(searchUrl);
         saveLinksStatus(searchUrl, "sourcePage", "fetchingEnd");
@@ -109,32 +109,24 @@ function extractLinks($, sourceUrl) {
     let titles = [];
     for (let i = 0; i < $a.length; i++) {
         try {
-            if ($($a[i]).children().hasClass("release_download")) {
-                let href = $($a[i]).attr('href');
-                let info = $($($($a[i]).parent().next().children()[1]).children()[2]).text();
+            let href = $($a[i]).attr('href');
+            if (href?.match(/\d+\.torrent/i)) {
+                let infoNode = $($a[i]).parent().prev().children();
+                if (infoNode.length > 1) {
+                    infoNode = infoNode[infoNode.length - 1];
+                }
+                let info = $(infoNode).text();
                 info = fixLinkInfo(info);
                 if (info.match(/\(\d{4}\)/)) {
                     continue;
                 }
 
-                let year = new Date().getFullYear();
-                let title = $($($a[i]).prev().prev().prev().children().children()[0]).text().toLowerCase();
-                title = replaceSpecialCharacters(title).replace(" " + year, "").replace(" " + (year - 1), "");
-
+                let title = getTitle(info);
                 let se = fixSeasonEpisode(info, false);
                 let size = getFixedFileSize($, $a[i]);
 
-                if (se.episode === 0) {
-                    let temp = $($($a[i]).prev().prev().prev().prev()).text();
-                    if (!isNaN(temp)) {
-                        se.episode = Number(temp);
-                    } else if (temp.match(/\d+v\d/)) {
-                        se.episode = Number(temp.toLowerCase().split('v')[0]);
-                    }
-                }
-
                 let link = {
-                    link: sourceUrl.replace(/\/$/, '') + href,
+                    link: sourceUrl.split(/\/\?/)[0] + href,
                     info: info,
                     season: se.season,
                     episode: se.episode,
@@ -159,22 +151,12 @@ function extractLinks($, sourceUrl) {
         }
     }
 
-    for (let i = 0; i < titles.length; i++) {
-        let seasonMatch = titles[i].title.match(/\ss\d+$/gi);
-        if (seasonMatch) {
-            titles[i].title = titles[i].title.replace(seasonMatch[0], '');
-            let season = Number(seasonMatch[0].replace(' s', ''));
-            for (let j = 0; j < titles[i].links.length; j++) {
-                titles[i].links[j].season = season;
-            }
-        }
-    }
-
     return titles;
 }
 
 function fixLinkInfo(info) {
     info = info
+        .trim()
         .replace(/^\[[a-zA-Z\-\s\d]+]\s?/i, '')
         .replace(/\s?\[[a-zA-Z\s\d]+](?=\.)/i, '')
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
@@ -194,6 +176,21 @@ function fixLinkInfo(info) {
     return info;
 }
 
+function getTitle(text) {
+    text = text.split(' - ')[0]
+        .replace(/^\d\d\d\d?p\./, '')
+        .replace(/(\s\d\d+)?\.mkv/, '')
+        .replace(/\s\(\d{4}\)/, '')
+        .split(/[\[？]/g)[0]
+        .trim();
+    let splitArr = text.split(/\s|\./g);
+    let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
+    if (index !== -1) {
+        return replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
+    }
+    return replaceSpecialCharacters(text);
+}
+
 function normalizeSeasonText(text) {
     return text
         .replace(/2nd season - \d+/, r => 's2e' + r.match(/\d+$/).pop())
@@ -210,7 +207,7 @@ function normalizeSeasonText(text) {
 function fixSeasonEpisode(text, isLinkInput) {
     let se = getSeasonEpisode(text, isLinkInput);
     if (se.season === 1 && se.episode === 0) {
-        let temp = text.match(/\s\d+(\s\((web\s)?\d{3,4}p\))?(\.mkv)$/);
+        let temp = text.match(/\s\d+(\s\((web\s)?\d{3,4}p\))?(\.mkv)?$/);
         if (temp) {
             se.episode = Number(temp[0].match(/\d+/g)[0]);
         }
@@ -220,7 +217,8 @@ function fixSeasonEpisode(text, isLinkInput) {
 }
 
 function getFixedFileSize($, link) {
-    let sizeText = $($(link).prev())?.text()?.toLowerCase().replace(/size:\s/, '') || "";
+    let sizeText = $($(link).parent().next())?.text()?.toLowerCase().replace(/size:\s/, '') || "";
+    sizeText = sizeText.replace('mib', 'mb').replace('gib', 'gb');
     sizeText = purgeSizeText(sizeText);
     if (sizeText.endsWith('MB')) {
         return Number(sizeText.replace("MB", ''));
