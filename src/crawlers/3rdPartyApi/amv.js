@@ -223,7 +223,7 @@ export async function getGogoDownloadLink(gogoID, episodeNumber) {
     }
 }
 
-export async function getGogoOnlineLink(gogoID, episodeNumber) {
+export async function getGogoOnlineLink(gogoID, nineAnimeID, episodeNumber) {
     try {
         // sample: https://api.amvstr.me/api/v2/stream/ore-dake-level-up-na-ken-episode-1
         let url = `https://api.amvstr.me/api/v2/stream/${gogoID}-episode-${episodeNumber}`;
@@ -236,6 +236,12 @@ export async function getGogoOnlineLink(gogoID, episodeNumber) {
             iframe: data.iframe,
             plyr: data.plyr,
             nspl: data.nspl,
+            otherSources: {
+                marin: `https://marinn.me/watch/${gogoID}-episode-${episodeNumber}`,
+                zoroxtv: `https://zoroxtv.to/watch/${nineAnimeID}/ep-${episodeNumber}`,
+                ryuk: `https://ryuk.to/watch/${gogoID}-episode-${episodeNumber}`,
+                anitaku: `https://anitaku.so/${gogoID}-episode-${episodeNumber}`,
+            },
         }
     } catch (error) {
         saveError(error);
