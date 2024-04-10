@@ -11,10 +11,12 @@ import {
     addPageLinkToCrawlerStatus,
     checkForceStopCrawler, updatePageNumberCrawlerStatus,
 } from "../status/crawlerStatus.js";
+import {CookieJar} from "tough-cookie";
+import {wrapper} from "axios-cookiejar-support";
 
 
 export const sourceConfig = Object.freeze({
-    sourceName: "tokyotosho",
+    sourceName: "eztv",
     needHeadlessBrowser: false,
     sourceAuthStatus: 'ok',
     vpnStatus: Object.freeze({
@@ -26,13 +28,19 @@ export const sourceConfig = Object.freeze({
     replaceInfoOnDuplicate: true,
 });
 
-export default async function tokyotosho({movie_url, serial_url}, pageCount, extraConfigs = {}) {
+export default async function eztv({movie_url, serial_url}, pageCount, extraConfigs = {}) {
     try {
-        saveLinksStatus(movie_url,"sourcePage", "fetchingStart");
-        let res = await axios.get(movie_url);
-        saveLinksStatus(movie_url,"sourcePage", "fetchingEnd");
+        saveLinksStatus(movie_url, "sourcePage", "fetchingStart");
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let res = await client.get(movie_url, {
+            headers: {
+                Cookie: "layout=def_wlinks;",
+            }
+        });
+        saveLinksStatus(movie_url, "sourcePage", "fetchingEnd");
         let $ = cheerio.load(res.data);
-        let titles = extractLinks($);
+        let titles = extractLinks($, movie_url);
 
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
@@ -59,16 +67,22 @@ export default async function tokyotosho({movie_url, serial_url}, pageCount, ext
     }
 }
 
-export async function searchByTitle(sourceUrl, title, extraConfigs = {}){
+export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
     try {
         let searchTitle = title.replace(/\s+/g, '+');
-        let searchUrl = `${sourceUrl.split('/?')[0]}/search.php?terms=${searchTitle}&type=1&searchName=true&searchComment=false`
-        saveLinksStatus(searchUrl,"sourcePage", "fetchingStart");
-        let res = await axios.get(searchUrl);
-        saveLinksStatus(searchUrl,"sourcePage", "fetchingEnd");
+        let searchUrl = sourceUrl.split('/home')[0] + '/search/' + searchTitle;
+        saveLinksStatus(searchUrl, "sourcePage", "fetchingStart");
+        const jar = new CookieJar();
+        const client = wrapper(axios.create({jar}));
+        let res = await client.get(searchUrl, {
+            headers: {
+                Cookie: "layout=def_wlinks;",
+            }
+        });
+        saveLinksStatus(searchUrl, "sourcePage", "fetchingEnd");
 
         let $ = cheerio.load(res.data);
-        let titles = extractLinks($);
+        let titles = extractLinks($, sourceUrl);
         titles = titles.slice(0, 5);
 
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
@@ -103,45 +117,43 @@ async function saveCrawlData(titleData, extraConfigs) {
         subtitles: [],
         cookies: [],
     };
-    await save(titleData.title, "anime_serial", "", sourceData, 1, extraConfigs);
+    await save(titleData.title, "serial", titleData.year, sourceData, 1, extraConfigs);
 }
 
-function extractLinks($) {
+function extractLinks($, sourceUrl) {
     let $a = $('a');
     let titles = [];
     for (let i = 0; i < $a.length; i++) {
         try {
             let href = $($a[i]).attr('href');
-            let info = fixLinkInfo($($a[i]).text());
-            if (info.match(/\(\d{4}\)/)) {
-                continue;
-            }
+            if (href?.match(/\.torrent$/i)) {
+                let info = $($($a[i]).parent().prev()).text();
+                info = fixLinkInfo(info);
+                if (info.match(/\(\d{4}\)/)) {
+                    continue;
+                }
 
-            if ($($a[i]).parent().hasClass("desc-top")) {
                 let title = getTitle(info);
+                let yearMatch = title.match(/\s\d\d\d\d/i);
+                let year = "";
+                if (yearMatch?.[0] && Number(yearMatch[0]) > 2010) {
+                    title = title.replace(yearMatch[0], '').trim();
+                    year = Number(yearMatch[0]);
+                }
                 let se = fixSeasonEpisode(info, false);
                 let size = getFixedFileSize($, $a[i]);
 
-                let type = href.startsWith("magnet:")
-                    ? "magnet"
-                    : (href.includes("/torrent") || href.endsWith(".torrent")) ? "torrent" : "direct";
-
-                if (type === "magnet") {
-                    info = fixLinkInfo($($a[i]).next().text());
-                    if (info.match(/\(\d{4}\)/)) {
-                        continue;
-                    }
-                    title = getTitle(info);
-                    se = fixSeasonEpisode(info, false);
+                if ((se.season === 1 && se.episode === 0) || href.includes(".COMPLETE.")) {
+                    continue;
                 }
 
                 let link = {
                     link: href,
-                    info: info.replace(".mkv", ""),
+                    info: info,
                     season: se.season,
                     episode: se.episode,
                     sourceName: sourceConfig.sourceName,
-                    type: type,
+                    type: "torrent",
                     size: size, //in mb
                     localLink: "",
                 }
@@ -152,6 +164,7 @@ function extractLinks($) {
                 } else {
                     titles.push({
                         title: title,
+                        year: year,
                         links: [link],
                     })
                 }
@@ -160,27 +173,41 @@ function extractLinks($) {
             saveError(error);
         }
     }
+
     return titles;
 }
 
 function fixLinkInfo(info) {
     info = info
+        .trim()
         .replace(/^\[[a-zA-Z\-\s\d]+]\s?/i, '')
         .replace(/\s?\[[a-zA-Z\s\d]+](?=\.)/i, '')
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
         .replace(/(?<!part)\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
+        .replace(".mkv", "")
+        .trim();
 
-    return normalizeSeasonText(info.toLowerCase());
+    info = normalizeSeasonText(info.toLowerCase());
+
+    let quality = info.match(/\s[\[(](web\s)?\d\d\d\d?p[\])]/gi);
+    if (quality) {
+        let temp = quality[0].match(/\d\d\d\d?p/i)[0];
+        info = temp + '.' + info.replace(quality[0], '');
+    }
+
+    return info;
 }
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .replace(/^\d\d\d\d?p\./, '')
         .replace(/(\s\d\d+)?\.mkv/, '')
-        .replace(/\s\(\d{4}\)/, '').trim();
+        .replace(/\s\(\d{4}\)/, '')
+        .split(/[\[？]/g)[0]
+        .trim();
     let splitArr = text.split(/\s|\./g);
-    // console.log(splitArr);
-    let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
+    let index = splitArr.findIndex(item => item.match(/s\d+e\d+/));
     if (index !== -1) {
         return replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
     }
@@ -203,7 +230,7 @@ function normalizeSeasonText(text) {
 function fixSeasonEpisode(text, isLinkInput) {
     let se = getSeasonEpisode(text, isLinkInput);
     if (se.season === 1 && se.episode === 0) {
-        let temp = text.match(/\s\d+(\s\((web\s)?\d{3,4}p\))?(\.mkv)$/);
+        let temp = text.match(/\s\d+(\s\((web\s)?\d{3,4}p\))?(\.mkv)?$/);
         if (temp) {
             se.episode = Number(temp[0].match(/\d+/g)[0]);
         }
@@ -213,7 +240,8 @@ function fixSeasonEpisode(text, isLinkInput) {
 }
 
 function getFixedFileSize($, link) {
-    let sizeText = $($(link).parent().parent().next().children()[0])?.text()?.match(/size: \d+\.?\d+(mb|gb)/i)?.[0].toLowerCase().replace(/size:\s/, '') || "";
+    let sizeText = $($(link).parent().next())?.text()?.toLowerCase().replace(/size:\s/, '') || "";
+    sizeText = sizeText.replace('mib', 'mb').replace('gib', 'gb');
     sizeText = purgeSizeText(sizeText);
     if (sizeText.endsWith('MB')) {
         return Number(sizeText.replace("MB", ''));

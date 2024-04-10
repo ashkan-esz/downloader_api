@@ -9,7 +9,7 @@ import {pauseCrawler} from "../status/crawlerController.js";
 import save from "../save_changes_db.js";
 import {
     addPageLinkToCrawlerStatus,
-    checkForceStopCrawler,
+    checkForceStopCrawler, updatePageNumberCrawlerStatus,
 } from "../status/crawlerStatus.js";
 
 
@@ -36,6 +36,7 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
 
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
+        updatePageNumberCrawlerStatus(1, pageCount, concurrencyNumber, extraConfigs);
         for (let i = 0; i < titles.length; i++) {
             if (checkForceStopCrawler()) {
                 break;
@@ -72,6 +73,7 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
 
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
+        updatePageNumberCrawlerStatus(1, 1, concurrencyNumber, extraConfigs);
         for (let i = 0; i < titles.length; i++) {
             await promiseQueue.onSizeLessThan(concurrencyNumber);
             const t = i;
