@@ -31,15 +31,18 @@ export async function startAgenda() {
         agenda.define("start crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
             if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
                 await removeCompletedJobs();
-                await crawler('', {crawlMode: 0});
+                await crawler('', {
+                    crawlMode: 0,
+                    torrentState: "ignore", // dont crawl torrent sources
+                });
             }
         });
 
         agenda.define("start torrent crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
-            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
+            if (!config.crawler.disable && !config.crawler.torrentDisable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
                 await crawler('', {
                     crawlMode: 0,
-                    torrentState: 'only',
+                    torrentState: 'only', // only crawl torrent sources
                 });
             }
         });

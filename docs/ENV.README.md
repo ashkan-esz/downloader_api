@@ -24,6 +24,7 @@ To run this project, you will need to add the following environment variables to
 | **`GOOGLE_API_KEY`**                   | see [google console](https://console.cloud.google.com/apis)                                                                    | `true`   |               |
 | **`PRINT_ERRORS`**                     |                                                                                                                                | `false`  | false         |
 | **`DISABLE_CRAWLER`**                  | crawler doesn't run                                                                                                            | `false`  | false         |
+| **`DISABLE_TORRENT_CRAWLER`**          | torrent crawler doesn't run                                                                                                    | `false`  | false         |
 | **`DISABLE_THUMBNAIL_CREATE`**         | thumbnails doesnt create                                                                                                       | `false`  | false         |
 | **`CRAWLER_CONCURRENCY`**              |                                                                                                                                | `false`  |               |
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                                | `true`   |               |

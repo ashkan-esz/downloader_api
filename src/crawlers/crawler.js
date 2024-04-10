@@ -29,7 +29,8 @@ export async function crawlerCycle() {
             return warningMessages.crawlerCycleCancelled;
         }
         const sourcesNames = Object.keys(sourcesObj);
-        let sourcesArray = getSourcesArray(sourcesObj, 2);
+        // ignore torrent sources
+        let sourcesArray = getSourcesArray(sourcesObj, 2).filter(item => !item.configs.isTorrent);
         sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
         sourcesArray = sourcesArray.map(item => ({name: item.name, ...sourcesObj[item.name]}));
 

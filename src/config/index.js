@@ -9,6 +9,7 @@ export default Object.freeze({
     crawler: Object.freeze({
         concurrency: process.env.CRAWLER_CONCURRENCY,
         disable: process.env.DISABLE_CRAWLER === 'true',
+        torrentDisable: process.env.DISABLE_TORRENT_CRAWLER === 'true',
         pauseOnHighLoad: process.env.PAUSE_CRAWLER_ON_HIGH_LOAD !== 'false',
         totalMemory: Number(process.env.CRAWLER_TOTAL_MEMORY || 1024),
         memoryLimit: Number(process.env.CRAWLER_MEMORY_LIMIT || 0),
