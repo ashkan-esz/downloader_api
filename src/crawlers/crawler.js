@@ -1,6 +1,6 @@
 import {getDatesBetween, getDayOfYear} from "./utils/utils.js";
 import {getSourcesObjDB, updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
-import {getSourcesArray} from "./sourcesArray.js";
+import {getSourcesArray, getSourcesMethods} from "./sourcesArray.js";
 import {domainChangeHandler} from "./domainChangeHandler.js";
 import {saveError} from "../error/saveError.js";
 import {
@@ -201,6 +201,108 @@ export async function crawler(sourceName, {
         const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         let message = `crawling done in : ${crawlDuration}min, (domainChangeHandler: ${domainChangeDuration}min)`;
+        await saveServerLog(message);
+        return {
+            isError: false,
+            message: message,
+        };
+    } catch (error) {
+        await updateCrawlerStatus_crawlerCrashed(error.message || '');
+        await saveError(error);
+        return {
+            isError: true,
+            message: error.message || "Internal server error",
+        };
+    }
+}
+
+export async function torrentCrawlerSearch({
+                                               sourceName = "",
+                                               title = "",
+                                               type = "",
+                                               isManualStart = false,
+                                               crawlerConcurrency = 0,
+                                               dontUseRemoteBrowser = false,
+                                               castUpdateState = 'none',
+                                               apiUpdateState = 'none',
+                                               trailerUploadState = 'none',
+                                           }) {
+
+    let extraConfigs = {
+        crawlerConcurrency,
+        dontUseRemoteBrowser,
+        castUpdateState,
+        apiUpdateState,
+        trailerUploadState,
+    }
+
+    try {
+        if (checkIsCrawling()) {
+            return {
+                isError: true,
+                message: 'another crawling is running',
+            };
+        }
+        const startTime = new Date();
+        await updateCrawlerStatus_crawlerStart(startTime, false, isManualStart, 0);
+
+        let sourcesObj = await getSourcesObjDB();
+        if (!sourcesObj) {
+            const warningMessages = getCrawlerWarningMessages();
+            await updateCrawlerStatus_crawlerCrashed(warningMessages.crawlerCancelled);
+            await saveCrawlerWarning(warningMessages.crawlerCancelled);
+            return {
+                isError: true,
+                message: warningMessages.crawlerCancelled,
+            };
+        }
+
+        const sourcesNames = Object.keys(sourcesObj);
+        let sourcesArray = getSourcesArray(sourcesObj, 0, extraConfigs);
+        sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name) && item.configs.isTorrent);
+        let sourcesMethods = getSourcesMethods();
+
+        if (!sourceName) {
+            for (let i = 0; i < sourcesArray.length; i++) {
+                const sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
+                const disabled = sourcesObj[sourcesArray[i].name].disabled;
+                const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
+                if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                    continue;
+                }
+                if (disabled) {
+                    await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    continue;
+                }
+                await updateCrawlerStatus_sourceStart(sourcesArray[i].name, 0);
+                let movieUrl = sourcesObj[sourcesArray[i].name].movie_url;
+                let lastPages = await sourcesMethods[sourcesArray[i].name].searchByTitle(movieUrl, title, extraConfigs);
+                await updateCrawlerStatus_sourceEnd(lastPages, true);
+            }
+        } else {
+            let findSource = sourcesArray.find(x => x.name === sourceName);
+            if (findSource) {
+                const sourceCookies = sourcesObj[sourceName].cookies;
+                const disabled = sourcesObj[sourceName].disabled;
+                const warningMessages = getCrawlerWarningMessages(sourceName);
+                if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                } else if (disabled) {
+                    await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                } else {
+                    await updateCrawlerStatus_sourceStart(sourceName, 0);
+                    let movieUrl = sourcesObj[sourceName].movie_url;
+                    let lastPages = await sourcesMethods[sourceName].searchByTitle(movieUrl, title, extraConfigs);
+                    await updateCrawlerStatus_sourceEnd(lastPages, true);
+                }
+            }
+        }
+
+        const endTime = new Date();
+        const crawlDuration = getDatesBetween(endTime, startTime).minutes;
+        await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
+        let message = `crawling done in : ${crawlDuration}min`;
         await saveServerLog(message);
         return {
             isError: false,

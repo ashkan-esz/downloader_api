@@ -1931,6 +1931,85 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
 
+  /admin/crawler/torrent/search:
+    put:
+      tags:
+        - Admin-Crawler
+      summary: search torrent
+      description: Search in torrent sources by title
+      operationId: admin-crawler-torrent-search
+      parameters:
+        - name: sourceName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - serial
+              - anime_serial
+              - movie
+              - anime_movie
+        - name: dontUseRemoteBrowser
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: castUpdateState
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - none
+              - ignore
+              - force
+            default: none
+        - name: apiUpdateState
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - none
+              - ignore
+              - force
+            default: none
+        - name: trailerUploadState
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - none
+              - ignore
+              - force
+            default: none
+        - name: crawlerConcurrency
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /admin/crawler/pause/{duration}:
     put:
       tags:
@@ -4178,6 +4257,8 @@ security:
             type: string
           url:
             type: string
+          isTorrent:
+            type: boolean
 
     MovieSource:
       type: object

@@ -1,6 +1,4 @@
 
-//todo : 20. crawler: add new movie sources to replace 'digimoviez'
-//todo : 130. add new sources
 //todo : 1. send push-notification on new-episode, new-sequel, ... that users follow
 //todo : 80. add feature: share movies between users
 //todo : 135.1 check bun

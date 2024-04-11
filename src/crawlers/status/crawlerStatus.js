@@ -413,7 +413,7 @@ export async function updateCrawlerStatus_sourceStart(sourceName, crawlMode) {
     await saveCrawlerLog(crawlerLog());
 }
 
-export async function updateCrawlerStatus_sourceEnd(lastPages) {
+export async function updateCrawlerStatus_sourceEnd(lastPages, dontSave = false) {
     crawlerStatus.crawledSources.push({
         ...crawlerStatus.crawlingSource,
         endTime: new Date(),
@@ -421,7 +421,9 @@ export async function updateCrawlerStatus_sourceEnd(lastPages) {
         lastPages: lastPages,
     });
 
-    await saveCrawlerLog(crawlerLog());
+    if (!dontSave) {
+        await saveCrawlerLog(crawlerLog());
+    }
     crawlerStatus.crawlingSource = null;
 }
 

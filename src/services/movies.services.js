@@ -10,6 +10,7 @@ import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils
 import PQueue from 'p-queue';
 import {getMoviesCacheByKey, setMoviesCacheByKey} from "../data/cache.js";
 import {saveError} from "../error/saveError.js";
+import {getSourcesMethods} from "../crawlers/sourcesArray.js";
 
 
 export async function getMoviesOfApiName(userId, apiName, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
@@ -681,9 +682,11 @@ export async function getMovieSources() {
 
     delete result._id;
     delete result.title;
+    let sourcesMethods = getSourcesMethods();
     let sourcesUrls = Object.keys(result).map(sourceName => ({
         sourceName: sourceName,
-        url: result[sourceName].movie_url.replace('/page/', '')
+        url: result[sourceName].movie_url.replace('/page/', ''),
+        isTorrent: sourcesMethods[sourceName].sourceConfig.isTorrent,
     }));
 
     if (sourcesUrls.length === 0) {

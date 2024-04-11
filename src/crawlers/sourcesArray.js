@@ -12,6 +12,9 @@ export const sourcesNames = Object.freeze([
     'digimoviez', 'film2movie', 'avamovie', 'anime20', 'yekmovie',
     'tokyotosho', 'shanaproject', 'nyaa', 'eztv', // torrent
 ]);
+export const torrentSourcesNames = Object.freeze([
+    'tokyotosho', 'shanaproject', 'nyaa', 'eztv',
+]);
 export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20', 'yekmovie']);
 export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20', 'yekmovie']);
 

@@ -6,6 +6,11 @@ export async function startCrawler(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function startTorrentSearch(req, res) {
+    let result = await adminServices.startTorrentSearch(req.query);
+    return sendResponse(req, res, result);
+}
+
 export async function getCrawlerStatus(req, res) {
     let result = await adminServices.getCrawlerStatus();
     return sendResponse(req, res, result);

@@ -1,5 +1,5 @@
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {crawler} from "../crawlers/crawler.js";
+import {crawler, torrentCrawlerSearch} from "../crawlers/crawler.js";
 import * as crawlerMethodsDB from "../data/db/crawlerMethodsDB.js";
 import * as adminCrawlerDbMethods from "../data/db/admin/adminCrawlerDbMethods.js";
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
@@ -34,6 +34,17 @@ export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
         ...crawlerOptions,
         crawlMode: crawlerOptions.mode,
+        isManualStart: true,
+    });
+    if (result.isError) {
+        return generateServiceResult({data: result}, 500, result.message);
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function startTorrentSearch(crawlerOptions) {
+    let result = await torrentCrawlerSearch({
+        ...crawlerOptions,
         isManualStart: true,
     });
     if (result.isError) {

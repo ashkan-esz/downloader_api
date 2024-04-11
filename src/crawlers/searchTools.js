@@ -270,7 +270,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                         }
                     }
                     let sourcesObject = await getAxiosSourcesObject();
-                    let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName].cookies : [];
+                    let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName]?.cookies || [] : [];
                     const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
                     let responseTimeout = pageType === 'sourcePage' ? 15 * 1000 : 10 * 1000;
                     let response = await getResponseWithCookie(url, cookie, responseTimeout);

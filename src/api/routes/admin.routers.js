@@ -31,6 +31,16 @@ router.put('/crawler/start',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserRolePermission(['admin']), adminControllers.startCrawler);
 
+//admin/crawler/torrent/search
+router.put('/crawler/torrent/search',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(
+        ['sourceName_query', 'title_query', 'type_query',
+            'crawlerConcurrency', 'dontUseRemoteBrowser',
+            'castUpdateState', 'apiUpdateState', 'trailerUploadState']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserRolePermission(['admin']), adminControllers.startTorrentSearch);
+
 //admin/crawler/pause/:duration
 router.put('/crawler/pause/:duration',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,

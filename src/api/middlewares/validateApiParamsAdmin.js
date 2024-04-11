@@ -367,7 +367,18 @@ const validations = Object.freeze({
         .isString().withMessage("title must be String")
         .trim().toLowerCase().escape(),
 
+    title_query: query('title')
+        .exists().withMessage("Missed parameter title")
+        .isString().withMessage("title must be String")
+        .trim().toLowerCase().escape(),
+
     type: body('type')
+        .exists().withMessage("Missed parameter type")
+        .isString().withMessage("type must be String")
+        .trim().toLowerCase().escape()
+        .isIn(types).withMessage(`Invalid parameter type :: (${types.join('|')})`),
+
+    type_query: query('type')
         .exists().withMessage("Missed parameter type")
         .isString().withMessage("type must be String")
         .trim().toLowerCase().escape()

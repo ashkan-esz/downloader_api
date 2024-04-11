@@ -14,7 +14,7 @@ export function updateCorsAllowedOriginsMiddleWareData(allowedOrigins) {
 
 const corsOptions = {
     origin: (origin, callback) => {
-        let allowedOrigins = [...config.corsAllowedOrigins, ...corsAllowedOriginsDB];
+        let allowedOrigins = [...config.corsAllowedOrigins, ...(corsAllowedOriginsDB || [])];
         if (allowedOrigins.indexOf(origin) !== -1 || !origin || origin.match(/^https?:\/\/localhost(:\d\d\d\d)?$/)) {
             callback(null, true);
         } else {
