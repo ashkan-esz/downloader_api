@@ -1,15 +1,19 @@
 import * as digimoviez from "./sources/1digimoviez.js";
 import * as film2movie from "./sources/3film2movie.js";
 import * as avamovie from "./sources/5avamovie.js";
+import * as yekmovie from "./sources/yekmovie.js";
 import * as anime20 from "./sources/anime20.js";
 import * as tokyotosho from "./torrentSources/tokyotosho.js";
 import * as shanaproject from "./torrentSources/shanaproject.js";
 import * as nyaa from "./torrentSources/nyaa.js";
 import * as eztv from "./torrentSources/eztv.js";
 
-export const sourcesNames = Object.freeze(['digimoviez', 'film2movie', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa', 'eztv']);
-export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa', 'eztv']);
-export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20', 'tokyotosho', 'shanaproject', 'nyaa', 'eztv']);
+export const sourcesNames = Object.freeze([
+    'digimoviez', 'film2movie', 'avamovie', 'anime20', 'yekmovie',
+    'tokyotosho', 'shanaproject', 'nyaa', 'eztv', // torrent
+]);
+export const sortPostersOrder = Object.freeze(['digimoviez', 'avamovie', 'film2movie', 's3Poster', 'anime20', 'yekmovie']);
+export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'avamovie', 'anime20', 'yekmovie']);
 
 export function getSourcesMethods() {
     return ({
@@ -17,6 +21,7 @@ export function getSourcesMethods() {
         film2movie: film2movie,
         avamovie: avamovie,
         anime20: anime20,
+        yekmovie: yekmovie,
         tokyotosho: tokyotosho,
         shanaproject: shanaproject,
         nyaa: nyaa,
@@ -54,6 +59,13 @@ export function getSourcesArray(sourcesObj, crawlMode, extraConfigs) {
             configs: anime20.sourceConfig,
             starter: () => {
                 return anime20.default(sourcesObj.anime20, pageCount, extraConfigs);
+            }
+        },
+        {
+            name: 'yekmovie',
+            configs: yekmovie.sourceConfig,
+            starter: () => {
+                return yekmovie.default(sourcesObj.yekmovie, pageCount, extraConfigs);
             }
         },
         {

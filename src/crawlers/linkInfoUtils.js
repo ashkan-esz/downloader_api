@@ -35,7 +35,7 @@ export const linkInfoRegex = new RegExp([
     /((\.x265)?(\.10bit)?(\.HDR)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
     /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
     /(\.Episode\(\d\d?\.5\))?/,
-    /((\.\d)?\.(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial)(_\d)?)?/,
+    /((\.\d)?\.(((Christmas\.)?Special)|OVA|ONA|OAD|NCED|NCOP|Redial)(_\d)?)?/,
     /((\.Main-Ceremony)|(\.Red-Carpet)|((\.Summary)?\.Oscar(\.\d\d\d\d)?))?/,
     /(\.DIRECTORS-CUT)?/,
     /(\.ALT-UNIVERSE-CUT)?/,
@@ -81,12 +81,12 @@ export const specialWords = new RegExp([
     /|Main-Ceremony|Red-Carpet|Backstage/,
     /|EXTENDED|REMASTERED|Theatrical|REMUX|REPACK|Extra|IMAX|Encore-Edition/,
     /|Episode/,
-    /|((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial/,
+    /|((Christmas\.)?Special)|OVA|ONA|OAD|NCED|NCOP|Redial/,
 ].map(item => item.source).join(''), 'g');
 
 const episodeRangeRegex = /Episode\(\d\d?\d?-\d\d?\d?\)/;
 const episodeRangeRegex2 = /Episode\(\d\d?\d?-\d\d?\d?\)/;
-export const specialRegex = /(((Christmas\.)?Special)|OVA|OAD|NCED|NCOP|Redial)(_\d)?/;
+export const specialRegex = /(((Christmas\.)?Special)|OVA|ONA|OAD|NCED|NCOP|Redial)(_\d)?/;
 const dubbedRegex = /dubbed(\(.+\))?/;
 const softSubRegex = /SoftSub(\(.+\))?/;
 const hardSubRegex = /HardSub(\(.+\))?/;
@@ -132,8 +132,8 @@ const ordersIndex = Object.freeze({
     ceremonyRegex: orders.indexOf('ceremonyRegex'),
 });
 
-const findSpecialRegex = /(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(?=(\.?e?\d))/gi;
-const findSpecialRegex2 = /(?<=%20)(Special|OVA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
+const findSpecialRegex = /(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)(?=(\.?e?\d))/gi;
+const findSpecialRegex2 = /(?<=%20)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)(?=\.)/gi;
 
 //-------------------------------------------------------
 //-------------------------------------------------------
@@ -554,7 +554,7 @@ export function getCleanLinkInfo(info) {
         .replace(/([.\-])Fixed/i, '')
         .replace(/(^Internal\.)|(\.INTERNAL)/i, '')
         .replace(/HEVCPSA/i, 'PSA')
-        .replace(/\.(x254|x\.?264)/gi, '')
+        .replace(/(^|\.)(x254|x?\.?264|x\.?246)/gi, '')
         .replace(/x256|X265/g, 'x265')
         .replace('x 265', 'x265')
         .replace('.6C.', '.6CH.')

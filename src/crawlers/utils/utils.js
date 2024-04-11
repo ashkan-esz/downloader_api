@@ -259,9 +259,9 @@ export function getSeasonEpisode(input, isLinkInput = false) {
         }
 
         if (season <= 1 && episode === 0) {
-            let ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p/i);
+            let ovaMatch = input.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p/i);
             if (!ovaMatch) {
-                ovaMatch = input.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)(E?)\d\d\d?\.\d\d\d\d?p/gi);
+                ovaMatch = input.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)(E?)\d\d\d?\.\d\d\d\d?p/gi);
             }
             if (ovaMatch) {
                 episode = ovaMatch.pop().match(/\d+(?=\.)/)[0];

@@ -59,7 +59,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                     if (type.includes('movie') && downloadLinks.length > 0 && (
                         downloadLinks[0].link.match(/s\d+e\d+/gi) ||
                         downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p?\./i) ||
-                        downloadLinks[0].link.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||
+                        downloadLinks[0].link.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||
                         (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
                     )) {
                         type = type.replace('movie', 'serial');
@@ -108,7 +108,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
             if (type.includes('movie') && downloadLinks.length > 0 && (
                 downloadLinks[0].link.match(/s\d+e\d+/gi) ||
                 downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p?\./i) ||
-                downloadLinks[0].link.match(/(?<=\.)(Special|OVA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||
+                downloadLinks[0].link.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||
                 (type === 'anime_movie' && downloadLinks[0].link.match(/\.\d\d\d?\.\d\d\d\d?p/i))
             )) {
                 type = type.replace('movie', 'serial');

@@ -9,7 +9,7 @@ import {saveError} from "../../error/saveError.js";
 
 const badPosterRegex = /https:\/\/image\.salamdl\.[a-zA-Z]+\/t\/p\/w\d+_and_h\d+_bestv\d+/i;
 
-export function getPoster($, sourceName) {
+export function getPoster($, sourceName, dontRemoveDimensions = false) {
     try {
         const $img = $('img');
 
@@ -44,7 +44,7 @@ export function getPoster($, sourceName) {
                 const alt = $img[i].attribs.alt;
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 if ((id && id === 'myimg') || (src.includes('.jpg') && alt && alt.includes('دانلود'))) {
-                    return purgePoster(src);
+                    return purgePoster(src, dontRemoveDimensions);
                 }
             }
             return "";
@@ -55,7 +55,7 @@ export function getPoster($, sourceName) {
                 const parent = $img[i].parent.name;
                 if (parent === 'p' || parent === 'div') {
                     const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                    return src.match(badPosterRegex) ? '' : purgePoster(src);
+                    return src.match(badPosterRegex) ? '' : purgePoster(src, dontRemoveDimensions);
                 }
             }
         }
@@ -65,9 +65,9 @@ export function getPoster($, sourceName) {
             const parent = $img[i].parent;
             if (parent.name === 'a') {
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                if (src.includes('uploads') && !src.includes('/logo') && !src.endsWith('.gif')) {
+                if (src.includes('uploads') && !src.toLowerCase().includes('/logo') && !src.endsWith('.gif')) {
                     if (!src.match(badPosterRegex)) {
-                        return purgePoster(src);
+                        return purgePoster(src, dontRemoveDimensions);
                     }
                 }
             }
@@ -76,9 +76,9 @@ export function getPoster($, sourceName) {
         //salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
             const parent = $img[i].parent.name;
-            if (parent === 'p' || parent === 'div'|| parent === 'strong'|| parent === 'span') {
+            if (parent === 'p' || parent === 'div' || parent === 'strong' || parent === 'span') {
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                return src.match(badPosterRegex) ? '' : purgePoster(src);
+                return src.match(badPosterRegex) ? '' : purgePoster(src, dontRemoveDimensions);
             }
         }
 
@@ -89,12 +89,15 @@ export function getPoster($, sourceName) {
     }
 }
 
-function purgePoster(poster) {
-    if (poster === "" || poster.includes('https://www.w3.org/') || poster.includes('data:image/') || poster.includes('/Logo.')) {
+function purgePoster(poster, dontRemoveDimensions = false) {
+    if (poster === "" || poster.includes('https://www.w3.org/') || poster.includes('data:image/') || poster.match(/\/Logo[a-z]+\./i)) {
         if (config.nodeEnv === 'dev') {
             console.log('************************************ BAD POSTER: ', poster);
         }
         return "";
+    }
+    if (dontRemoveDimensions) {
+        return poster.replace(/.+(?=https:)/, '');
     }
     return poster
         .replace(/.+(?=https:)/, '')
