@@ -1,3 +1,4 @@
+import config from "../config/index.js";
 import {validationResult} from 'express-validator';
 import {getClientIp} from 'request-ip';
 import {usersServices} from '../services/index.js';
@@ -27,6 +28,7 @@ export async function signup(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
+                domain: "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -58,6 +60,7 @@ export async function login(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
+                domain: "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -90,6 +93,7 @@ export async function getToken(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
+                domain: "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -104,6 +108,7 @@ export async function logout(req, res) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
             secure: true,
+            domain: "." + config.domain,
             sameSite: 'none',
             expires: new Date(0),
             maxAge: 0,

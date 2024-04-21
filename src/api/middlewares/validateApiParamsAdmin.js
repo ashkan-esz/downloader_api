@@ -477,6 +477,9 @@ const validations = Object.freeze({
     profileImageExtensionLimit: body('profileImageExtensionLimit')
         .isString().withMessage("Invalid parameter profileImageExtensionLimit :: String"),
 
+    torrentDownloadMaxFileSize: body('torrentDownloadMaxFileSize')
+        .isInt({min:1, max: 10000}).withMessage("Invalid parameter torrentDownloadMaxFileSize :: Integer{min: 1, max: 10000}"),
+
     ids: body('ids')
         .exists().withMessage("Missed parameter ids")
         .isArray({min: 1}).withMessage("ids Must be an not empty array")

@@ -84,6 +84,7 @@ To run this project, you will need to add the following environment variables to
 | **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                       | `false`  |               |
 | **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                       | `false`  |               |
 | **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                    | `false`  |               |
+| **`DOMAIN`**                           | base domain, used for cookies domain and subdomain                                                                  | `false`  |               |
 
 >**NOTE: check [configs schema](docs/CONFIGS.README.md) for other configs that read from db.**
 >**NOTE: check [env variable](docs/ENV.README.md) for full list of environment variables.**
@@ -130,6 +131,7 @@ Give a ⭐️ if you like this project!
 - [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
 - [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
 - [downloader_gochat](https://github.com/ashkan-esz/downloader_gochat/)
+- [downloader_torrent](https://github.com/ashkan-esz/downloader_torrent/)
 - [downloader_email](https://github.com/ashkan-esz/downloader_email/)
 
 ## Extra

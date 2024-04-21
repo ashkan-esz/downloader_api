@@ -15,7 +15,8 @@ dbConfigs = {
     profileFileSizeLimit: Int, //default value: 2
     profileImageCountLimit: Int, //default value: 5
     mediaFileExtensionLimit: String, //default value: 'jpg, jpeg, png, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
-    profileImageExtensionLimit: String //default value: 'jpg, jpeg, png, webp',
+    profileImageExtensionLimit: String, //default value: 'jpg, jpeg, png, webp',
+    torrentDownloadMaxFileSize: Int //default value: 800,
 }
 ```
 
