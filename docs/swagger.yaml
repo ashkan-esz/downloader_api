@@ -2,6 +2,8 @@ openapi: "3.0.0"
 info:
   title: Downloader Api
   description: <p> A webcrawler based movie/anime data provider with rest api <br/> <br/>
+    Chat service Doc -->  https://chat.movieTracker.mom/swagger <br/> <br/>
+    Torrent service Doc -->  https://download.movieTracker.mom/swagger <br/> <br/>
     <p/>
   version: 1.0.0
   contact:
@@ -2545,6 +2547,10 @@ paths:
                   type: string
                 profileImageExtensionLimit:
                   type: string
+                torrentDownloadMaxFileSize:
+                  type: integer
+                  default: 800
+                  description: it is in mb
       responses:
         200:
           description: Ok
@@ -4362,6 +4368,9 @@ security:
         profileImageExtensionLimit:
           type: string
           default: jpg, jpeg, png, webp
+        torrentDownloadMaxFileSize:
+          type: integer
+          default: 800
 
     Season:
       type: object

@@ -30,6 +30,7 @@ services:
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
       CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
+      DOMAIN: movietracker.mom
     #    ports:
     #      - "3000:3000"
     deploy:
@@ -128,8 +129,10 @@ services:
     network_mode: host
     depends_on:
       - api
+      - torrent
     environment:
       - REACT_APP_BASE_URL=http://api.localhost
+      - REACT_APP_TORRENT_BASE_URL=http://download.localhost
     #    ports:
     #      - "7070:7070"
     deploy:
@@ -166,6 +169,7 @@ services:
     #      - '80:80'
     depends_on:
 #      - telegrambot
+      - torrent
       - adminpanel
       - website
     deploy:
@@ -187,6 +191,7 @@ services:
       MAIN_SERVER_ADDRESS: api.movieTracker.mom
       CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
       LOG_PANIC_TRACE: 'true'
+      DOMAIN: movietracker.mom
     #    ports:
     #      - "3000:3000"
     deploy:
@@ -201,6 +206,7 @@ services:
   rabbitmq:
     image: rabbitmq
     network_mode: host
+    hostname: rabbitmq
     container_name: my-rabbitmq
     build:
       context: ./docker/rabbitmq
@@ -209,8 +215,8 @@ services:
     env_file: env/chatservice.env
     environment:
       - PORT=5672
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+#      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+#      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - RABBITMQ_ERLANG_COOKIE=unique-erlang-cookie
     #    ports:
     #      - "5672:5672"
@@ -226,6 +232,29 @@ services:
           memory: 150M
     restart: always
 
+  torrent:
+    image: ashkanaz2828/downloader_torrent
+    network_mode: host
+    env_file: env/torrentservice.env
+    environment:
+      PORT: 3003
+      MAIN_SERVER_ADDRESS: api.movieTracker.mom
+      CORS_ALLOWED_ORIGINS: https://admin.movietracker.mom --- http://admin.movietracker.mom
+      LOG_PANIC_TRACE: 'true'
+      DONT_CONVERT_MKV: 'true'
+    volumes:
+      - ./downloads:/app/downloads
+    #    ports:
+    #      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 300M
+        reservations:
+          memory: 50M
+    restart: always
+
   postgresDb:
     image: postgres:16.0-alpine3.18
     env_file: ./env/.env
@@ -234,7 +263,7 @@ services:
     container_name: downloader_postgres
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=downloader
     #    ports:
     #      - "5432:5432"

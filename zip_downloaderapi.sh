@@ -18,6 +18,7 @@ find $target_dir -name ".db" -exec rm -rf {} \;
 find $target_dir -name "coverage" -exec rm -rf {} \;
 find $target_dir -name "db-backups" -exec rm -rf {} \;
 find $target_dir -name "node_modules" -exec rm -rf {} \;
+find $target_dir -name "downloads" -exec rm -rf {} \;
 
 # Create a zip file from the target directory
 zip -r $target_dir.zip $target_dir

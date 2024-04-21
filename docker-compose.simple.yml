@@ -6,7 +6,6 @@ services:
     depends_on:
       - redis
       - rabbitmq
-#      - remoteBrowser
     network_mode: host
     build:
       context: .
@@ -19,8 +18,6 @@ services:
     environment:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
-      _REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
-      _REMOTE_BROWSER_TABS_COUNT1: 2
       DISABLE_CRAWLER: 'false'
       DISABLE_TORRENT_CRAWLER: 'false'
       CRAWLER_CONCURRENCY: 13
@@ -31,7 +28,7 @@ services:
       CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
       DOMAIN: movietracker.mom
     #    ports:
-#      - "3000:3000"
+    #      - "3000:3000"
     deploy:
       resources:
         #also check --max_old_space_size in Dockerfile
@@ -56,8 +53,8 @@ services:
       - ALLOW_EMPTY_PASSWORD=no
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
       - USE_OPTIMIZATION=true
-#    ports:
-#      - "6379:6379"
+    #    ports:
+    #      - "6379:6379"
     volumes:
       - redis:/data
     entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 80mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD"
@@ -75,33 +72,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-
-#  remoteBrowser:
-#    image: ashkanaz2828/downloader_remotebrowser
-#    network_mode: host
-#    env_file: ./env/remotebrowser.env
-#    environment:
-#      - NODE_ENV=production
-#      - CRAWLER_BROWSER_TAB_COUNT=2
-#      - TOTAL_MEMORY_AMOUNT=600
-#      - TOTAL_DISK_SPACE=2000
-#      - SERVER_NAME=remoteBrowser-vps-1
-#      - PRINT_ERRORS=true
-#      - CRAWLER_PAUSE_DURATION_LIMIT=30
-#      - DISABLE_UPLOAD_JOB=false
-#      - BLACKHOLE_FILE_SIZE_LIMIT=768
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: "0.5"
-#          memory: 500M
-#        reservations:
-#          memory: 50M
-##    volumes:
-##      - ./:/usr/app
-##    ports:
-##      - "5000:5000"
-#    restart: always
 
   telegrambot:
     image: ashkanaz2828/downloader_telegrambot
@@ -132,26 +102,8 @@ services:
     environment:
       - REACT_APP_BASE_URL=https://api.movietracker.mom
       - REACT_APP_TORRENT_BASE_URL=https://download.movietracker.mom
-#    ports:
-#      - "7070:7070"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 100M
-        reservations:
-          memory: 10M
-    restart: unless-stopped
-
-  website:
-    image: ashkanaz2828/downloader_website
-    network_mode: host
-    depends_on:
-      - api
-    environment:
-      - REACT_APP_BASE_URL=https://api.movietracker.mom
-#    ports:
-#      - "9090:9090"
+    #    ports:
+    #      - "7070:7070"
     deploy:
       resources:
         limits:
@@ -164,14 +116,13 @@ services:
   nginx:
     network_mode: host
     build: ./docker/nginx
-#    ports:
-#      - '80:80'
+    #    ports:
+    #      - '80:80'
     depends_on:
       - api
       - chat
       - torrent
       - adminpanel
-      - website
     deploy:
       resources:
         limits:
@@ -256,64 +207,17 @@ services:
           memory: 50M
     restart: always
 
-  mailService:
-    image: ashkanaz2828/downloader_email
-    depends_on:
-      - rabbitmq
-      - mailServer
-    network_mode: host
-    env_file: ./env/mailservice.env
-    environment:
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom  --- https://chat.movietracker.mom
-      MAILSERVER_HOST: localhost
-      MAILSERVER_PORT: 587
-      MAILSERVER_USERNAME: webmaster@movietracker.mom
-      LOG_PANIC_TRACE: 'true'
-      INITIAL_WAIT_FOR_MAIL_SERVER_SEC: 30
-    #    ports:
-    #      - "3000:3000"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 50M
-        reservations:
-          memory: 10M
-    restart: always
-
-  #more details in https://github.com/ashkan-esz/downloader_email
-  mailServer:
-    image: boky/postfix
-#    network_mode: host
-    environment:
-      - ALLOWED_SENDER_DOMAINS=localhost movietracker.mom chat.movietracker.mom
-    ports:
-      - "587:587"
-      - "250:25"
-#    volumes:
-#      - ./postfix/main.cf:/etc/postfix/main.cf
-#      - ./postfix/virtual:/etc/postfix/virtual
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 100M
-        reservations:
-          memory: 10M
-    restart: always
-
   postgresDb:
     image: postgres:16.0-alpine3.18
     env_file: ./env/.env
-    network_mode: service:api
+    network_mode: host
     container_name: downloader_postgres
     environment:
       - POSTGRES_USER=postgres
 #      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=downloader
-#    ports:
-#      - "5432:5432"
+    #    ports:
+    #      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     command: ["postgres", "-c", "log_min_messages=log"]
@@ -324,11 +228,6 @@ services:
           memory: 300M
         reservations:
           memory: 50M
-#    healthcheck:
-#      test: ["CMD-SHELL", "pg_isready -U postgres"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 10
     restart: always
 
 volumes:
