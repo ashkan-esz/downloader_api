@@ -7,11 +7,12 @@ import {saveError} from "../error/saveError.js";
 import {checkIsCrawling} from "../crawlers/status/crawlerStatus.js";
 import PQueue from "p-queue";
 import {getTrailerFromYoutube} from "../crawlers/3rdPartyApi/googleYoutubeApi.js";
+import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 
 
 export default function (agenda) {
     agenda.define("add trailers from youtube", {concurrency: 1}, async (job) => {
-        if (!checkIsCrawling() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
+        if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && !checkIsCrawling() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
             await addTrailersFromYoutubeJobFunc();
         }
     });

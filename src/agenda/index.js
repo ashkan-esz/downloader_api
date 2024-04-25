@@ -38,7 +38,11 @@ export async function startAgenda() {
             }
         });
 
-        agenda.define("start torrent crawler", {concurrency: 1, priority: "highest", shouldSaveResult: true}, async (job) => {
+        agenda.define("start torrent crawler", {
+            concurrency: 1,
+            priority: "highest",
+            shouldSaveResult: true
+        }, async (job) => {
             if (!config.crawler.disable && !config.crawler.torrentDisable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
                 await crawler('', {
                     crawlMode: 0,
@@ -48,7 +52,9 @@ export async function startAgenda() {
         });
 
         agenda.define("update jikan data", {concurrency: 1, priority: "high"}, async (job) => {
-            await updateJikanDataJobFunc();
+            if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
+                await updateJikanDataJobFunc();
+            }
         });
 
         agenda.define("reset month likes", async (job) => {
@@ -97,10 +103,8 @@ async function removeCompletedJobs() {
 
 export async function updateJikanDataJobFunc() {
     updateCronJobsStatus('updateJikanData', 'start');
-    if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
-        await removeCompletedJobs();
-        await updateJikanData(true);
-    }
+    await removeCompletedJobs();
+    await updateJikanData(true);
     updateCronJobsStatus('updateJikanData', 'end');
 }
 

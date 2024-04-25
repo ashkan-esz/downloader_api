@@ -13,7 +13,7 @@ import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 
 export default function (agenda) {
     agenda.define("check movie source domains", {concurrency: 1}, async (job) => {
-        if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb()) {
+        if (!config.crawler.disable && !checkCrawlerIsDisabledByConfigsDb() && (Date.now() - config.serverStartTime > 30 * 60 * 1000)) {
             await checkCrawlerDomainsJobFunc();
         }
     });
