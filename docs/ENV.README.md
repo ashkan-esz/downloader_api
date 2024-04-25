@@ -42,5 +42,6 @@ To run this project, you will need to add the following environment variables to
 | **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                                  | `false`  |               |
 | **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                               | `false`  |               |
 | **`IGNORE_HENTAI`**                    | dont add hentai to db                                                                                                          | `false`  | true          |
+| **`DOMAIN`**                           | base domain, used for cookies domain and subdomain                                                                             | `false`  |               |
 
 >**NOTE: check [configs schema](CONFIGS.README.md) for other configs that read from db.**

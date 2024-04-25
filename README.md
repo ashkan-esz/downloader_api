@@ -9,51 +9,53 @@ There is lots of movie sources to download from and also they change url frequen
 
 ## Getting started
 
-### 1. Install and start remote headless browser
+#### 1. install docker in your system
 
-Go to [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/) and follow instructions. (`REMOTE_BROWSER_PASSWORD`, `REMOTE_BROWSER_ENDPOINT`) 
+#### 2. copy/clone this project
+#### 3. run `docker-compose up --build`
+#### 4. wait for it
+<details>  
+<summary>5. now the system is up and running </summary>
 
-**Note: Without this almost half of movie sources and url updater doesn't work .**
+- Main Server: localhost:3000 || api.movieTracker.mom 
+- Chat Server: localhost:3002 || chat.movieTracker.mom
+- Torrent Server: localhost:3003 || download.movieTracker.mom
+- Admin Panel: localhost:7070 || admin.movieTracker.mom 
+- Website: localhost:9090 || movieTracker.mom 
+- RemoteBrowser: localhost:5000
+- Telegram Bot 
+- Mail Service 
+- other services: Nginx, Redis, RabbitMq, MailServer, Postgres, Mongodb
+</details>
+
+## Getting started (without docker)
+
+**check [installation](docs/INSTALL.README.md).**
+
+## Extra Stuff
+<details>
+<summary> database and s3 </summary>
+
+### Setup Db collections
+1. set env `INIT_DBS_ON_START` to `true` or
+2. you can run npm script `npm run pre_start` to create collections and their indexes automatically.
+> **Note: more info on [setup db](docs/INSTALL.README.md#3-setup-db-collections)**
 
 
-### 2. Install dependencies and Environment variables
-First set all environment variables to env/.env file in your local environment or to server shell. then use npm script `npm install` to install dependencies.
+### Setup cloud storage
+1. set env `INIT_DBS_ON_START` to `true` or
+2. you can run npm script `npm run pre_start` to create buckets automatically.
 
-### 3. Setup Db collections
+> **Note: more info on [setup s3](docs/INSTALL.README.md#4-setup-cloud-storage)**
+</details>
 
-Collection information listed in [`src/data/createCollectionsIndex`](src/data/createCollectionsIndex.js).
-
-you can run npm script `npm run pre_start` to create collections and their indexes automatically.
-
-**NOTE: schema for movie sources used by crawler can be found in [sources schema](docs/SOURCES.README.md).
-(this can be done from admin panel too)**
-
-> a file with the same name of [sourceName] exist in [sources](src/crawlers/sources)
-> and can be accessed from [sourcesArray](src/crawlers/sourcesArray.js).
-
-### 4. Setup cloud storage
-
-Config your own preferred cloud storage provider (s3) and create buckets with names of [serverstatic, cast, download-subtitle, poster, download-trailer, media-file].
-
-you can run npm script `npm run pre_start` to create buckes automatically.
-> Don't forget to add file 'defaultProfile.png' in bucket 'serverstatic'.
-
-**Note: all of them must be public and enable static website.**
-
-
-### 5. Finally, the end
-
-Set the rest of environment variables, like `CLOUAD_STORAGE_ENDPOINT`.
-
-if you have more than 1024mb of ram (which you should have) change `--max_old_space_size` values in start script (or use docker!).
-
-start npm script `npm run start` and boom server is working.
-
-### Note
+<details>
+<summary> crawler </summary>
 
 In few hours (almost every 3 hour) crawler start and populates database, also you can start the crawler with api (POST /crawler/[password])
 
-(you can also start crawler from admin panel)
+> you can also start crawler from admin panel
+</details>
 
 ## Environment Variables
 
@@ -61,10 +63,6 @@ To run this project, you will need to add the following environment variables to
 
 | Prop                                   | Description                                                                                                         | Required | Default Value |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------|----------|---------------|
-| **`PORT`**                             | server port                                                                                                         | `false`  | 3000          |
-| **`REMOTE_BROWSER_PASSWORD{i}`**       | `i` start from 1. like REMOTE_BROWSER_PASSWORD1, password of remote headless browser (puppeteer)                    | `true`   |               |
-| **`REMOTE_BROWSER_ENDPOINT{i}`**       | end point of remote headless browser (puppeteer), [source](https://github.com/ashkan-esz/downloader_remotebrowser/) | `true`   |               |
-| **`REMOTE_BROWSER_TABS_COUNT{i}`**     | number of tabs that set on remote headless browser (puppeteer)                                                      | `false`  | 7             |
 | **`MONGODB_DATABASE_URL`**             | mongodb url, for example see [mongodb.com](https://www.mongodb.com/)                                                | `true`   |               |
 | **`POSTGRE_DATABASE_URL`**             | postgresSql url                                                                                                     | `true`   |               |
 | **`POSTGRES_PASSWORD`**                |                                                                                                                     | `true`   |               |
@@ -81,13 +79,12 @@ To run this project, you will need to add the following environment variables to
 | **`ACCESS_TOKEN_SECRET`**              |                                                                                                                     | `true`   |               |
 | **`REFRESH_TOKEN_SECRET`**             |                                                                                                                     | `true`   |               |
 | **`CORS_ALLOWED_ORIGINS`**             | address joined by `---` example: https://download-admin.com---https:download-website.com                            | `false`  |               |
-| **`ADMIN_USER`**                       | admin username which created automatically on app start, can be changed after                                       | `false`  |               |
-| **`ADMIN_PASS`**                       | admin password which created automatically on app start, can be changed after                                       | `false`  |               |
 | **`DB_BACKUP_PASSWORD`**               | password used on db backup files                                                                                    | `false`  |               |
 | **`DOMAIN`**                           | base domain, used for cookies domain and subdomain                                                                  | `false`  |               |
 
->**NOTE: check [configs schema](docs/CONFIGS.README.md) for other configs that read from db.**
 >**NOTE: check [env variable](docs/ENV.README.md) for full list of environment variables.**
+
+>**NOTE: check [configs schema](docs/CONFIGS.README.md) for other configs that read from db.**
 
 
 ## Future updates
@@ -109,10 +106,22 @@ To run this project, you will need to add the following environment variables to
 - Open [configs schema](docs/CONFIGS.README.md).
 - Open [env variable](docs/ENV.README.md).
 
+## Related
+- [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
+- [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
+- [downloader_gochat](https://github.com/ashkan-esz/downloader_gochat/)
+- [downloader_torrent](https://github.com/ashkan-esz/downloader_torrent/)
+- [downloader_email](https://github.com/ashkan-esz/downloader_email/)
+
 ## Clients
-- [movie tracker](https://github.com/amir-7979/MovieTrracker) (Flutter -Old)
 - [downloader_app](https://github.com/ashkan-esz/downloader_app) (React Native)
 - [movietracker_bot](https://github.com/ashkan-esz/downloader_telegrambot) (Telegram Bot)
+
+## Extra
+- docker repository is ashkanaz2828/downloader_api
+- Change `CMD [ "node", "src/server.js"]` to `CMD [ "node", "src/tracing.js"]` in Dockerfile to enable opentelemetry.
+- Run `make signoz-install` to install and start signoz apm dashboard. (http://localhost:3301)
+
 
 ## Contributing
 
@@ -126,23 +135,8 @@ Please adhere to this project's `code of conduct`.
 Contributions, issues, and feature requests are welcome!
 Give a ⭐️ if you like this project!
 
-## Related
-
-- [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)
-- [downloader_adminPanel](https://github.com/ashkan-esz/downloader_adminpanel/)
-- [downloader_gochat](https://github.com/ashkan-esz/downloader_gochat/)
-- [downloader_torrent](https://github.com/ashkan-esz/downloader_torrent/)
-- [downloader_email](https://github.com/ashkan-esz/downloader_email/)
-
-## Extra
-
-- docker repository is ashkanaz2828/downloader_api
-- Change `CMD [ "node", "src/server.js"]` to `CMD [ "node", "src/tracing.js"]` in Dockerfile to enable opentelemetry.
-- Run `make signoz-install` to instakk and start signoz apm dashboard. (http://localhost:3301)
 
 ## Author
-
 **Ashkan Esz**
-
 - [Profile](https://github.com/ashkan-esz "Ashkan esz")
 - [Email](mailto:ashkanaz2828@gmail.com?subject=Hi "Hi!")

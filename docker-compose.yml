@@ -194,7 +194,7 @@ services:
       LOG_PANIC_TRACE: 'true'
       DOMAIN: movietracker.mom
     #    ports:
-    #      - "3000:3000"
+    #      - "3002:3002"
     deploy:
       resources:
         limits:
@@ -246,7 +246,7 @@ services:
     volumes:
       - ./downloads:/app/downloads
     #    ports:
-    #      - "3000:3000"
+    #      - "3003:3003"
     deploy:
       resources:
         limits:
