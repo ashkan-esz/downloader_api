@@ -1,16 +1,18 @@
 import axios from "axios";
 import * as cheerio from 'cheerio';
 import {saveError} from "../../error/saveError.js";
-import {getSeasonEpisode, replaceSpecialCharacters} from "../utils/utils.js";
-import {purgeSizeText} from "../linkInfoUtils.js";
-import PQueue from "p-queue";
-import {getConcurrencyNumber, saveLinksStatus} from "../searchTools.js";
-import {pauseCrawler} from "../status/crawlerController.js";
+import {replaceSpecialCharacters} from "../utils/utils.js";
+import {releaseRegex, releaseRegex2} from "../linkInfoUtils.js";
+import {saveLinksStatus} from "../searchTools.js";
 import save from "../save_changes_db.js";
+import {addPageLinkToCrawlerStatus} from "../status/crawlerStatus.js";
 import {
-    addPageLinkToCrawlerStatus,
-    checkForceStopCrawler, updatePageNumberCrawlerStatus,
-} from "../status/crawlerStatus.js";
+    fixSeasonEpisode,
+    getFixedFileSize, handleCrawledTitles, handleSearchedCrawledTitles,
+    mergeTitleLinks,
+    normalizeSeasonText,
+    removeSeasonText
+} from "./torrentUtils.js";
 
 
 export const sourceConfig = Object.freeze({
@@ -34,24 +36,8 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
         let $ = cheerio.load(res.data);
         let titles = extractLinks($, movie_url);
 
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
-        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
-        updatePageNumberCrawlerStatus(1, pageCount, concurrencyNumber, extraConfigs);
-        for (let i = 0; i < titles.length; i++) {
-            if (checkForceStopCrawler()) {
-                break;
-            }
-            await pauseCrawler();
-            await promiseQueue.onSizeLessThan(3 * concurrencyNumber);
-            if (checkForceStopCrawler()) {
-                break;
-            }
-            const t = i;
-            promiseQueue.add(() => saveCrawlData(titles[t], extraConfigs));
-        }
+        await handleCrawledTitles(titles, 1, pageCount, saveCrawlData, sourceConfig, extraConfigs);
 
-        await promiseQueue.onEmpty();
-        await promiseQueue.onIdle();
         return [1]; //pageNumber
     } catch (error) {
         saveError(error);
@@ -71,17 +57,8 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
         let titles = extractLinks($, sourceUrl);
         titles = titles.slice(0, 5);
 
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
-        const promiseQueue = new PQueue({concurrency: concurrencyNumber});
-        updatePageNumberCrawlerStatus(1, 1, concurrencyNumber, extraConfigs);
-        for (let i = 0; i < titles.length; i++) {
-            await promiseQueue.onSizeLessThan(concurrencyNumber);
-            const t = i;
-            promiseQueue.add(() => saveCrawlData(titles[t], extraConfigs));
-        }
+        await handleSearchedCrawledTitles(titles, 1, 1, saveCrawlData, sourceConfig, extraConfigs);
 
-        await promiseQueue.onEmpty();
-        await promiseQueue.onIdle();
         return [1]; //pageNumber
     } catch (error) {
         saveError(error);
@@ -119,13 +96,24 @@ function extractLinks($, sourceUrl) {
                 }
                 let info = $(infoNode).text();
                 info = fixLinkInfo(info);
-                if (info.match(/\(\d{4}\)/)) {
+                if (
+                    info.match(/\(\d{4}\)/) ||
+                    info.includes(' complete') ||
+                    info.includes(' vostfr') ||
+                    info.match(/\s\d+ ~ \d+/) ||
+                    info.match(/-\s\d+-\d+\s/)
+                ) {
                     continue;
                 }
 
                 let title = getTitle(info);
+                if (title.match(/\svol\s\d/i)) {
+                    continue;
+                }
+
                 let se = fixSeasonEpisode(info, false);
-                let size = getFixedFileSize($, $a[i]);
+                let sizeText = $($($a[i]).parent().next())?.text() || "";
+                let size = getFixedFileSize($, sizeText);
 
                 let link = {
                     link: sourceUrl.split(/\/\?/)[0] + href,
@@ -153,6 +141,7 @@ function extractLinks($, sourceUrl) {
         }
     }
 
+    titles = mergeTitleLinks(titles);
     return titles;
 }
 
@@ -164,7 +153,7 @@ function fixLinkInfo(info) {
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
         .replace(/(?<!part)\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
-        .replace(".mkv", "")
+        .replace(/\.\s?(mkv|mp4)/, "")
         .trim();
 
     info = normalizeSeasonText(info.toLowerCase());
@@ -180,50 +169,20 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .replace(/^\d\d\d\d?p\./, '')
-        .replace(/(\s\d\d+)?\.mkv/, '')
+        .replace(/(\s\d\d+)?\.(mkv|mp4)/, '')
+        .replace(/\sii+$/, '')
         .replace(/\s\(\d{4}\)/, '')
-        .split(/[\[？]/g)[0]
+        .split(/[\[？|]/g)[0]
         .trim();
     let splitArr = text.split(/\s|\./g);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
     if (index !== -1) {
-        return replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
+        let temp = replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
+        return removeSeasonText(temp);
     }
-    return replaceSpecialCharacters(text);
-}
-
-function normalizeSeasonText(text) {
-    return text
-        .replace(/2nd season - \d+/, r => 's2e' + r.match(/\d+$/).pop())
-        .replace('2nd season', '2')
-        .replace('2nd attack', '2')
-        .replace('zoku hen', 'season 2')
-        .replace(/3rd season - \d+/, r => 's3e' + r.match(/\d+$/).pop())
-        .replace('3rd season', '3')
-        .replace('season 3', '3')
-        .replace(/\dth season/, r => r.replace('th season', ''))
-        .replace(/season \d/, r => r.replace('season ', ''));
-}
-
-function fixSeasonEpisode(text, isLinkInput) {
-    let se = getSeasonEpisode(text, isLinkInput);
-    if (se.season === 1 && se.episode === 0) {
-        let temp = text.match(/\s\d+(\s\((web\s)?\d{3,4}p\))?(\.mkv)?$/);
-        if (temp) {
-            se.episode = Number(temp[0].match(/\d+/g)[0]);
-        }
-    }
-
-    return se;
-}
-
-function getFixedFileSize($, link) {
-    let sizeText = $($(link).parent().next())?.text()?.toLowerCase().replace(/size:\s/, '') || "";
-    sizeText = sizeText.replace('mib', 'mb').replace('gib', 'gb');
-    sizeText = purgeSizeText(sizeText);
-    if (sizeText.endsWith('MB')) {
-        return Number(sizeText.replace("MB", ''));
-    }
-    return Math.floor(Number(sizeText.replace("GB", '')) * 1024);
+    let temp = replaceSpecialCharacters(text);
+    return removeSeasonText(temp);
 }

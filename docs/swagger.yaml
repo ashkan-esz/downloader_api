@@ -3852,7 +3852,7 @@ security:
           type: string
         updateReason:
           type: string
-          enum: [ 'season', 'episode', 'quality' ]
+          enum: [ 'season', 'episode', 'quality', 'torrent-season', 'torrent-episode' ]
         hardSub:
           type: string
           pattern: /S\d+E\d+/
@@ -3865,6 +3865,8 @@ security:
         censored:
           type: string
         watchOnlineLink:
+          type: string
+        torrentLinks:
           type: string
 
     EmbedCast:

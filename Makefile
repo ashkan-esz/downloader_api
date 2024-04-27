@@ -21,6 +21,15 @@ up-prod:
 down:
 	docker-compose down
 
+up-simple-build:
+	docker-compose -f docker-compose.simple.yml down && docker-compose -f docker-compose.simple.yml --compatibility up --build
+
+up-simple:
+	docker-compose -f docker-compose.simple.yml down && docker-compose -f docker-compose.simple.yml --compatibility up
+
+down-simple:
+	docker-compose -f docker-compose.simple.yml down
+
 run-postgres:
 	docker run --restart unless-stopped --network=host --memory 500m -v pgdata:/var/lib/postgresql/data -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
 
