@@ -105,6 +105,7 @@ To run this project, you will need to add the following environment variables to
 - Open [sources schema](docs/SOURCES.README.md).
 - Open [configs schema](docs/CONFIGS.README.md).
 - Open [env variable](docs/ENV.README.md).
+- Open [user stats document](docs/USER_STATS.README.md).
 
 ## Related
 - [remoteHeadlessBrowser](https://github.com/ashkan-esz/downloader_remotebrowser/)

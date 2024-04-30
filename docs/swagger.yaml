@@ -949,6 +949,14 @@ paths:
                   data:
                     $ref: '#/components/schemas/MovieSources'
 
+  /movies/userstats/doc:
+    get:
+      tags:
+        - Movies-UserStats
+      summary: document for user stats and stuff
+      description: check [user_stats_doc](./USER_STATS.README.md)
+      operationId: movies-userstats-doc
+
   /movies/addUserStats/likeOrDislike/{statType}/{id}:
     put:
       tags:
@@ -1417,7 +1425,7 @@ paths:
     get:
       tags:
         - Movies-UserStats-Collection
-      summary: Get Collections Movies
+      summary: Get Collections Movies, user must own the collection or it must be a public collection
       description: Get Collections Movies
       operationId: movies-addUserStatsCollectionMovies
       parameters:
@@ -1440,7 +1448,7 @@ paths:
       tags:
         - Movies-UserStats-Collection
       summary: Search Collections
-      description: Get Collections Movies
+      description: Search in collections
       operationId: movies-addUserStatsSearchCollection
       parameters:
         - $ref: '#/components/parameters/page'
