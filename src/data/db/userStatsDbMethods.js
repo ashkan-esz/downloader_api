@@ -2086,6 +2086,88 @@ export async function resetMoviesMonthView() {
 //----------------------------------------------------------------
 //----------------------------------------------------------------
 
+export async function getUsersWatchedRelatedTitle(movieId) {
+    try {
+        return await prisma.relatedMovie.findMany({
+            where: {
+                relatedId: movieId,
+            },
+            select: {
+                movie: {
+                    select: {
+                        movieId: true,
+                        watchedMovies: {
+                            select: {
+                                user: {
+                                    select: {
+                                        userId: true,
+                                    }
+                                }
+                            }
+                        },
+                        followMovies: {
+                            select: {
+                                user: {
+                                    select: {
+                                        userId: true,
+                                    }
+                                }
+                            }
+                        },
+                        watchListMovies: {
+                            select: {
+                                user: {
+                                    select: {
+                                        userId: true,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getUsersFollowingTitle(movieId) {
+    try {
+        return prisma.followMovie.findMany({
+            where: {
+                movieId: movieId,
+            },
+            select: {
+                userId: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+export async function getWatchListingUsers(movieId) {
+    try {
+        return prisma.watchListMovie.findMany({
+            where: {
+                movieId: movieId,
+            },
+            select: {
+                userId: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+
 export const defaultUserStats = Object.freeze({
     like: false,
     dislike: false,

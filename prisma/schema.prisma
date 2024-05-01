@@ -120,11 +120,11 @@ model NotificationSettings {
   newMessage                 Boolean @default(false)
   finishedList_spinOffSequel Boolean @default(true)
   followMovie                Boolean @default(true)
-  followMovie_betterQuality  Boolean @default(true)
-  followMovie_subtitle       Boolean @default(true)
-  futureList                 Boolean @default(true)
+  followMovie_betterQuality  Boolean @default(false)
+  followMovie_subtitle       Boolean @default(false)
+  futureList                 Boolean @default(false)
   futureList_serialSeasonEnd Boolean @default(true)
-  futureList_subtitle        Boolean @default(true)
+  futureList_subtitle        Boolean @default(false)
   userId                     Int     @id @unique
   user                       User    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -264,7 +264,7 @@ model CastImage {
   originalUrl  String
   size         Int
   thumbnail    String
-  blurHash    String
+  blurHash     String
   url          String     @unique
   vpnStatus    String
   staffId      Int?       @unique
@@ -477,16 +477,18 @@ model UserMessageRead {
 // ----------------------------------------------------------------
 
 model Notification {
-  id           Int                    @id @default(autoincrement())
-  creatorId    Int
-  receiverId   Int
-  entityId     Int
-  entityTypeId Int
-  date         DateTime               @default(now())
-  status       Int
-  creator      User                   @relation(fields: [creatorId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
-  receiver     User                   @relation(fields: [receiverId], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "receivedNotif")
-  entityType   NotificationEntityType @relation(fields: [entityTypeId], references: [entityTypeId], onDelete: Cascade, onUpdate: Cascade)
+  id              Int                    @id @default(autoincrement())
+  creatorId       Int
+  receiverId      Int
+  message         String
+  entityId        String
+  entityTypeId    Int
+  subEntityTypeId Int
+  date            DateTime               @default(now())
+  status          Int
+  creator         User                   @relation(fields: [creatorId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  receiver        User                   @relation(fields: [receiverId], references: [userId], onDelete: Cascade, onUpdate: Cascade, name: "receivedNotif")
+  entityType      NotificationEntityType @relation(fields: [entityTypeId], references: [entityTypeId], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([receiverId, date])
 }

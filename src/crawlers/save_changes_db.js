@@ -25,6 +25,7 @@ import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {handleLatestDataUpdate} from "./latestData.js";
 import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
 import * as rabbitmqPublisher from "../../rabbitmq/publish.js";
+import {handleMovieNotification, handleNewInsertedMovieNotification} from "./movieNotification.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber, extraConfigs) {
@@ -106,6 +107,8 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingRelatedTitles);
                         await handleAnimeRelatedTitles(insertedId, result.allApiData.jikanApiFields.jikanRelatedTitles);
                     }
+
+                    await handleNewInsertedMovieNotification(insertedId, result.titleModel.posters, pageLink);
 
                     if (checkForceStopCrawler()) {
                         return removePageLinkToCrawlerStatus(pageLink);
@@ -233,6 +236,7 @@ async function searchOnCollection(titleObj, year, type) {
         releaseDay: 1,
         animeType: 1,
         rated: 1,
+        seasonEpisode: 1,
     };
 
     let searchTypes = [type];
@@ -283,6 +287,8 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             updateFields.releaseState = 'done';
             db_data.insert_date = new Date();
             updateFields.insert_date = new Date();
+
+            await handleNewInsertedMovieNotification(db_data._id, db_data.posters, pageLink);
         }
 
         if (type.includes('serial') && !apiData) {
@@ -415,6 +421,11 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
             if (updateFields.poster_wide_s3) {
                 await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieWideS3, db_data._id, updateFields.poster_wide_s3.url)
+            }
+
+            if (latestDataUpdate && PrimaryLatestDataUpdate) {
+                // maybe take some time
+                await handleMovieNotification(db_data, pageLink);
             }
         }
 

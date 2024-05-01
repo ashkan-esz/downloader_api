@@ -34,7 +34,7 @@ run-postgres:
 	docker run --restart unless-stopped --network=host --memory 500m -v pgdata:/var/lib/postgresql/data -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
 
 run-redis:
-	docker run  --rm --network=host --memory 200m -e ALLOW_EMPTY_PASSWORD=yes redis:alpine
+	docker run --restart unless-stopped --network=host --memory 200m -e ALLOW_EMPTY_PASSWORD=yes redis:alpine
 
 redis-stat:
 	docker-compose -f ./docker/redis-stat.docker-compose.yml up --build
@@ -63,6 +63,9 @@ signoz-uninstall:
 
 build_rabbitmq:
 	docker image build --network=host -t rabbitmq ./docker/rabbitmq
+
+build_rabbitmq_dev:
+	docker image build --network=host -t rabbitmq ./docker/rabbitmq -f ./docker/rabbitmq/dev.Dockerfile
 
 run_rabbitmq:
 	#docker run -d --hostname rabbitmq --name rabbitmq -p 15672:15672 -p 5672:5672 --network rabbitnet -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq

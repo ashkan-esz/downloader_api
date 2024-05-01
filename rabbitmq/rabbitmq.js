@@ -2,16 +2,22 @@ import config from "../src/config/index.js";
 import amqp from "amqplib"
 import {saveError} from "../src/error/saveError.js";
 
-export const blurHashQueue = "blurHash"
-export const blurHashBindingKey = "blurHash"
-export const blurHashExchange = "blurHashExchange"
-export const blurHashExchangeType = "direct"
+export const blurHashQueue = "blurHash";
+export const blurHashBindingKey = "blurHash";
+export const blurHashExchange = "blurHashExchange";
+export const blurHashExchangeType = "direct";
 
 //-----------------------------
-export const emailQueue = "email"
-export const emailBindingKey = "email"
-export const emailExchange = "EmailExchange"
-export const emailExchangeType = "direct"
+export const emailQueue = "email";
+export const emailBindingKey = "email";
+export const emailExchange = "EmailExchange";
+export const emailExchangeType = "direct";
+//-----------------------------
+
+export const notificationQueue = "notification";
+export const notificationBindingKey = "notification";
+export const notificationExchange = "NotificationExchange";
+export const notificationExchangeType = "direct";
 //-----------------------------
 
 export let rabbitmqPublishChannel = null
@@ -61,6 +67,7 @@ async function createExchangesAndQueues(channel) {
     });
     await channel.bindQueue(blurHashQueue, blurHashExchange, blurHashBindingKey);
     //----------------------------
+
     await channel.assertExchange(emailExchange, emailExchangeType, {
         durable: true
     })
@@ -68,6 +75,15 @@ async function createExchangesAndQueues(channel) {
         durable: true,
     });
     await channel.bindQueue(emailQueue, emailExchange, emailBindingKey);
+    //----------------------------
+
+    await channel.assertExchange(notificationExchange, notificationExchangeType, {
+        durable: true
+    })
+    await channel.assertQueue(notificationQueue, {
+        durable: true,
+    });
+    await channel.bindQueue(notificationQueue, notificationExchange, notificationBindingKey);
 }
 
 async function createConsumers(channel) {

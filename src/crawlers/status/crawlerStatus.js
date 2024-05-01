@@ -195,6 +195,16 @@ export const linkStateMessages = Object.freeze({
         crawlingSources: 'crawling sources',
         end: 'end',
     }),
+    notification: Object.freeze({
+        start: "start handling movie notification",
+        finishedListSpinOffSequel: "notification: finishedListSpinOffSequel",
+        futureList: "notification: futureList",
+        futureListSerialSeasonEnd: "notification: futureListSerialSeasonEnd",
+        followingMovie: "notification: followingMovie",
+        followMovieBetterQuality: "notification: followMovieBetterQuality",
+        followMovieSubtitle: "notification: followMovieSubtitle",
+        futureListSubtitle: "notification: futureListSubtitle",
+    }),
 });
 
 export function updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber, extraConfigs) {

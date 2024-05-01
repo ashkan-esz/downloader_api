@@ -6,6 +6,7 @@ export async function addNotificationEntityTypes() {
         const notificationEntityTypesAndId = [
             {entityTypeId: 1, entityType: "User"},
             {entityTypeId: 2, entityType: "Message"},
+            {entityTypeId: 3, entityType: "Movie"},
         ];
         await prisma.notificationEntityType.createMany({
             data: notificationEntityTypesAndId,
