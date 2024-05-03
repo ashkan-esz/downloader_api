@@ -28,7 +28,7 @@ export async function signup(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                domain: "." + config.domain,
+                domain: (!config.domain || config.domain === "localhost") ? undefined : "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -60,7 +60,7 @@ export async function login(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                domain: "." + config.domain,
+                domain: (!config.domain || config.domain === "localhost") ? undefined : "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -93,7 +93,7 @@ export async function getToken(req, res) {
             res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: true,
-                domain: "." + config.domain,
+                domain: (!config.domain || config.domain === "localhost") ? undefined : "." + config.domain,
                 sameSite: 'none',
             });
         }
@@ -108,7 +108,7 @@ export async function logout(req, res) {
         res.cookie('refreshToken', '', {
             httpOnly: true,
             secure: true,
-            domain: "." + config.domain,
+            domain: (!config.domain || config.domain === "localhost") ? undefined : "." + config.domain,
             sameSite: 'none',
             expires: new Date(0),
             maxAge: 0,

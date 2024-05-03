@@ -5,8 +5,7 @@ services:
     image: downloader-api
     depends_on:
       - redis
-      - mailServer
-#      - remoteBrowser
+      - rabbitmq
     network_mode: host
     build:
       context: .
@@ -30,7 +29,7 @@ services:
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
       CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
-      DOMAIN: movietracker.mom
+      DOMAIN: localhost
     #    ports:
     #      - "3000:3000"
     deploy:
@@ -77,52 +76,25 @@ services:
       retries: 3
       start_period: 20s
 
-#  remoteBrowser:
-#    image: ashkanaz2828/downloader_remotebrowser
-#    network_mode: host
-#    env_file: ./env/remotebrowser.env
-#    environment:
-#      - NODE_ENV=production
-#      - CRAWLER_BROWSER_TAB_COUNT=2
-#      - TOTAL_MEMORY_AMOUNT=600
-#      - TOTAL_DISK_SPACE=2000
-#      - SERVER_NAME=remoteBrowser-vps-1
-#      - PRINT_ERRORS=true
-#      - CRAWLER_PAUSE_DURATION_LIMIT=30
-#      - DISABLE_UPLOAD_JOB=false
-#      - BLACKHOLE_FILE_SIZE_LIMIT=768
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: "0.5"
-#          memory: 500M
-#        reservations:
-#          memory: 50M
-#    #    volumes:
-#    #      - ./:/usr/app
-#    #    ports:
-#    #      - "5000:5000"
-#    restart: always
-
-#  telegrambot:
-#    image: ashkanaz2828/downloader_telegrambot
-#    network_mode: host
-#    depends_on:
-#      - api
-#    env_file: ./env/telegrambot.env
-#    environment:
-#      - API_URL=http://localhost:3000
-#      - WEB_URL=http://localhost
-#    volumes:
-#      - telegrambot
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: "0.2"
-#          memory: 100M
-#        reservations:
-#          memory: 10M
-#    restart: always
+  telegrambot:
+    image: ashkanaz2828/downloader_telegrambot
+    network_mode: host
+    depends_on:
+      - api
+    env_file: ./env/telegrambot.env
+    environment:
+      - API_URL=http://api.localhost
+      - WEB_URL=http://localhost
+    volumes:
+      - telegrambot
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 100M
+        reservations:
+          memory: 10M
+    restart: always
 
   adminpanel:
     image: ashkanaz2828/downloader_adminpanel
@@ -144,34 +116,16 @@ services:
           memory: 10M
     restart: unless-stopped
 
-  website:
-    image: ashkanaz2828/downloader_website
-    network_mode: host
-    depends_on:
-      - api
-    environment:
-      - REACT_APP_BASE_URL=http://api.localhost
-    #    ports:
-    #      - "9090:9090"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 100M
-        reservations:
-          memory: 10M
-    restart: unless-stopped
-
   nginx:
     network_mode: host
     build: ./docker/nginx
     #    ports:
     #      - '80:80'
     depends_on:
-#      - telegrambot
+      - api
+      - chat
       - torrent
       - adminpanel
-      - website
     deploy:
       resources:
         limits:
@@ -183,15 +137,16 @@ services:
   chat:
     image: ashkanaz2828/downloader_gochat
     depends_on:
+      - redis
       - rabbitmq
     network_mode: host
     env_file: env/chatservice.env
     environment:
       PORT: 3002
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
+      MAIN_SERVER_ADDRESS: api.localhost
+      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
       LOG_PANIC_TRACE: 'true'
-      DOMAIN: movietracker.mom
+      DOMAIN: localhost
     #    ports:
     #      - "3002:3002"
     deploy:
@@ -215,8 +170,8 @@ services:
     env_file: env/chatservice.env
     environment:
       - PORT=5672
-#      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-#      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      #      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      #      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - RABBITMQ_ERLANG_COOKIE=unique-erlang-cookie
     #    ports:
     #      - "5672:5672"
@@ -238,8 +193,8 @@ services:
     env_file: env/torrentservice.env
     environment:
       PORT: 3003
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://admin.movietracker.mom --- http://admin.movietracker.mom
+      MAIN_SERVER_ADDRESS: api.localhost
+      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
       LOG_PANIC_TRACE: 'true'
       DONT_CONVERT_MKV: 'true'
     volumes:
@@ -259,11 +214,10 @@ services:
     image: postgres:16.0-alpine3.18
     env_file: ./env/.env
     network_mode: host
-#    network_mode: host
     container_name: downloader_postgres
     environment:
       - POSTGRES_USER=postgres
-#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      #      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=downloader
     #    ports:
     #      - "5432:5432"
@@ -273,15 +227,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-          memory: 400M
+          cpus: "0.3"
+          memory: 300M
         reservations:
           memory: 50M
-    #    healthcheck:
-    #      test: ["CMD-SHELL", "pg_isready -U postgres"]
-    #      interval: 10s
-    #      timeout: 5s
-    #      retries: 10
     restart: always
 
 volumes:
