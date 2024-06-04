@@ -2032,6 +2032,44 @@ export async function getMoviesUserStats_likeDislikeFollow(userId, movieIds) {
     }
 }
 
+export async function getMoviesUserStats_followAndWatchlist(userId, movieIds) {
+    try {
+        return await prisma.movie.findMany({
+            where: {
+                movieId: {
+                    in: movieIds,
+                }
+            },
+            include: {
+                followMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        watch_season: true,
+                        watch_episode: true,
+                        score: true,
+                    }
+                },
+                watchListMovies: {
+                    where: {
+                        userId: userId,
+                    },
+                    take: 1,
+                    select: {
+                        score: true,
+                        group_name: true,
+                    }
+                },
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return [];
+    }
+}
+
 export async function getMoviesUserStatsCounts(movieIds) {
     try {
         return await prisma.movie.findMany({
