@@ -28,6 +28,10 @@ export async function preStart(force = false) {
         } else {
             console.log('====> [[Restoring PostgresDb Backup: Done]]');
         }
+
+        console.log('====> [[Creating Notifications Entity Types]]');
+        await addNotificationEntityTypes();
+        console.log('====> [[Creating Notifications Entity Types: done]]');
     }
     if (config.admin.user && config.admin.pass) {
         await Promise.allSettled([
@@ -41,9 +45,6 @@ export async function preStart(force = false) {
         if (!testUserCreated) {
             await createTestUser();
         }
-        console.log('====> [[Creating Notifications Entity Types]]');
-        await addNotificationEntityTypes();
-        console.log('====> [[Creating Notifications Entity Types: done]]');
     }
 }
 
