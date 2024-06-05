@@ -227,12 +227,16 @@ export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
     }
 }
 
-export function changePageLinkStateFromCrawlerStatus(pageLink, state) {
+export function changePageLinkStateFromCrawlerStatus(pageLink, state, appendMode = false) {
     pageLink = getDecodedLink(pageLink);
     let data = crawlerStatus.pageLinks.find(item => item.url === pageLink);
     if (data) {
-        data.state = state;
-        data.stateTime = new Date();
+        if (appendMode) {
+            data.state += state;
+        } else {
+            data.state = state;
+            data.stateTime = new Date();
+        }
     }
 }
 

@@ -18,7 +18,7 @@ import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB, getAllS3Wide
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
 import {getArrayBufferResponse, getFileSize} from "../crawlers/utils/axiosUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
-import {updateTrailerUploadLimit} from "../crawlers/status/crawlerStatus.js";
+import {changePageLinkStateFromCrawlerStatus, updateTrailerUploadLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {getDecodedLink} from "../crawlers/utils/utils.js";
@@ -222,7 +222,7 @@ export async function uploadProfileImageToS3(userId, type, dataBuffer, retryCoun
     }
 }
 
-export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
+export async function uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
             return null;
@@ -263,7 +263,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
                     reject(err);
                 });
 
-                let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, videoReadStream, fileName, fileUrl);
+                let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, videoReadStream, fileName, fileUrl, true, pageLink);
                 decreaseUploadingTrailerNumber();
                 resolve({
                     url: fileUrl,
@@ -287,15 +287,15 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
         ) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
+            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3(title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
+            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
         if (error.statusCode === 410 || error.statusCode === 403) {
-            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, false);
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, false);
         }
         if (error.name !== "AbortError" && error.message !== 'Video unavailable' && !error.message.includes('This is a private video')) {
             saveError(error);
@@ -304,7 +304,7 @@ export async function uploadTitleTrailerFromYoutubeToS3(title, type, year, origi
     }
 }
 
-export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist = true,
+export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist = true,
                                                                           retryCounter = 0, retryWithSleepCounter = 0) {
     try {
         if (!originalUrl) {
@@ -341,7 +341,7 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
             responseEncoding: "binary"
         });
 
-        let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, response.data, fileName, fileUrl);
+        let fileSize = await uploadFileToS3(bucketNamesObject.downloadTrailer, response.data, fileName, fileUrl, true, pageLink);
         decreaseUploadingTrailerNumber();
         return ({
             url: fileUrl,
@@ -354,12 +354,12 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title,
         if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
             retryCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
         }
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
-            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
         }
         if (error.response.status !== 403) {
             saveError(error);
@@ -456,7 +456,7 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
     }
 }
 
-async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFileSize = true) {
+async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFileSize = true, pageLink) {
     const parallelUploads3 = new Upload({
         client: s3,
         params: {
@@ -472,6 +472,10 @@ async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFil
 
     let fileSize = 0;
     parallelUploads3.on("httpUploadProgress", (progress) => {
+        let uploaded = (progress.loaded / (1024 * 1024)).toFixed(1);
+        if (pageLink) {
+            changePageLinkStateFromCrawlerStatus(pageLink, `  (Uploading ${uploaded}/??)`, true);
+        }
         fileSize = progress.total;
     });
 

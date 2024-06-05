@@ -17,9 +17,9 @@ export async function uploadTitlePosterAndAddToTitleModel(titleModel, posterUrl,
     return updateFields || titleModel;
 }
 
-export async function uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, trailerUrl, updateFields = null) {
+export async function uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, titleModel, trailerUrl, updateFields = null) {
     if (trailerUrl) {
-        let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(titleModel.title, titleModel.type, titleModel.year, trailerUrl);
+        let s3Trailer = await cloudStorage.uploadTitleTrailerFromYoutubeToS3(pageLink, titleModel.title, titleModel.type, titleModel.year, trailerUrl);
         if (s3Trailer) {
             if (updateFields) {
                 addS3TrailerToTitleModel(updateFields, s3Trailer, titleModel.trailers);

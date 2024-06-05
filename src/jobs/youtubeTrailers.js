@@ -56,7 +56,7 @@ export async function addTrailersFromYoutubeJobFunc() {
                         updateCronJobsStatus('addTrailersFromYoutube',
                             `running, checked: ${loopCounter * _batchCount}, notFound: ${notFoundCount}, completed: ${completedCount}, running: ${runningCounter}`);
                         if (trailerUrl) {
-                            let updateFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(movies[i], trailerUrl, {});
+                            let updateFields = await uploadTitleYoutubeTrailerAndAddToTitleModel("", movies[i], trailerUrl, {});
                             await updateMovieByIdDB(movies[i]._id, updateFields);
                             completedCount++;
                         } else {

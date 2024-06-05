@@ -614,7 +614,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
         }
 
         if (checkNeedTrailerUpload(titleDataFromDB.trailer_s3, titleDataFromDB.trailers)) {
-            await uploadTitleYoutubeTrailerAndAddToTitleModel(titleDataFromDB, semiJikanData.trailer.url, updateFields);
+            await uploadTitleYoutubeTrailerAndAddToTitleModel("", titleDataFromDB, semiJikanData.trailer.url, updateFields);
         }
 
         if (titleDataFromDB.castUpdateDate === 0) {
@@ -663,7 +663,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
 
         let imageUrl = getImageUrl(jikanApiData);
         await uploadTitlePosterAndAddToTitleModel(titleModel, imageUrl);
-        await uploadTitleYoutubeTrailerAndAddToTitleModel(titleModel, jikanApiData.trailer.url);
+        await uploadTitleYoutubeTrailerAndAddToTitleModel("", titleModel, jikanApiData.trailer.url);
 
         titleModel.insert_date = 0;
         titleModel.apiUpdateDate = 0;
