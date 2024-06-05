@@ -6,6 +6,7 @@ import * as utils from "../../utils/utils.js";
 import {extractStaffDataFromJikanAbout} from "../extractDataFields.js";
 import {saveError} from "../../../error/saveError.js";
 import * as rabbitmqPublisher from "../../../../rabbitmq/publish.js";
+import {checkForceStopCrawler} from "../../status/crawlerStatus.js";
 
 const _maxStaffOrCharacterSize = 150;
 
@@ -25,10 +26,16 @@ export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate,
 
         const credits = [];
 
+        if (checkForceStopCrawler()) {
+            return;
+        }
         if (tvmazeApiFields) {
             await addTvMazeActorsAndCharacters(movieId, tvmazeApiFields.cast, credits);
         }
 
+        if (checkForceStopCrawler()) {
+            return;
+        }
         if (jikanApiFields) {
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
@@ -49,6 +56,9 @@ export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate,
 
 async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
     for (let i = 0; i < tvmazeCast.length; i++) {
+        if (checkForceStopCrawler()) {
+            break;
+        }
         const countryName = tvmazeCast[i].person.country?.name?.toLowerCase() || '';
         const originalImages = [tvmazeCast[i].person.image?.medium, tvmazeCast[i].person.image?.original].filter(item => item);
         const positions = tvmazeCast[i].voice ? ['Voice Actor'] : ['Actor'];
@@ -99,6 +109,9 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
     }
 
     for (let i = 0; i < tvmazeCast.length; i++) {
+        if (checkForceStopCrawler()) {
+            break;
+        }
         const originalImages = [tvmazeCast[i].character.image?.medium, tvmazeCast[i].character.image?.original].filter(item => item);
         const rawName = utils.fixJapaneseCharacter(tvmazeCast[i].character.name);
         const name = utils.replaceSpecialCharacters(rawName.toLowerCase());
@@ -151,6 +164,9 @@ async function handleJikanStaff_voiceActors(movieId, jikanCharactersArray, credi
 async function handleJikanStaff(movieId, jikanStaffArray, credits) {
     const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
+        if (checkForceStopCrawler()) {
+            break;
+        }
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].person.mal_id).then(async (staffApiData) => {
             if (staffApiData) {
                 await addStaffOrCharacterFromJikanData(movieId, jikanStaffArray[i], staffApiData, 'staff', credits);
@@ -163,6 +179,9 @@ async function handleJikanStaff(movieId, jikanStaffArray, credits) {
 async function handleJikanCharaters(movieId, jikanCharatersArray, credits) {
     const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanCharatersArray.length && i < _maxStaffOrCharacterSize; i++) {
+        if (checkForceStopCrawler()) {
+            break;
+        }
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(async (characterApiData) => {
             if (characterApiData) {
                 await addStaffOrCharacterFromJikanData(movieId, jikanCharatersArray[i], characterApiData, 'character', credits);
