@@ -395,11 +395,14 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             } else if (db_data.releaseState === 'done' && db_data.insert_date && getDatesBetween(new Date(), db_data.insert_date).days > 90) {
                 let dLinksLength = db_data.type.includes('movie') ?
                     db_data.qualities.map(item => item.links).flat(1).length
-                    : db_data.seasons.map(s => s.episodes.map(e => e.links).flat(1)).flat(1);
+                    : db_data.seasons.map(s => s.episodes.map(e => e.links).flat(1)).flat(1).length;
                 if (dLinksLength === 0) {
+                    // let torrentLinksLength = db_data.type.includes('movie') ?
+                    //     db_data.qualities.map(item => item.torrentLinks).flat(1).length
+                    //     : db_data.seasons.map(s => s.episodes.map(e => e.torrentLinks).flat(1)).flat(1).length;
                     let onlineLinksLength = db_data.type.includes('movie') ?
                         db_data.qualities.map(item => item.watchOnlineLinks).flat(1).length
-                        : db_data.seasons.map(s => s.episodes.map(e => e.watchOnlineLinks).flat(1)).flat(1);
+                        : db_data.seasons.map(s => s.episodes.map(e => e.watchOnlineLinks).flat(1)).flat(1).length;
                     if (onlineLinksLength === 0) {
                         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.removingS3Trailer);
                         await removeS3Trailer(db_data, updateFields);

@@ -323,15 +323,26 @@ function fixEpisodesZeroDuration(seasons, duration, type) {
 }
 
 export function getTotalDuration(seasons, latestData, type) {
+    let [_, s, e] = latestData.torrentLinks.split(/[se]/gi).map(item => Number(item));
+    let torrentSeason = s || 0;
+    let torrentEpisode = e || 0;
+    let latestSeason = latestData.season;
+    let latestEpisode = latestData.episode;
+    if (latestSeason < torrentSeason ||
+        (latestSeason === torrentSeason && latestEpisode < torrentEpisode)) {
+        latestSeason = torrentSeason;
+        latestEpisode = torrentEpisode;
+    }
+
     let totalDuration = 0;
     let episodeCounter = 0;
     for (let i = 0; i < seasons.length; i++) {
-        if (seasons[i].seasonNumber <= latestData.season ||
+        if (seasons[i].seasonNumber <= latestSeason ||
             seasons[i].episodes.find(item => item.links.length > 0 || item.watchOnlineLinks.length > 0 || item.torrentLinks.length > 0)) {
             let episodes = seasons[i].episodes;
             for (let j = 0; j < episodes.length; j++) {
-                if (seasons[i].seasonNumber < latestData.season ||
-                    episodes[j].episodeNumber <= latestData.episode ||
+                if (seasons[i].seasonNumber < latestSeason ||
+                    episodes[j].episodeNumber <= latestEpisode ||
                     episodes[j].links.length > 0 ||
                     episodes[j].watchOnlineLinks.length > 0 ||
                     episodes[j].torrentLinks.length > 0
