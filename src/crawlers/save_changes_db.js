@@ -114,7 +114,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.addingCast);
-                    await addStaffAndCharacters(insertedId, result.allApiData, titleModel.castUpdateDate, extraConfigs);
+                    await addStaffAndCharacters(pageLink, insertedId, result.allApiData, titleModel.castUpdateDate, extraConfigs);
                     if (checkForceStopCrawler()) {
                         return removePageLinkToCrawlerStatus(pageLink);
                     }
@@ -378,7 +378,7 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
         }
         if (apiData) {
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingCast);
-            await addStaffAndCharacters(db_data._id, apiData.allApiData, db_data.castUpdateDate, extraConfigs);
+            await addStaffAndCharacters(pageLink, db_data._id, apiData.allApiData, db_data.castUpdateDate, extraConfigs);
             if (extraConfigs?.castUpdateState !== 'ignore') {
                 updateFields.castUpdateDate = new Date();
             }

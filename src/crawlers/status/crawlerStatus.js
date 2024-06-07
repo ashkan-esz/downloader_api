@@ -232,7 +232,7 @@ export function changePageLinkStateFromCrawlerStatus(pageLink, state, appendMode
     let data = crawlerStatus.pageLinks.find(item => item.url === pageLink);
     if (data) {
         if (appendMode) {
-            data.state += state;
+            data.state = data.state.split(" (")[0] + state;
         } else {
             data.state = state;
             data.stateTime = new Date();

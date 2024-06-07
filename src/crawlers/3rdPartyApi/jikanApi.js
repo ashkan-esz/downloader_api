@@ -623,7 +623,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                     jikanID: titleDataFromDB.apiIds.jikanID,
                 },
             };
-            await addStaffAndCharacters(titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
+            await addStaffAndCharacters("", titleDataFromDB._id, allApiData, titleDataFromDB.castUpdateDate);
             updateFields.castUpdateDate = new Date();
         }
 
@@ -699,7 +699,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
                 jikanApiFields,
             };
             await handleAnimeRelatedTitles(insertedId, jikanApiFields.jikanRelatedTitles);
-            await addStaffAndCharacters(insertedId, allApiData, titleModel.castUpdateDate);
+            await addStaffAndCharacters("", insertedId, allApiData, titleModel.castUpdateDate);
             await crawlerMethodsDB.updateMovieByIdDB(insertedId, {
                 castUpdateDate: new Date(),
             });

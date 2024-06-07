@@ -6,12 +6,12 @@ import * as utils from "../../utils/utils.js";
 import {extractStaffDataFromJikanAbout} from "../extractDataFields.js";
 import {saveError} from "../../../error/saveError.js";
 import * as rabbitmqPublisher from "../../../../rabbitmq/publish.js";
-import {checkForceStopCrawler} from "../../status/crawlerStatus.js";
+import {changePageLinkStateFromCrawlerStatus, checkForceStopCrawler} from "../../status/crawlerStatus.js";
 
 const _maxStaffOrCharacterSize = 150;
 
 
-export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate, extraConfigs = null) {
+export async function addStaffAndCharacters(pageLink, movieId, allApiData, castUpdateDate, extraConfigs = null) {
     try {
         movieId = movieId.toString();
         //castUpdateState is none|ignore|force
@@ -30,21 +30,22 @@ export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate,
             return;
         }
         if (tvmazeApiFields) {
-            await addTvMazeActorsAndCharacters(movieId, tvmazeApiFields.cast, credits);
+            await addTvMazeActorsAndCharacters(pageLink, movieId, tvmazeApiFields.cast, credits);
         }
 
         if (checkForceStopCrawler()) {
             return;
         }
         if (jikanApiFields) {
+            changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan: fetching staff/character list)`, true);
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
-                await handleJikanStaff(movieId, jikanCharatersStaff.staff, credits);
-                await handleJikanStaff_voiceActors(movieId, jikanCharatersStaff.characters, credits);
+                await handleJikanStaff(pageLink, movieId, jikanCharatersStaff.staff, credits);
+                await handleJikanStaff_voiceActors(pageLink, movieId, jikanCharatersStaff.characters, credits);
                 await handleJikanCharaters(movieId, jikanCharatersStaff.characters, credits);
             }
         }
-
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([6/6] updating credits)`, true);
         await handleCredits(credits);
     } catch (error) {
         saveError(error);
@@ -54,8 +55,9 @@ export async function addStaffAndCharacters(movieId, allApiData, castUpdateDate,
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
+async function addTvMazeActorsAndCharacters(pageLink, movieId, tvmazeCast, credits) {
     for (let i = 0; i < tvmazeCast.length; i++) {
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([1/6] tvmaze-staff: ${i + 1}/${tvmazeCast.length})`, true);
         if (checkForceStopCrawler()) {
             break;
         }
@@ -109,6 +111,7 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
     }
 
     for (let i = 0; i < tvmazeCast.length; i++) {
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([2/6] tvmaze-character: ${i + 1}/${tvmazeCast.length})`, true);
         if (checkForceStopCrawler()) {
             break;
         }
@@ -145,7 +148,7 @@ async function addTvMazeActorsAndCharacters(movieId, tvmazeCast, credits) {
 //-----------------------------------------------------
 //-----------------------------------------------------
 
-async function handleJikanStaff_voiceActors(movieId, jikanCharactersArray, credits) {
+async function handleJikanStaff_voiceActors(pageLink, movieId, jikanCharactersArray, credits) {
     let voiceActors = [];
     for (let i = 0; i < jikanCharactersArray.length; i++) {
         let thisCharacterVoiceActors = jikanCharactersArray[i].voice_actors;
@@ -158,13 +161,19 @@ async function handleJikanStaff_voiceActors(movieId, jikanCharactersArray, credi
             }
         }
     }
-    await handleJikanStaff(movieId, voiceActors, credits);
+    await handleJikanStaff(pageLink, movieId, voiceActors, credits, true);
 }
 
-async function handleJikanStaff(movieId, jikanStaffArray, credits) {
+async function handleJikanStaff(pageLink, movieId, jikanStaffArray, credits, isVoiceActors = false) {
+    if (isVoiceActors) {
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-voiceActor: 0/?)`, true);
+    } else {
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-staff: 0/?)`, true);
+    }
     const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
+            promiseQueue.clear();
             break;
         }
         promiseQueue.add(() => getPersonInfo(jikanStaffArray[i].person.mal_id).then(async (staffApiData) => {
@@ -173,13 +182,29 @@ async function handleJikanStaff(movieId, jikanStaffArray, credits) {
             }
         })).catch(error => saveError(error));
     }
+
+    let counter = 0;
+    let total = Math.min(jikanStaffArray.length, _maxStaffOrCharacterSize);
+    promiseQueue.on('next', () => {
+        counter++;
+        if (isVoiceActors) {
+            changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-voiceActor: ${counter}(+${promiseQueue.pending})/${total})`, true);
+        } else {
+            changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-staff: ${counter}(+${promiseQueue.pending})/${total})`, true);
+        }
+        if (checkForceStopCrawler()) {
+            promiseQueue.clear();
+        }
+    });
     await promiseQueue.onIdle();
 }
 
-async function handleJikanCharaters(movieId, jikanCharatersArray, credits) {
+async function handleJikanCharaters(pageLink, movieId, jikanCharatersArray, credits) {
+    changePageLinkStateFromCrawlerStatus(pageLink, ` ([5/6] jikan-characters: 0/?)`, true);
     const promiseQueue = new PQueue({concurrency: 10});
     for (let i = 0; i < jikanCharatersArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
+            promiseQueue.clear();
             break;
         }
         promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(async (characterApiData) => {
@@ -188,6 +213,16 @@ async function handleJikanCharaters(movieId, jikanCharatersArray, credits) {
             }
         })).catch(error => saveError(error));
     }
+
+    let counter = 0;
+    let total = Math.min(jikanCharatersArray.length, _maxStaffOrCharacterSize);
+    promiseQueue.on('next', () => {
+        counter++;
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([5/6] jikan-characters: ${counter}(+${promiseQueue.pending})/${total})`, true);
+        if (checkForceStopCrawler()) {
+            promiseQueue.clear();
+        }
+    });
     await promiseQueue.onIdle();
 }
 
