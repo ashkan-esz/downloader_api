@@ -66,7 +66,7 @@ export function getTrailers($, sourceName, sourceVpnStatus) {
 }
 
 function purgeTrailer(url, sourceName, quality, vpnStatus) {
-    if (url.includes('media-imdb.com') || url.includes('.ir/') || url.includes('aparat.com')) {
+    if (url.includes('media-imdb.com') || url.includes('.ir/') || url.includes('aparat.com') || url.startsWith("ftp:")) {
         return null;
     }
 
