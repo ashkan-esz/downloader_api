@@ -13,6 +13,7 @@ import {
     removeS3TrailerJobFunc,
     removeS3WidePosterJobFunc
 } from "../jobs/s3Files.js";
+import {removeBadPostersJobFunc} from "../jobs/posters.js";
 
 const cronJobsStatus = {
     checkCrawlerDomains: {
@@ -142,6 +143,14 @@ const cronJobsStatus = {
         value: '',
         description: '',
         startFunc: removeS3ProfileImageJobFunc,
+    },
+    removeBadPosters: {
+        running: false,
+        startDate: 0,
+        state: '',
+        value: '',
+        description: '',
+        startFunc: removeBadPostersJobFunc,
     },
 }
 

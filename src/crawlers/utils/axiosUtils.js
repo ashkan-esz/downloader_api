@@ -4,7 +4,7 @@ import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
-export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0) {
+export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0, ignoreError = false) {
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
@@ -22,14 +22,16 @@ export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter =
             retryCounter++;
             let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter);
+            return await getFileSize(url, retryCounter, retryWithSleepCounter, ignoreError);
         }
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter);
+            return await getFileSize(url, retryCounter, retryWithSleepCounter, ignoreError);
         }
-        saveErrorIfNeeded(error);
+        if (!ignoreError) {
+            saveErrorIfNeeded(error);
+        }
         return 0;
     }
 }
