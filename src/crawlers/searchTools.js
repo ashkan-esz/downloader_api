@@ -90,7 +90,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                         break;
                     }
                     await pauseCrawler();
-                    await promiseQueue.onSizeLessThan(60);
+                    await promiseQueue.onSizeLessThan(concurrencyNumber * 8);
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs));
                 }
             } catch (error) {
@@ -409,6 +409,9 @@ export async function getConcurrencyNumber(sourceName, needHeadlessBrowser, extr
     let concurrencyNumber = 0;
     if (extraConfigs?.crawlerConcurrency) {
         concurrencyNumber = Number(extraConfigs?.crawlerConcurrency);
+        if (concurrencyNumber > 0) {
+            return concurrencyNumber;
+        }
     } else if (config.crawler.concurrency) {
         concurrencyNumber = Number(config.crawler.concurrency);
     }

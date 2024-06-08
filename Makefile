@@ -33,6 +33,9 @@ down-simple:
 run-postgres:
 	docker run --restart unless-stopped --network=host --memory 500m -v pgdata:/var/lib/postgresql/data -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
 
+run-empty-postgres:
+	docker run --restart unless-stopped --network=host --memory 500m -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=downloader postgres:16.0-alpine3.18
+
 run-redis:
 	docker run --restart unless-stopped --network=host --memory 200m -e ALLOW_EMPTY_PASSWORD=yes redis:alpine
 

@@ -53,6 +53,8 @@ export function stopCrawler_manual() {
 //--------------------------------------------------------
 //--------------------------------------------------------
 
+// let gcCallTime = null;
+
 export async function pauseCrawler() {
     while (Date.now() < manualPauseUntil) {
         if (checkForceStopCrawler()) {
@@ -84,6 +86,12 @@ export async function pauseCrawler() {
             disableForceResume();
             break;
         }
+        // if (memoryStatus.used >= crawlerMemoryLimit) {
+        //     if (gcCallTime && (Date.now() - gcCallTime) > 5 * 1000) {
+        //         global.gc?.();
+        //         gcCallTime = Date.now();
+        //     }
+        // }
         await new Promise(resolve => setTimeout(resolve, 50));
         memoryStatus = await getMemoryStatus(false);
         cpuAverageLoad = getCpuAverageLoad();
@@ -96,7 +104,7 @@ export async function checkServerIsIdle() {
     const cpuAverageLoad = getCpuAverageLoad();
     return (
         memoryStatus.used < crawlerMemoryLimit &&
-        memoryStatus.used < (config.crawler.totalMemory * 0.7) &&
+        memoryStatus.used < (config.crawler.totalMemory * 0.6) &&
         cpuAverageLoad[0] < 50 &&
         cpuAverageLoad[1] < 50
     );
