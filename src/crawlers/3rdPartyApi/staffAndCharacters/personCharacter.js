@@ -9,7 +9,9 @@ import * as rabbitmqPublisher from "../../../../rabbitmq/publish.js";
 import {changePageLinkStateFromCrawlerStatus, checkForceStopCrawler} from "../../status/crawlerStatus.js";
 
 const _maxStaffOrCharacterSize = 150;
-
+const _pqConcurrency = 8;
+const _maxCastConcurrency = 3;
+let _castConcurrency = 0;
 
 export async function addStaffAndCharacters(pageLink, movieId, allApiData, castUpdateDate, extraConfigs = null) {
     try {
@@ -36,14 +38,23 @@ export async function addStaffAndCharacters(pageLink, movieId, allApiData, castU
         if (checkForceStopCrawler()) {
             return;
         }
+
         if (jikanApiFields) {
             changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan: fetching staff/character list)`, true);
+
+            while (_castConcurrency >= _maxCastConcurrency) {
+                changePageLinkStateFromCrawlerStatus(pageLink, ` (exceed concurrency limit: ${_castConcurrency}/${_maxCastConcurrency})`, true);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            _castConcurrency++;
+
             let jikanCharatersStaff = await getCharactersStaff(jikanApiFields.jikanID);
             if (jikanCharatersStaff) {
                 await handleJikanStaff(pageLink, movieId, jikanCharatersStaff.staff, credits);
                 await handleJikanStaff_voiceActors(pageLink, movieId, jikanCharatersStaff.characters, credits);
                 await handleJikanCharaters(movieId, jikanCharatersStaff.characters, credits);
             }
+            _castConcurrency--;
         }
         changePageLinkStateFromCrawlerStatus(pageLink, ` ([6/6] updating credits)`, true);
         await handleCredits(credits);
@@ -102,7 +113,7 @@ async function addTvMazeActorsAndCharacters(pageLink, movieId, tvmazeCast, credi
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     let res = await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
-                    if (res.blurHash === "") {
+                    if (res && res.blurHash === "") {
                         await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
                     }
                 }
@@ -136,7 +147,7 @@ async function addTvMazeActorsAndCharacters(pageLink, movieId, tvmazeCast, credi
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'character', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     let res = await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
-                    if (res.blurHash === "") {
+                    if (res && res.blurHash === "") {
                         await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
                     }
                 }
@@ -170,7 +181,7 @@ async function handleJikanStaff(pageLink, movieId, jikanStaffArray, credits, isV
     } else {
         changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-staff: 0/?)`, true);
     }
-    const promiseQueue = new PQueue({concurrency: 10});
+    const promiseQueue = new PQueue({concurrency: _pqConcurrency});
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
             promiseQueue.clear();
@@ -201,13 +212,17 @@ async function handleJikanStaff(pageLink, movieId, jikanStaffArray, credits, isV
 
 async function handleJikanCharaters(pageLink, movieId, jikanCharatersArray, credits) {
     changePageLinkStateFromCrawlerStatus(pageLink, ` ([5/6] jikan-characters: 0/?)`, true);
-    const promiseQueue = new PQueue({concurrency: 10});
+    const promiseQueue = new PQueue({concurrency: _pqConcurrency});
     for (let i = 0; i < jikanCharatersArray.length && i < _maxStaffOrCharacterSize; i++) {
         if (checkForceStopCrawler()) {
             promiseQueue.clear();
             break;
         }
-        promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[i].character.mal_id).then(async (characterApiData) => {
+        const index = i;
+        if (!jikanCharatersArray[index].character?.mal_id) {
+            continue;
+        }
+        promiseQueue.add(() => getCharacterInfo(jikanCharatersArray[index].character.mal_id).then(async (characterApiData) => {
             if (characterApiData) {
                 await addStaffOrCharacterFromJikanData(movieId, jikanCharatersArray[i], characterApiData, 'character', credits);
             }
@@ -248,6 +263,9 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
         }
     }
 
+    if (!fullApiData.name) {
+        return;
+    }
     const rawName = utils.fixJapaneseCharacter(fullApiData.name);
     const name = utils.replaceSpecialCharacters(rawName.toLowerCase());
     const data = {
@@ -292,7 +310,7 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createStaffResult.id, originalImages[0]);
                 if (castImage) {
                     let res = await staffAndCharactersDbMethods.addCastImageDb(createStaffResult.id, 'staff', castImage);
-                    if (res.blurHash === "") {
+                    if (res && res.blurHash === "") {
                         await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.staff, createStaffResult.id, castImage.url)
                     }
                 }
@@ -322,7 +340,7 @@ async function addStaffOrCharacterFromJikanData(movieId, SemiData, fullApiData, 
                 const castImage = await cloudStorage.uploadCastImageToS3ByURl(name, 'staff', createCharacterResult.id, originalImages[0]);
                 if (castImage) {
                     let res = await staffAndCharactersDbMethods.addCastImageDb(createCharacterResult.id, 'character', castImage);
-                    if (res.blurHash === "") {
+                    if (res && res.blurHash === "") {
                         await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.character, createCharacterResult.id, castImage.url)
                     }
                 }

@@ -665,6 +665,7 @@ export async function addCastImageDb(id, type, data) {
         }
     } catch (error) {
         saveError(error);
+        return null;
     }
 }
 

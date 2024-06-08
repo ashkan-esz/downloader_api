@@ -218,7 +218,7 @@ export async function getCharactersStaff(jikanID) {
 export async function getPersonInfo(jikanID) {
     if (jikanID) {
         let url = `https://api.jikan.moe/v4/people/${jikanID}`;
-        return await handleApiCall(url, 15);
+        return await handleApiCall(url, 8);
     }
     return null;
 }
@@ -226,7 +226,7 @@ export async function getPersonInfo(jikanID) {
 export async function getCharacterInfo(jikanID) {
     if (jikanID) {
         let url = `https://api.jikan.moe/v4/characters/${jikanID}`;
-        return await handleApiCall(url, 15);
+        return await handleApiCall(url, 8);
     }
     return null;
 }
@@ -320,13 +320,13 @@ async function handleApiCall(url, timeoutSec = 0) {
     }
 
     let waitCounter = 0;
-    while (waitCounter < 20) {
+    while (waitCounter < 12) {
         try {
             let response = await new Promise(async (resolve, reject) => {
                 await handleRateLimits();
 
                 const source = axios.CancelToken.source();
-                let hardTimeout = timeoutSec === 0 ? 3 * 60 * 1000 : (3 * timeoutSec * 1000) + 7;
+                let hardTimeout = timeoutSec === 0 ? 3 * 60 * 1000 : (1.5 * timeoutSec * 1000) + 7;
                 const timeoutId = setTimeout(() => {
                     source.cancel('hard timeout');
                 }, hardTimeout);
@@ -355,7 +355,7 @@ async function handleApiCall(url, timeoutSec = 0) {
         } catch (error) {
             if (error.response && error.response.status === 429) {
                 //too much request
-                let waitTime = 3000;
+                let waitTime = 2000;
                 waitCounter++;
                 await new Promise((resolve => setTimeout(resolve, waitTime)));
             } else {
