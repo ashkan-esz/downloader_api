@@ -38,9 +38,11 @@ export async function downloadImage(url, retryCounter = 0) {
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
+        let timeout = url.includes(".s3.") ? 8000 : 5000;
         let response = await client.get(url, {
             responseType: "arraybuffer",
-            responseEncoding: "binary"
+            responseEncoding: "binary",
+            timeout: timeout,
         });
         if (response.headers['content-type'].includes('text/html')) {
             return null;
@@ -55,6 +57,10 @@ export async function downloadImage(url, retryCounter = 0) {
             retryCounter++;
             let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
+            return await downloadImage(url, retryCounter);
+        }
+        if ((error.message === 'timeout of 8000ms exceeded' || error.message === 'timeout of 5000ms exceeded') && retryCounter < 1) {
+            retryCounter++;
             return await downloadImage(url, retryCounter);
         }
         if (error.code !== 'EAI_AGAIN') {
