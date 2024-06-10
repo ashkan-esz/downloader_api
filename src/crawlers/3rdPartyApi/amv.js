@@ -122,8 +122,8 @@ function normalizeSeasonText(text) {
 function addTitleObjToAmvData(apiData, year) {
     const yearRegex = new RegExp(` \\(?${year}\\)?\$`);
     let titleObj = {
-        title: replaceSpecialCharacters(apiData.title.userPreferred?.toLowerCase() || "").replace(yearRegex, '').replace(/\stv$/i, ''),
-        rawTitle: (apiData.title.userPreferred || "").replace(/^["']|["']$/g, '')
+        title: replaceSpecialCharacters(apiData.title?.userPreferred?.toLowerCase() || "").replace(yearRegex, '').replace(/\stv$/i, ''),
+        rawTitle: (apiData.title?.userPreferred || "").replace(/^["']|["']$/g, '')
             .replace(/volume \d/i, (res) => res.replace('Volume', 'Vol'))
             .replace(/!+/g, '!')
             .replace(yearRegex, '')
@@ -132,7 +132,7 @@ function addTitleObjToAmvData(apiData, year) {
         titleSynonyms: [],
     }
     let temp = utils.removeDuplicateElements(
-        [apiData.title.userPreferred, apiData.title.romaji, apiData.title.english, apiData.title.native]
+        [apiData.title?.userPreferred, apiData.title?.romaji, apiData.title?.english, apiData.title?.native]
             .filter(Boolean)
             .filter(item => item !== titleObj.title && item !== titleObj.rawTitle)
             .map(value => value.toLowerCase()

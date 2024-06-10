@@ -397,7 +397,13 @@ export async function uploadImageToS3(bucketName, fileName, fileUrl, originalUrl
         if (response === null) {
             return null;
         }
+        if (response.data?.length === 0) {
+            return null;
+        }
         let dataBuffer = await compressImage(response.data);
+        if (dataBuffer === null) {
+            return null;
+        }
 
         const params = {
             ContentType: 'image/jpeg',
