@@ -97,6 +97,7 @@ export function getTvMazeApiFields(data) {
         let apiFields = {
             imdbID: data.externals.imdb || '',
             tvmazeID: Number(data.id) || 0,
+            posters: (data._embedded.images || []).filter(item => item.type === 'poster'),
             backgroundPosters: (data._embedded.images || []).filter(item => item.type === 'background'),
             cast: data._embedded.cast || [],
             nextEpisode: getNextEpisode(data),

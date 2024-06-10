@@ -84,6 +84,28 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
             titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
             updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
 
+            if (!titleModel.type.includes("anime") && tvmazeApiFields.posters.length > 0 && titleModel.posters.length === 0) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingTvmazePosterToS3);
+                let imageUrl = tvmazeApiFields.posters[1]?.resolutions?.original?.url ||
+                    tvmazeApiFields.posters[0].resolutions.original?.url ||
+                    tvmazeApiFields.posters[1]?.resolutions?.medium?.url ||
+                    tvmazeApiFields.posters[0].resolutions.medium?.url;
+                if (imageUrl) {
+                    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, imageUrl, false, false);
+                    if (s3poster) {
+                        titleModel.poster_s3 = s3poster;
+                        titleModel.posters.push({
+                            url: s3poster.url,
+                            info: 's3Poster',
+                            size: s3poster.size,
+                            vpnStatus: s3poster.vpnStatus,
+                            thumbnail: s3poster.thumbnail,
+                            blurHash: s3poster.blurHash,
+                        });
+                        titleModel.posters = sortPosters(titleModel.posters);
+                    }
+                }
+            }
             if (tvmazeApiFields.backgroundPosters.length > 0 && titleModel.poster_wide_s3 === null) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingTvmazeWidePosterToS3);
                 let imageUrl = tvmazeApiFields.backgroundPosters[1]?.resolutions?.original?.url ||
@@ -344,6 +366,30 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
             updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
             updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
 
+            if (!db_data.type.includes("anime") && tvmazeApiFields.posters.length > 0 && db_data.posters.length === 0) {
+                let imageUrl = tvmazeApiFields.posters[1]?.resolutions?.original?.url ||
+                    tvmazeApiFields.posters[0].resolutions.original?.url ||
+                    tvmazeApiFields.posters[1]?.resolutions?.medium?.url ||
+                    tvmazeApiFields.posters[0].resolutions.medium?.url;
+                if (imageUrl && db_data.poster_s3 === null) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingTvmazePosterToS3);
+                    let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, imageUrl, true, false);
+                    if (s3poster) {
+                        db_data.poster_s3 = s3poster;
+                        updateFields.poster_s3 = s3poster;
+                        db_data.posters.push({
+                            url: s3poster.url,
+                            info: 's3Poster',
+                            size: s3poster.size,
+                            vpnStatus: s3poster.vpnStatus,
+                            thumbnail: s3poster.thumbnail,
+                            blurHash: s3poster.blurHash,
+                        });
+                        db_data.posters = sortPosters(db_data.posters);
+                        updateFields.posters = db_data.posters;
+                    }
+                }
+            }
             if (tvmazeApiFields.backgroundPosters.length > 0) {
                 let imageUrl = tvmazeApiFields.backgroundPosters[1]?.resolutions?.original?.url ||
                     tvmazeApiFields.backgroundPosters[0].resolutions.original?.url ||
