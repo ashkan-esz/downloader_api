@@ -86,6 +86,9 @@ services:
       - API_URL=http://api.localhost
       - WEB_URL=http://localhost
       - PRINT_ERRORS=false
+      - MIN_IMDB_RATE=7
+      - MIN_MAL_RATE=7
+      - INITIAL_SLEEP_MINUTE=2
     volumes:
       - telegrambot
     deploy:

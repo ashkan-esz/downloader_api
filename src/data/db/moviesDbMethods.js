@@ -28,13 +28,15 @@ export async function getNewMovies(types, imdbScores, malScores, skip, limit, pr
     }
 }
 
-export async function getNewMoviesWithDate(insertDate, types, imdbScores, malScores, skip, limit, projection) {
+export async function getNewMoviesWithDate(insertDate, types, imdbScores, malScores, skip, limit, projection, {
+    useOrConditionForScores = false,
+} = {}) {
     try {
         let collection = await getCollection('movies');
 
         return await collection.find({
             releaseState: 'done',
-            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores, useOrConditionForScores),
             insert_date: {$gt: insertDate},
             update_date: 0,
         }, {
@@ -75,13 +77,15 @@ export async function getUpdateMovies(types, imdbScores, malScores, skip, limit,
     }
 }
 
-export async function getUpdateMoviesWithDate(updateDate, types, imdbScores, malScores, skip, limit, projection) {
+export async function getUpdateMoviesWithDate(updateDate, types, imdbScores, malScores, skip, limit, projection, {
+    useOrConditionForScores = false,
+} = {}) {
     try {
         let collection = await getCollection('movies');
 
         return await collection.find({
             releaseState: 'done',
-            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores),
+            ...getTypeAndRatingFilterConfig(types, imdbScores, malScores, useOrConditionForScores),
             update_date: {$gt: updateDate},
         }, {
             projection: projection
@@ -954,7 +958,26 @@ export async function addMoviesFromMongodbToPostgres() {
 //-----------------------------------
 //-----------------------------------
 
-function getTypeAndRatingFilterConfig(types, imdbScores, malScores) {
+function getTypeAndRatingFilterConfig(types, imdbScores, malScores, useOrConditionForScores = false) {
+    if (useOrConditionForScores) {
+        return {
+            type: {$in: types},
+            $or: [
+                {
+                    "rating.imdb": {
+                        $gte: imdbScores[0],
+                        $lte: imdbScores[1],
+                    },
+                },
+                {
+                    "rating.myAnimeList": {
+                        $gte: malScores[0],
+                        $lte: malScores[1],
+                    },
+                },
+            ],
+        };
+    }
     return {
         type: {$in: types},
         "rating.imdb": {
