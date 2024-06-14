@@ -56,9 +56,13 @@ export async function removeBadPostersJobFunc() {
                     let postersPromArr = [];
                     for (let j = 0; j < movies[index].posters.length; j++) {
                         const j2 = j;
-                        let p = axiosUtils.getFileSize(movies[index].posters[j2].url, 0, 0, true).then(res => {
-                            movies[index].posters[j2].delete = res === 0;
-                            if (res === 0) {
+                        let p = axiosUtils.getFileSize(movies[index].posters[j2].url, {
+                            ignoreError: true,
+                            timeout: 20 * 1000,
+                            errorReturnValue: -1,
+                        }).then(res => {
+                            movies[index].posters[j2].delete = res === -1;
+                            if (res === -1) {
                                 stats.badPostersCounter++;
                             }
                         });
@@ -68,12 +72,19 @@ export async function removeBadPostersJobFunc() {
 
                     if (movies[index].posters.some(p => p.delete === true)) {
                         movies[index].posters = movies[index].posters.filter(p => !p.delete);
+                        movies[index].posters = movies[index].posters.map(p => {
+                            delete p.delete;
+                            return p;
+                        });
                         updateFields.posters = movies[index].posters;
                     }
 
                     //s3 poster
                     if (movies[index].poster_s3) {
-                        let fileSize = await axiosUtils.getFileSize(movies[index].poster_s3.url, 0, 0, true);
+                        let fileSize = await axiosUtils.getFileSize(movies[index].poster_s3.url, {
+                            ignoreError: true,
+                            timeout: 20 * 1000,
+                        });
                         if (fileSize === 0) {
                             await deletePosterFromS3(movies[index].poster_s3.url.split('/').pop());
                             movies[index].poster_s3 = null;
@@ -84,7 +95,10 @@ export async function removeBadPostersJobFunc() {
 
                     //s3 wide poster
                     if (movies[index].poster_wide_s3) {
-                        let fileSize = await axiosUtils.getFileSize(movies[index].poster_wide_s3.url, 0, 0, true);
+                        let fileSize = await axiosUtils.getFileSize(movies[index].poster_wide_s3.url, {
+                            ignoreError: true,
+                            timeout: 20 * 1000,
+                        });
                         if (fileSize === 0) {
                             await deletePosterFromS3(movies[index].poster_wide_s3.url.split('/').pop());
                             movies[index].poster_wide_s3 = null;
@@ -110,8 +124,8 @@ export async function removeBadPostersJobFunc() {
             stats.checkedMovies = stats.loopCounter * stats.loopSize;
         }
 
-        updateCronJobsStatus('removeBadPosters', 'end', JSON.stringify(stats));
         clearInterval(intervalId);
+        updateCronJobsStatus('removeBadPosters', 'end', JSON.stringify(stats));
         return {status: 'ok'};
     } catch (error) {
         saveError(error);

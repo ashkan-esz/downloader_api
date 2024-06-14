@@ -4,35 +4,44 @@ import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
 import {saveErrorIfNeeded} from "../../error/saveError.js";
 
-export async function getFileSize(url, retryCounter = 0, retryWithSleepCounter = 0, ignoreError = false) {
+export async function getFileSize(url, opt = {}) {
+    opt = {
+        retryCounter: 0,
+        retryWithSleepCounter: 0,
+        ignoreError: false,
+        timeout: 5000,
+        errorReturnValue: 0,
+        ...opt
+    }
+
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
-        let response = await client.head(url, {timeout: 5000});
+        let response = await client.head(url, {timeout: opt.timeout});
         if (response.headers['content-type'].includes('text/html')) {
             return 0;
         }
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
         if (error.message === 'timeout of 5000ms exceeded' || error.message === 'socket hang up' || error.code === 'EAI_AGAIN') {
-            return 0;
+            return opt.errorReturnValue;
         }
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
-            decodeURIComponent(url) === url && retryCounter < 1) {
-            retryCounter++;
+            decodeURIComponent(url) === url && opt.retryCounter < 1) {
+            opt.retryCounter++;
             let fileName = url.replace(/\/$/, '').split('/').pop();
             url = url.replace(fileName, encodeURIComponent(fileName));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter, ignoreError);
+            return await getFileSize(url, opt);
         }
-        if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
-            retryWithSleepCounter++;
+        if (checkNeedRetryWithSleep(error, opt.retryWithSleepCounter)) {
+            opt.retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 1000)));
-            return await getFileSize(url, retryCounter, retryWithSleepCounter, ignoreError);
+            return await getFileSize(url, opt);
         }
-        if (!ignoreError) {
+        if (!opt.ignoreError) {
             saveErrorIfNeeded(error);
         }
-        return 0;
+        return opt.errorReturnValue;
     }
 }
 
