@@ -231,19 +231,20 @@ export async function getSeriesOfDay(dayNumber, types, imdbScores, malScores, sk
             $or: [
                 {
                     status: "running",
-                    $or: [
-                        {
-                            'nextEpisode.releaseStamp': {
-                                $gte: lastWeek.toISOString(),
-                                $lte: twoWeekInFuture.toISOString()
-                            }
-                        },
-                        {update_date: {$gte: lastWeek}}
-                    ]
+                    // $or: [
+                    // {
+                    'nextEpisode.releaseStamp': {
+                        $gte: lastWeek.toISOString(),
+                        $lte: twoWeekInFuture.toISOString()
+                    }
+                    // },
+                    // {update_date: {$gte: lastWeek}}
+                    // ]
                 },
                 {
                     status: {$ne: "running"},
                     update_date: {$gte: lastWeek},
+                    "latestData.updateReason": {$nin: ["season", "season-torrent"]},
                     endYear: year,
                 }
             ],
