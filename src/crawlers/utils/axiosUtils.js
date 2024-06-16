@@ -30,12 +30,15 @@ export async function getFileSize(url, opt = {}) {
             decodeURIComponent(url) === url && opt.retryCounter < 1) {
             opt.retryCounter++;
             let fileName = url.replace(/\/$/, '').split('/').pop();
+            let prevUrl = url;
             url = url.replace(fileName, encodeURIComponent(fileName));
-            return await getFileSize(url, opt);
+            if (prevUrl !== url) {
+                return await getFileSize(url, opt);
+            }
         }
         if (checkNeedRetryWithSleep(error, opt.retryWithSleepCounter)) {
             opt.retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 1000)));
+            await new Promise((resolve => setTimeout(resolve, 2000)));
             return await getFileSize(url, opt);
         }
         if (!opt.ignoreError) {
