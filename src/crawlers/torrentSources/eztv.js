@@ -163,7 +163,7 @@ function fixLinkInfo(info) {
         .replace(/^\[[a-zA-Z\-\s\d]+]\s?/i, '')
         .replace(/\s?\[[a-zA-Z\s\d]+](?=\.)/i, '')
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
-        .replace(/(?<!part)\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
+        .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
         .replace(/\.\s?(mkv|mp4)/g, "")
         .trim();
