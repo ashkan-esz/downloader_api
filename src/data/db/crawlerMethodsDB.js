@@ -11,6 +11,8 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 {title: titleObj.title},
                 {title: titleObj.title.replace('uu', 'u')},
                 {title: titleObj.title.replace('u', 'uu')},
+                {title: titleObj.title.replace(' o', ' wo')},
+                {title: titleObj.title.replace(' wo', ' o')},
                 {title: {$in: titleObj.alternateTitles}},
                 {title: {$in: titleObj.titleSynonyms}},
                 {alternateTitles: titleObj.title},

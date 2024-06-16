@@ -98,6 +98,7 @@ function extractLinks($) {
                 let title = getTitle(info);
                 let se = fixSeasonEpisode(info, false);
                 let sizeText = $($($a[i]).parent().parent().next().children()[0])?.text() || "";
+                sizeText = sizeText.split("|").find(item => item.toLowerCase().includes("size"))?.trim() || sizeText;
                 let size = getFixedFileSize($, sizeText);
 
                 if (size > 10 * 1024) {
