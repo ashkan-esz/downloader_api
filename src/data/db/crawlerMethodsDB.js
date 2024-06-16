@@ -44,7 +44,7 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 .split('')
                 .map(item => {
                     if (item === ' ') {
-                        item = ':?-?\\s?';
+                        item = ':?-?\\.?\\s?';
                     } else {
                         item = item + '\\\'?';
                     }

@@ -1,6 +1,6 @@
 import config from "../../config/index.js";
 import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks} from "../utils/utils.js";
+import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks, getDecodedLink} from "../utils/utils.js";
 import {getTitleAndYear} from "../movieTitle.js";
 import {
     purgeSizeText,
@@ -56,6 +56,8 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                     year = fixYear($2);
                 }
                 if (type.includes('movie') && downloadLinks.length > 0 && (
+                    getDecodedLink(downloadLinks[0].link).match(/\s+-\s+\d+\s+\[(480|720|1080|2160)p]/i) || // - 12 [480p]
+                    downloadLinks[0].link.match(/\.e\d+\.(480|720|1080|2160)p\./i) ||
                     downloadLinks[0].link.match(/s\d+e\d+/gi) ||
                     downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p?\./i) ||
                     downloadLinks[0].link.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||
@@ -115,6 +117,8 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 year = fixYear($2);
             }
             if (type.includes('movie') && downloadLinks.length > 0 && (
+                getDecodedLink(downloadLinks[0].link).match(/\s+-\s+\d+\s+\[(480|720|1080|2160)p]/i) || // - 12 [480p]
+                downloadLinks[0].link.match(/\.e\d+\.(480|720|1080|2160)p\./i) ||
                 downloadLinks[0].link.match(/s\d+e\d+/gi) ||
                 downloadLinks[0].link.match(/\.E\d\d\d?\..*\d\d\d\d?p?\./i) ||
                 downloadLinks[0].link.match(/(?<=\.)(Special|OVA|ONA|OAD|NCED|NCOP|Redial)\.\d\d\d?\.\d\d\d\d?p?/i) ||

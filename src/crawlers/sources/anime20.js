@@ -35,6 +35,9 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             if (type.includes('movie') && url.includes('/series/')) {
                 type = type.replace('movie', 'serial');
             }
+            if (url.includes("/anime/") && !type.includes("anime")) {
+                type = "anime_" + type;
+            }
             if (config.nodeEnv === 'dev') {
                 console.log(`anime20/${type}/${pageNumber}/${title}  ========>  `);
             }

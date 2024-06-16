@@ -137,7 +137,7 @@ function extractLinks($, sourceUrl) {
                     localLink: "",
                 }
 
-                let findResult = titles.find(item => item.title === title);
+                let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''));
                 if (findResult) {
                     findResult.links.push(link);
                 } else {

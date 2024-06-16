@@ -476,11 +476,19 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage, isJobFunction
     const updatePromiseQueue = new PQueue({concurrency: 25});
     const insertPromiseQueue = new PQueue({concurrency: 5});
 
+    let intervalId = null;
+    let page = 1;
+    if (isJobFunction) {
+        intervalId = setInterval(() => {
+            updateCronJobsStatus('updateJikanData', `Mode: ${mode}, page: ${page}/${numberOfPage},
+            insert remained: ${insertPromiseQueue.size + insertPromiseQueue.pending}(-${insertPromiseQueue.pending}),
+            update remained: ${updatePromiseQueue.size + updatePromiseQueue.pending}(-${updatePromiseQueue.pending})`.replace(/([\n\t]+)|\s+/g, " "));
+        }, 1000);
+    }
+
     let rank = 0;
     for (let k = 1; k <= numberOfPage; k++) {
-        if (isJobFunction) {
-            updateCronJobsStatus('updateJikanData', `${mode}: page: ${k}/${numberOfPage}`);
-        }
+        page = k;
         let url = '';
         if (mode === 'comingSoon') {
             url = `https://api.jikan.moe/v4/top/anime?filter=upcoming&page=${k}`;
@@ -498,6 +506,14 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage, isJobFunction
         }
 
         let comingSoon_topAiring_titles = apiData.data;
+        let uniqueTitles = [];
+        for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
+            if (!uniqueTitles.find(t => t.mal_id === comingSoon_topAiring_titles[i].mal_id)) {
+                uniqueTitles.push(comingSoon_topAiring_titles[i]);
+            }
+        }
+        comingSoon_topAiring_titles = uniqueTitles;
+
         for (let i = 0; i < comingSoon_topAiring_titles.length; i++) {
             rank++;
             let titleDataFromDB = await crawlerMethodsDB.searchOnMovieCollectionDB({"apiIds.jikanID": comingSoon_topAiring_titles[i].mal_id}, {
@@ -525,6 +541,9 @@ async function add_comingSoon_topAiring_Titles(mode, numberOfPage, isJobFunction
 
     await updatePromiseQueue.onIdle();
     await insertPromiseQueue.onIdle();
+    if (intervalId) {
+        clearInterval(intervalId);
+    }
 }
 
 async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData, mode, rank) {
@@ -572,7 +591,7 @@ async function update_comingSoon_topAiring_Title(titleDataFromDB, semiJikanData,
                 }
             }
 
-            if (titleDataFromDB.apiIds.jikanID !== jikanApiFields.jikanID){
+            if (titleDataFromDB.apiIds.jikanID !== jikanApiFields.jikanID) {
                 titleDataFromDB.apiIds.jikanID = jikanApiFields.jikanID;
                 updateFields.apiIds = titleDataFromDB.apiIds;
             }
@@ -656,7 +675,7 @@ async function insert_comingSoon_topAiring_Title(semiJikanData, mode, rank) {
             if (config.ignoreHentai && jikanApiFields.updateFields.rated === 'Rx - Hentai') {
                 return 'ignore hentai';
             }
-            if (titleModel.apiIds.jikanID !== jikanApiFields.jikanID){
+            if (titleModel.apiIds.jikanID !== jikanApiFields.jikanID) {
                 titleModel.apiIds.jikanID = jikanApiFields.jikanID;
             }
         }
