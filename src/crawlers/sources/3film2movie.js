@@ -16,6 +16,7 @@ import {getWatchOnlineLinksModel} from "../../models/watchOnlineLinks.js";
 import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
+import * as axiosUtils from "../utils/axiosUtils.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "film2movie",
@@ -124,6 +125,21 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         subtitles: getSubtitles($2, type, pageLink),
                         cookies
                     };
+
+                    // check trailers are available
+                    let goodTrailers = [];
+                    for (let i = 0; i < sourceData.trailers.length; i++) {
+                        let fileSize = await axiosUtils.getFileSize(sourceData.trailers[i].url, {
+                            ignoreError: true,
+                            timeout: 20 * 1000,
+                            errorReturnValue: -1,
+                        });
+                        if (fileSize !== -1) {
+                            goodTrailers.push(sourceData.trailers[i]);
+                        }
+                    }
+                    sourceData.trailers = goodTrailers;
+
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
                 }
             }
