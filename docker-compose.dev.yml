@@ -216,7 +216,7 @@ services:
     restart: always
 
   postgresDb:
-    image: postgres:16.0-alpine3.18
+    image: postgres:16.3-bookworm
     env_file: ./env/.env
     network_mode: host
     container_name: downloader_postgres
