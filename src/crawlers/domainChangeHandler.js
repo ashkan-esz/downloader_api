@@ -84,7 +84,9 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                         continue;
                     }
                 } else {
-                    await saveErrorIfNeeded(error);
+                    if (error.code !== 'ETIMEDOUT') {
+                        await saveErrorIfNeeded(error);
+                    }
                     sourcesUrls[i].checked = true;
                     sourcesUrls[i].errorMessage = error.message || '';
                     continue;

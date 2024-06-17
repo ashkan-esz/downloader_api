@@ -325,7 +325,11 @@ async function handle_OMDB_ApiCall(url) {
                         const warningMessages = getCrawlerWarningMessages('');
                         await saveCrawlerWarning(warningMessages.apiCalls.omdb.eaiError);
                         continue;
-                    } else if (!error.response || error.response.status !== 500) {
+                    } else if (error.response?.status !== 500 &&
+                        error.response?.status !== 503 &&
+                        error.response?.status !== 520 &&
+                        error.response?.status !== 521 &&
+                        error.response?.status !== 524) {
                         saveError(error);
                     }
                     return null;
@@ -341,7 +345,11 @@ async function handle_OMDB_ApiCall(url) {
         }
         return response.data;
     } catch (error) {
-        if (!error.response || error.response.status !== 500) {
+        if (error.response?.status !== 500 &&
+            error.response?.status !== 503 &&
+            error.response?.status !== 520 &&
+            error.response?.status !== 521 &&
+            error.response?.status !== 524) {
             await saveError(error);
         }
         return null;

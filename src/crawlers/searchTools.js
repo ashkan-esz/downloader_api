@@ -41,6 +41,7 @@ axiosRetry(axios, {
         (error.response &&
             error.response.status !== 500 &&
             error.response.status !== 503 &&
+            error.response.status !== 521 &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
             error.response.status !== 403 &&

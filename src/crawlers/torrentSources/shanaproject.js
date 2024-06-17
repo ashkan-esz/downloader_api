@@ -106,6 +106,11 @@ function extractLinks($, sourceUrl) {
                 let sizeText = $($($a[i]).prev())?.text() || "";
                 let size = getFixedFileSize($, sizeText);
 
+                if (size > 10 * 1024) {
+                    //size > 10gb
+                    continue;
+                }
+
                 if (se.episode === 0) {
                     let temp = $($($a[i]).prev().prev().prev().prev()).text();
                     if (!isNaN(temp)) {

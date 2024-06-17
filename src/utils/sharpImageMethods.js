@@ -5,6 +5,7 @@ import {updateImageOperationsLimit} from "../crawlers/status/crawlerStatus.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../crawlers/status/crawlerWarnings.js";
 import {downloadImage} from "../crawlers/utils/axiosUtils.js";
+import * as Sentry from "@sentry/node";
 
 export const imageOperationsConcurrency = 100;
 export const saveWarningTimeout = 60 * 1000; //60s
@@ -71,7 +72,9 @@ export async function compressImage(responseData, activeSize = 1024) {
         return dataBuffer;
     } catch (error) {
         decreaseImageOperationNumber();
-        saveError(error);
+        if (error.message !== 'Input buffer contains unsupported image format' && error.message !== "VipsJpeg: Premature end of input file") {
+            saveError(error);
+        }
         throw error;
     }
 }
@@ -121,7 +124,11 @@ export async function getImageThumbnail(inputImage, downloadFile = false) {
         };
     } catch (error) {
         decreaseImageOperationNumber();
-        if (error.message !== 'Input buffer contains unsupported image format') {
+        //todo : temporal, remove later
+        if (downloadFile && error.message === "VipsJpeg: Premature end of input file") {
+            Sentry.captureMessage("VipsJpeg: Premature end of input file :: " + inputImage);
+        }
+        if (error.message !== 'Input buffer contains unsupported image format' && error.message !== "VipsJpeg: Premature end of input file") {
             saveError(error);
         }
         return null;
