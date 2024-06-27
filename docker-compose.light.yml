@@ -105,6 +105,24 @@ services:
           memory: 10M
     restart: unless-stopped
 
+  website:
+    image: ashkanaz2828/downloader_website
+    network_mode: host
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_BASE_URL=https://api.movietracker.mom
+    #    ports:
+    #      - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 80M
+        reservations:
+          memory: 10M
+    restart: unless-stopped
+
   nginx:
     network_mode: host
     build: ./docker/nginx
@@ -137,13 +155,13 @@ services:
       LOG_PANIC_TRACE: 'true'
       DOMAIN: movietracker.mom
       MALLOC_ARENA_MAX: 2
-      BLURHASH_CONSUMER_COUNT: 4
+      BLURHASH_CONSUMER_COUNT: 2
     #    ports:
     #      - "3002:3002"
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.4"
           memory: 400M
         reservations:
           memory: 15M
