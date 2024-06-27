@@ -10,7 +10,7 @@ import {changePageLinkStateFromCrawlerStatus, checkForceStopCrawler} from "../..
 
 const _maxStaffOrCharacterSize = 150;
 const _pqConcurrency = 8;
-const _maxCastConcurrency = 3;
+const _maxCastConcurrency = 1;
 let _castConcurrency = 0;
 
 export async function addStaffAndCharacters(pageLink, movieId, allApiData, castUpdateDate, extraConfigs = null) {
@@ -368,7 +368,7 @@ async function handleCredits(credits) {
             }
         }
 
-        const promiseQueue = new PQueue({concurrency: 60});
+        const promiseQueue = new PQueue({concurrency: 30});
         for (let j = 0; j < result.length; j++) {
             promiseQueue.add(() => staffAndCharactersDbMethods.insertOrUpdateCredit(result[j].movieId, result[j].staffId, result[j].characterId, result[j].actorPositions, result[j].characterRole));
         }

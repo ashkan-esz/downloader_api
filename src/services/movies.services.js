@@ -767,8 +767,8 @@ export async function getMoviesDataForBot(botId, apiName, types, dataLevel, imdb
         moviesData = await moviesDbMethods.getUpdateMoviesWithDate(botData.lastApiCall_updates, types, imdbScores, malScores, 0, 24, projection, {useOrConditionForScores: true});
     } else if (apiName === 'newsandupdates') {
         let result = await Promise.allSettled([
-            moviesDbMethods.getNewMoviesWithDate(botData.lastApiCall_news, types, imdbScores, malScores, 0, 12, projection),
-            moviesDbMethods.getUpdateMoviesWithDate(botData.lastApiCall_updates, types, imdbScores, malScores, 0, 12, projection),
+            moviesDbMethods.getNewMoviesWithDate(botData.lastApiCall_news, types, imdbScores, malScores, 0, 12, projection, {useOrConditionForScores: true}),
+            moviesDbMethods.getUpdateMoviesWithDate(botData.lastApiCall_updates, types, imdbScores, malScores, 0, 12, projection, {useOrConditionForScores: true}),
         ]);
         moviesData = result[0].value;
         moviesData2 = result[1].value;
