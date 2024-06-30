@@ -155,7 +155,7 @@ services:
       LOG_PANIC_TRACE: 'true'
       DOMAIN: movietracker.mom
       MALLOC_ARENA_MAX: 2
-      BLURHASH_CONSUMER_COUNT: 2
+      BLURHASH_CONSUMER_COUNT: 1
     #    ports:
     #      - "3002:3002"
     deploy:

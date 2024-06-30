@@ -102,7 +102,7 @@ const cronJobsStatus = {
         startDate: 0,
         state: '',
         value: '',
-        description: 'Every day at 02:00',
+        description: 'Every 8 hours',
         startFunc: () => backupDbJobFunc(true),
     },
     restoreBackupDb: {
