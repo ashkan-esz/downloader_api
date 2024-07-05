@@ -20,6 +20,19 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
             ],
             type: {$in: searchTypes}
         };
+
+        try {
+            let temp = titleObj.title
+                .replace(/\s/g, '\\s?')
+                .replace(/\*/g, '\\*')
+                .replace(/\\s\?$/, '');
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp + '$')
+            });
+        } catch (error2) {
+            saveError(error2);
+        }
+
         if (year) {
             searchObj.year = year;
             try {

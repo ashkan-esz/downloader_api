@@ -287,7 +287,7 @@ export function getSeasonEpisode(input, isLinkInput = false) {
                     episode = se[1].toLowerCase().replace('e', '').trim();
                 }
             } else {
-                const episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[]/gi);
+                const episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[](?!(\d*(mb|gb)))/gi);
                 if (episodeMatch && episodeMatch.length === 1) {
                     season = '1';
                     episode = episodeMatch[0].match(/\d+/)[0];

@@ -119,7 +119,7 @@ export function mergeTitleLinks(titles) {
 
     for (let i = 0; i < titles.length; i++) {
         let findResult = uniqueTitles.find(item =>
-            item.title === titles[i].title ||
+            item.title.replace(/\s+/g, '') === titles[i].title.replace(/\s+/g, '') ||
             item.title.split(/\(/)[0].trim() === titles[i].title.split(/\(/)[0].trim() ||
             item.title.split(_japaneseCharactersRegex)[0].trim() === titles[i].title.split(_japaneseCharactersRegex)[0].trim()
         );

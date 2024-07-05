@@ -26,9 +26,10 @@ export const sourceConfig = Object.freeze({
 });
 
 export default async function yekmovie({movie_url, serial_url}, pageCount, extraConfigs) {
-    let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title, extraConfigs);
+    // let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title, extraConfigs);
     let p2 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
-    return [p1, p2];
+    // return [p1, p2];
+    return [p2];
 }
 
 async function search_title(link, pageNumber, $, url, extraConfigs) {
