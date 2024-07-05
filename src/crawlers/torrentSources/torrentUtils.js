@@ -5,6 +5,7 @@ import PQueue from "p-queue";
 import {checkForceStopCrawler, updatePageNumberCrawlerStatus} from "../status/crawlerStatus.js";
 import {pauseCrawler} from "../status/crawlerController.js";
 
+export const _japaneseCharactersRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/g;
 
 export async function handleCrawledTitles(titles, pageNumber, pageCount, saveCrawlDataFunc, sourceConfig, extraConfigs) {
     const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
@@ -97,8 +98,31 @@ export function getFixedFileSize($, link) {
 
 export function mergeTitleLinks(titles) {
     let uniqueTitles = [];
+    titles = titles.sort((a, b) => {
+        let w1 = 0;
+        let w2 = 0;
+        if (a.title.match(/\(/)) {
+            w1++;
+        }
+        if (b.title.match(/\(/)) {
+            w2++;
+        }
+        if (a.title.match(_japaneseCharactersRegex)) {
+            w1++;
+        }
+        if (b.title.match(_japaneseCharactersRegex)) {
+            w2++;
+        }
+
+        return w1 - w2;
+    });
+
     for (let i = 0; i < titles.length; i++) {
-        let findResult = uniqueTitles.find(item => item.title === titles[i].title);
+        let findResult = uniqueTitles.find(item =>
+            item.title === titles[i].title ||
+            item.title.split(/\(/)[0].trim() === titles[i].title.split(/\(/)[0].trim() ||
+            item.title.split(_japaneseCharactersRegex)[0].trim() === titles[i].title.split(_japaneseCharactersRegex)[0].trim()
+        );
         if (findResult) {
             findResult.links = [...findResult.links, ...titles[i].links];
         } else {
@@ -106,7 +130,50 @@ export function mergeTitleLinks(titles) {
         }
     }
 
-    uniqueTitles = uniqueTitles.filter(item => item.links.length > 0);
-
+    uniqueTitles = uniqueTitles.filter(item => item.links.length > 0 && !checkInvalidTitle(item.title));
+    uniqueTitles = dropOutlierEpisodeNumber(uniqueTitles);
     return uniqueTitles;
+}
+
+function checkInvalidTitle(title) {
+    return title.includes(" scripts fonts for ");
+}
+
+function dropOutlierEpisodeNumber(titles) {
+    for (let i = 0; i < titles.length; i++) {
+        let seasons = [];
+        for (let j = 0; j < titles[i].links.length; j++) {
+            let s = titles[i].links[j].season;
+            let e = titles[i].links[j].episode;
+            let season = seasons.find(item => item.season === s);
+            if (season) {
+                if (!season.episodes.includes(e)) {
+                    season.episodes.push(e);
+                }
+            } else {
+                seasons.push({
+                    season: s,
+                    episodes: [e],
+                })
+            }
+        }
+
+        for (let j = 0; j < seasons.length; j++) {
+            seasons[j].episodes = seasons[j].episodes.sort((a, b) => a - b);
+            let episodes = seasons[j].episodes[0] !== undefined ? [seasons[j].episodes[0]] : [];
+            for (let k = 1; k < seasons[j].episodes.length; k++) {
+                if (seasons[j].episodes[k] - seasons[j].episodes[k - 1] < 6) {
+                    episodes.push(seasons[j].episodes[k]);
+                }
+            }
+            seasons[j].episodes = episodes;
+        }
+
+        titles[i].links = titles[i].links.filter(l => {
+            let season = seasons.find(item => item.season === l.season);
+            return season && season.episodes.includes(l.episode);
+        });
+    }
+
+    return titles;
 }

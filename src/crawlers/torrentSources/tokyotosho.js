@@ -191,7 +191,8 @@ function getTitle(text) {
     // console.log(splitArr);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
     if (index !== -1) {
-        let temp = replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
+        let temp = splitArr.slice(0, index).join(" ").split("(")[0];
+        temp = replaceSpecialCharacters(temp);
         return removeSeasonText(temp);
     }
     let temp = replaceSpecialCharacters(text);
