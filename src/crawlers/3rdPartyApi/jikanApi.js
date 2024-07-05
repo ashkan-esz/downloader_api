@@ -23,7 +23,7 @@ import {updateCronJobsStatus} from "../../utils/cronJobsStatus.js";
 
 const rateLimitConfig = {
     minuteLimit: 60,
-    secondLimit: 3,
+    secondLimit: 1,
     minute: new Date().getMinutes(),
     minute_call: 0,
     second: new Date().getSeconds(),

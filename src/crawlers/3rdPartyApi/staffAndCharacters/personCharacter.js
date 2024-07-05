@@ -10,7 +10,7 @@ import {changePageLinkStateFromCrawlerStatus, checkForceStopCrawler} from "../..
 
 const _maxStaffOrCharacterSize = 150;
 const _pqConcurrency = 8;
-const _maxCastConcurrency = 1;
+const _maxCastConcurrency = 2;
 let _castConcurrency = 0;
 
 export async function addStaffAndCharacters(pageLink, movieId, allApiData, castUpdateDate, extraConfigs = null) {
