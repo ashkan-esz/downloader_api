@@ -91,6 +91,7 @@ async function saveCrawlData(titleData, extraConfigs) {
         poster: "",
         trailers: [],
         subtitles: [],
+        rating: null,
         cookies: [],
     };
     await save(titleData.title, "serial", titleData.year, sourceData, 1, extraConfigs);

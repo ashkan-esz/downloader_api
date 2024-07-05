@@ -77,6 +77,7 @@ async function saveCrawlData(titleData, extraConfigs) {
         poster: "",
         trailers: [],
         subtitles: [],
+        rating: null,
         cookies: [],
     };
     await save(titleData.title, "anime_serial", "", sourceData, 1, extraConfigs);

@@ -99,6 +99,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                         trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: [],
+                        rating: getRatings($2),
                         cookies
                     };
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
@@ -148,6 +149,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                 trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                 subtitles: [],
+                rating: getRatings($2),
                 cookies
             };
             await save(title, type, year, sourceData, pageNumber, extraConfigs);
@@ -191,6 +193,36 @@ function fixTitleAndYear(title, year, type, page_link, downloadLinks, $2) {
     } catch (error) {
         saveError(error);
         return {title, year: year || ''};
+    }
+}
+
+function getRatings($) {
+    let ratings = {
+        imdb: 0,
+        rottenTomatoes: 0,
+        metacritic: 0,
+        myAnimeList: 0
+    }
+
+    try {
+        let divs = $('div');
+        for (let i = 0; i < divs.length; i++) {
+            if ($(divs[i]).hasClass('imdb_holder_single')) {
+                let imdb = $($($(divs[i]).children()[0]).children()[0]).text();
+                if (imdb) {
+                    imdb = imdb.split("/")[0];
+                    if (!isNaN(imdb)){
+                        ratings.imdb = Number(imdb);
+                    }
+                }
+                break;
+            }
+        }
+
+        return ratings;
+    } catch (error) {
+        saveError(error);
+        return ratings;
     }
 }
 

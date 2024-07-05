@@ -39,7 +39,8 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             persianSummary,
             poster, trailers,
             subtitles,
-            cookies
+            rating,
+            cookies,
         } = sourceData;
 
         let badLinks = [];
@@ -83,7 +84,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
-                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.sourceName, pageLink, extraConfigs);
+                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.sourceName, pageLink, rating, extraConfigs);
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
@@ -135,7 +136,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.sourceName, pageLink, extraConfigs);
+        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.sourceName, pageLink, rating, extraConfigs);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }

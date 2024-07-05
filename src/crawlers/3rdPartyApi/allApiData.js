@@ -15,10 +15,10 @@ import {
 } from "../status/crawlerStatus.js";
 import {getKitsuApiData, getKitsuApiFields} from "./kitsuApi.js";
 import {getAmvApiData, getAmvApiFields} from "./amv.js";
-import {saveErrorIfNeeded} from "../../error/saveError.js";
+import {saveError, saveErrorIfNeeded} from "../../error/saveError.js";
 
 
-export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, torrentLinks, sourceName, pageLink, extraConfigs) {
+export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, torrentLinks, sourceName, pageLink, siteRating, extraConfigs) {
     titleModel.apiUpdateDate = new Date();
 
     if (titleModel.posters.length > 0) {
@@ -299,6 +299,8 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
         }
     }
 
+    handleSiteRating(titleModel.rating, siteRating);
+
     return {
         titleModel,
         allApiData: {
@@ -309,7 +311,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
     };
 }
 
-export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, torrentLinks, siteType, sitePoster, sourceName, pageLink, extraConfigs) {
+export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, torrentLinks, siteType, sitePoster, sourceName, pageLink, siteRating, extraConfigs) {
     let now = new Date();
     let apiUpdateDate = new Date(db_data.apiUpdateDate);
     if (extraConfigs?.apiUpdateState === 'ignore') {
@@ -624,6 +626,11 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
         }
     }
 
+    let ratingUpdated = handleSiteRating(db_data.rating, siteRating);
+    if (ratingUpdated) {
+        updateFields.rating = db_data.rating;
+    }
+
     return {
         updateFields,
         allApiData: {
@@ -832,4 +839,34 @@ async function updateSeasonsField(db_data, sourceName, site_links, siteWatchOnli
         fields.nextEpisode = db_data.nextEpisode;
     }
     return fields;
+}
+
+function handleSiteRating(rating, siteRating) {
+    try {
+        if (!siteRating) {
+            return false;
+        }
+
+        let update = false;
+        if (rating.imdb === 0 && siteRating.imdb) {
+            rating.imdb = siteRating.imdb;
+            update = true;
+        }
+        if (rating.rottenTomatoes === 0 && siteRating.rottenTomatoes) {
+            rating.rottenTomatoes = siteRating.rottenTomatoes;
+            update = true;
+        }
+        if (rating.metacritic === 0 && siteRating.metacritic) {
+            rating.metacritic = siteRating.metacritic;
+            update = true;
+        }
+        if (rating.myAnimeList === 0 && siteRating.myAnimeList) {
+            rating.myAnimeList = siteRating.myAnimeList;
+            update = true;
+        }
+        return update;
+    } catch (error) {
+        saveError(error);
+        return false;
+    }
 }

@@ -68,6 +68,7 @@ async function search_title(link, i, $, url, extraConfigs) {
                         poster: getPoster($2),
                         trailers: [],
                         subtitles: getSubtitles($2, type, pageLink),
+                        rating: null,
                         cookies
                     };
                     await save(title, type, year, sourceData, i, extraConfigs);

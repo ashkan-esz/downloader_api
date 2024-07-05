@@ -109,6 +109,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                         trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                         subtitles: [],
+                        rating: null,
                         cookies
                     };
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
@@ -172,6 +173,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
                 trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
                 subtitles: [],
+                rating: null,
                 cookies
             };
             await save(title, type, year, sourceData, pageNumber, extraConfigs);
