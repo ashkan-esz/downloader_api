@@ -154,7 +154,8 @@ function checkTitle(title, type, allTitles) {
         apiTitle_simple.replace(/the|tv|precent|\s+/g, '').replace(/volume \d/, (res) => res.replace('volume', 'vol')).trim() ||
         title === apiTitleEnglish_simple.replace(/the/gi, '').replace(/\s\s+/g, ' ') ||
         title === apiTitleJapanese ||
-        titleSynonyms.includes(title)
+        titleSynonyms.includes(title) ||
+        titleSynonyms.map(item => item.replace(/\s+/g, '')).includes(title.replace(/\s+/g, ''))
     );
 }
 
@@ -169,6 +170,7 @@ export function getJikanApiFields(data) {
             endYear: data.aired.to ? data.aired.to.split('T')[0] || '' : '',
             myAnimeListScore: Number(data.score) || 0,
             youtubeTrailer: data.trailer.url,
+            jikanPoster: getImageUrl(data),
             updateFields: {
                 rawTitle: data.titleObj.rawTitle.replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 premiered: data.aired.from ? data.aired.from.split('T')[0] : '',

@@ -84,26 +84,16 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
             titleModel = {...titleModel, ...tvmazeApiFields.updateFields};
             updateSpecificFields(titleModel, titleModel, tvmazeApiFields, 'tvmaze');
 
-            if (!titleModel.type.includes("anime") && tvmazeApiFields.posters.length > 0 && titleModel.posters.length === 0) {
-                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingTvmazePosterToS3);
+            // add poster, torrent first released
+            if (tvmazeApiFields.posters.length > 0 && titleModel.posters.length === 0) {
                 let imageUrl = tvmazeApiFields.posters[1]?.resolutions?.original?.url ||
                     tvmazeApiFields.posters[0].resolutions.original?.url ||
                     tvmazeApiFields.posters[1]?.resolutions?.medium?.url ||
                     tvmazeApiFields.posters[0].resolutions.medium?.url;
+
                 if (imageUrl) {
-                    let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, imageUrl, false, false);
-                    if (s3poster) {
-                        titleModel.poster_s3 = s3poster;
-                        titleModel.posters.push({
-                            url: s3poster.url,
-                            info: 's3Poster',
-                            size: s3poster.size,
-                            vpnStatus: s3poster.vpnStatus,
-                            thumbnail: s3poster.thumbnail,
-                            blurHash: s3poster.blurHash,
-                        });
-                        titleModel.posters = sortPosters(titleModel.posters);
-                    }
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingTvmazePosterToS3);
+                    await uploadPosterAndAddToData(titleModel, imageUrl, false, false);
                 }
             }
             if (tvmazeApiFields.backgroundPosters.length > 0 && titleModel.poster_wide_s3 === null) {
@@ -151,6 +141,11 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
         if (jikanApiData) {
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
+                if (jikanApiFields.jikanPoster && titleModel.poster_s3 === null) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingJikanPosterToS3);
+                    await uploadPosterAndAddToData(titleModel, jikanApiFields.jikanPoster, false, false);
+                }
+
                 if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(titleModel.trailer_s3, titleModel.trailers)) {
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingYoutubeTrailerToS3);
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, titleModel, jikanApiFields.youtubeTrailer, {});
@@ -213,19 +208,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
 
             if (kitsuApiFields.kitsuPoster && titleModel.poster_s3 === null) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingKitsuPosterToS3);
-                let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, kitsuApiFields.kitsuPoster);
-                if (s3poster) {
-                    titleModel.poster_s3 = s3poster;
-                    titleModel.posters.push({
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                        vpnStatus: s3poster.vpnStatus,
-                        thumbnail: s3poster.thumbnail,
-                        blurHash: s3poster.blurHash,
-                    });
-                    titleModel.posters = sortPosters(titleModel.posters);
-                }
+                await uploadPosterAndAddToData(titleModel, kitsuApiFields.kitsuPoster, false, false);
             }
 
             if (kitsuApiFields.kitsuPosterCover && titleModel.poster_wide_s3 === null) {
@@ -274,19 +257,7 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
 
             if (amvApiFields.amvPoster && titleModel.poster_s3 === null) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingAmvPosterToS3);
-                let s3poster = await uploadTitlePosterToS3(titleModel.title, titleModel.type, titleModel.year, amvApiFields.amvPoster);
-                if (s3poster) {
-                    titleModel.poster_s3 = s3poster;
-                    titleModel.posters.push({
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                        vpnStatus: s3poster.vpnStatus,
-                        thumbnail: s3poster.thumbnail,
-                        blurHash: s3poster.blurHash,
-                    });
-                    titleModel.posters = sortPosters(titleModel.posters);
-                }
+                await uploadPosterAndAddToData(titleModel, amvApiFields.amvPoster, false, false);
             }
 
             if (amvApiFields.amvPosterCover && titleModel.poster_wide_s3 === null) {
@@ -297,6 +268,12 @@ export async function addApiData(titleModel, site_links, siteWatchOnlineLinks, t
                 }
             }
         }
+    }
+
+    if (omdbApiFields && omdbApiFields.poster && titleModel.posters.length === 0) {
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.uploadingOmdbPosterToS3);
+        let imageUrl = omdbApiFields.poster.replace(/_SX\d+(?=\.jpg)/i, '');
+        await uploadPosterAndAddToData(titleModel, imageUrl, false, false);
     }
 
     handleSiteRating(titleModel.rating, siteRating);
@@ -368,26 +345,17 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
             updateFields = {...updateFields, ...tvmazeApiFields.updateFields};
             updateSpecificFields(db_data, updateFields, tvmazeApiFields, 'tvmaze');
 
-            if (!db_data.type.includes("anime") && tvmazeApiFields.posters.length > 0 && db_data.posters.length === 0) {
+            // add poster, torrent first released
+            if (tvmazeApiFields.posters.length > 0 && db_data.posters.length === 0) {
                 let imageUrl = tvmazeApiFields.posters[1]?.resolutions?.original?.url ||
                     tvmazeApiFields.posters[0].resolutions.original?.url ||
                     tvmazeApiFields.posters[1]?.resolutions?.medium?.url ||
                     tvmazeApiFields.posters[0].resolutions.medium?.url;
                 if (imageUrl && db_data.poster_s3 === null) {
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingTvmazePosterToS3);
-                    let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, imageUrl, true, false);
-                    if (s3poster) {
-                        db_data.poster_s3 = s3poster;
-                        updateFields.poster_s3 = s3poster;
-                        db_data.posters.push({
-                            url: s3poster.url,
-                            info: 's3Poster',
-                            size: s3poster.size,
-                            vpnStatus: s3poster.vpnStatus,
-                            thumbnail: s3poster.thumbnail,
-                            blurHash: s3poster.blurHash,
-                        });
-                        db_data.posters = sortPosters(db_data.posters);
+                    let posterAdded = await uploadPosterAndAddToData(db_data, imageUrl, true, false);
+                    if (posterAdded) {
+                        updateFields.poster_s3 = db_data.poster_s3;
                         updateFields.posters = db_data.posters;
                     }
                 }
@@ -443,6 +411,15 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
             updateFields = {...updateFields, ...temp};
             jikanApiFields = getJikanApiFields(jikanApiData);
             if (jikanApiFields) {
+                if (jikanApiFields.jikanPoster && db_data.posters.length === 0 && db_data.poster_s3 === null) {
+                    changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingJikanPosterToS3);
+                    let posterAdded = await uploadPosterAndAddToData(db_data, jikanApiFields.jikanPoster, false, false);
+                    if (posterAdded) {
+                        updateFields.poster_s3 = db_data.poster_s3;
+                        updateFields.posters = db_data.posters;
+                    }
+                }
+
                 if (jikanApiFields.youtubeTrailer && extraConfigs?.trailerUploadState !== 'ignore' && checkNeedTrailerUpload(db_data.trailer_s3, db_data.trailers)) {
                     changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingYoutubeTrailerToS3);
                     let trailerUploadFields = await uploadTitleYoutubeTrailerAndAddToTitleModel(pageLink, db_data, jikanApiFields.youtubeTrailer, {});
@@ -518,19 +495,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
                 (db_data.type.includes('anime') && await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))
             )) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingKitsuPosterToS3);
-                let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, kitsuApiFields.kitsuPoster);
-                if (s3poster) {
-                    db_data.poster_s3 = s3poster;
-                    updateFields.poster_s3 = s3poster;
-                    db_data.posters.push({
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                        vpnStatus: s3poster.vpnStatus,
-                        thumbnail: s3poster.thumbnail,
-                        blurHash: s3poster.blurHash,
-                    });
-                    db_data.posters = sortPosters(db_data.posters);
+                let posterAdded = await uploadPosterAndAddToData(db_data, kitsuApiFields.kitsuPoster, false, false);
+                if (posterAdded) {
+                    updateFields.poster_s3 = db_data.poster_s3;
                     updateFields.posters = db_data.posters;
                 }
             }
@@ -598,19 +565,9 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
                 (db_data.type.includes('anime') && await checkBetterS3Poster(db_data.posters, sourceName, sitePoster, db_data.poster_s3))
             )) {
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingAmvPosterToS3);
-                let s3poster = await uploadTitlePosterToS3(db_data.title, db_data.type, db_data.year, amvApiFields.amvPoster);
-                if (s3poster) {
-                    db_data.poster_s3 = s3poster;
-                    updateFields.poster_s3 = s3poster;
-                    db_data.posters.push({
-                        url: s3poster.url,
-                        info: 's3Poster',
-                        size: s3poster.size,
-                        vpnStatus: s3poster.vpnStatus,
-                        thumbnail: s3poster.thumbnail,
-                        blurHash: s3poster.blurHash,
-                    });
-                    db_data.posters = sortPosters(db_data.posters);
+                let posterAdded = await uploadPosterAndAddToData(db_data, amvApiFields.amvPoster, false, false);
+                if (posterAdded) {
+                    updateFields.poster_s3 = db_data.poster_s3;
                     updateFields.posters = db_data.posters;
                 }
             }
@@ -623,6 +580,16 @@ export async function apiDataUpdate(db_data, site_links, siteWatchOnlineLinks, t
                     updateFields.poster_wide_s3 = s3WidePoster;
                 }
             }
+        }
+    }
+
+    if (omdbApiFields && omdbApiFields.poster && db_data.posters.length === 0 && db_data.poster_s3 === null) {
+        let imageUrl = omdbApiFields.poster.replace(/_SX\d+(?=\.jpg)/i, '');
+        changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.uploadingOmdbPosterToS3);
+        let posterAdded = await uploadPosterAndAddToData(db_data, imageUrl, true, false);
+        if (posterAdded) {
+            updateFields.poster_s3 = db_data.poster_s3;
+            updateFields.posters = db_data.posters;
         }
     }
 
@@ -869,4 +836,22 @@ function handleSiteRating(rating, siteRating) {
         saveError(error);
         return false;
     }
+}
+
+async function uploadPosterAndAddToData(data, imageUrl, forceUpload = false, isWide = false) {
+    let s3poster = await uploadTitlePosterToS3(data.title, data.type, data.year, imageUrl, forceUpload, isWide);
+    if (s3poster) {
+        data.poster_s3 = s3poster;
+        data.posters.push({
+            url: s3poster.url,
+            info: 's3Poster',
+            size: s3poster.size,
+            vpnStatus: s3poster.vpnStatus,
+            thumbnail: s3poster.thumbnail,
+            blurHash: s3poster.blurHash,
+        });
+        data.posters = sortPosters(data.posters);
+        return true;
+    }
+    return false;
 }

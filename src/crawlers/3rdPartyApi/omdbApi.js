@@ -127,9 +127,9 @@ export function getOMDBApiFields(data, type) {
     try {
         let apiFields = {
             imdbID: data.imdbID,
-            directorsNames: data.Director.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
-            writersNames: data.Writer.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
-            actorsNames: data.Actors.split(',').filter(value => value && value.toLowerCase() !== 'n/a'),
+            directorsNames: data.Director.split(',').map(item => item.trim()).filter(value => value && value.toLowerCase() !== 'n/a'),
+            writersNames: data.Writer.split(',').map(item => item.trim()).filter(value => value && value.toLowerCase() !== 'n/a'),
+            actorsNames: data.Actors.split(',').map(item => item.trim()).filter(value => value && value.toLowerCase() !== 'n/a'),
             summary_en: getFixedSummary(data.Plot),
             genres: data.Genre ? getFixedGenres(data.Genre.split(',')) : [],
             isAnime: (data.Genre?.toLowerCase().includes('anime')),
@@ -137,6 +137,7 @@ export function getOMDBApiFields(data, type) {
             omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
             yearIgnored: data.yearIgnored,
             year: data.Year.split(/[-–]/g)[0],
+            poster: data?.Poster?.replace('N/A', '') || "",
             updateFields: {
                 rawTitle: data.Title.trim().replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')),
                 duration: data.Runtime || '0 min',
