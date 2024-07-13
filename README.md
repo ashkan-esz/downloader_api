@@ -17,11 +17,11 @@ There is lots of movie sources to download from and also they change url frequen
 <details>  
 <summary>5. now the system is up and running </summary>
 
-- Main Server: localhost:3000 || api.movieTracker.mom 
-- Chat Server: localhost:3002 || chat.movieTracker.mom
-- Torrent Server: localhost:3003 || download.movieTracker.mom
-- Admin Panel: localhost:7070 || admin.movieTracker.mom 
-- Website: localhost:9090 || movieTracker.mom 
+- Main Server: localhost:3000 || api.movieTracker.site 
+- Chat Server: localhost:3002 || chat.movieTracker.site
+- Torrent Server: localhost:3003 || download.movieTracker.site
+- Admin Panel: localhost:7070 || admin.movieTracker.site 
+- Website: localhost:9090 || movieTracker.site 
 - RemoteBrowser: localhost:5000
 - Telegram Bot 
 - Mail Service 

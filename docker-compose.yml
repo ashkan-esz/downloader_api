@@ -28,8 +28,8 @@ services:
       CRAWLER_TOTAL_MEMORY: 900
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
-      DOMAIN: movietracker.mom
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site
+      DOMAIN: movietracker.site
     #    ports:
 #      - "3000:3000"
     deploy:
@@ -110,8 +110,8 @@ services:
       - api
     env_file: ./env/telegrambot.env
     environment:
-      - API_URL=https://api.movietracker.mom
-      - WEB_URL=https://movietracker.mom
+      - API_URL=https://api.movietracker.site
+      - WEB_URL=https://movietracker.site
       - MIN_IMDB_RATE=7
       - MIN_MAL_RATE=7
       - INITIAL_SLEEP_MINUTE=2
@@ -133,8 +133,8 @@ services:
       - api
       - torrent
     environment:
-      - REACT_APP_BASE_URL=https://api.movietracker.mom
-      - REACT_APP_TORRENT_BASE_URL=https://download.movietracker.mom
+      - REACT_APP_BASE_URL=https://api.movietracker.site
+      - REACT_APP_TORRENT_BASE_URL=https://download.movietracker.site
 #    ports:
 #      - "7070:7070"
     deploy:
@@ -152,7 +152,7 @@ services:
     depends_on:
       - api
     environment:
-      - REACT_APP_BASE_URL=https://api.movietracker.mom
+      - REACT_APP_BASE_URL=https://api.movietracker.site
 #    ports:
 #      - "9090:9090"
     deploy:
@@ -192,10 +192,10 @@ services:
     env_file: env/chatservice.env
     environment:
       PORT: 3002
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://chat.movietracker.mom
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site
       LOG_PANIC_TRACE: 'true'
-      DOMAIN: movietracker.mom
+      DOMAIN: movietracker.site
       MALLOC_ARENA_MAX: 2
     #    ports:
     #      - "3002:3002"
@@ -243,8 +243,8 @@ services:
     env_file: env/torrentservice.env
     environment:
       PORT: 3003
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://admin.movietracker.mom --- http://admin.movietracker.mom --- https://download.movietracker.mom
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://admin.movietracker.site --- http://admin.movietracker.site --- https://download.movietracker.site
       LOG_PANIC_TRACE: 'true'
       DONT_CONVERT_MKV: 'true'
     volumes:
@@ -268,11 +268,11 @@ services:
     network_mode: host
     env_file: ./env/mailservice.env
     environment:
-      MAIN_SERVER_ADDRESS: api.movieTracker.mom
-      CORS_ALLOWED_ORIGINS: https://www.movietracker.mom --- https://movietracker.mom --- http://movietracker.mom --- https://admin.movietracker.mom --- http://admin.movietracker.mom  --- https://chat.movietracker.mom
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site  --- https://chat.movietracker.site
       MAILSERVER_HOST: localhost
       MAILSERVER_PORT: 587
-      MAILSERVER_USERNAME: webmaster@movietracker.mom
+      MAILSERVER_USERNAME: webmaster@movietracker.site
       LOG_PANIC_TRACE: 'true'
       INITIAL_WAIT_FOR_MAIL_SERVER_SEC: 30
     #    ports:
@@ -291,7 +291,7 @@ services:
     image: boky/postfix
 #    network_mode: host
     environment:
-      - ALLOWED_SENDER_DOMAINS=localhost movietracker.mom chat.movietracker.mom
+      - ALLOWED_SENDER_DOMAINS=localhost movietracker.site chat.movietracker.site
     ports:
       - "587:587"
       - "250:25"

@@ -2,8 +2,8 @@ openapi: "3.0.0"
 info:
   title: Downloader Api
   description: <p> A webcrawler based movie/anime data provider with rest api <br/> <br/>
-    Chat service Doc -->  https://chat.movieTracker.mom/swagger <br/> <br/>
-    Torrent service Doc -->  https://download.movieTracker.mom/swagger <br/> <br/>
+    Chat service Doc -->  https://chat.movieTracker.site/swagger <br/> <br/>
+    Torrent service Doc -->  https://download.movieTracker.site/swagger <br/> <br/>
     <p/>
   version: 1.0.0
   contact:
@@ -12,11 +12,11 @@ info:
     "name": "Apache 2.0"
     "url": 'http://www.apache.org/licenses/LICENSE-2.0.html'
 "servers":
-  - "url": 'https://api.movietracker.mom'
+  - "url": 'https://api.movietracker.site'
   - "url": 'http://localhost:3000'
 externalDocs:
   description: --- Chat Service Doc ---
-  url: https://chat.movieTracker.mom/swagger
+  url: https://chat.movieTracker.site/swagger
 
 paths:
   /users/signup:
