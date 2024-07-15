@@ -23,11 +23,25 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
 
         try {
             let temp = titleObj.title
-                .replace(/\s/g, '\\s?')
+                .split('').map(item => item ? item.trim() + '\\s?' : '\\s?').join('')
                 .replace(/\*/g, '\\*')
+                .replace(/\\s\?\\s\?/g, '\\s?')
                 .replace(/\\s\?$/, '');
+
             searchObj['$or'].push({
-                title: new RegExp('^' + temp + '$')
+                title: new RegExp('^' + temp + '$'),
+            });
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp.replace(/uu/g, 'uu?') + '$'),
+            });
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp.replace(/u+/g, 'uu?') + '$'),
+            });
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp.replace(/\\s\?o/g, '\\s?w?\\s?o') + '$'),
+            });
+            searchObj['$or'].push({
+                title: new RegExp('^' + temp.replace(/\\s\?w\\s\?o/g, '\\s?w?\\s?o') + '$'),
             });
         } catch (error2) {
             saveError(error2);
@@ -68,7 +82,7 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 .join('')
                 .replace(/\*/g, '\\*');
             searchObj['$or'].push({
-                alternateTitles: new RegExp('^' + temp2 + '!?$', 'i')
+                alternateTitles: new RegExp('^' + temp2 + '!?\\.?$', 'i')
             });
         } catch (error2) {
             saveError(error2);
