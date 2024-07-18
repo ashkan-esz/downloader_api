@@ -360,6 +360,10 @@ async function handleApiCall(url, timeoutSec = 0) {
                 let waitTime = 2000;
                 waitCounter++;
                 await new Promise((resolve => setTimeout(resolve, waitTime)));
+            } else if (error.response?.status === 504) {
+                let waitTime = 3000;
+                waitCounter += 3;
+                await new Promise((resolve => setTimeout(resolve, waitTime)));
             } else {
                 if (error.code === 'EAI_AGAIN') {
                     const warningMessages = getCrawlerWarningMessages('');
@@ -381,7 +385,8 @@ async function handleApiCall(url, timeoutSec = 0) {
                     (error.response && (
                         error.response.status !== 404 &&
                         error.response.status !== 500 &&
-                        error.response.status !== 503
+                        error.response.status !== 503 &&
+                        error.response.status !== 504
                     ))
                 ) {
                     await saveError(error);

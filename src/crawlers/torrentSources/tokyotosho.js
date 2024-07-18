@@ -40,7 +40,9 @@ export default async function tokyotosho({movie_url, serial_url}, pageCount, ext
 
         return [1]; //pageNumber
     } catch (error) {
-        saveError(error);
+        if (error.response?.status !== 521 && error.response?.status !== 522) {
+            saveError(error);
+        }
         return [1];
     }
 }
@@ -61,7 +63,9 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
 
         return [1]; //pageNumber
     } catch (error) {
-        saveError(error);
+        if (error.response?.status !== 521 && error.response?.status !== 522) {
+            saveError(error);
+        }
         return [1];
     }
 }

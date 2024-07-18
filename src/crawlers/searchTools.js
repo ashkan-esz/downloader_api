@@ -136,7 +136,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
         let downloadLinks = [];
         for (let j = 0, links_length = links.length; j < links_length; j++) {
             let link = $(links[j]).attr('href');
-            if (!link) {
+            if (!link || link.startsWith("ftp:")) {
                 continue;
             }
 

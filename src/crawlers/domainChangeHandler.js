@@ -84,7 +84,8 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                         continue;
                     }
                 } else {
-                    if (error.code !== 'ETIMEDOUT') {
+                    if (error.code !== 'ETIMEDOUT' && error.code !== 'EAI_AGAIN' &&
+                        error.response?.status !== 521 && error.response?.status !== 522) {
                         await saveErrorIfNeeded(error);
                     }
                     sourcesUrls[i].checked = true;
@@ -132,7 +133,10 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                     error2.filePath = 'domainChangeHandler';
                     await saveErrorIfNeeded(error2);
                 }
-            } else if ((error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') && retryCounter < 2) {
+            } else if (
+                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.response?.status === 521 || error.response?.status === 522) &&
+                retryCounter < 2)
+            {
                 retryCounter++;
                 await new Promise((resolve => setTimeout(resolve, 2000)));
                 return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);

@@ -272,6 +272,9 @@ async function handleApiCall(url) {
                 //too much request
                 waitCounter++;
                 await new Promise((resolve => setTimeout(resolve, 3000)));
+            } else if (error.response && error.response.status === 504) {
+                waitCounter += 3;
+                await new Promise((resolve => setTimeout(resolve, 3000)));
             } else if (error.code === 'EAI_AGAIN') {
                 const warningMessages = getCrawlerWarningMessages('');
                 await saveCrawlerWarning(warningMessages.apiCalls.amv.eaiError);

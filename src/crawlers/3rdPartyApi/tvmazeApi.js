@@ -30,6 +30,12 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
+            } else if (error.code === "EAI_AGAIN") {
+                if (waitCounter > 6) {
+                    return null;
+                }
+                await new Promise((resolve => setTimeout(resolve, 3000)));
+                waitCounter += 3;
             } else if (error.response && error.response.status === 404) {
                 if (type.includes('anime') && canReTry) {
                     let newTitle = getEditedTitle(title);
