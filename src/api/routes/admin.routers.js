@@ -259,7 +259,7 @@ router.get('/bots',
 router.put('/bots/editBot/:botId',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParamsAdmin.checkApiParams([
-        'botId_param', 'botName', 'botType', 'lastUseDate', 'lastApiCall_news', 'lastApiCall_updates', 'disabled', 'description',
+        'botId_param', 'botName', 'botToken', 'botType', 'lastUseDate', 'lastApiCall_news', 'lastApiCall_updates', 'disabled', 'description',
         'isOfficial', 'permissionToLogin', 'permissionToCrawl', 'permissionToTorrentLeech',
     ]),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
@@ -270,7 +270,7 @@ router.put('/bots/editBot/:botId',
 router.put('/bots/addBot',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParamsAdmin.checkApiParams(
-        ['botName', 'botType', 'disabled', 'description', 'isOfficial', 'permissionToLogin', 'permissionToCrawl', 'permissionToTorrentLeech']),
+        ['botName', 'botToken', 'botType', 'disabled', 'description', 'isOfficial', 'permissionToLogin', 'permissionToCrawl', 'permissionToTorrentLeech']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     mongoSanitize(),
     middlewares.auth.checkUserRolePermission(['admin', 'dev']), adminControllers.addBot);

@@ -311,6 +311,11 @@ const validations = Object.freeze({
         .isString().withMessage("botName must be String")
         .trim().toLowerCase().escape(),
 
+    botToken: body('botToken')
+        .exists().withMessage("Missed parameter botToken")
+        .isString().withMessage("botToken must be String")
+        .trim(),
+
     botType: body('botType')
         .exists().withMessage("Missed parameter botType")
         .isString().withMessage("botType must be String")

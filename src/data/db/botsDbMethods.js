@@ -10,6 +10,7 @@ export async function addBotsFromMongodbToPostgres() {
         let rr = await collection.find({}).toArray();
         rr = rr.map(b => ({
             botId: b.botId,
+            botToken: b.botToken,
             botName: b.botName,
             botType: b.botType,
             disabled: b.disabled,
@@ -91,7 +92,7 @@ export async function getBotData(botId) {
     }
 }
 
-export async function addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, userData) {
+export async function addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, botToken, userData) {
     //for admin usage
     try {
         let collection = await getCollection('bots');
@@ -100,6 +101,7 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
         daysAgo.setHours(0, 0, 0, 0);
         let newBot = {
             botId: uuidv4(),
+            botToken: botToken,
             botName: botName,
             botType: botType,
             addDate: new Date(),
@@ -125,6 +127,7 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
             await prisma.bot.create({
                 data: {
                     botId: newBot.botId,
+                    botToken: newBot.botToken,
                     botName: newBot.botName,
                     botType: newBot.botType,
                     disabled: newBot.disabled,
@@ -182,7 +185,15 @@ export async function updateBotData(botId, data, userData) {
                 botId: botId,
             },
             data: {
-                ...botData,
+                botId: botData.botId,
+                botToken: botData.botToken,
+                botName: botData.botName,
+                botType: botData.botType,
+                disabled: botData.disabled,
+                isOfficial: botData.isOfficial,
+                permissionToLogin: botData.permissionToLogin,
+                permissionToCrawl: botData.permissionToCrawl,
+                permissionToTorrentLeech: botData.permissionToTorrentLeech,
             },
         });
 

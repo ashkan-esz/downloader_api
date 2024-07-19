@@ -56,6 +56,7 @@ model User {
   userMessageRead                 UserMessageRead?
   createdNotifications            Notification[]
   receivedNotifications           Notification[]           @relation("receivedNotif")
+  bots                            UserBot[]
 }
 
 model Follow {
@@ -503,7 +504,8 @@ model NotificationEntityType {
 // ----------------------------------------------------------------
 
 model Bot {
-  botId                    String  @id @unique
+  botId                    String    @id @unique
+  botToken                 String    @unique
   botName                  String
   botType                  String
   disabled                 Boolean
@@ -511,6 +513,20 @@ model Bot {
   permissionToLogin        Boolean
   permissionToCrawl        Boolean
   permissionToTorrentLeech Boolean
+  users                    UserBot[]
+}
+
+model UserBot {
+  notification Boolean @default(true)
+  username     String
+  chatId       String
+  botId        String
+  bot          Bot     @relation(fields: [botId], references: [botId], onDelete: Cascade, onUpdate: Cascade)
+  userId       Int
+  user         User    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, botId])
+  @@index([userId, botId])
 }
 
 // ----------------------------------------------------------------

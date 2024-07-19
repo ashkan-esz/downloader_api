@@ -2745,6 +2745,9 @@ paths:
                 botName:
                   type: string
                   required: true
+                botToken:
+                  type: string
+                  required: true
                 botType:
                   type: string
                   required: true
@@ -2807,6 +2810,9 @@ paths:
               type: object
               properties:
                 botName:
+                  type: string
+                  required: true
+                botToken:
                   type: string
                   required: true
                 botType:
@@ -4870,6 +4876,8 @@ security:
       type: object
       properties:
         botName:
+          type: string
+        botToken:
           type: string
         botType:
           type: string

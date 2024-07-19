@@ -187,17 +187,17 @@ export async function getBots(req, res) {
 }
 
 export async function editBot(req, res) {
-    let {botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech} = req.body;
+    let {botName, botToken, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech} = req.body;
     let result = await adminServices.editBot(req.params.botId,
         botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates,
-        disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech,
+        disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, botToken,
         req.jwtUserData);
     return sendResponse(req, res, result);
 }
 
 export async function addBot(req, res) {
-    let {botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech} = req.body;
-    let result = await adminServices.addBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, req.jwtUserData);
+    let {botName, botToken, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech} = req.body;
+    let result = await adminServices.addBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, botToken, req.jwtUserData);
     return sendResponse(req, res, result);
 }
 
