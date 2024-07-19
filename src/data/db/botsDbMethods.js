@@ -58,7 +58,7 @@ export async function getBotData(botId) {
     }
 }
 
-export async function addNewBot(botName, botType, disabled, description, userData) {
+export async function addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, userData) {
     //for admin usage
     try {
         let collection = await getCollection('bots');
@@ -81,6 +81,10 @@ export async function addNewBot(botName, botType, disabled, description, userDat
             },
             description: description,
             lastConfigUpdateDate: 0,
+            isOfficial: isOfficial,
+            permissionToLogin: permissionToLogin,
+            permissionToCrawl: permissionToCrawl,
+            permissionToTorrentLeech: permissionToTorrentLeech,
         };
         await collection.insertOne(newBot);
         return newBot.botId;

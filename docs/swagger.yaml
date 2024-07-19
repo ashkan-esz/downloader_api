@@ -2761,6 +2761,22 @@ paths:
                 description:
                   type: string
                   required: false
+                isOfficial:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToLogin:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToCrawl:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToTorrentLeech:
+                  type: boolean
+                  default: false
+                  required: true
       parameters:
         - $ref: '#/components/parameters/botId_param'
       responses:
@@ -2803,6 +2819,22 @@ paths:
                 description:
                   type: string
                   required: false
+                isOfficial:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToLogin:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToCrawl:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToTorrentLeech:
+                  type: boolean
+                  default: false
+                  required: true
       responses:
         200:
           description: Ok
@@ -4868,3 +4900,11 @@ security:
               type: string
         description:
           type: string
+        isOfficial:
+          type: boolean
+        permissionToLogin:
+          type: boolean
+        permissionToCrawl:
+          type: boolean
+        permissionToTorrentLeech:
+          type: boolean

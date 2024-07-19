@@ -439,7 +439,7 @@ export async function getBots(botId) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editBot(botId, botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, userData) {
+export async function editBot(botId, botName, botType, lastUseDate, lastApiCall_news, lastApiCall_updates, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, userData) {
     let result = await botsDbMethods.updateBotData(botId, {
         botName,
         botType,
@@ -448,6 +448,7 @@ export async function editBot(botId, botName, botType, lastUseDate, lastApiCall_
         lastApiCall_updates,
         disabled,
         description,
+        isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech,
     }, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
@@ -457,8 +458,8 @@ export async function editBot(botId, botName, botType, lastUseDate, lastApiCall_
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function addBot(botName, botType, disabled, description, userData) {
-    let result = await botsDbMethods.addNewBot(botName, botType, disabled, description, userData);
+export async function addBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, userData) {
+    let result = await botsDbMethods.addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
