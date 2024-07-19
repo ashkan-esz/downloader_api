@@ -41,6 +41,7 @@ const _modelNames = Object.freeze([
     'userCollection', 'userCollectionMovie',
     "room", "message", "mediaFile", "userMessageRead",
     "notificationEntityType", "notification",
+    "bot",
 ]);
 
 export async function backupDbJobFunc(isManualStart = false) {

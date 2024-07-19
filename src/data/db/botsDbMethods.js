@@ -1,8 +1,41 @@
 import getCollection from "../mongoDB.js";
 import * as usersDbMethods from "./usersDbMethods.js";
 import {v4 as uuidv4} from 'uuid';
+import prisma from "../prisma.js";
 import {saveError} from "../../error/saveError.js";
 
+export async function addBotsFromMongodbToPostgres() {
+    try {
+        let collection = await getCollection('bots');
+        let rr = await collection.find({}).toArray();
+        rr = rr.map(b => ({
+            botId: b.botId,
+            botName: b.botName,
+            botType: b.botType,
+            disabled: b.disabled,
+            isOfficial: b.isOfficial,
+            permissionToLogin: b.permissionToLogin,
+            permissionToCrawl: b.permissionToCrawl,
+            permissionToTorrentLeech: b.permissionToTorrentLeech,
+        }));
+
+        await prisma.bot.deleteMany({
+            where: {
+                botId: {
+                    notIn: rr.map(m => m.botId),
+                }
+            }
+        });
+        await prisma.bot.createMany({
+            data: rr,
+            skipDuplicates: true,
+        });
+        return 'ok';
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
 
 export async function getAllBots() {
     try {
@@ -87,6 +120,24 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
             permissionToTorrentLeech: permissionToTorrentLeech,
         };
         await collection.insertOne(newBot);
+
+        try {
+            await prisma.bot.create({
+                data: {
+                    botId: newBot.botId,
+                    botName: newBot.botName,
+                    botType: newBot.botType,
+                    disabled: newBot.disabled,
+                    isOfficial: newBot.isOfficial,
+                    permissionToLogin: newBot.permissionToLogin,
+                    permissionToCrawl: newBot.permissionToCrawl,
+                    permissionToTorrentLeech: newBot.permissionToTorrentLeech,
+                },
+            });
+        } catch (error2) {
+            saveError(error2);
+        }
+
         return newBot.botId;
     } catch (error) {
         saveError(error);
@@ -125,6 +176,16 @@ export async function updateBotData(botId, data, userData) {
         if (updateResult.modifiedCount === 0) {
             return 'notfound';
         }
+
+        await prisma.bot.update({
+            where: {
+                botId: botId,
+            },
+            data: {
+                ...botData,
+            },
+        });
+
         return botData;
     } catch (error) {
         saveError(error);
@@ -158,6 +219,13 @@ export async function removeBotData(botId) {
         if (!result || result.deletedCount === 0) {
             return 'notfound';
         }
+
+        await prisma.bot.delete({
+            where: {
+                botId: botId,
+            },
+        });
+
         return 'ok';
     } catch (error) {
         saveError(error);

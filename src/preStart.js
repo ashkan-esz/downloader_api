@@ -8,6 +8,7 @@ import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
 import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
 import {addNotificationEntityTypes} from "./data/db/notificationDbMethods.js";
+import {addBotsFromMongodbToPostgres} from "./data/db/botsDbMethods.js";
 
 export let testUserCreated = false;
 
@@ -16,6 +17,10 @@ export async function preStart(force = false) {
         console.log('====> [[Adding Movies To Postgres]]');
         await addMoviesFromMongodbToPostgres();
         console.log('====> [[Adding Movies to Postgres: Done]]');
+
+        console.log('====> [[Adding Bots To Postgres]]');
+        await addBotsFromMongodbToPostgres();
+        console.log('====> [[Adding Bots to Postgres: Done]]');
 
         console.log('====> [[Restoring PostgresDb Backup]]');
         let res = await restoreBackupDbJobFunc(true);

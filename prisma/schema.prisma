@@ -502,6 +502,20 @@ model NotificationEntityType {
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
+model Bot {
+  botId                    String  @id @unique
+  botName                  String
+  botType                  String
+  disabled                 Boolean
+  isOfficial               Boolean
+  permissionToLogin        Boolean
+  permissionToCrawl        Boolean
+  permissionToTorrentLeech Boolean
+}
+
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------
+
 enum likeDislike {
   like
   dislike
