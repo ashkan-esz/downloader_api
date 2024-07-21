@@ -62,6 +62,9 @@ export async function isAuth_refreshToken(req, res, next) {
     try {
         let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
         if (refreshTokenVerifyResult) {
+            if (refreshTokenVerifyResult.isBotRequest) {
+                return next();
+            }
             req.refreshToken = refreshToken;
             req.jwtUserData = refreshTokenVerifyResult;
             req.isAuth = true;
@@ -106,6 +109,9 @@ export async function attachAuthFlag(req, res, next) {
         let accessTokenVerifyResult = jwt.verify(accessToken, config.jwt.accessTokenSecret);
         let refreshTokenVerifyResult = jwt.verify(refreshToken, config.jwt.refreshTokenSecret);
         if (accessTokenVerifyResult || refreshTokenVerifyResult) {
+            if (accessTokenVerifyResult.isBotRequest || refreshTokenVerifyResult.isBotRequest) {
+                return next();
+            }
             req.accessToken = accessToken;
             req.refreshToken = refreshToken;
             req.jwtUserData = accessTokenVerifyResult;
@@ -136,7 +142,7 @@ export async function attachAuthFlagForBots(req, res, next) {
         if (accessTokenVerifyResult) {
             req.accessToken = accessToken;
             req.jwtUserData = accessTokenVerifyResult;
-            req.isBotRequest = req.headers['isbotrequest'] === 'true';
+            req.isBotRequest = accessTokenVerifyResult.isBotRequest || req.headers['isbotrequest'] === 'true';
             req.isAuth = true;
         } else {
             req.authCode = 403;

@@ -33,6 +33,7 @@ export async function loginBot(username_email, password, botId, chatId, botUsern
             const user = getJwtPayload(userData);
             user.chatId = chatId;
             user.botUsername = botUsername;
+            user.isBotRequest = true;
             const tokens = generateAuthTokens(user, '720d', '720d');
 
             return generateServiceResult({
