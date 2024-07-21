@@ -121,6 +121,32 @@ export async function attachAuthFlag(req, res, next) {
     return next();
 }
 
+export async function attachAuthFlagForBots(req, res, next) {
+    req.isAuth = false;
+
+    const authHeader = req.headers['authorization'];
+    let accessToken = authHeader && authHeader.split(' ')[1];
+    if (!accessToken) {
+        req.authCode = 401;
+        return next();
+    }
+
+    try {
+        let accessTokenVerifyResult = jwt.verify(accessToken, config.jwt.accessTokenSecret);
+        if (accessTokenVerifyResult) {
+            req.accessToken = accessToken;
+            req.jwtUserData = accessTokenVerifyResult;
+            req.isBotRequest = req.headers['isbotrequest'] === 'true';
+            req.isAuth = true;
+        } else {
+            req.authCode = 403;
+        }
+    } catch (error) {
+        req.authCode = 403;
+    }
+    return next();
+}
+
 export function blockAuthorized(req, res, next) {
     if (req.isAuth) {
         return res.status(403).json({

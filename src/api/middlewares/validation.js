@@ -1,24 +1,24 @@
 import {body} from 'express-validator';
 
-const USERNAME_IS_EMPTY = 'Username Is Empty';
-const USERNAME_MUST_BE_STRING = 'Username Must Be String';
-const EMAIL_IS_EMPTY = 'Email Is Empty';
-const EMAIL_MUST_BE_STRING = 'Email Must Be String';
-const USERNAME_LENGTH_MUST_BE_MORE_THAN_6 = 'Username Length Must Be More Than 6';
-const USERNAME_LENGTH_MUST_BE_LESS_THAN_50 = 'Username Length Must Be Less Than 50';
-const USERNAME_BAD_FORMAT = 'Only a-z, 0-9, and underscores are allowed';
-const EMAIL_IS_IN_WRONG_FORMAT = 'Email Is in Wrong Format';
-const PASSWORD_IS_EMPTY = 'Password Is Empty';
-const PASSWORD_MUST_BE_STRING = 'Password Must Be String';
-const PASSWORD_LENGTH_MUST_BE_MORE_THAN_8 = 'Password Length Must Be More Than 8';
-const PASSWORD_LENGTH_MUST_BE_LESS_THAN_50 = 'Password Length Must Be LESS Than 50';
-const PASSWORDS_DONT_MATCH = 'Passwords Don\'t Match';
-const PASSWORD_IS_EQUAL_WITH_USERNAME = 'Password Is Equal With Username';
-const Password_Must_Contain_A_Number = 'Password Must Contain A Number';
-const Password_Must_Contain_An_Uppercase = 'Password Must Contain An Uppercase';
-const Password_Cannot_Have_Space = 'Password Cannot Have Space';
-const DEVICE_INFO_IS_EMPTY = 'DeviceInfo Is Empty';
-const DEVICE_INFO_MUST_BE_OBJECT = 'DeviceInfo Must Be Object';
+export const USERNAME_IS_EMPTY = 'Username Is Empty';
+export const USERNAME_MUST_BE_STRING = 'Username Must Be String';
+export const EMAIL_IS_EMPTY = 'Email Is Empty';
+export const EMAIL_MUST_BE_STRING = 'Email Must Be String';
+export const USERNAME_LENGTH_MUST_BE_MORE_THAN_6 = 'Username Length Must Be More Than 6';
+export const USERNAME_LENGTH_MUST_BE_LESS_THAN_50 = 'Username Length Must Be Less Than 50';
+export const USERNAME_BAD_FORMAT = 'Only a-z, 0-9, and underscores are allowed';
+export const EMAIL_IS_IN_WRONG_FORMAT = 'Email Is in Wrong Format';
+export const PASSWORD_IS_EMPTY = 'Password Is Empty';
+export const PASSWORD_MUST_BE_STRING = 'Password Must Be String';
+export const PASSWORD_LENGTH_MUST_BE_MORE_THAN_8 = 'Password Length Must Be More Than 8';
+export const PASSWORD_LENGTH_MUST_BE_LESS_THAN_50 = 'Password Length Must Be LESS Than 50';
+export const PASSWORDS_DONT_MATCH = 'Passwords Don\'t Match';
+export const PASSWORD_IS_EQUAL_WITH_USERNAME = 'Password Is Equal With Username';
+export const Password_Must_Contain_A_Number = 'Password Must Contain A Number';
+export const Password_Must_Contain_An_Uppercase = 'Password Must Contain An Uppercase';
+export const Password_Cannot_Have_Space = 'Password Cannot Have Space';
+export const DEVICE_INFO_IS_EMPTY = 'DeviceInfo Is Empty';
+export const DEVICE_INFO_MUST_BE_OBJECT = 'DeviceInfo Must Be Object';
 
 const deviceInfoFields = ['appName', 'appVersion', 'os', 'deviceModel', 'notifToken'];
 

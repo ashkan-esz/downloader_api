@@ -1,6 +1,16 @@
 import {body, param, query, validationResult} from 'express-validator';
 import {statTypes} from "../../data/db/userStatsDbMethods.js";
 import {mbtiTypes} from "../../data/db/usersDbMethods.js";
+import {
+    PASSWORD_IS_EMPTY, PASSWORD_IS_EQUAL_WITH_USERNAME,
+    PASSWORD_LENGTH_MUST_BE_LESS_THAN_50,
+    PASSWORD_LENGTH_MUST_BE_MORE_THAN_8,
+    PASSWORD_MUST_BE_STRING,
+    USERNAME_IS_EMPTY,
+    USERNAME_LENGTH_MUST_BE_LESS_THAN_50,
+    USERNAME_LENGTH_MUST_BE_MORE_THAN_6,
+    USERNAME_MUST_BE_STRING
+} from "./validation.js";
 
 
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
@@ -779,6 +789,55 @@ const validations = Object.freeze({
         })
         .trim().escape(),
 
+    //--------------------------------------------------------------
+    //--------------------------------------------------------------
+
+    username_email: body('username_email')
+        .exists().withMessage(USERNAME_IS_EMPTY)
+        .isString().withMessage(USERNAME_MUST_BE_STRING)
+        .isLength({min: 6}).withMessage(USERNAME_LENGTH_MUST_BE_MORE_THAN_6)
+        .isLength({max: 50}).withMessage(USERNAME_LENGTH_MUST_BE_LESS_THAN_50)
+        .trim().escape(),
+
+    password: body('password')
+        .exists().withMessage(PASSWORD_IS_EMPTY)
+        .isString().withMessage(PASSWORD_MUST_BE_STRING)
+        .isLength({min: 8}).withMessage(PASSWORD_LENGTH_MUST_BE_MORE_THAN_8)
+        .isLength({max: 50}).withMessage(PASSWORD_LENGTH_MUST_BE_LESS_THAN_50)
+        .custom((value, {req, loc, path}) => {
+            if (value === req.body.username) {
+                // trow error if password is equal with username
+                throw new Error(PASSWORD_IS_EQUAL_WITH_USERNAME);
+            } else {
+                return value;
+            }
+        })
+        .trim().escape(),
+
+    botId: body('botId')
+        .exists().withMessage("botId cannot be empty")
+        .isString().withMessage("botId must be String")
+        .trim(),
+
+    botId_param: param('botId')
+        .exists().withMessage("botId cannot be empty")
+        .isString().withMessage("botId must be String")
+        .trim(),
+
+    chatId: body('chatId')
+        .exists().withMessage("chatId cannot be empty")
+        .isString().withMessage("chatId must be String")
+        .trim(),
+
+    botUsername: body('botUsername')
+        .exists().withMessage("botUsername cannot be empty")
+        .isString().withMessage("botUsername must be String")
+        .trim(),
+
+    notificationFlag: param('notificationFlag')
+        .trim()
+        .isBoolean().withMessage(`Invalid parameter notificationFlag :: (true|false)`)
+        .toBoolean(),
 });
 
 

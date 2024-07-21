@@ -56,6 +56,7 @@ export const errorMessage = Object.freeze({
     alreadyFollowed: 'Already followed',
     //----------------------
     botIsDisabled: 'This bot is disabled',
+    botNoLoginPermission: 'This bot doesnt have the permission to login',
     //----------------------
     adminAndDevOnly: 'Forbidden, ([admin, dev]) roles only',
 });

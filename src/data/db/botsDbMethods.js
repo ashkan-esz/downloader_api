@@ -243,3 +243,58 @@ export async function removeBotData(botId) {
         return 'error';
     }
 }
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+
+export async function addUserBotData(userId, botId, chatId, botUsername) {
+    try {
+        return await prisma.userBot.upsert({
+            where: {
+                userId_botId: {
+                    botId: botId,
+                    userId: userId,
+                },
+            },
+            create: {
+                botId: botId,
+                userId: userId,
+                chatId: chatId,
+                username: botUsername,
+                notification: true,
+            },
+            update: {
+                chatId: chatId,
+                username: botUsername,
+            },
+            select: {
+                notification: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function updateAccountNotificationForBot(userId, botId, notificationFlag) {
+    try {
+        return await prisma.userBot.update({
+            where: {
+                userId_botId: {
+                    botId: botId,
+                    userId: userId,
+                },
+            },
+            data: {
+                notification: notificationFlag,
+            },
+            select: {
+                notification: true,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}

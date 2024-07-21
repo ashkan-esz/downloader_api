@@ -1662,6 +1662,70 @@ paths:
                         - $ref: '#/components/schemas/Staff'
                         - $ref: '#/components/schemas/Character'
 
+  /bots/login:
+    post:
+      tags:
+        - Bots
+      summary: Login Bot
+      description: connect to user account in bot
+      operationId: bots-login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username_email:
+                  type: string
+                  pattern: ^[a-z|\d_-]+$
+                  minimum: 6
+                  maximum: 50
+                  required: true
+                  description: user can log in with username or email address
+                  example: ashkanaz2828
+                password:
+                  type: string
+                  description: at least one number and capital letter and length in range
+                  example: p@sswOrD123#
+                botId:
+                  type: string
+                  description: id of the bot, generated when bot added in adminPanel
+                chatId:
+                  type: string
+                  description: id of the chat, generated and used by bot
+                botUsername:
+                  type: string
+                  description: username of the user inside the bot
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                  - $ref: '#/components/schemas/SignUpResult'
+
+  /bots/{botId}/notification/{userId}/{notificationFlag}:
+    put:
+      tags:
+        - Bots
+      summary: Account Notification
+      description: Toggle account notification receive by bot
+      operationId: bots-update-notification-flag
+      parameters:
+        - $ref: '#/components/parameters/botId'
+        - $ref: '#/components/parameters/notificationFlag'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /movies/bots/{botId}/{moviesRequestName}/{types}/{dataLevel}/{imdbScores}/{malScores}:
     get:
       tags:
@@ -3182,6 +3246,19 @@ security:
       in: path
       schema:
         type: string
+    userId:
+      name: userId
+      required: true
+      in: path
+      schema:
+        type: integer
+    notificationFlag:
+      name: notificationFlag
+      required: true
+      in: path
+      schema:
+        type: boolean
+        default: true
     moviesRequestName:
       name: moviesRequestName
       required: true

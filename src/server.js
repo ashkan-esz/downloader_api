@@ -61,6 +61,7 @@ app.use('/admin', routes.adminRouters);
 app.use('/movies', routes.moviesRouters);
 app.use('/users', routes.usersRouters);
 app.use('/utils', routes.utilsRouters);
+app.use('/bots', routes.botsRouters);
 
 
 app.use(Sentry.Handlers.errorHandler({
