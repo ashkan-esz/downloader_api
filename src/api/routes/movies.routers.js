@@ -153,6 +153,7 @@ router.put('/addUserStats/finish_movie/:id/handle_favorite/:favorite',
 //movies/addUserStats/follow_movie/:id?remove=(true|false)
 router.put('/addUserStats/follow_movie/:id',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.botHasLoginPermission,
     middlewares.validateApiParams.checkApiParams(['id', 'remove', 'score_query', 'watch_season_query', 'watch_episode_query']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.userStatsFollowMovieService);
@@ -238,6 +239,7 @@ router.put('/addUserStats/changeWatchState/:stat_list_type/:watch_season/:watch_
 //movies/userStatsList/:statType/:dataLevel/:page
 router.get('/userStatsList/:statType/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.botHasLoginPermission,
     middlewares.validateApiParams.checkApiParams(['statType', 'dataLevel', 'page', 'sortBy', 'favoritesOnly', 'dropsOnly', 'groupName_query', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getUserStatsList);

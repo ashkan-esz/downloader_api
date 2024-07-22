@@ -17,6 +17,7 @@ router.post('/login',
 //bots/:botId/notification/:notificationFlag
 router.put('/:botId/notification/:notificationFlag',
     middlewares.auth.attachAuthFlagForBots, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.botHasLoginPermission,
     middlewares.validateApiParams.checkApiParams(
         ['botId_param', 'notificationFlag']),
     middlewares.validateApiParams.apiParams_sendError,

@@ -1091,7 +1091,7 @@ paths:
       tags:
         - Movies-UserStats-FinishMovie
       summary: Add/Remove Movie To Follow list
-      description: add serial to list of serials that user follows, only works for serials titles.
+      description: add serial to list of serials that user follows, only works for serials titles. add header 'isBotRequest' if requesting from a bot.
       operationId: movies-addUserStatsFollowMovie
       parameters:
         - $ref: '#/components/parameters/id'
@@ -1571,7 +1571,7 @@ paths:
       tags:
         - Movies-UserStats-Lists
       summary: User Stats List
-      description: Return array of movies/staff/character.
+      description: Return array of movies/staff/character.  add header 'isBotRequest' if requesting from a bot.
       operationId: movies-userStatsList
       parameters:
         - name: statType

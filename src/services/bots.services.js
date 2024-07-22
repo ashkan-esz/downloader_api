@@ -34,6 +34,7 @@ export async function loginBot(username_email, password, botId, chatId, botUsern
             user.chatId = chatId;
             user.botUsername = botUsername;
             user.isBotRequest = true;
+            user.botId = botId;
             const tokens = generateAuthTokens(user, '720d', '720d');
 
             return generateServiceResult({
@@ -52,17 +53,8 @@ export async function loginBot(username_email, password, botId, chatId, botUsern
     }
 }
 
-export async function updateAccountNotification(botId, notificationFlag, jwtUserData) {
+export async function updateAccountNotification(botId, botData, notificationFlag, jwtUserData) {
     try {
-        let botData = await botsDbMethods.getBotData(botId);
-        if (botData === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!botData) {
-            return generateServiceResult({}, 404, errorMessage.botNotFound);
-        } else if (!botData.permissionToLogin) {
-            return generateServiceResult({}, 403, errorMessage.botNoLoginPermission);
-        }
-
         let result = await botsDbMethods.updateAccountNotificationForBot(jwtUserData.userId, botId, notificationFlag);
         if (result === 'error') {
             return generateServiceResult({}, 500, errorMessage.serverError);

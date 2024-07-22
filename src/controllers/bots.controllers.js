@@ -14,7 +14,7 @@ export async function loginBot(req, res) {
 
 export async function updateAccountNotification(req, res) {
     let {botId, notificationFlag} = req.params;
-    let result = await botsServices.updateAccountNotification(botId, notificationFlag, req.jwtUserData);
+    let result = await botsServices.updateAccountNotification(botId, req.botData, notificationFlag, req.jwtUserData);
 
     return sendResponse(req, res, result);
 }

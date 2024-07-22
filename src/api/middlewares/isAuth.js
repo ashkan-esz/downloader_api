@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
 import {getConfigDB_DisableTestUserRequests} from "../../data/db/admin/adminConfigDbMethods.js";
-import {redisKeyExist} from "../../data/redis.js";
+import {getRedis, redisKeyExist, setRedis} from "../../data/redis.js";
+import * as botsDbMethods from "../../data/db/botsDbMethods.js";
+import {errorMessage} from "../../services/serviceUtils.js";
 
 
 let testUserDataCache = null;
@@ -18,6 +20,14 @@ setInterval(async () => {
 export function updateDisableTestUserRequestsMiddleWareData(flag) {
     disableTestUserRequests = flag;
 }
+
+//----------------------------------------------
+//----------------------------------------------
+
+export const _botRequestsWhitelist = Object.freeze([
+    "/movies/addUserStats/follow_movie/:id",
+    "/movies/userStatsList/:statType/:dataLevel/:page",
+]);
 
 //----------------------------------------------
 //----------------------------------------------
@@ -88,6 +98,11 @@ export async function isAuth_refreshToken(req, res, next) {
 }
 
 export async function attachAuthFlag(req, res, next) {
+    if (req.headers['isbotrequest'] === 'true' && _botRequestsWhitelist.includes(req._reconstructedRoute)) {
+        req.isBotRequest = true;
+        return attachAuthFlagForBots(req, res, next);
+    }
+
     req.isGuest = false;
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
@@ -149,6 +164,44 @@ export async function attachAuthFlagForBots(req, res, next) {
         }
     } catch (error) {
         req.authCode = 403;
+    }
+    return next();
+}
+
+export async function botHasLoginPermission(req, res, next) {
+    if (req.isBotRequest) {
+        let botId = req.jwtUserData.botId;
+        // get bot data - cache first
+        let botData = await getRedis('botData:' + botId);
+        if (!botData) {
+            // check db - update db
+            botData = await botsDbMethods.getBotData(botId);
+            if (botData === 'error') {
+                return res.status(500).json({
+                    code: 500,
+                    errorMessage: errorMessage.serverError,
+                    isGuest: false,
+                    isCacheData: false,
+                });
+            } else if (!botData) {
+                return res.status(404).json({
+                    code: 404,
+                    errorMessage: errorMessage.botNotFound,
+                    isGuest: false,
+                    isCacheData: false,
+                });
+            }
+            await setRedis('botData:' + botId, botData, 2 * 60);
+        }
+        req.botData = botData;
+        if (!botData.permissionToLogin) {
+            return res.status(403).json({
+                code: 403,
+                errorMessage: errorMessage.botNoLoginPermission,
+                isGuest: false,
+                isCacheData: false,
+            });
+        }
     }
     return next();
 }

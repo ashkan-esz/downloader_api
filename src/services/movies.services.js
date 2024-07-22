@@ -379,7 +379,7 @@ export async function userStatsFollowMovieService(userId, id, watch_season, watc
     } else if (result === 'notfound') {
         return generateServiceResult({}, 404, errorMessage.documentNotFound);
     } else if (result === 'already watched') {
-        return generateServiceResult({}, 404, 'Already watched, cannot follow');
+        return generateServiceResult({}, 409, 'Already watched, cannot follow');
     }
     return generateServiceResult({}, 200, '');
 }
