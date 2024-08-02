@@ -47,6 +47,17 @@ export default async function eztv({movie_url, serial_url}, pageCount, extraConf
 
         return [1]; //pageNumber
     } catch (error) {
+        if (error.code === "EAI_AGAIN") {
+            if (extraConfigs.retryCounter === undefined) {
+                extraConfigs.retryCounter = 0;
+            }
+            if (extraConfigs.retryCounter < 2) {
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                extraConfigs.retryCounter++;
+                return await tokyotosho({movie_url, serial_url}, pageCount, extraConfigs);
+            }
+            return [1];
+        }
         if (error.response?.status !== 521 && error.response?.status !== 522) {
             saveError(error);
         }

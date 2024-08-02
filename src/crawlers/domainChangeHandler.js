@@ -85,7 +85,7 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                     }
                 } else {
                     if (error.code !== 'ETIMEDOUT' && error.code !== 'EAI_AGAIN' &&
-                        error.response?.status !== 521 && error.response?.status !== 522) {
+                        error.response?.status !== 521 && error.response?.status !== 522 && error.response?.status !== 524) {
                         await saveErrorIfNeeded(error);
                     }
                     sourcesUrls[i].checked = true;
@@ -134,7 +134,7 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                     await saveErrorIfNeeded(error2);
                 }
             } else if (
-                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.response?.status === 521 || error.response?.status === 522) &&
+                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' || error.response?.status === 521 || error.response?.status === 522) &&
                 retryCounter < 2)
             {
                 retryCounter++;

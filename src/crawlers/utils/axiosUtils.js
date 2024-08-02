@@ -38,7 +38,7 @@ export async function getFileSize(url, opt = {}) {
         }
         if (checkNeedRetryWithSleep(error, opt.retryWithSleepCounter)) {
             opt.retryWithSleepCounter++;
-            await new Promise((resolve => setTimeout(resolve, 2000)));
+            await new Promise((resolve => setTimeout(resolve, 3000)));
             return await getFileSize(url, opt);
         }
         if (!opt.ignoreError) {
