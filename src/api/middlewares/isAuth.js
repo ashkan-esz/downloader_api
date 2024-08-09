@@ -27,6 +27,10 @@ export function updateDisableTestUserRequestsMiddleWareData(flag) {
 export const _botRequestsWhitelist = Object.freeze([
     "/movies/addUserStats/follow_movie/:id",
     "/movies/userStatsList/:statType/:dataLevel/:page",
+    "/movies/:staffOrCharacter/searchByID/:id",
+    "/movies/:staffOrCharacter/credits/:id/:page",
+    "/movies/searchStaff/:dataLevel/:page",
+    "/movies/searchCharacter/:dataLevel/:page",
 ]);
 
 //----------------------------------------------
