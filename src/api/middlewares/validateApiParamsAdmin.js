@@ -505,6 +505,10 @@ const validations = Object.freeze({
     torrentDownloadMaxFileSize: body('torrentDownloadMaxFileSize')
         .isInt({min:1, max: 10000}).withMessage("Invalid parameter torrentDownloadMaxFileSize :: Integer{min: 1, max: 10000}"),
 
+    disableBotsNotifications: body('disableBotsNotifications')
+        .isBoolean().withMessage("Invalid parameter disableBotsNotifications :: Boolean")
+        .toBoolean(),
+
     ids: body('ids')
         .exists().withMessage("Missed parameter ids")
         .isArray({min: 1}).withMessage("ids Must be an not empty array")

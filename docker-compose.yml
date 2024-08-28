@@ -113,8 +113,8 @@ services:
       - API_URL=https://api.movietracker.site
       - CHAT_API_URL=https://chat.movietracker.site
       - WEB_URL=https://movietracker.site
-      - MIN_IMDB_RATE=7
-      - MIN_MAL_RATE=7
+      - MIN_IMDB_RATE=7.5
+      - MIN_MAL_RATE=7.5
       - INITIAL_SLEEP_MINUTE=2
 #    volumes:
 #      - telegrambot

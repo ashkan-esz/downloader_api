@@ -2623,6 +2623,8 @@ paths:
                   type: integer
                   default: 800
                   description: it is in mb
+                disableBotsNotifications:
+                  type: boolean
       responses:
         200:
           description: Ok
@@ -4496,6 +4498,9 @@ security:
         torrentDownloadMaxFileSize:
           type: integer
           default: 800
+        disableBotsNotifications:
+          type: boolean
+          default: false
 
     Season:
       type: object

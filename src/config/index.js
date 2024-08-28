@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-dotenv.config({path: './env/.env'});
+dotenv.config({path: './.env'});
 
 export default Object.freeze({
     nodeEnv: process.env.NODE_ENV,
