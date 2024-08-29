@@ -26,6 +26,7 @@ import {handleLatestDataUpdate} from "./latestData.js";
 import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
 import * as rabbitmqPublisher from "../../rabbitmq/publish.js";
 import {handleMovieNotification, handleNewInsertedMovieNotification} from "./movieNotification.js";
+import {titlesAndYears} from "./utils/titlesList.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber, extraConfigs) {
@@ -69,6 +70,11 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
+        }
+
+        let findTitle = titlesAndYears.find(t => t.title === title);
+        if (findTitle) {
+            year = findTitle.year;
         }
 
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks, torrentLinks);

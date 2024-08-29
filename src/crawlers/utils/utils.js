@@ -185,6 +185,7 @@ export function getSeasonEpisode(input, isLinkInput = false) {
         }
         input = input
             .replace(/(?<!\.)10bit/g, '.10bit')
+            .replace('.h.264', '.h264')
             .replace(/\.e\d+end/i, res => res.replace('end', '.end'))
             .replace(/(?<!(\.|^))(2160|1440|1080|720|576|480|360)p/g, (res) => '.' + res); // .S06E03720p.WEB-DL
 

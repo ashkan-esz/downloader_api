@@ -66,6 +66,7 @@ export function removeSeasonText(text) {
         .replace(/3rd season( - \d+)?/, "")
         .replace(/\dth season/, "")
         .replace(/season \d/, "")
+        .replace(/\srepack$/, '')
         .trim();
 }
 

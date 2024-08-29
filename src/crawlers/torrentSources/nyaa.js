@@ -94,7 +94,8 @@ async function saveCrawlData(titleData, extraConfigs) {
         rating: null,
         cookies: [],
     };
-    await save(titleData.title, "anime_serial", "", sourceData, 1, extraConfigs);
+    const type = titleData.links.length > 0 && titleData.links.every(l => l.info.includes('- movie')) ? 'anime_movie' : 'anime_serial';
+    await save(titleData.title, type, "", sourceData, 1, extraConfigs);
 }
 
 function extractLinks($, sourceUrl) {
