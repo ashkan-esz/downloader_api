@@ -330,6 +330,7 @@ async function handle_OMDB_ApiCall(url) {
                         error.response?.status !== 503 &&
                         error.response?.status !== 520 &&
                         error.response?.status !== 521 &&
+                        error.response?.status !== 522 &&
                         error.response?.status !== 524) {
                         saveError(error);
                     }

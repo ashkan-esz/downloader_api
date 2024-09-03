@@ -74,7 +74,7 @@ services:
       - WEB_URL=https://movietracker.site
       - MIN_IMDB_RATE=7.5
       - MIN_MAL_RATE=7.5
-      - INITIAL_SLEEP_MINUTE=2
+      - INITIAL_SLEEP_MINUTE=1
 #    volumes:
 #      - telegrambot
     deploy:

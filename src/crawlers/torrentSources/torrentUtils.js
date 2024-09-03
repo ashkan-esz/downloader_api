@@ -67,6 +67,7 @@ export function removeSeasonText(text) {
         .replace(/\dth season/, "")
         .replace(/season \d/, "")
         .replace(/\srepack$/, '')
+        .replace(/\stv\s(0[1-9])+([1-9]0)?$/, '') // tv 010203 | tv 010230
         .trim();
 }
 
@@ -137,7 +138,7 @@ export function mergeTitleLinks(titles) {
 }
 
 function checkInvalidTitle(title) {
-    return title.includes(" scripts fonts for ");
+    return title.includes(" scripts fonts for ") || title.includes(" music collection");
 }
 
 function dropOutlierEpisodeNumber(titles) {

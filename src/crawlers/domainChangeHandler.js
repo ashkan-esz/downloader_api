@@ -1,5 +1,5 @@
 import {updateSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
-import {getSourcesArray} from "./sourcesArray.js";
+import {getSourcesArray, torrentSourcesNames} from "./sourcesArray.js";
 import {getPageData} from "./remoteHeadlessBrowser.js";
 import {getDatesBetween} from "./utils/utils.js";
 import {getResponseUrl} from "./utils/axiosUtils.js";
@@ -27,6 +27,10 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extra
             crawled: false,
             errorMessage: '',
         }));
+
+        if (extraConfigs.torrentState === "only") {
+            sourcesUrls = sourcesUrls.filter(s => torrentSourcesNames.includes(s.sourceName));
+        }
 
         changeDomainChangeHandlerState(sourcesUrls, linkStateMessages.domainChangeHandler.checkingUrls);
         let changedSources = await checkSourcesUrl(sourcesUrls, extraConfigs);
@@ -141,6 +145,11 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                 await new Promise((resolve => setTimeout(resolve, 2000)));
                 return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
             } else {
+                // if (torrentSourcesNames.includes(sourceName) && (error.response?.status === 521 || error.response?.status === 522) ) {
+                //     // torrent source not responding on this moment, dont save error
+                // } else {
+                //     await saveErrorIfNeeded(error);
+                // }
                 await saveErrorIfNeeded(error);
             }
             return "error";
