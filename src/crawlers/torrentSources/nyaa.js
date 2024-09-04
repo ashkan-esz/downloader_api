@@ -168,7 +168,7 @@ function fixLinkInfo(info) {
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
         .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
-        .replace(/\.\s?(mkv|mp4)/, "")
+        .replace(/\.\s?(mkv|mp4|avi|wmv)/, "")
         .trim();
 
     info = normalizeSeasonText(info.toLowerCase());
@@ -187,17 +187,28 @@ function getTitle(text) {
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .replace(/^\d\d\d\d?p\./, '')
-        .replace(/(\s\d\d+)?\.(mkv|mp4)/, '')
+        .replace(/(\s\d\d+)?\.(mkv|mp4|avi|wmv)/, '')
         .replace(/\sii+$/, '')
         .replace(/\s\(\d{4}\)/, '')
         .split(/[\[？|]/g)[0]
+        .split(/\s\((web|dvd|raw)\s/)[0]
+        .split(/\s(480|720|1080|2160)p/)[0]
+        .split(/_\(\d+x\d+/)[0]
+        .replace(/(?<!(movie))\s?(_\d+\s?)+_?$/, '')
+        .replace(/\s\(\d+-\d+\)\s*$/, '')
+        .replace(/\send$/, '')
         .trim();
     let splitArr = text.split(/\s|\./g);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
     if (index !== -1) {
         let temp = replaceSpecialCharacters(splitArr.slice(0, index).join(" "));
+        if (index <= splitArr.length && temp.endsWith('season')) {
+            temp = temp.replace(/\sseason$/, '');
+        }
         return removeSeasonText(temp);
     }
+
+    text = text.replace(/\s\d\d\d*-\d\d\d*$/, '');
     let temp = replaceSpecialCharacters(text);
     return removeSeasonText(temp);
 }

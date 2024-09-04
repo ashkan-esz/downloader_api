@@ -70,6 +70,9 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
         let titles = extractLinks($);
         titles = titles.slice(0, 5);
 
+        // console.log(JSON.stringify(titles, null , 4))
+        // return
+
         await handleSearchedCrawledTitles(titles, 1, 1, saveCrawlData, sourceConfig, extraConfigs);
 
         return [1]; //pageNumber
@@ -183,7 +186,7 @@ function fixLinkInfo(info) {
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
         .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
-        .replace(/\.\s?(mkv|mp4)/g, "")
+        .replace(/\.\s?(mkv|mp4|avi|wmv)/g, "");
 
     return normalizeSeasonText(info.toLowerCase());
 }
@@ -198,6 +201,9 @@ function getTitle(text) {
         .replace(/\s\d\d+$/, '')
         .replace(/\s\(([a-zA-Z]{3,4}\s)?\d{4}\)/, '')
         .split('[')[0]
+        .split(/\s(480|720|1080|2160)p/)[0]
+        .split(/\sep\d/)[0]
+        .replace(/(?<!(movie))\s_\d+\s?_$/, '')
         .trim();
 
     let year = new Date().getFullYear();
@@ -208,9 +214,20 @@ function getTitle(text) {
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
     if (index !== -1) {
         let temp = splitArr.slice(0, index).join(" ").split("(")[0];
+        temp = temp
+            .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)+(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
+            .replace(/\s\d+([-,]\d+)+\s\(engsubs?\)$/, '')
+            .replace(/\s\d\d\d+-\d\d\d+$/, '');
         temp = replaceSpecialCharacters(temp);
         return removeSeasonText(temp);
     }
+
+    text = text
+        .replace(/\s\(\d\d\d+x\d\d\d+\)$/, '')
+        .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)+(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
+        .replace(/\s\d+([-,]\d+)+\s\(engsubs?\)$/, '')
+        .replace(/\s\d\d\d+-\d\d\d+$/, '')
+        .replace(/\s1-\d$/, '');
     let temp = replaceSpecialCharacters(text);
     return removeSeasonText(temp);
 }

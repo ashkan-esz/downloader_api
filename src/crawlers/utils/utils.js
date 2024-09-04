@@ -4,11 +4,13 @@ import {saveError} from "../../error/saveError.js";
 export function replaceSpecialCharacters(input) {
     return input
         .replace('&#39;', '')
-        .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+＿_–−-]|(\|)/g, ' ')
+        .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+×＿_–−-]|(\|)/g, ' ')
         .replace(/[”“"'’‘٫.:?¿？!¡#%,()~♥♡△∽Ωωψ‎]/g, '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
+        .replace('1／2', ' 1/2')
+        .replace('／', ' ')
         .replace(/&/g, 'and')
         .replace('∞', ' infinity')
         .replace(/[áåäà@æ]/g, 'a')

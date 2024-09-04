@@ -184,7 +184,7 @@ function fixLinkInfo(info) {
         .replace(/s\d+\s+-\s+\d+/i, r => r.replace(/\s+-\s+/, 'E')) // S2 - 13
         .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
-        .replace(/\.\s?(mkv|mp4)/g, "")
+        .replace(/\.\s?(mkv|mp4|avi|wmv)/g, "")
         .trim();
 
     info = normalizeSeasonText(info.toLowerCase());

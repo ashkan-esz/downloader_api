@@ -55,7 +55,10 @@ export function normalizeSeasonText(text) {
         .replace('3rd season', '3')
         .replace('season 3', '3')
         .replace(/\dth season/, r => r.replace('th season', ''))
-        .replace(/season \d/, r => r.replace('season ', ''));
+        .replace(/season \d/, r => r.replace('season ', ''))
+        .replace(/part i\s/, 'part 1 ')
+        .replace(/(part)? ii+/, r => r.replace('iii', '3').replace('ii', '2'))
+        .replace(' ∬', ' 2');
 }
 
 export function removeSeasonText(text) {
@@ -68,6 +71,16 @@ export function removeSeasonText(text) {
         .replace(/season \d/, "")
         .replace(/\srepack$/, '')
         .replace(/\stv\s(0[1-9])+([1-9]0)?$/, '') // tv 010203 | tv 010230
+        .replace(/\stv\s\d+-\d+$/, '') // tv 04-09 | tv 11-15
+        .replace(/(\sv2)?\s(tv|ld)$/, '')
+        .replace(/\s\d\d\d+-\d\d\d+$/, '') // 008-009
+        .replace(/s\d+\s(\d+\s?)+/, '')
+        .replace(/(?<=(\s2))\s\d+$/, '')
+        .replace(/(?<=(\s\d))\s0$/, '')
+        .replace(' part one', ' part 1')
+        .replace(' part two', ' part 2')
+        .replace(' part three', ' part 3')
+        .replace(' part four', ' part 4')
         .trim();
 }
 
@@ -75,7 +88,7 @@ export function fixSeasonEpisode(text, isLinkInput) {
     // console.log(text)
     let se = getSeasonEpisode(text, isLinkInput);
     if (se.season === 1 && se.episode === 0) {
-        let temp = text.replace(/\s[(\[][a-zA-Z\d\sx]+[)\]]/g, '').match(/\s\d+(-\d+)?(v\d)?(\s(end|raw))?(\.\s*(mkv|mp4))?$/);
+        let temp = text.replace(/\s?[(\[][a-zA-Z\d\sx]+[)\]]/g, '').match(/\s\d+(-\d+)?(v\d)?(\s(end|raw))?(\.\s*(mkv|mp4|avi|wmv))?$/);
         if (temp) {
             se.episode = Number(temp[0].match(/\d+/g)[0]);
         }
@@ -123,7 +136,8 @@ export function mergeTitleLinks(titles) {
         let findResult = uniqueTitles.find(item =>
             item.title.replace(/\s+/g, '') === titles[i].title.replace(/\s+/g, '') ||
             item.title.split(/\(/)[0].trim() === titles[i].title.split(/\(/)[0].trim() ||
-            item.title.split(_japaneseCharactersRegex)[0].trim() === titles[i].title.split(_japaneseCharactersRegex)[0].trim()
+            item.title.split(_japaneseCharactersRegex)[0].trim() === titles[i].title.split(_japaneseCharactersRegex)[0].trim() ||
+            simplifyTitle(item.title) === simplifyTitle(titles[i].title)
         );
         if (findResult) {
             findResult.links = [...findResult.links, ...titles[i].links];
@@ -138,7 +152,19 @@ export function mergeTitleLinks(titles) {
 }
 
 function checkInvalidTitle(title) {
-    return title.includes(" scripts fonts for ") || title.includes(" music collection");
+    return !title ||
+        title.includes(" scripts fonts for ") ||
+        title.includes(" music collection") ||
+        title.includes(" music video") ||
+        title.includes("random subbed episodes pack");
+}
+
+function simplifyTitle(title) {
+    return title
+        .replace('ou ', 'o ')
+        .replace(' wo ', ' o ')
+        .replace(/\swo$/, ' o')
+        .replace(/[ck]/g, 'c');
 }
 
 function dropOutlierEpisodeNumber(titles) {
