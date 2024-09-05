@@ -27,9 +27,11 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
             let fullData = await handleApiCall(animeUrl);
             if (fullData) {
                 fullData = fullData.data;
-                addTitleObjToKitsuData(fullData, year);
-                if (checkTitle(title, year, fullData)) {
-                    return fullData;
+                if (fullData) {
+                    addTitleObjToKitsuData(fullData, year);
+                    if (checkTitle(title, year, fullData)) {
+                        return fullData;
+                    }
                 }
             }
         }
@@ -70,9 +72,11 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
                 }
             }
 
-            addTitleObjToKitsuData(searchResult[i], year);
-            if (checkTitle(title, year, searchResult[i])) {
-                return searchResult[i];
+            if (searchResult[i]) {
+                addTitleObjToKitsuData(searchResult[i], year);
+                if (checkTitle(title, year, searchResult[i])) {
+                    return searchResult[i];
+                }
             }
         }
         return null;

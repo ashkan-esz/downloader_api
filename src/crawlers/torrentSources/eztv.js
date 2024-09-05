@@ -54,7 +54,7 @@ export default async function eztv({movie_url, serial_url}, pageCount, extraConf
             if (extraConfigs.retryCounter < 2) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
-                return await tokyotosho({movie_url, serial_url}, pageCount, extraConfigs);
+                return await eztv({movie_url, serial_url}, pageCount, extraConfigs);
             }
             return [1];
         }

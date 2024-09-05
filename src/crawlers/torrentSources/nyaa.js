@@ -47,7 +47,7 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
             if (extraConfigs.retryCounter < 2) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
-                return await tokyotosho({movie_url, serial_url}, pageCount, extraConfigs);
+                return await nyaa({movie_url, serial_url}, pageCount, extraConfigs);
             }
             return [1];
         }

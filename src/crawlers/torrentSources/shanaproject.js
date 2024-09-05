@@ -46,7 +46,7 @@ export default async function shanaproject({movie_url, serial_url}, pageCount, e
             if (extraConfigs.retryCounter < 2) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
-                return await tokyotosho({movie_url, serial_url}, pageCount, extraConfigs);
+                return await shanaproject({movie_url, serial_url}, pageCount, extraConfigs);
             }
             return [1];
         }
