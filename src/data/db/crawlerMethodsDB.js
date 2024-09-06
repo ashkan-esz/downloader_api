@@ -147,19 +147,26 @@ export async function insertMovieToDB(dataToInsert) {
     }
 }
 
-export async function updateMovieByIdDB(id, updateFields) {
-    try {
-        let collection = await getCollection('movies');
-        let result = await collection.updateOne({_id: id}, {
-            $set: updateFields
-        });
-        if (result.modifiedCount === 0) {
-            return 'notfound';
+export async function updateMovieByIdDB(id, updateFields, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            let collection = await getCollection('movies');
+            let result = await collection.updateOne({_id: id}, {
+                $set: updateFields
+            }, {
+                maxTimeMS: 6 * 1000,
+            });
+            if (result.modifiedCount === 0) {
+                return 'notfound';
+            }
+            return 'ok';
+        } catch (error) {
+            if (attempt === maxRetries) {
+                saveError(error);
+                return 'error';
+            }
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
         }
-        return 'ok';
-    } catch (error) {
-        saveError(error);
-        return 'error';
     }
 }
 

@@ -1,4 +1,5 @@
 import {checkBetterQuality, checkDubbed, checkHardSub, getDatesBetween, getSeasonEpisode} from "./utils/utils.js";
+import {saveError} from "../error/saveError.js";
 
 const latestDataKeys = ['season', 'episode', 'quality', 'hardSub', 'dubbed', 'censored', 'subtitle', 'watchOnlineLink', 'torrentLinks'];
 
