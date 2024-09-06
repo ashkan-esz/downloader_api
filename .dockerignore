@@ -22,3 +22,6 @@ manualTest.http
 db-backups
 docker
 downloads
+
+docker-compose.*
+docker-compose.*.*

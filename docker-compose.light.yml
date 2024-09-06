@@ -233,7 +233,10 @@ services:
     #      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    command: ["postgres", "-c", "log_min_messages=log"]
+      - ./docker/postgres/postgresql-light.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+#    shm_size: '64mb'
+#    shm_size: '90mb'
     deploy:
       resources:
         limits:

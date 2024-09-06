@@ -193,6 +193,9 @@ export const linkStateMessages = Object.freeze({
         callingJikan: 'update title: calling jikan api',
         uploadingYoutubeTrailerToS3: 'update title: uploading youtube trailer to s3',
         addingRelatedTitles: 'update title: adding related titles',
+        addingMoviePosterBlurHashQueue: 'update title: adding moviePoster to blurHashQueue',
+        addingMoviePosterS3BlurHashQueue: 'update title: adding moviePosterS3 to blurHashQueue',
+        addingMovieWidePosterS3BlurHashQueue: 'update title: adding movieWidePosterS3 to blurHashQueue',
     }),
     domainChangeHandler: Object.freeze({
         start: 'start',

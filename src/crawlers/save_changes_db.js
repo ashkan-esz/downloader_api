@@ -424,12 +424,15 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             await updateMovieByIdDB(db_data._id, updateFields);
 
             if (updateFields.posters && updateFields.posters.length > 0) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingMoviePosterBlurHashQueue);
                 await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movie, db_data._id, "")
             }
             if (updateFields.poster_s3) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingMoviePosterS3BlurHashQueue);
                 await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieS3, db_data._id, updateFields.poster_s3.url)
             }
             if (updateFields.poster_wide_s3) {
+                changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.addingMovieWidePosterS3BlurHashQueue);
                 await rabbitmqPublisher.addBlurHashToQueue(rabbitmqPublisher.blurHashTypes.movieWideS3, db_data._id, updateFields.poster_wide_s3.url)
             }
 
