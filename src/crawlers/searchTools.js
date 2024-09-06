@@ -51,6 +51,9 @@ axiosRetry(axios, {
 
 export const axiosBlackListSources = [];
 
+const scriptRegex = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+const styleRegex = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
+
 export async function wrapper_module(sourceConfig, url, pageCount, searchCB, extraConfigs) {
     let lastPageNumber = 0;
     try {
@@ -246,6 +249,9 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                     pageTitle = pageData.pageTitle;
                     cookies = pageData.cookies;
                     pageContent = pageData.pageContent;
+                    if (sourceConfig.removeScriptAndStyleFromHtml) {
+                        pageData.pageContent = removeScriptAndStyle(pageData.pageContent);
+                    }
                     $ = cheerio.load(pageData.pageContent);
                     links = $('a');
                 }
@@ -281,6 +287,9 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                         links = [];
                     } else {
                         pageContent = response.data;
+                        if (sourceConfig.removeScriptAndStyleFromHtml) {
+                            response.data = removeScriptAndStyle(response.data);
+                        }
                         $ = cheerio.load(response.data);
                         links = $('a');
                     }
@@ -465,6 +474,21 @@ function freeAxiosBlackListSources() {
             axiosBlackListSources[i].lastErrorTime = 0;
             axiosBlackListSources[i].isBlocked = false;
         }
+    }
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+export function removeScriptAndStyle(htmlString) {
+    try {
+        if (!htmlString) {
+            return htmlString;
+        }
+        return htmlString.replace(styleRegex, '').replace(scriptRegex, '');
+    } catch (error) {
+        saveError(error);
+        return htmlString;
     }
 }
 

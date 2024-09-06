@@ -31,6 +31,7 @@ export const sourceConfig = Object.freeze({
     },
     isTorrent: false,
     replaceInfoOnDuplicate: false,
+    removeScriptAndStyleFromHtml: true,
 });
 
 export default async function digimoviez({movie_url, serial_url}, pageCount, extraConfigs) {

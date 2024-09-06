@@ -23,6 +23,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 
 export default async function yekmovie({movie_url, serial_url}, pageCount, extraConfigs) {

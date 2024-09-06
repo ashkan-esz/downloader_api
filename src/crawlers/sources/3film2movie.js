@@ -29,6 +29,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 let prevTitles = [];
 

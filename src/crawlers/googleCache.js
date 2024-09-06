@@ -1,9 +1,10 @@
 import config from "../config/index.js";
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import {getDecodedLink} from "./utils/utils.js";
 import {saveError} from "../error/saveError.js";
 import {saveGoogleCacheCall} from "../data/db/serverAnalysisDbMethods.js";
+import {removeScriptAndStyle} from "./searchTools.js";
 
 let callCounter = 0;
 let error429Time = 0;
@@ -29,6 +30,7 @@ export async function getFromGoogleCache(url, retryCounter = 0) {
         let response = await axios.get(webCacheUrl);
         await new Promise((resolve => setTimeout(resolve, 200)));
         callCounter--;
+        response.data = removeScriptAndStyle(response.data);
         let $ = cheerio.load(response.data);
         let links = $('a');
         return {$, links};

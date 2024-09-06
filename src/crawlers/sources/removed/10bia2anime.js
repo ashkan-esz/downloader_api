@@ -27,6 +27,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 
 export default async function bia2anime({movie_url}, pageCount, extraConfigs) {

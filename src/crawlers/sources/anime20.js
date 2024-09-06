@@ -18,6 +18,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 
 export default async function anime20({movie_url}, pageCount, extraConfigs) {

@@ -24,6 +24,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: true,
 });
 
 export default async function avamovie({movie_url, serial_url}, pageCount, extraConfigs) {

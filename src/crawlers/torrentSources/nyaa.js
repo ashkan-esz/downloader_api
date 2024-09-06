@@ -26,6 +26,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: true,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 
 export default async function nyaa({movie_url, serial_url}, pageCount, extraConfigs = {}) {

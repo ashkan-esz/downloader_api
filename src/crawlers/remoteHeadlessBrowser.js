@@ -1,6 +1,6 @@
 import config from "../config/index.js";
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import {v4 as uuidv4} from "uuid";
 import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 import {getDecodedLink} from "./utils/utils.js"
@@ -8,6 +8,7 @@ import {getResponseWithCookie} from "./utils/axiosUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
 import {saveCrawlerWarning} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
+import {removeScriptAndStyle} from "./searchTools.js";
 
 export const remoteBrowsers = config.remoteBrowser.map(item => {
     item.password = encodeURIComponent(item.password);
@@ -112,6 +113,9 @@ export async function getPageData(url, sourceName, extraConfigs, sourceAuthStatu
         data.isAxiosResult = false;
         data.isAxiosCalled = axiosResult ? axiosResult.isAxiosCalled : false;
         if (axiosResult && axiosResult.pageContent && axiosResult.isSus) {
+            if (extraConfigs.removeScriptAndStyleFromHtml) {
+                data.pageContent = removeScriptAndStyle(data.pageContent);
+            }
             let $ = cheerio.load(data.pageContent);
             let links = $('a');
             if (Math.abs(links.length - axiosResult.linksCount) > 2) {
@@ -378,6 +382,9 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCou
         // let timeout = sourceAuthStatus === 'login-cookie' ? 7000 : 4000;
         let timeout = 10000;
         let response = await getResponseWithCookie(url, cookie, timeout);
+        // if (extraConfigs.removeScriptAndStyleFromHtml) {
+        //     response.data = removeScriptAndStyle(response.data);
+        // }
         let $ = cheerio.load(response.data);
         let links = $('a');
         result.pageContent = response.data;

@@ -28,6 +28,7 @@ export const sourceConfig = Object.freeze({
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,
+    removeScriptAndStyleFromHtml: false,
 });
 
 export default async function salamdl({movie_url}, pageCount, extraConfigs) {
