@@ -4579,6 +4579,14 @@ security:
                       type: integer
                     localLink:
                       type: string
+                    localLinkExpire:
+                      type: integer
+                    downloadsCount:
+                      type: integer
+                    okCount:
+                      type: integer
+                    badCount:
+                      type: integer
 
     Quality:
       type: object
@@ -4638,6 +4646,14 @@ security:
                 type: integer
               localLink:
                 type: string
+              localLinkExpire:
+                type: integer
+              downloadsCount:
+                type: integer
+              okCount:
+                type: integer
+              badCount:
+                type: integer
 
     Subtitle:
       type: object

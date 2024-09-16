@@ -152,6 +152,10 @@ function extractLinks($) {
                     type: type,
                     size: size, //in mb
                     localLink: "",
+                    localLinkExpire: 0,
+                    downloadsCount: 0,
+                    okCount: 0,
+                    badCount: 0,
                 }
 
                 let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''));
