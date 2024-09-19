@@ -198,6 +198,7 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .replace(/^zip\./, '')
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .replace(/\.+\s+/g, ' ')
@@ -211,8 +212,9 @@ function getTitle(text) {
         .replace(/(?<!(movie))\s_\d+\s?_$/, '')
         .trim();
 
-    let year = new Date().getFullYear();
-    text = text.split(new RegExp(`\\s${year}\\s(480\|720p\|1080\|2160p)p`))[0];
+    // let year = new Date().getFullYear();
+    // text = text.split(new RegExp(`\\s${year}\\s(480\|720p\|1080\|2160p)p`))[0];
+    text = text.split(new RegExp(`(\\s\|\\.)\\d{4}(\\s\|\\.)(480\|720p\|1080\|2160p)p`))[0];
 
     let splitArr = text.split(/\s|\./g);
     // console.log(splitArr);

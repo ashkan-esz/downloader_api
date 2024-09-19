@@ -171,7 +171,7 @@ export function groupSerialLinks(links, watchOnlineLinks, torrentLinks) {
         for (let j = 0; j < result[i].episodes.length; j++) {
             result[i].episodes[j].links = sortLinksByQuality(result[i].episodes[j].links);
             result[i].episodes[j].watchOnlineLinks = sortLinksByQuality(result[i].episodes[j].watchOnlineLinks);
-            result[i].episodes[j].torrentLinks = sortLinksByQuality(result[i].episodes[j].torrentLinks);
+            result[i].episodes[j].torrentLinks = sortLinksByQuality(result[i].episodes[j].torrentLinks, true);
         }
     }
 
@@ -234,7 +234,7 @@ export function groupMovieLinks(links, watchOnlineLinks, torrentLinks) {
     for (let i = 0; i < qualities.length; i++) {
         qualities[i].links = sortLinksByQuality(qualities[i].links);
         qualities[i].watchOnlineLinks = sortLinksByQuality(qualities[i].watchOnlineLinks);
-        qualities[i].torrentLinks = sortLinksByQuality(qualities[i].torrentLinks);
+        qualities[i].torrentLinks = sortLinksByQuality(qualities[i].torrentLinks, true);
     }
 
     return qualities;
@@ -334,7 +334,7 @@ export function updateSerialLinks(checkEpisode, prevLinks, prevOnlineLinks, prev
     let newTorrentLinksArray = removeDuplicateLinks([...prevTorrentLinks, ...currentTorrentLinks]);
     let newTorrentLength = newTorrentLinksArray.length;
     if (prevTorrentLength !== newTorrentLength) {
-        checkEpisode.torrentLinks = sortLinksByQuality(newTorrentLinksArray);
+        checkEpisode.torrentLinks = sortLinksByQuality(newTorrentLinksArray, true);
         updateFlag = true;
     }
 
@@ -351,6 +351,6 @@ export function checkEqualLinks(link1, link2) {
     );
 }
 
-export function sortLinksByQuality(links) {
-    return links.sort((a, b) => checkBetterQuality(a.info, b.info, false) ? -1 : 1);
+export function sortLinksByQuality(links, handleMalformedInfo = false) {
+    return links.sort((a, b) => checkBetterQuality(a.info, b.info, false, handleMalformedInfo) ? -1 : 1);
 }

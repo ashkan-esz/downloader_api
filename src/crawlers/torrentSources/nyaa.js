@@ -189,6 +189,7 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .replace(/^zip\./, '')
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .replace(/^\d\d\d\d?p\./, '')

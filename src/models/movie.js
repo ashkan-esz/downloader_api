@@ -95,8 +95,21 @@ export function getMovieModel(titleObj, page_link, type, siteDownloadLinks, torr
         animeType: '',
         animeSource: '',
         animeSeason: '',
+        torrentDownloaderConfig: null,
+        removeTorrentLinks: [],
+        downloadTorrentLinks: [],
     };
 }
+
+export const torrentDownloaderConfig = Object.freeze({
+    disabled: false,
+    newEpisodeQualities: "1080p",
+    movieQualities: "1080p",
+    torrentFilesExpireHour: 7 * 24,
+    bypassIfHasDownloadLink: true,
+    newEpisodeLinkLimit: 2,
+    movieLinkLimit: 2,
+});
 
 export const dataLevelConfig = Object.freeze({
     dlink: Object.freeze({

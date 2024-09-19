@@ -55,6 +55,19 @@ async function handleUpdateStuff(saveChangesToDB = true) {
 //----------------------------------------------------
 //----------------------------------------------------
 
+export const defaultTorrentDownloaderConfig = Object.freeze({
+    disabled: "", // all | serial | movie
+    status: "default", // default | force | ignore
+    minImdbScore: 7.1,
+    minMalScore: 7.1,
+    newEpisodeQualities: "1080p",
+    movieQualities: "1080p",
+    torrentFilesExpireHour: 7 * 24,
+    bypassIfHasDownloadLink: true,
+    newEpisodeLinkLimit: 2,
+    movieLinkLimit: 2,
+});
+
 export const defaultConfigsDb = Object.freeze({
     title: 'server configs',
     corsAllowedOrigins: Object.freeze([]),
@@ -72,6 +85,7 @@ export const defaultConfigsDb = Object.freeze({
     profileImageExtensionLimit: 'jpg, jpeg, png, webp',
     torrentDownloadMaxFileSize: 800,
     disableBotsNotifications: false,
+    defaultTorrentDownloaderConfig: defaultTorrentDownloaderConfig,
 });
 
 export const safeFieldsToEdit_array = Object.freeze([

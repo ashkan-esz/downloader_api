@@ -202,6 +202,7 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .replace(/^zip\./, '')
         .replace(/^\d\d\d\d?p\./, '')
         .replace(/(\s\d\d+)?\.\s?(mkv|mp4|avi|wmv)/, '')
         .replace(/\s\(\d{4}\)/, '')

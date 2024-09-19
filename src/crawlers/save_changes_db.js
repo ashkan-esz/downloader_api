@@ -9,7 +9,7 @@ import {getJikanApiData, handleAnimeRelatedTitles} from "./3rdPartyApi/jikanApi.
 import {groupMovieLinks, updateMoviesGroupedLinks} from "./link.js";
 import {handleSubtitlesUpdate} from "./subtitle.js";
 import {checkNeedTrailerUpload} from "./posterAndTrailer.js";
-import {getDatesBetween} from "./utils/utils.js";
+import {getDatesBetween, removeDuplicateElements} from "./utils/utils.js";
 import {getFileSize} from "./utils/axiosUtils.js";
 import {
     changePageLinkStateFromCrawlerStatus, checkForceStopCrawler,
@@ -27,6 +27,8 @@ import {checkCrawledDataForChanges} from "./status/crawlerChange.js";
 import * as rabbitmqPublisher from "../../rabbitmq/publish.js";
 import {handleMovieNotification, handleNewInsertedMovieNotification} from "./movieNotification.js";
 import {titlesAndYears} from "./utils/titlesList.js";
+import {torrentSourcesNames} from "./sourcesArray.js";
+import {getServerConfigsDb} from "../config/configsDb.js";
 
 
 export default async function save(title, type, year, sourceData, pageNumber, extraConfigs) {
@@ -98,6 +100,14 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                     result.titleModel.qualities = groupMovieLinks(downloadLinks, watchOnlineLinks, torrentLinks);
                 }
                 changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.newTitle.inserting);
+
+                let {
+                    downloadTorrentLinks,
+                    removeTorrentLinks
+                } = checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.sourceName, true);
+                result.titleModel.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
+                result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
+
                 let insertedId = await insertMovieToDB(result.titleModel);
                 if (insertedId) {
                     if (result.titleModel.posters.length > 0) {
@@ -244,6 +254,9 @@ async function searchOnCollection(titleObj, year, type) {
         animeType: 1,
         rated: 1,
         seasonEpisode: 1,
+        torrentDownloaderConfig: 1,
+        removeTorrentLinks: 1,
+        downloadTorrentLinks: 1,
     };
 
     let searchTypes = [type];
@@ -420,6 +433,13 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
 
 
         if (Object.keys(updateFields).length > 0) {
+            let {
+                downloadTorrentLinks,
+                removeTorrentLinks
+            } = checkTorrentAutoDownloaderMustRun(db_data, sourceName, false);
+            updateFields.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
+            updateFields.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
+
             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.updateTitle.updating);
             await updateMovieByIdDB(db_data._id, updateFields);
 
@@ -529,4 +549,189 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
     }
     await promiseQueue.onIdle();
     return downloadLinks;
+}
+
+//---------------------------------------------
+//---------------------------------------------
+
+function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
+    let removeTorrentLinks = titleModel.removeTorrentLinks || [];
+    let downloadTorrentLinks = titleModel.downloadTorrentLinks || [];
+
+    let defaultConfig = getServerConfigsDb()?.defaultTorrentDownloaderConfig;
+
+    if (defaultConfig.disabled === "all" || defaultConfig.disabled.includes(titleModel.type.split('_').pop())) {
+        return {removeTorrentLinks, downloadTorrentLinks};
+    }
+
+    if (isNewTitle) {
+        return checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig);
+    }
+
+    let titleConfig;
+    if (defaultConfig.status === "force" || (defaultConfig.status === "default" && !titleModel.torrentDownloaderConfig)) {
+        titleConfig = {...defaultConfig};
+        if (Number(titleModel.rating.imdb) < defaultConfig.minImdbScore && Number(titleModel.rating.myAnimeList) < defaultConfig.minMalScore) {
+            return {removeTorrentLinks, downloadTorrentLinks};
+        }
+    } else {
+        // status: ignore || status:default and validConfig
+        titleConfig = titleModel.torrentDownloaderConfig;
+        if (titleConfig.disabled) {
+            return {removeTorrentLinks, downloadTorrentLinks};
+        }
+    }
+
+    if (!titleConfig) {
+        return {removeTorrentLinks, downloadTorrentLinks};
+    }
+
+    if (titleModel.type.includes('serial')) {
+        if (downloadTorrentLinks.length >= titleConfig.newEpisodeLinkLimit) {
+            return {removeTorrentLinks, downloadTorrentLinks};
+        }
+
+        let [_, season, episode] = titleModel.latestData.torrentLinks.split(/[se]/gi);
+        season = Number(season);
+        episode = Number(episode);
+
+        let searchQualities = defaultConfig.newEpisodeQualities.toLowerCase().split(',').map(item => item.trim());
+
+        for (let i = 0; i < titleModel.seasons.length; i++) {
+            if (titleModel.seasons[i].seasonNumber === season) {
+                for (let j = 0; j < titleModel.seasons[i].episodes.length; j++) {
+                    if (titleModel.seasons[i].episodes[j].episodeNumber === episode) {
+                        // new episode
+                        if (titleModel.seasons[i].episodes[j].links.length > 0 && titleConfig.bypassIfHasDownloadLink) {
+                            return {removeTorrentLinks, downloadTorrentLinks};
+                        }
+
+                        const torrentLinks = titleModel.seasons[i].episodes[j].torrentLinks.filter(l => l.type === "torrent");
+
+                        const countOfTorrentDirected = torrentLinks.filter(l => !!l.localLink).length;
+                        if (countOfTorrentDirected >= titleConfig.newEpisodeLinkLimit) {
+                            return {removeTorrentLinks, downloadTorrentLinks};
+                        }
+
+                        for (let k = 0; k < torrentLinks.length; k++) {
+                            for (let l = 0; l < searchQualities.length; l++) {
+                                if (torrentLinks[k].info.includes(searchQualities[l])) {
+                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link)) {
+                                        downloadTorrentLinks.push(torrentLinks[k].link);
+                                    }
+
+                                    if (downloadTorrentLinks.length >= defaultConfig.newEpisodeLinkLimit) {
+                                        return {removeTorrentLinks, downloadTorrentLinks};
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        if (downloadTorrentLinks.length >= titleConfig.movieLinkLimit) {
+            return {removeTorrentLinks, downloadTorrentLinks};
+        }
+
+        const searchQualities = defaultConfig.movieQualities.toLowerCase().split(',').map(item => item.trim());
+
+        for (let i = 0; i < titleModel.qualities.length; i++) {
+            if (searchQualities.includes(titleModel.qualities[i].quality.toLowerCase())) {
+                // quality is candidate
+                if (titleModel.qualities[i].links.length > 0 && titleConfig.bypassIfHasDownloadLink) {
+                    // check another quality
+                    continue;
+                }
+
+                const torrentLinks = titleModel.qualities[i].torrentLinks.filter(l => l.type === "torrent");
+
+                for (let j = 0; j < torrentLinks.length; j++) {
+                    if (!downloadTorrentLinks.includes(torrentLinks[j].link)) {
+                        downloadTorrentLinks.push(torrentLinks[j].link);
+                    }
+
+                    const countOfTorrentDirected = torrentLinks.filter(l => !!l.localLink).length;
+                    if (countOfTorrentDirected >= titleConfig.movieLinkLimit) {
+                        return {removeTorrentLinks, downloadTorrentLinks};
+                    }
+
+                    if (downloadTorrentLinks.length >= defaultConfig.movieLinkLimit) {
+                        return {removeTorrentLinks, downloadTorrentLinks};
+                    }
+                }
+            }
+        }
+    }
+
+    return {removeTorrentLinks, downloadTorrentLinks};
+}
+
+function checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig) {
+    let removeTorrentLinks = [];
+    let downloadTorrentLinks = [];
+
+    if (defaultConfig.status === "ignore") {
+        return {removeTorrentLinks, downloadTorrentLinks};
+    }
+    if (Number(titleModel.rating.imdb) < defaultConfig.minImdbScore && Number(titleModel.rating.myAnimeList) < defaultConfig.minMalScore) {
+        return {removeTorrentLinks, downloadTorrentLinks};
+    }
+    if (!torrentSourcesNames.includes(sourceName)) {
+        //there is no torrent link to continue
+        return {removeTorrentLinks, downloadTorrentLinks};
+    }
+
+    if (titleModel.type.includes('serial')) {
+        let [_, season, episode] = titleModel.latestData.torrentLinks.split(/[se]/gi);
+        season = Number(season);
+        episode = Number(episode);
+
+        let searchQualities = defaultConfig.newEpisodeQualities.toLowerCase().split(',').map(item => item.trim());
+
+        for (let i = 0; i < titleModel.seasons.length; i++) {
+            if (titleModel.seasons[i].seasonNumber === season) {
+                for (let j = 0; j < titleModel.seasons[i].episodes.length; j++) {
+                    if (titleModel.seasons[i].episodes[j].episodeNumber === episode) {
+                        const torrentLinks = titleModel.seasons[i].episodes[j].torrentLinks.filter(l => l.type === "torrent");
+
+                        for (let k = 0; k < torrentLinks.length; k++) {
+                            for (let l = 0; l < searchQualities.length; l++) {
+                                if (torrentLinks[k].info.includes(searchQualities[l])) {
+                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link)) {
+                                        downloadTorrentLinks.push(torrentLinks[k].link);
+                                    }
+
+                                    if (downloadTorrentLinks.length >= defaultConfig.newEpisodeLinkLimit) {
+                                        return {removeTorrentLinks, downloadTorrentLinks};
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        const searchQualities = defaultConfig.movieQualities.toLowerCase().split(',').map(item => item.trim());
+
+        for (let i = 0; i < titleModel.qualities.length; i++) {
+            if (searchQualities.includes(titleModel.qualities[i].quality.toLowerCase())) {
+                const torrentLinks = titleModel.qualities[i].torrentLinks.filter(l => l.type === "torrent");
+
+                for (let j = 0; j < torrentLinks.length; j++) {
+                    if (!downloadTorrentLinks.includes(torrentLinks[j].link)) {
+                        downloadTorrentLinks.push(torrentLinks[j].link);
+                    }
+
+                    if (downloadTorrentLinks.length >= defaultConfig.movieLinkLimit) {
+                        return {removeTorrentLinks, downloadTorrentLinks};
+                    }
+                }
+            }
+        }
+    }
+
+    return {removeTorrentLinks, downloadTorrentLinks};
 }

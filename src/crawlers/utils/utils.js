@@ -338,9 +338,23 @@ export function getSeasonEpisode(input, isLinkInput = false) {
     }
 }
 
-export function checkBetterQuality(quality, prevQuality, withSubIsBetter = true) {
+export function checkBetterQuality(quality, prevQuality, withSubIsBetter = true, handleMalformedInfo = false) {
     if (quality === prevQuality) {
         return false;
+    }
+
+    if (handleMalformedInfo && !quality.match(/^\d\d\d\d?p/)) {
+        let qualityMatch = quality.match(/\d\d\d\d?p/g)?.[0];
+        if (qualityMatch) {
+            quality = qualityMatch + '.' + quality;
+        }
+    }
+
+    if (handleMalformedInfo && !prevQuality.match(/^\d\d\d\d?p/)) {
+        let qualityMatch = prevQuality.match(/\d\d\d\d?p/g)?.[0];
+        if (qualityMatch) {
+            prevQuality = qualityMatch + '.' + prevQuality;
+        }
     }
 
     quality = quality.split('- ')[0].toLowerCase()
