@@ -558,14 +558,15 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
     let removeTorrentLinks = titleModel.removeTorrentLinks || [];
     let downloadTorrentLinks = titleModel.downloadTorrentLinks || [];
 
-    let defaultConfig = getServerConfigsDb()?.defaultTorrentDownloaderConfig;
+    const defaultConfig = getServerConfigsDb()?.defaultTorrentDownloaderConfig;
+    const torrentDownloadSizeLimit = (getServerConfigsDb()?.torrentDownloadMaxFileSize || 0) * 1024 * 1024;
 
     if (defaultConfig.disabled === "all" || defaultConfig.disabled.includes(titleModel.type.split('_').pop())) {
         return {removeTorrentLinks, downloadTorrentLinks};
     }
 
     if (isNewTitle) {
-        return checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig);
+        return checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig, torrentDownloadSizeLimit);
     }
 
     let titleConfig;
@@ -616,7 +617,7 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
                         for (let k = 0; k < torrentLinks.length; k++) {
                             for (let l = 0; l < searchQualities.length; l++) {
                                 if (torrentLinks[k].info.includes(searchQualities[l])) {
-                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link)) {
+                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link) && (!torrentDownloadSizeLimit || torrentLinks[k].size <= torrentDownloadSizeLimit)) {
                                         downloadTorrentLinks.push(torrentLinks[k].link);
                                     }
 
@@ -648,7 +649,7 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
                 const torrentLinks = titleModel.qualities[i].torrentLinks.filter(l => l.type === "torrent");
 
                 for (let j = 0; j < torrentLinks.length; j++) {
-                    if (!downloadTorrentLinks.includes(torrentLinks[j].link)) {
+                    if (!downloadTorrentLinks.includes(torrentLinks[j].link) && (!torrentDownloadSizeLimit || torrentLinks[j].size <= torrentDownloadSizeLimit)) {
                         downloadTorrentLinks.push(torrentLinks[j].link);
                     }
 
@@ -668,7 +669,7 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
     return {removeTorrentLinks, downloadTorrentLinks};
 }
 
-function checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig) {
+function checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defaultConfig, torrentDownloadSizeLimit) {
     let removeTorrentLinks = [];
     let downloadTorrentLinks = [];
 
@@ -699,7 +700,7 @@ function checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defa
                         for (let k = 0; k < torrentLinks.length; k++) {
                             for (let l = 0; l < searchQualities.length; l++) {
                                 if (torrentLinks[k].info.includes(searchQualities[l])) {
-                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link)) {
+                                    if (!downloadTorrentLinks.includes(torrentLinks[k].link) && (!torrentDownloadSizeLimit || torrentLinks[k].size <= torrentDownloadSizeLimit)) {
                                         downloadTorrentLinks.push(torrentLinks[k].link);
                                     }
 
@@ -721,7 +722,7 @@ function checkTorrentAutoDownloaderMustRun_newTitle(titleModel, sourceName, defa
                 const torrentLinks = titleModel.qualities[i].torrentLinks.filter(l => l.type === "torrent");
 
                 for (let j = 0; j < torrentLinks.length; j++) {
-                    if (!downloadTorrentLinks.includes(torrentLinks[j].link)) {
+                    if (!downloadTorrentLinks.includes(torrentLinks[j].link) && (!torrentDownloadSizeLimit || torrentLinks[j].size <= torrentDownloadSizeLimit)) {
                         downloadTorrentLinks.push(torrentLinks[j].link);
                     }
 
