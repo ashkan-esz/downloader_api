@@ -210,6 +210,7 @@ services:
       DOMAIN: movietracker.site
     volumes:
       - ./downloads:/app/downloads
+      - ./download_queue.json:/app/download_queue.json
     #    ports:
     #      - "3003:3003"
     deploy:

@@ -250,7 +250,7 @@ export function updateMoviesGroupedLinks(prevGroupedLinks, currentGroupedLinks, 
             //get source links
             let prevLinks = checkQuality.links.filter(item => item.sourceName === sourceName);
             let prevOnlineLinks = checkQuality.watchOnlineLinks.filter(item => item.sourceName === sourceName);
-            let prevTorrentLinks = checkQuality.torrentLinks.filter(item => item.sourceName === sourceName);
+            let prevTorrentLinks = checkQuality.torrentLinks;
             let currentLinks = currentGroupedLinks[i].links;
             let currentOnlineLinks = currentGroupedLinks[i].watchOnlineLinks;
             let currentTorrentLinks = currentGroupedLinks[i].torrentLinks;

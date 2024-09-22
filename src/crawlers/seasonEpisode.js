@@ -44,8 +44,8 @@ export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links,
     };
 }
 
-export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks) {
-    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);
+export function handleSiteSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, siteTorrentLinks) {
+    let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, siteTorrentLinks);
     let seasonsUpdateFlag = handleLinksSeasonUpdate(db_data.seasons, links_seasons, sourceName);
 
     let missedEpisodeResult = handleMissedSeasonEpisode(db_data.seasons);
@@ -178,7 +178,7 @@ function handleLinksSeasonUpdate(db_seasons, currentSeasons, sourceName) {
                     //get source links
                     let prevLinks = checkEpisode.links.filter(item => item.sourceName === sourceName);
                     let prevOnlineLinks = checkEpisode.watchOnlineLinks.filter(item => item.sourceName === sourceName);
-                    let prevTorrentLinks = checkEpisode.torrentLinks.filter(item => item.sourceName === sourceName);
+                    let prevTorrentLinks = checkEpisode.torrentLinks;
                     let currentLinks = currentEpisodes[j].links;
                     let currentOnlineLinks = currentEpisodes[j].watchOnlineLinks;
                     let currentTorrentLinks = currentEpisodes[j].torrentLinks;

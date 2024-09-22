@@ -5,48 +5,40 @@ services:
     image: downloader-api
     depends_on:
       - redis
-      - rabbitmq
+    #      - rabbitmq
     network_mode: host
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.light
       network: host
     env_file: ./env/.env
     volumes:
       - .:/usr/app
       - ./db-backups:/db-backups
-      - /usr/app/node_modules
     environment:
       NODE_ENV: production
       REDIS_URL: redis://127.0.0.1:6379
-      _REMOTE_BROWSER_ENDPOINT1: http://localhost:5000
-      _REMOTE_BROWSER_TABS_COUNT1: 2
-      DISABLE_CRAWLER: 'true'
-      DISABLE_TORRENT_CRAWLER: 'true'
-      CRAWLER_CONCURRENCY: 13
+      DISABLE_CRAWLER: 'false'
+      DISABLE_TORRENT_CRAWLER: 'false'
+      CRAWLER_CONCURRENCY: 6
       PAUSE_CRAWLER_ON_HIGH_LOAD: 'true'
-      CRAWLER_TOTAL_MEMORY: 900
+      CRAWLER_TOTAL_MEMORY: 560
+      CRAWLER_MEMORY_LIMIT: 520
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
-      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
-      DOMAIN: localhost
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site
+      DOMAIN: movietracker.site
     #    ports:
     #      - "3000:3000"
     deploy:
       resources:
         #also check --max_old_space_size in Dockerfile
         limits:
-          cpus: "0.6"
-          memory: 900M
+          cpus: "0.5"
+          memory: 800M
         reservations:
           memory: 50M
     restart: always
-    healthcheck:
-      test: [ "CMD", "node", "healthcheck.js" ]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   redis:
     image: "redis:7.2.3-alpine"
@@ -60,21 +52,15 @@ services:
     #      - "6379:6379"
     volumes:
       - redis:/data
-    entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 80mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD"
+    entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 50mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD"
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: 90M
+          cpus: "0.1"
+          memory: 50M
         reservations:
           memory: 10M
     restart: always
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-      interval: 1m30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
 
   telegrambot:
     image: ashkanaz2828/downloader_telegrambot
@@ -83,20 +69,19 @@ services:
       - api
     env_file: ./env/telegrambot.env
     environment:
-      - API_URL=http://api.localhost
+      - API_URL=https://api.movietracker.site
       - CHAT_API_URL=https://chat.movietracker.site
-      - WEB_URL=http://localhost
-      - PRINT_ERRORS=false
+      - WEB_URL=https://movietracker.site
       - MIN_IMDB_RATE=7.5
       - MIN_MAL_RATE=7.5
       - INITIAL_SLEEP_MINUTE=1
-#    volumes:
-#      - telegrambot
+    #    volumes:
+    #      - telegrambot
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: 100M
+          cpus: "0.1"
+          memory: 70M
         reservations:
           memory: 10M
     restart: always
@@ -108,15 +93,33 @@ services:
       - api
       - torrent
     environment:
-      - REACT_APP_BASE_URL=http://api.localhost
-      - REACT_APP_TORRENT_BASE_URL=http://download.localhost
+      - REACT_APP_BASE_URL=https://api.movietracker.site
+      - REACT_APP_TORRENT_BASE_URL=https://download.movietracker.site
     #    ports:
     #      - "7070:7070"
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: 100M
+          cpus: "0.1"
+          memory: 80M
+        reservations:
+          memory: 10M
+    restart: unless-stopped
+
+  website:
+    image: ashkanaz2828/downloader_website
+    network_mode: host
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_BASE_URL=https://api.movietracker.site
+    #    ports:
+    #      - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 80M
         reservations:
           memory: 10M
     restart: unless-stopped
@@ -134,7 +137,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
+          cpus: "0.15"
           memory: 100M
         reservations:
           memory: 10M
@@ -143,25 +146,26 @@ services:
     image: ashkanaz2828/downloader_gochat
     depends_on:
       - redis
-      - rabbitmq
+    #      - rabbitmq
     network_mode: host
     env_file: env/chatservice.env
     environment:
       PORT: 3002
-      MAIN_SERVER_ADDRESS: api.localhost
-      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site
       LOG_PANIC_TRACE: 'true'
-      DOMAIN: localhost
+      DOMAIN: movietracker.site
       MALLOC_ARENA_MAX: 2
+      BLURHASH_CONSUMER_COUNT: 1
     #    ports:
     #      - "3002:3002"
     deploy:
       resources:
         limits:
           cpus: "0.4"
-          memory: 150M
+          memory: 400M
         reservations:
-          memory: 20M
+          memory: 15M
     restart: always
 
   rabbitmq:
@@ -188,9 +192,9 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: 250M
+          memory: 200M
         reservations:
-          memory: 150M
+          memory: 50M
     restart: always
 
   torrent:
@@ -199,10 +203,11 @@ services:
     env_file: env/torrentservice.env
     environment:
       PORT: 3003
-      MAIN_SERVER_ADDRESS: api.localhost
-      CORS_ALLOWED_ORIGINS: http://localhost --- http://admin.localhost --- http://api.localhost --- http://chat.localhost
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site --- https://download.movietracker.site
       LOG_PANIC_TRACE: 'true'
       DONT_CONVERT_MKV: 'true'
+      DOMAIN: movietracker.site
     volumes:
       - ./downloads:/app/downloads
       - ./download_queue.json:/app/download_queue.json
@@ -211,10 +216,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 300M
+          cpus: "0.4"
+          memory: 400M
         reservations:
-          memory: 50M
+          memory: 15M
     restart: always
 
   postgresDb:
@@ -230,14 +235,17 @@ services:
     #      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    command: ["postgres", "-c", "log_min_messages=log"]
+      - ./docker/postgres/postgresql-light.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    #    shm_size: '64mb'
+    #    shm_size: '90mb'
     deploy:
       resources:
         limits:
-          cpus: "0.3"
+          cpus: "0.5"
           memory: 300M
         reservations:
-          memory: 50M
+          memory: 40M
     restart: always
 
 volumes:
