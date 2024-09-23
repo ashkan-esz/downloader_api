@@ -621,7 +621,7 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
                                         downloadTorrentLinks.push(torrentLinks[k].link);
                                     }
 
-                                    if (downloadTorrentLinks.length >= defaultConfig.newEpisodeLinkLimit) {
+                                    if (downloadTorrentLinks.length >= titleConfig.newEpisodeLinkLimit) {
                                         return {removeTorrentLinks, downloadTorrentLinks};
                                     }
                                 }
@@ -658,7 +658,7 @@ function checkTorrentAutoDownloaderMustRun(titleModel, sourceName, isNewTitle) {
                         return {removeTorrentLinks, downloadTorrentLinks};
                     }
 
-                    if (downloadTorrentLinks.length >= defaultConfig.movieLinkLimit) {
+                    if (downloadTorrentLinks.length >= titleConfig.movieLinkLimit) {
                         return {removeTorrentLinks, downloadTorrentLinks};
                     }
                 }

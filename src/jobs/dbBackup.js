@@ -129,15 +129,25 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
         }
 
         updateCronJobsStatus('restoreBackupDb', 'filter last backup files list');
-        let lastBackUpDate = s3Files[0].Key.split('-').slice(2).join('-').replace('.gz', '');
-        for (let i = 0; i < s3Files.length; i++) {
-            let fileDate = s3Files[i].Key.split('-').slice(2).join('-').replace('.gz', '');
-            if (getDatesBetween(new Date(fileDate), new Date(lastBackUpDate)).milliseconds > 0) {
-                lastBackUpDate = fileDate;
+        let backupFiles = [];
+        for (let i = 0; i < _modelNames.length; i++) {
+            let lastDate = null;
+            let lastBackup = null;
+            for (let j = 0; j < s3Files.length; j++) {
+                if (s3Files[j].Key.split('-')[1] === _modelNames[i]) {
+                    let date = s3Files[j].Key.split('-').slice(2).join('-').replace('.gz', '');
+                    if (!lastBackup || getDatesBetween(new Date(date), new Date(lastDate)).milliseconds > 0) {
+                        lastDate = date;
+                        lastBackup = s3Files[j];
+                    }
+                }
+            }
+            if (lastBackup) {
+                backupFiles.push(lastBackup);
             }
         }
-        let backupFiles = s3Files.filter(item => item.Key.includes(lastBackUpDate))
-            .sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
+
+         backupFiles = backupFiles.sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
 
         if (backupFiles.length === 0) {
             updateCronJobsStatus('restoreBackupDb', 'end');
