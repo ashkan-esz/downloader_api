@@ -419,6 +419,11 @@ const validations = Object.freeze({
         .isBoolean({strict: true}).withMessage("permissionToTorrentLeech must be Boolean")
         .toBoolean(),
 
+    permissionToTorrentSearch: body('permissionToTorrentSearch')
+        .exists().withMessage("Missed parameter permissionToTorrentSearch")
+        .isBoolean({strict: true}).withMessage("permissionToTorrentSearch must be Boolean")
+        .toBoolean(),
+
     reCrawl: body('reCrawl')
         .exists().withMessage("Missed parameter reCrawl")
         .isBoolean({strict: true}).withMessage("reCrawl must be Boolean")

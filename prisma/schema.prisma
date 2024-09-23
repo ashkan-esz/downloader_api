@@ -504,16 +504,17 @@ model NotificationEntityType {
 // ----------------------------------------------------------------
 
 model Bot {
-  botId                    String    @id @unique
-  botToken                 String    @unique
-  botName                  String
-  botType                  String
-  disabled                 Boolean
-  isOfficial               Boolean
-  permissionToLogin        Boolean
-  permissionToCrawl        Boolean
-  permissionToTorrentLeech Boolean
-  users                    UserBot[]
+  botId                     String    @id @unique
+  botToken                  String    @unique
+  botName                   String
+  botType                   String
+  disabled                  Boolean
+  isOfficial                Boolean
+  permissionToLogin         Boolean
+  permissionToCrawl         Boolean
+  permissionToTorrentLeech  Boolean
+  permissionToTorrentSearch Boolean
+  users                     UserBot[]
 }
 
 model UserBot {

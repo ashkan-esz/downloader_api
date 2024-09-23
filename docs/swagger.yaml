@@ -2846,6 +2846,10 @@ paths:
                   type: boolean
                   default: false
                   required: true
+                permissionToTorrentSearch:
+                  type: boolean
+                  default: false
+                  required: true
       parameters:
         - $ref: '#/components/parameters/botId_param'
       responses:
@@ -2904,6 +2908,10 @@ paths:
                   default: false
                   required: true
                 permissionToTorrentLeech:
+                  type: boolean
+                  default: false
+                  required: true
+                permissionToTorrentSearch:
                   type: boolean
                   default: false
                   required: true
@@ -5013,4 +5021,6 @@ security:
         permissionToCrawl:
           type: boolean
         permissionToTorrentLeech:
+          type: boolean
+        permissionToTorrentSearch:
           type: boolean

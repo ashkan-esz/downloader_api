@@ -18,6 +18,7 @@ export async function addBotsFromMongodbToPostgres() {
             permissionToLogin: b.permissionToLogin,
             permissionToCrawl: b.permissionToCrawl,
             permissionToTorrentLeech: b.permissionToTorrentLeech,
+            permissionToTorrentSearch: b.permissionToTorrentSearch,
         }));
 
         await prisma.bot.deleteMany({
@@ -92,7 +93,7 @@ export async function getBotData(botId) {
     }
 }
 
-export async function addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, botToken, userData) {
+export async function addNewBot(botName, botType, disabled, description, isOfficial, permissionToLogin, permissionToCrawl, permissionToTorrentLeech, permissionToTorrentSearch, botToken, userData) {
     //for admin usage
     try {
         let collection = await getCollection('bots');
@@ -120,6 +121,7 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
             permissionToLogin: permissionToLogin,
             permissionToCrawl: permissionToCrawl,
             permissionToTorrentLeech: permissionToTorrentLeech,
+            permissionToTorrentSearch: permissionToTorrentSearch,
         };
         await collection.insertOne(newBot);
 
@@ -135,6 +137,7 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
                     permissionToLogin: newBot.permissionToLogin,
                     permissionToCrawl: newBot.permissionToCrawl,
                     permissionToTorrentLeech: newBot.permissionToTorrentLeech,
+                    permissionToTorrentSearch: newBot.permissionToTorrentSearch,
                 },
             });
         } catch (error2) {
@@ -194,6 +197,7 @@ export async function updateBotData(botId, data, userData) {
                 permissionToLogin: botData.permissionToLogin,
                 permissionToCrawl: botData.permissionToCrawl,
                 permissionToTorrentLeech: botData.permissionToTorrentLeech,
+                permissionToTorrentSearch: botData.permissionToTorrentSearch,
             },
         });
 
