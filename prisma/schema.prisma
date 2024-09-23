@@ -57,6 +57,7 @@ model User {
   createdNotifications            Notification[]
   receivedNotifications           Notification[]           @relation("receivedNotif")
   bots                            UserBot[]
+  roles                           UserToRole[]
 }
 
 model Follow {
@@ -100,11 +101,53 @@ model ActiveSession {
   @@index([userId, refreshToken])
 }
 
+// todo : change usage in api and goChat
 enum userRole {
   test_user
   user
   dev
   admin
+}
+
+model UserToRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Role {
+  id                  Int      @id @default(autoincrement())
+  name                String   @unique
+  description         String   @default("")
+  torrentLeachLimitGb Int
+  torrentSearchLimit  Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  users       UserToRole[]
+  permissions RoleToPermission[]
+}
+
+model RoleToPermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles RoleToPermission[]
 }
 
 // ----------------------------------------------------------------
