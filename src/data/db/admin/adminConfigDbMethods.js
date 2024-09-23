@@ -196,7 +196,6 @@ export async function addNewAppVersionDB(appData, userData) {
                 version: appData.version,
                 versionName: appData.versionName,
                 uploaderId: userData.userId,
-                uploaderRole: userData.role,
                 vid: uuidv4(),
                 fileData: appData.fileData,
             }]
@@ -301,7 +300,6 @@ export async function getAppVersionDB(publicCall = false) {
                 projection: {
                     _id: 0,
                     'apps.versions.uploaderId': 0,
-                    'apps.versions.uploaderRole': 0,
                     'apps.versions.vid': 0,
                 }
             })

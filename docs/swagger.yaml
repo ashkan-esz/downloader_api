@@ -3455,70 +3455,6 @@ security:
                 $ref: '#/components/schemas/MovieData'
 
   "schemas":
-    Profile:
-      type: object
-      properties:
-        userId:
-          type: integer
-        username:
-          type: string
-        publicName:
-          type: string
-          description: other users see this in general
-        email:
-          type: string
-        emailVerified:
-          type: boolean
-        bio:
-          type: string
-        mbtiType:
-          type: string
-        profileImages:
-          type: array
-          items:
-            type: object
-            properties:
-              url:
-                type: string
-              originalSize:
-                type: integer
-              size:
-                type: integer
-              thumbnail:
-                type: string
-              blurHash:
-                type: string
-              addDate:
-                $ref: '#/components/schemas/DateString'
-        defaultProfile:
-          type: string
-        favoriteGenres:
-          $ref: '#/components/schemas/StringArray'
-        computedFavoriteGenres:
-          $ref: '#/components/schemas/FavoriteGenres'
-        movieSettings:
-          $ref: '#/components/schemas/MovieSettings'
-        downloadLinksSettings:
-          $ref: '#/components/schemas/DownloadLinksSettings'
-        notificationSettings:
-          $ref: '#/components/schemas/NotificationSettings'
-        friends:
-          type: array
-        registrationDate:
-          $ref: '#/components/schemas/DateString'
-        role:
-          type: string
-          enum: [ 'test_user', 'user', 'dev', 'admin' ]
-        thisDevice:
-          $ref: '#/components/schemas/Session'
-        _count:
-          type: object
-          properties:
-            followers:
-              type: integer
-            following:
-              type: integer
-
     FavoriteGenres:
       type: array
       items:
@@ -3531,59 +3467,6 @@ security:
           percent:
             type: number
             format: float
-
-    MovieSettings:
-      type: object
-      properties:
-        includeAnime:
-          type: boolean
-          default: true
-        includeHentai:
-          type: boolean
-          default: false
-
-    DownloadLinksSettings:
-      type: object
-      properties:
-        includeDubbed:
-          type: boolean
-          default: true
-        includeHardSub:
-          type: boolean
-          default: true
-        includeCensored:
-          type: boolean
-          default: true
-        preferredQualities:
-          type: array
-          items:
-            type: string
-            enum: [ '480p', '720p', '1080p', '2160p' ]
-
-    NotificationSettings:
-      type: object
-      properties:
-        followMovie:
-          type: boolean
-          default: true
-        followMovie_betterQuality:
-          type: boolean
-          default: true
-        followMovie_subtitle:
-          type: boolean
-          default: true
-        futureList:
-          type: boolean
-          default: true
-        futureList_serialSeasonEnd:
-          type: boolean
-          default: true
-        futureList_subtitle:
-          type: boolean
-          default: true
-        finishedList_spinOffSequel:
-          type: boolean
-          default: true
 
     MovieData:
       oneOf:
@@ -4145,7 +4028,6 @@ security:
         watchlist_groupName:
           type: string
 
-
     UserStats_staff:
       type: object
       properties:
@@ -4442,8 +4324,6 @@ security:
           properties:
             userId:
               type: integer
-            role:
-              type: string
             rawUsername:
               type: string
         description:
@@ -5008,8 +4888,6 @@ security:
           properties:
             userId:
               type: integer
-            role:
-              type: string
             rawUsername:
               type: string
         description:

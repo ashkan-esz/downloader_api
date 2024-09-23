@@ -42,7 +42,6 @@ export async function updateSourceData(sourceName, data, userData) {
         sourceData = {...sourceData, ...data};
         sourceData.userData = {
             userId: userData.userId,
-            role: userData.role,
         }
         sourceData.lastConfigUpdateDate = new Date();
 
@@ -188,7 +187,6 @@ export async function removeSource(sourceName, userData, isManualRemove) {
         if (isManualRemove) {
             sourceData.userData = {
                 userId: userData.userId,
-                role: userData.role,
             }
         }
         sourceData.lastConfigUpdateDate = new Date();

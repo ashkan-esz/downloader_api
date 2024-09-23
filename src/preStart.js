@@ -6,6 +6,8 @@ import {v4 as uuidv4} from "uuid";
 import {generateAuthTokens, getJwtPayload} from "./services/users.services.js";
 import {createBuckets, defaultProfileImage} from "./data/cloudStorage.js";
 import {addMoviesFromMongodbToPostgres} from "./data/db/moviesDbMethods.js";
+import * as roleAndPermissionsDbMethods from "./data/db/admin/roleAndPermissionsDbMethods.js";
+import {Default_Role_Ids} from "./data/db/admin/roleAndPermissionsDbMethods.js";
 import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
 import {addNotificationEntityTypes} from "./data/db/notificationDbMethods.js";
 import {addBotsFromMongodbToPostgres} from "./data/db/botsDbMethods.js";
@@ -22,6 +24,10 @@ export async function preStart(force = false) {
         await addBotsFromMongodbToPostgres();
         console.log('====> [[Adding Bots to Postgres: Done]]');
 
+        console.log('====> [[Adding permissions To Postgres]]');
+        await roleAndPermissionsDbMethods.addPermissionsToPostgres();
+        console.log('====> [[Adding permissions to Postgres: Done]]');
+
         console.log('====> [[Restoring PostgresDb Backup]]');
         let res = await restoreBackupDbJobFunc(true);
         if (res?.status === 'error') {
@@ -33,6 +39,17 @@ export async function preStart(force = false) {
         } else {
             console.log('====> [[Restoring PostgresDb Backup: Done]]');
         }
+
+        console.log('====> [[Adding main_admin_role To Postgres]]');
+        await roleAndPermissionsDbMethods.addMainAdminRoleToPostgres();
+        await roleAndPermissionsDbMethods.addDefaultAdminRoleToPostgres();
+        console.log('====> [[Adding main_admin_role to Postgres: Done]]');
+
+        console.log('====> [[Adding default_user_role To Postgres]]');
+        await roleAndPermissionsDbMethods.addDefaultUserRoleToPostgres();
+        await roleAndPermissionsDbMethods.addTestUserRoleToPostgres();
+        await roleAndPermissionsDbMethods.addDefaultBotRoleToPostgres();
+        console.log('====> [[Adding default_user_role to Postgres: Done]]');
 
         console.log('====> [[Creating Notifications Entity Types]]');
         await addNotificationEntityTypes();
@@ -57,7 +74,7 @@ async function createTestUser() {
     console.log('====> [[Creating Guest User]]');
     try {
         let hashedPassword = await bcrypt.hash('$$test_user_password$$', 11);
-        let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, 'test_user', '0', 0, defaultProfileImage);
+        let userData = await usersDbMethods.addUser('$$test_user$$', '', hashedPassword, Default_Role_Ids.testUser, '0', 0, defaultProfileImage);
         if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             //test user already exist
             let testUserData = await usersDbMethods.findUser('$$test_user$$', '', true);
@@ -73,7 +90,7 @@ async function createTestUser() {
             console.log('====> [[Creating Guest User: Error]]');
             return;
         }
-        const user = getJwtPayload(userData);
+        const user = getJwtPayload(userData, [Default_Role_Ids.testUser]);
         const tokens = generateAuthTokens(user, '10000d', '10000d');
         const deviceId = uuidv4();
         await usersDbMethods.addSession(userData.userId, {}, deviceId, tokens.refreshToken); //deviceInfo, deviceId
@@ -92,7 +109,7 @@ async function createAdminUser() {
     try {
         let hashedPassword = await bcrypt.hash(config.admin.pass, 13);
         const email = config.admin.user + '@gmail.com';
-        let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword, 'admin', '', 0, defaultProfileImage);
+        let userData = await usersDbMethods.addUser(config.admin.user, email, hashedPassword,  Default_Role_Ids.mainAdmin, '', 0, defaultProfileImage);
         if (userData === 'userId exist' || userData === 'username exist' || userData === 'email exist') {
             console.log('====> [[Creating Admin User: Already Exists]]');
         } else if (userData) {

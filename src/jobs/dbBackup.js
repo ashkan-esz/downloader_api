@@ -42,6 +42,7 @@ const _modelNames = Object.freeze([
     "room", "message", "mediaFile", "userMessageRead",
     "notificationEntityType", "notification",
     "bot", "userBot",
+    "permission", "role", "roleToPermission", "userToRole",
 ]);
 
 export async function backupDbJobFunc(isManualStart = false) {

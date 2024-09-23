@@ -1,5 +1,6 @@
 import prisma from '../prisma.js';
 import {saveError} from "../../error/saveError.js";
+import {Default_Role_Ids} from "./admin/roleAndPermissionsDbMethods.js";
 
 
 export const _editableUserDataFields = Object.freeze(['username', 'publicName', 'email', 'bio']);
@@ -29,9 +30,18 @@ export async function findUser(username, email, includeSessions = false) {
                 rawUsername: true,
                 publicName: true,
                 password: true,
-                role: true,
                 email: true,
                 activeSessions: includeSessions,
+                roles: {
+                    select: {
+                        roleId: true,
+                        role: {
+                            select: {
+                                name: true,
+                            }
+                        }
+                    }
+                },
             },
         });
     } catch (error) {
@@ -54,7 +64,7 @@ export async function findUserById(userId, projection = {}) {
     }
 }
 
-export async function addUser(username, email, hashedPassword, role, emailVerifyToken, emailVerifyToken_expire, defaultProfileImage) {
+export async function addUser(username, email, hashedPassword, roleId, emailVerifyToken, emailVerifyToken_expire, defaultProfileImage) {
     try {
         return await prisma.user.create({
             data: {
@@ -66,7 +76,11 @@ export async function addUser(username, email, hashedPassword, role, emailVerify
                 emailVerifyToken: emailVerifyToken,
                 emailVerifyToken_expire: emailVerifyToken_expire,
                 password: hashedPassword,
-                role: role || 'user',
+                roles: {
+                    create: {
+                        roleId: roleId,
+                    }
+                },
                 defaultProfile: defaultProfileImage,
                 movieSettings: {
                     create: {}
@@ -333,11 +347,17 @@ export async function getTotalAndActiveUsersCount() {
 
 export async function removeUserById(id) {
     try {
+        //todo : check permission to remove user, admin_user
+        //todo : cannot remove main admin user
         return await prisma.$transaction(async (prisma) => {
             const removedUser = await prisma.user.delete({
                 where: {
                     userId: id,
-                    role: {not: 'admin'},
+                    roles: {
+                        none: {
+                            roleId: Default_Role_Ids.mainAdmin,
+                        }
+                    },
                 },
                 include: {
                     activeSessions: {

@@ -113,7 +113,6 @@ export async function addNewBot(botName, botType, disabled, description, isOffic
             disabledDate: disabled ? new Date() : 0,
             userData: {
                 userId: userData.userId,
-                role: userData.role,
             },
             description: description,
             lastConfigUpdateDate: 0,
@@ -172,7 +171,6 @@ export async function updateBotData(botId, data, userData) {
         botData = {...botData, ...data};
         botData.userData = {
             userId: userData.userId,
-            role: userData.role,
         }
         botData.lastConfigUpdateDate = new Date();
 

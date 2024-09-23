@@ -17,7 +17,6 @@ model User {
   rawUsername                     String
   registrationDate                DateTime                 @default(now())
   lastSeenDate                    DateTime                 @default(now())
-  role                            userRole                 @default(user)
   username                        String                   @unique
   bio                             String                   @default("")
   email                           String                   @unique
@@ -99,14 +98,6 @@ model ActiveSession {
 
   @@id([userId, deviceId])
   @@index([userId, refreshToken])
-}
-
-// todo : change usage in api and goChat
-enum userRole {
-  test_user
-  user
-  dev
-  admin
 }
 
 model UserToRole {

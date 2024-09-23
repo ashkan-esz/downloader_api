@@ -9,6 +9,7 @@ import {defaultProfileImage} from "../data/cloudStorage.js";
 import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import {setRedis} from "../data/redis.js";
+import {Default_Role_Ids} from "../data/db/admin/roleAndPermissionsDbMethods.js";
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
@@ -16,7 +17,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         let verifyToken = await bcrypt.hash(uuidv4(), 11);
         verifyToken = verifyToken.replace(/\//g, '');
         let verifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let userData = await usersDbMethods.addUser(username, email, hashedPassword, 'user', verifyToken, verifyToken_expire, defaultProfileImage);
+        let userData = await usersDbMethods.addUser(username, email, hashedPassword, Default_Role_Ids.defaultUser, verifyToken, verifyToken_expire, defaultProfileImage);
         if (userData === 'userId exist') {
             return generateServiceResult({}, 403, errorMessage.userIdAlreadyExist);
         }
@@ -29,7 +30,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         if (!userData) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         }
-        const user = getJwtPayload(userData);
+        const user = getJwtPayload(userData, [Default_Role_Ids.defaultUser]);
         const tokens = generateAuthTokens(user);
         deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         const deviceId = fingerprint.hash || uuidv4();
@@ -53,11 +54,11 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
             return generateServiceResult({}, 500, errorMessage.serverError);
         } else if (!userData) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
-        } else if (isAdminLogin && userData.role !== 'admin' && userData.role !== 'dev') {
+        } else if (isAdminLogin && !userData.roles.some(r => r.role.name.includes("admin"))) {
             return generateServiceResult({}, 403, errorMessage.adminAndDevOnly);
         }
         if (await bcrypt.compare(password, userData.password)) {
-            const user = getJwtPayload(userData);
+            const user = getJwtPayload(userData, userData.roles.map(r => r.roleId));
             const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
             deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
             let deviceId = fingerprint.hash || (uuidv4() + '-' + user.generatedAt);
@@ -78,6 +79,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
                 accessToken_expire: tokens.accessToken_expire,
                 username: userData.rawUsername,
                 userId: userData.userId,
+                roleIds: userData.roles.map(r => r.roleId),
             }, 200, '', tokens);
         } else {
             return generateServiceResult({}, 403, errorMessage.userPassNotMatch);
@@ -93,7 +95,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
         const user = {
             userId: jwtUserData.userId,
             username: jwtUserData.username,
-            role: jwtUserData.role,
+            roleIds: jwtUserData.roleIds,
             generatedAt: Date.now(),
         };
         const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
@@ -108,6 +110,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             userId: jwtUserData.userId,
+            roleIds: jwtUserData.roleIds,
             username: result.user?.rawUsername,
             profileImages: result.user?.profileImages,
         }, 200, '', tokens);
@@ -210,11 +213,11 @@ function getRequestLocation(fingerprint) {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 
-export function getJwtPayload(userData) {
+export function getJwtPayload(userData, roleIds = []) {
     return {
         userId: userData.userId,
         username: userData.rawUsername,
-        role: userData.role,
+        roleIds: roleIds,
         generatedAt: Date.now(),
     };
 }

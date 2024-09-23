@@ -24,7 +24,6 @@
         lastConfigUpdateDate: Date,
         userData: {
             userId: Int,
-            role: String,
             rawUsername: String,
         },
         description: '',

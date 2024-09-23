@@ -30,7 +30,7 @@ export async function loginBot(username_email, password, botId, chatId, botUsern
                 return generateServiceResult({}, 500, errorMessage.serverError);
             }
 
-            const user = getJwtPayload(userData);
+            const user = getJwtPayload(userData, (userData.roles || []).map(r => r.roleId));
             user.chatId = chatId;
             user.botUsername = botUsername;
             user.isBotRequest = true;
