@@ -8,7 +8,6 @@ import * as botsDbMethods from "../../data/db/botsDbMethods.js";
 import {errorMessage} from "../../services/serviceUtils.js";
 import {getUserPermissionsByRoleIds} from "../../data/db/admin/roleAndPermissionsDbMethods.js";
 import {saveError} from "../../error/saveError.js";
-import {CACHE_KEY_PREFIX} from "../../data/cache.js";
 import * as Cache from "../../data/cache.js";
 
 
@@ -69,7 +68,7 @@ async function handleGuestMode(req, res, next) {
 export async function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
-    if (!refreshToken || (await redisKeyExist(CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken))) {
+    if (!refreshToken || (await redisKeyExist(Cache.CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken))) {
         return res.status(401).json({
             code: 401,
             errorMessage: 'Unauthorized',
@@ -118,7 +117,7 @@ export async function attachAuthFlag(req, res, next) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }
-    if (await redisKeyExist(CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken)) {
+    if (await redisKeyExist(Cache.CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken)) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }
@@ -251,17 +250,21 @@ export function addFingerPrint() {
 }
 
 export function checkUserHavePermissions(neededPermissions) {
-    //todo : cache permissions
     return async (req, res, next) => {
         try {
-            let permissions = await getUserPermissionsByRoleIds(req.jwtUserData.roleIds);
-            if (permissions === null) {
-                return res.status(500).json({
-                    code: 500,
-                    errorMessage: errorMessage.serverError,
-                    isGuest: false,
-                    isCacheData: false,
-                });
+            const cacheKey = req.jwtUserData.roleIds.join(',');
+            let permissions = await Cache.getRolesPermissionsCacheByKey(cacheKey);
+            if (!permissions) {
+                permissions = await getUserPermissionsByRoleIds(req.jwtUserData.roleIds);
+                if (permissions === null) {
+                    return res.status(500).json({
+                        code: 500,
+                        errorMessage: errorMessage.serverError,
+                        isGuest: false,
+                        isCacheData: false,
+                    });
+                }
+                await Cache.setRolesPermissionsCacheByKey(cacheKey, permissions);
             }
 
             req.permissions = permissions;

@@ -10,6 +10,7 @@ export const CACHE_KEY_PREFIX = Object.freeze({
     utilsMessagesCachePrefix: "utils/message",
     utilsAppsCachePrefix: "utils/apps",
     utilsAppUpdateCachePrefix: "utils/appUpdate/",
+    rolePermissionsCachePrefix: "roleIds:",
 });
 
 export async function getMoviesCacheByKey(key) {
@@ -73,6 +74,17 @@ export async function getJwtDataCacheByKey(key) {
 
 export async function setJwtDataCacheByKey(key, value, durationSec = 3600) {
     return await setRedis(CACHE_KEY_PREFIX.jwtDataCachePrefix + key, value, durationSec);
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function getRolesPermissionsCacheByKey(key) {
+    return await getRedis(CACHE_KEY_PREFIX.rolePermissionsCachePrefix + key);
+}
+
+export async function setRolesPermissionsCacheByKey(key, value, durationMin = 5) {
+    return await setRedis(CACHE_KEY_PREFIX.rolePermissionsCachePrefix + key, value, durationMin * 60);
 }
 
 //-----------------------------------------------------

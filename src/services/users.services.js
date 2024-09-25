@@ -55,8 +55,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
         } else if (!userData) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         } else if (isAdminLogin && !userData.roles.some(r => r.role.name.includes("admin"))) {
-            //todo : change message
-            return generateServiceResult({}, 403, errorMessage.adminAndDevOnly);
+            return generateServiceResult({}, 403, errorMessage.adminPermissionNeeded);
         }
         if (await bcrypt.compare(password, userData.password)) {
             const user = getJwtPayload(userData, userData.roles.map(r => r.roleId));
