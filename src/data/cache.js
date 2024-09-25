@@ -23,6 +23,17 @@ export async function setMoviesCacheByKey(key, value, durationMin = 5) {
 //-----------------------------------------------------
 //-----------------------------------------------------
 
+export async function getBotDataCacheByKey(key) {
+    return await getRedis(CACHE_KEY_PREFIX.botDataCachePrefix + key);
+}
+
+export async function setBotDataCacheByKey(key, value, durationMin = 60) {
+    return await setRedis(CACHE_KEY_PREFIX.botDataCachePrefix + key, value, durationMin * 60);
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
 export async function getUtilsMessagesCacheByKey(key) {
     return await getRedis(CACHE_KEY_PREFIX.utilsMessagesCachePrefix + key);
 }

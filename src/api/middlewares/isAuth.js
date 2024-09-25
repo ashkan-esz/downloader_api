@@ -3,10 +3,13 @@ import jwt from "jsonwebtoken";
 import fingerPrint from "express-fingerprint";
 import {findUser} from "../../data/db/usersDbMethods.js";
 import {getConfigDB_DisableTestUserRequests} from "../../data/db/admin/adminConfigDbMethods.js";
-import {getRedis, redisKeyExist, setRedis} from "../../data/redis.js";
+import {redisKeyExist} from "../../data/redis.js";
 import * as botsDbMethods from "../../data/db/botsDbMethods.js";
 import {errorMessage} from "../../services/serviceUtils.js";
 import {getUserPermissionsByRoleIds} from "../../data/db/admin/roleAndPermissionsDbMethods.js";
+import {saveError} from "../../error/saveError.js";
+import {CACHE_KEY_PREFIX} from "../../data/cache.js";
+import * as Cache from "../../data/cache.js";
 
 
 let testUserDataCache = null;
@@ -66,7 +69,7 @@ async function handleGuestMode(req, res, next) {
 export async function isAuth_refreshToken(req, res, next) {
     req.isAuth = false;
     let refreshToken = req.cookies.refreshToken || req.headers['refreshtoken'];
-    if (!refreshToken || (await redisKeyExist('jwtKey:' + refreshToken))) {
+    if (!refreshToken || (await redisKeyExist(CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken))) {
         return res.status(401).json({
             code: 401,
             errorMessage: 'Unauthorized',
@@ -115,7 +118,7 @@ export async function attachAuthFlag(req, res, next) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }
-    if (await redisKeyExist('jwtKey:' + refreshToken)) {
+    if (await redisKeyExist(CACHE_KEY_PREFIX.jwtDataCachePrefix + refreshToken)) {
         req.authCode = 401;
         return handleGuestMode(req, res, next);
     }
@@ -177,10 +180,10 @@ export async function botHasLoginPermission(req, res, next) {
     if (req.isBotRequest) {
         let botId = req.jwtUserData.botId;
         // get bot data - cache first
-        let botData = await getRedis('botData:' + botId);
+        let botData = await Cache.getBotDataCacheByKey(botId);
         if (!botData) {
-            // check db - update db
-            botData = await botsDbMethods.getBotData(botId);
+            // check db - update cache
+            botData = await botsDbMethods.getBotDataFromPostgres(botId);
             if (botData === 'error') {
                 return res.status(500).json({
                     code: 500,
@@ -196,7 +199,7 @@ export async function botHasLoginPermission(req, res, next) {
                     isCacheData: false,
                 });
             }
-            await setRedis('botData:' + botId, botData, 2 * 60);
+            await Cache.setBotDataCacheByKey(botId, botData, 2 * 60);
         }
         req.botData = botData;
         if (!botData.permissionToLogin) {
@@ -250,16 +253,38 @@ export function addFingerPrint() {
 export function checkUserHavePermissions(neededPermissions) {
     //todo : cache permissions
     return async (req, res, next) => {
-        let permissions = await getUserPermissionsByRoleIds(req.jwtUserData.roleIds);
+        try {
+            let permissions = await getUserPermissionsByRoleIds(req.jwtUserData.roleIds);
+            if (permissions === null) {
+                return res.status(500).json({
+                    code: 500,
+                    errorMessage: errorMessage.serverError,
+                    isGuest: false,
+                    isCacheData: false,
+                });
+            }
 
-        if (neededPermissions.some(p => !permissions.includes(p))) {
-            return res.status(403).json({
-                code: 403,
-                errorMessage: `Forbidden, need ([${neededPermissions.filter(p => !permissions.includes(p)).join(',')}]) permissions`,
+            req.permissions = permissions;
+            const permissionSet = new Set(permissions);
+            const missingPermissions = neededPermissions.filter(p => !permissionSet.has(p));
+
+            if (missingPermissions.length > 0) {
+                return res.status(403).json({
+                    code: 403,
+                    errorMessage: `Forbidden, need ([${missingPermissions.join(',')}]) permissions`,
+                    isGuest: false,
+                    isCacheData: false,
+                });
+            }
+            return next();
+        } catch (error) {
+            saveError(error);
+            return res.status(500).json({
+                code: 500,
+                errorMessage: errorMessage.serverError,
                 isGuest: false,
                 isCacheData: false,
             });
         }
-        return next();
     }
 }

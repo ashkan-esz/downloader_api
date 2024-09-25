@@ -1,5 +1,6 @@
 import * as usersDbMethods from "../data/db/usersDbMethods.js";
 import * as botsDbMethods from "../data/db/botsDbMethods.js";
+import * as Cache from "../data/cache.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
 import * as bcrypt from "bcrypt";
 import {saveError} from "../error/saveError.js";
@@ -8,12 +9,22 @@ import {generateAuthTokens, getJwtPayload} from "./users.services.js";
 
 export async function loginBot(username_email, password, botId, chatId, botUsername) {
     try {
-        let botData = await botsDbMethods.getBotData(botId);
-        if (botData === 'error') {
-            return generateServiceResult({}, 500, errorMessage.serverError);
-        } else if (!botData) {
-            return generateServiceResult({}, 404, errorMessage.botNotFound);
-        } else if (!botData.permissionToLogin) {
+        let botData = await Cache.getBotDataCacheByKey(botId);
+        if (!botData) {
+            // check db - update cache
+            botData = await botsDbMethods.getBotDataFromPostgres(botId);
+
+            if (botData === 'error') {
+                return generateServiceResult({}, 500, errorMessage.serverError);
+            } else if (!botData) {
+                return generateServiceResult({}, 404, errorMessage.botNotFound);
+            }
+
+            // update cache
+            await Cache.setBotDataCacheByKey(botId, botData, 60); //1 hour
+        }
+
+        if (!botData.permissionToLogin) {
             return generateServiceResult({}, 403, errorMessage.botNoLoginPermission);
         }
 
@@ -30,7 +41,7 @@ export async function loginBot(username_email, password, botId, chatId, botUsern
                 return generateServiceResult({}, 500, errorMessage.serverError);
             }
 
-            const user = getJwtPayload(userData, (userData.roles || []).map(r => r.roleId));
+            const user = getJwtPayload(userData, userData.roles.map(r => r.roleId));
             user.chatId = chatId;
             user.botUsername = botUsername;
             user.isBotRequest = true;

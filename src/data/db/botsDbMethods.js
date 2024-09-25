@@ -71,6 +71,19 @@ export async function getAllBots() {
     }
 }
 
+export async function getBotDataFromPostgres(botId) {
+    try {
+        return prisma.bot.findFirst({
+            where: {
+                botId: botId,
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
 export async function getBotData(botId) {
     try {
         let collection = await getCollection('bots');
