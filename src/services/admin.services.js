@@ -26,9 +26,9 @@ import {getArrayBufferResponse} from "../crawlers/utils/axiosUtils.js";
 import {checkOmdbApiKeys} from "../crawlers/3rdPartyApi/omdbApi.js";
 import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
 import {getCronJobsStatus, startCronJobByName} from "../utils/cronJobsStatus.js";
-import {setRedis} from "../data/redis.js";
+import * as Cache from "../data/cache.js";
 import config from "../config/index.js";
-
+import {PermissionsList} from "../data/db/admin/roleAndPermissionsDbMethods.js";
 
 export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
@@ -554,7 +554,7 @@ export async function removeDocsRows(removeType, id) {
                 }
                 //blacklist tokens
                 for (let i = 0; i < result.activeSessions.length; i++) {
-                    await setRedis('jwtKey:' + result.activeSessions[i].refreshToken, 'deleteAccount', config.jwt.accessTokenExpireSeconds);
+                    await Cache.setJwtDataCacheByKey(result.activeSessions[i].refreshToken, 'deleteAccount', config.jwt.accessTokenExpireSeconds);
                 }
             }
         }
@@ -572,3 +572,8 @@ export async function removeDocsRows(removeType, id) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function getPermissionsList(){
+    return generateServiceResult({data: Object.keys(PermissionsList)}, 200, '');
+}
+

@@ -1,11 +1,11 @@
 import * as adminConfigDbMethods from "../data/db/admin/adminConfigDbMethods.js";
 import {errorMessage, generateServiceResult} from "./serviceUtils.js";
-import {getCache, setCache} from "../data/cache.js";
+import * as Cache from "../data/cache.js";
 import {compareAppVersions} from "../data/db/admin/adminConfigDbMethods.js";
 
 
 export async function getMessage() {
-    let cacheResult = await getCache('utils/message');
+    let cacheResult = await Cache.getUtilsMessagesCacheByKey("");
     let result = cacheResult || await adminConfigDbMethods.getMessageDB();
     if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
@@ -14,14 +14,14 @@ export async function getMessage() {
     }
 
     if (!cacheResult) {
-        await setCache('utils/message', result);
+        await Cache.setUtilsMessagesCacheByKey("", result);
     }
 
     return generateServiceResult({data: result, isCacheData: !!cacheResult}, 200, '');
 }
 
 export async function getApps(appName) {
-    let cacheResult = await getCache('utils/apps');
+    let cacheResult = await Cache.getUtilsAppsCacheByKey("");
     let result = cacheResult || await adminConfigDbMethods.getAppVersionDB(true);
     if (result === 'error') {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
@@ -30,7 +30,7 @@ export async function getApps(appName) {
     }
 
     if (!cacheResult) {
-        await setCache('utils/apps', result);
+        await Cache.setUtilsAppsCacheByKey("", result);
     }
 
     if (appName) {
@@ -41,8 +41,8 @@ export async function getApps(appName) {
 }
 
 export async function checkAppUpdate(appName, os, version) {
-    const cacheKey = 'utils/appUpdate/' + [appName, os, version].join('/');
-    let cacheResult = await getCache(cacheKey);
+    const cacheKey = [appName, os, version].join('/');
+    let cacheResult = await Cache.getUtilsAppUpdateCacheByKey(cacheKey);
     let result = cacheResult || await Promise.allSettled([
         adminConfigDbMethods.getAppVersionDB(true),
         adminConfigDbMethods.getMessageDB(),
@@ -53,7 +53,7 @@ export async function checkAppUpdate(appName, os, version) {
     }
 
     if (!cacheResult) {
-        await setCache(cacheKey, result);
+        await Cache.setUtilsAppUpdateCacheByKey(cacheKey, result);
     }
 
     let appData = result[0].value.find(app => app.appName === appName && app.os === os);

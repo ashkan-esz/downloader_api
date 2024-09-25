@@ -76,14 +76,14 @@ export async function getRedis(key) {
     }
 }
 
-export async function setRedis(key, value, duration = null) {
+export async function setRedis(key, value, durationSec = null) {
     //duration: seconds
     try {
         if (!client.isReady) {
             return 'error';
         }
-        if (duration) {
-            return await client.set(key, JSON.stringify(value), {EX: duration});
+        if (durationSec) {
+            return await client.set(key, JSON.stringify(value), {EX: durationSec});
         } else {
             return await client.set(key, JSON.stringify(value));
         }

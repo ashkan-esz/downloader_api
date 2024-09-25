@@ -8,7 +8,7 @@ import {generateServiceResult, errorMessage} from "./serviceUtils.js";
 import {defaultProfileImage} from "../data/cloudStorage.js";
 import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
-import {setRedis} from "../data/redis.js";
+import * as Cache from "../data/cache.js";
 import {Default_Role_Ids} from "../data/db/admin/roleAndPermissionsDbMethods.js";
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
@@ -55,6 +55,7 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
         } else if (!userData) {
             return generateServiceResult({}, 404, errorMessage.userNotFound);
         } else if (isAdminLogin && !userData.roles.some(r => r.role.name.includes("admin"))) {
+            //todo : change message
             return generateServiceResult({}, 403, errorMessage.adminAndDevOnly);
         }
         if (await bcrypt.compare(password, userData.password)) {
@@ -133,7 +134,7 @@ export async function logout(jwtUserData, prevRefreshToken, prevAccessToken) {
             let decodedJwt = jwt.decode(prevAccessToken);
             if (decodedJwt) {
                 let jwtExpireLeft = (decodedJwt.exp * 1000 - Date.now()) / 1000;
-                await setRedis('jwtKey:' + prevRefreshToken, 'logout', jwtExpireLeft);
+                await Cache.setJwtDataCacheByKey(prevRefreshToken, 'logout', jwtExpireLeft);
             }
         } catch (error2) {
             saveError(error2);
