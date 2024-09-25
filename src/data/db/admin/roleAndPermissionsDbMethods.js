@@ -14,6 +14,41 @@ export const PermissionsList = Object.freeze({
     admin_remove_admin: "admin_remove_admin",
     //-----------------------------
     admin_get_users: "admin_get_users",
+    admin_get_permissions: "admin_get_permissions",
+    //-----------------------------
+    admin_crawler_status: "admin_crawler_status",
+    admin_start_crawler: "admin_start_crawler",
+    admin_start_torrent_search: "admin_start_torrent_search",
+    admin_control_crawler: "admin_control_crawler",
+    //-----------------------------
+    admin_get_crawler_sources: "admin_get_crawler_sources",
+    admin_edit_crawler_sources: "admin_edit_crawler_sources",
+    //-----------------------------
+    admin_get_duplicate_titles: "admin_get_duplicate_titles",
+    //-----------------------------
+    admin_get_crawler_logs: "admin_get_crawler_logs",
+    admin_edit_crawler_logs: "admin_edit_crawler_logs",
+    //-----------------------------
+    admin_get_db_configs: "admin_get_db_configs",
+    admin_edit_db_configs: "admin_edit_db_configs",
+    //-----------------------------
+    admin_get_server_status: "admin_get_server_status",
+    admin_check_remote_browser: "admin_check_remote_browser",
+    //-----------------------------
+    admin_manage_app_versions: "admin_manage_app_versions",
+    //-----------------------------
+    admin_check_3rd_party_apis: "admin_check_3rd_party_apis",
+    //-----------------------------
+    admin_get_bots: "admin_get_bots",
+    admin_edit_bots: "admin_edit_bots",
+    //-----------------------------
+    admin_get_cronjobs: "admin_get_cronjobs",
+    admin_run_cronjobs: "admin_run_cronjobs",
+    //-----------------------------
+    admin_manage_related_titles: "admin_manage_related_titles",
+    //-----------------------------
+    admin_remove_doc: "admin_remove_doc",
+    //-----------------------------
 });
 
 export const Default_Role_Ids = Object.freeze({
@@ -83,8 +118,15 @@ export async function addDefaultAdminRoleToPostgres() {
                 torrentLeachLimitGb: 0,
                 torrentSearchLimit: 0,
                 permissions: {
-                    create: {
-                        permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_get_users)
+                    createMany: {
+                        data: [
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_get_users)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_get_permissions)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_crawler_status)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_get_cronjobs)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.admin_get_server_status)},
+                        ],
+                        skipDuplicates: true,
                     }
                 }
             }
@@ -172,5 +214,32 @@ export async function addDefaultBotRoleToPostgres() {
         }
         saveError(error);
         return 'error';
+    }
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getUserPermissionsByRoleIds(roleIds) {
+    try {
+        const res = await prisma.roleToPermission.findMany({
+            where: {
+                roleId: {
+                    in: roleIds,
+                }
+            },
+            include: {
+                permission: {
+                    select: {
+                        name: true,
+                    }
+                }
+            }
+        });
+
+        return res.map(item => item.permission.name);
+    } catch (error) {
+        saveError(error);
+        return null;
     }
 }

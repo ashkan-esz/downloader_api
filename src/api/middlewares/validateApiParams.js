@@ -842,14 +842,16 @@ const validations = Object.freeze({
 
 
 export function checkApiParams(apiParams) {
-    let validationArray = [];
-    for (let i = 0; i < apiParams.length; i++) {
-        let val = validations[apiParams[i]];
-        if (val) {
-            validationArray.push(val);
-        }
-    }
-    return validationArray;
+    return apiParams.map(param => validations[param]).filter(item => item !== undefined);
+
+    // let validationArray = [];
+    // for (let i = 0; i < apiParams.length; i++) {
+    //     let val = validations[apiParams[i]];
+    //     if (val) {
+    //         validationArray.push(val);
+    //     }
+    // }
+    // return validationArray;
 }
 
 export function apiParams_sendError(req, res, next) {

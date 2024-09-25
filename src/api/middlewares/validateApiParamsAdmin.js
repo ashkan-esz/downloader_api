@@ -600,15 +600,35 @@ const validations = Object.freeze({
         }),
 });
 
-export function checkApiParams(apiParams) {
-    let validationArray = [];
-    for (let i = 0; i < apiParams.length; i++) {
-        let val = validations[apiParams[i]];
-        if (val) {
-            validationArray.push(val);
+export function checkApiParamsAndSendError(apiParams) {
+    return async (req, res, next) => {
+        await Promise.all(apiParams.map(p => validations[p]?.run(req)));
+
+        const errorsAfterValidation = validationResult(req);
+        if (!errorsAfterValidation.isEmpty()) {
+            return res.status(400).json({
+                data: null,
+                code: 400,
+                errorMessage: errorsAfterValidation.errors.map(item => item.msg).join(', '),
+                isGuest: false,
+                isCacheData: false,
+            });
         }
-    }
-    return validationArray;
+        return next();
+    };
+}
+
+export function checkApiParams(apiParams) {
+    return apiParams.map(param => validations[param]).filter(item => item !== undefined);
+
+    // let validationArray = [];
+    // for (let i = 0; i < apiParams.length; i++) {
+    //     let val = validations[apiParams[i]];
+    //     if (val) {
+    //         validationArray.push(val);
+    //     }
+    // }
+    // return validationArray;
 }
 
 export function apiParams_sendError(req, res, next) {

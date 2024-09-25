@@ -6,6 +6,7 @@ import {getConfigDB_DisableTestUserRequests} from "../../data/db/admin/adminConf
 import {getRedis, redisKeyExist, setRedis} from "../../data/redis.js";
 import * as botsDbMethods from "../../data/db/botsDbMethods.js";
 import {errorMessage} from "../../services/serviceUtils.js";
+import {getUserPermissionsByRoleIds} from "../../data/db/admin/roleAndPermissionsDbMethods.js";
 
 
 let testUserDataCache = null;
@@ -38,7 +39,7 @@ export const _botRequestsWhitelist = Object.freeze([
 
 async function handleGuestMode(req, res, next) {
     //handle test user
-    if (!disableTestUserRequests && req.method === 'GET') {
+    if (!disableTestUserRequests && req.method === 'GET' && !req._reconstructedRoute.startsWith("/admin/")) {
         if (Date.now() - testUserDataCacheDate > testUserDataCacheStale || testUserDataCache === 'error') {
             testUserDataCache = await findUser('$$test_user$$', '', true);
             testUserDataCacheDate = Date.now();
@@ -246,12 +247,15 @@ export function addFingerPrint() {
     })
 }
 
-export function checkUserRolePermission(roles) {
-    return (req, res, next) => {
-        if (!roles.includes(req.jwtUserData.role)) {
+export function checkUserHavePermissions(neededPermissions) {
+    //todo : cache permissions
+    return async (req, res, next) => {
+        let permissions = await getUserPermissionsByRoleIds(req.jwtUserData.roleIds);
+
+        if (neededPermissions.some(p => !permissions.includes(p))) {
             return res.status(403).json({
                 code: 403,
-                errorMessage: `Forbidden, ([${roles.join(',')}]) roles only`,
+                errorMessage: `Forbidden, need ([${neededPermissions.filter(p => !permissions.includes(p)).join(',')}]) permissions`,
                 isGuest: false,
                 isCacheData: false,
             });
