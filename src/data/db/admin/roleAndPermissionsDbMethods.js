@@ -243,3 +243,52 @@ export async function getUserPermissionsByRoleIds(roleIds) {
         return null;
     }
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getAllRolesWithPermissionsDb(searchingPermissions = []) {
+    try {
+        let res = await prisma.role.findMany({
+            where: searchingPermissions.length > 0 ? {
+                permissions: {
+                    some: {
+                        permission: {
+                            name: {in: searchingPermissions},
+                        }
+                    }
+                }
+            } : undefined,
+            include: {
+                permissions: {
+                    include: {
+                        permission: {
+                            select: {
+                                name: true,
+                                description: true,
+                                id: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return res.map(role => ({
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            torrentLeachLimitGb: role.torrentLeachLimitGb,
+            torrentSearchLimit: role.torrentSearchLimit,
+            permissions: role.permissions.map(p => ({
+                id: p.permission.id,
+                name: p.permission.name,
+                description: p.permission.description,
+            }))
+        }));
+
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

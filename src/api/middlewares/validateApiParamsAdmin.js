@@ -598,6 +598,12 @@ const validations = Object.freeze({
         .customSanitizer(value => {
             return new Date(value);
         }),
+
+    permissions_query: query('permissions')
+        .trim()
+        .customSanitizer(value => {
+            return (value || '').split(',')
+        }),
 });
 
 export function checkApiParamsAndSendError(apiParams) {

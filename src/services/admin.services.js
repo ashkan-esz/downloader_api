@@ -28,7 +28,7 @@ import {getSourcesMethods, sourcesNames} from "../crawlers/sourcesArray.js";
 import {getCronJobsStatus, startCronJobByName} from "../utils/cronJobsStatus.js";
 import * as Cache from "../data/cache.js";
 import config from "../config/index.js";
-import {PermissionsList} from "../data/db/admin/roleAndPermissionsDbMethods.js";
+import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermissionsDbMethods.js";
 
 export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
@@ -573,7 +573,27 @@ export async function removeDocsRows(removeType, id) {
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function getPermissionsList(){
-    return generateServiceResult({data: Object.keys(PermissionsList)}, 200, '');
+export async function getAllPermissionsList() {
+    return generateServiceResult({data: Object.keys(roleAndPermissionsDbMethods.PermissionsList)}, 200, '');
+}
+
+export async function getAllRoles(searchingPermissions) {
+    let result = await roleAndPermissionsDbMethods.getAllRolesWithPermissionsDb(searchingPermissions);
+    if (!result) {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function createNewRole() {
+
+    //todo : handle unique name of role
+
+    return generateServiceResult({data: null}, 200, '');
 }
 

@@ -3122,6 +3122,57 @@ paths:
                   data:
                     type: string
 
+  /admin/role/all_permissions:
+    get:
+      tags:
+        - Admin-Role-Permission
+      summary: Permissions List
+      description: get list of all permissions
+      operationId: admin-allPermissions
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+
+  /admin/role/all_roles:
+    get:
+      tags:
+        - Admin-Role-Permission
+      summary: Roles List
+      description: get list of all roles
+      operationId: admin-allRoles
+      parameters:
+        - name: permissions
+          required: false
+          in: query
+          description: return roles which have these permissions
+          schema:
+            type: string
+            example: torrent_search,torrent_leach
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
 
 security:
   - accessToken: [ ]
@@ -4902,3 +4953,31 @@ security:
           type: boolean
         permissionToTorrentSearch:
           type: boolean
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        description:
+          type: string
+        torrentLeachLimitGb:
+          type: number
+        torrentSearchLimit:
+          type: number
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        description:
+          type: string

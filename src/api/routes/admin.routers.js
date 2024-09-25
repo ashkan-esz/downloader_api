@@ -365,10 +365,25 @@ router.delete('/remove/:removeType/:id',
 //---------------------------------------------------
 //---------------------------------------------------
 
-// //admin/role/permissions
-// router.get('/role/permissions',
-//     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-//     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]), adminControllers.getPermissionsList);
+//admin/role/all_permissions
+router.get('/role/all_permissions',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
+    adminControllers.getAllPermissionsList);
+
+//admin/role/all_roles
+router.get('/role/all_roles',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['permissions_query']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
+    adminControllers.getAllRoles);
+
+//admin/role/new_role
+router.post('/role/new_role',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_create_role]),
+    adminControllers.createNewRole);
 
 //---------------------------------------------------
 //---------------------------------------------------
