@@ -635,3 +635,19 @@ export async function removeRoleByName(name, newName, description, torrentLeachL
     return generateServiceResult({data: result}, 200, '');
 }
 
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getRoleUsers(roleName, skip, limit) {
+    let result = await roleAndPermissionsDbMethods.getRoleUsersDb(roleName, skip, limit);
+    if (!result) {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result.length === 0) {
+        return generateServiceResult({data: []}, 404, "Not found");
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

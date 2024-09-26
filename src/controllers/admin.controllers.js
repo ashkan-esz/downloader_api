@@ -312,3 +312,12 @@ export async function removeRoleByName(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function getRoleUsers(req, res) {
+    let {roleName, skip, limit} = req.query;
+    let result = await adminServices.getRoleUsers(roleName, skip, limit);
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

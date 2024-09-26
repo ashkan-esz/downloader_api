@@ -3324,6 +3324,69 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/ResponseCode'
 
+  /admin/role/users:
+    get:
+      tags:
+        - Admin-Role-Permission
+      summary: Role Users
+      description: users of a role
+      operationId: admin-roleUsers
+      parameters:
+        - name: roleName
+          required: false
+          in: query
+          description: name of the role
+          schema:
+            type: string
+            example: default_user_role
+        - name: skip
+          required: false
+          in: query
+          schema:
+            type: number
+            minimum: 0
+        - name: limit
+          required: false
+          in: query
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: number
+                        publicName:
+                          type: string
+                        rawUsername:
+                          type: string
+                        username:
+                          type: string
+                        registrationDate:
+                          type: string
+                        lastSeenDate:
+                          type: string
+                        email:
+                          type: string
+                        emailVerified:
+                          type: boolean
+                        roles:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/Role'
+
 security:
   - accessToken: [ ]
 

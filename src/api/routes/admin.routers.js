@@ -379,13 +379,13 @@ router.get('/role/all_roles',
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
     adminControllers.getAllRoles);
 
-//admin/role/:name
-router.get('/role/:name',
+//admin/role/users
+router.get('/role/users',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['name']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['roleName_query', 'skip_query', 'limit_query']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
-    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
-    adminControllers.getRoleDataByName);
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_users]),
+    adminControllers.getRoleUsers);
 
 //admin/role/new_role
 router.post('/role/new_role',
@@ -394,6 +394,14 @@ router.post('/role/new_role',
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_create_role]),
     adminControllers.createNewRole);
+
+//admin/role/:name
+router.get('/role/:name',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['name']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
+    adminControllers.getRoleDataByName);
 
 //admin/role/edit_role/:name
 router.post('/role/edit_role/:name',

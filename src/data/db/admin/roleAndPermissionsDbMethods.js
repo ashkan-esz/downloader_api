@@ -411,3 +411,68 @@ export async function removeRoleByNameDb(roleName) {
         return 'error';
     }
 }
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function getRoleUsersDb(roleName, skip, limit) {
+    try {
+        let res = await prisma.user.findMany({
+            where: roleName ? {
+                roles: {
+                    some: {
+                        role: {
+                            name: roleName,
+                        }
+                    }
+                }
+            } : undefined,
+            select: {
+                userId: true,
+                publicName: true,
+                rawUsername: true,
+                username: true,
+                registrationDate: true,
+                lastSeenDate: true,
+                email: true,
+                emailVerified: true,
+                mbtiType: true,
+                roles: {
+                    select: {
+                        role: {
+                            include: {
+                                permissions: {
+                                    select: {
+                                        permission: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                description: true,
+                                                createdAt: true,
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+            },
+            skip: skip || undefined,
+            take: limit || undefined,
+            orderBy: {userId: 'desc'},
+        });
+
+        return res.map(u => ({
+            ...u,
+            roles: u.roles.map(r => ({
+                ...r.role,
+                permissions: r.role.permissions.map(p => p.permission),
+            })),
+        }));
+
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

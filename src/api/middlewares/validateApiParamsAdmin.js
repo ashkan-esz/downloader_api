@@ -18,6 +18,20 @@ const validations = Object.freeze({
         .trim().isInt({min: 0}).withMessage('Invalid parameter limit :: Number 1 to Infinite')
         .toInt(),
 
+    skip_query: query('skip')
+        .customSanitizer(value => {
+            return (value && Number.isInteger(value)) ? Number(value) : 0;
+        })
+        .isInt({min: 0}).withMessage('Invalid parameter skip :: Number >= 0')
+        .toInt(),
+
+    limit_query: query('limit')
+        .customSanitizer(value => {
+            return (value && Number.isInteger(value)) ? Number(value) : 0;
+        })
+        .isInt({min: 0}).withMessage('Invalid parameter limit :: Number > 0')
+        .toInt(),
+
     duration: param('duration')
         .trim().isInt({min: 1, max: 120}).withMessage('Invalid parameter duration :: Number 1 to 120')
         .toInt(),
@@ -607,6 +621,13 @@ const validations = Object.freeze({
         .customSanitizer(value => {
             return (value || '').split(',')
         }),
+
+    roleName_query: query('roleName')
+        .customSanitizer(value => {
+            return value || ''
+        })
+        .isString().withMessage("roleName must be String")
+        .trim().toLowerCase().escape(),
 
     name: param('name')
         .exists().withMessage("Missed parameter name")
