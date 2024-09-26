@@ -3174,6 +3174,156 @@ paths:
                     items:
                       $ref: '#/components/schemas/Role'
 
+  /admin/role/{name}:
+    get:
+      tags:
+        - Admin-Role-Permission
+      summary: Role Data
+      description: get data of a role
+      operationId: admin-roleData
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: name of the role
+          schema:
+            type: string
+            example: default_user_role
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+
+  /admin/role/new_role:
+    post:
+      tags:
+        - Admin-Role-Permission
+      summary: Create Role
+      description: create new role
+      operationId: admin-newRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  required: true
+                description:
+                  type: string
+                  required: true
+                torrentLeachLimitGb:
+                  type: number
+                  required: true
+                  minimum: 0
+                torrentSearchLimit:
+                  type: number
+                  required: true
+                  minimum: 0
+                permissionIds:
+                  type: array
+                  required: true
+                  items:
+                    type: number
+                    minimum: 0
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
+  /admin/role/edit_role/{name}:
+    post:
+      tags:
+        - Admin-Role-Permission
+      summary: Edit Role
+      description: edit roles data
+      operationId: admin-editRole
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: name of the role
+          schema:
+            type: string
+            example: default_user_role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  required: true
+                description:
+                  type: string
+                  required: true
+                torrentLeachLimitGb:
+                  type: number
+                  required: true
+                  minimum: 0
+                torrentSearchLimit:
+                  type: number
+                  required: true
+                  minimum: 0
+                permissionIds:
+                  type: array
+                  required: true
+                  items:
+                    type: number
+                    minimum: 0
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+
+  /admin/remove_role/{name}:
+    delete:
+      tags:
+        - Admin-Role-Permission
+      summary: Delete Role
+      description: delete data of a role
+      operationId: admin-removeRole
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: name of the role
+          schema:
+            type: string
+            example: default_user_role
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
 security:
   - accessToken: [ ]
 

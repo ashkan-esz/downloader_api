@@ -379,11 +379,37 @@ router.get('/role/all_roles',
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
     adminControllers.getAllRoles);
 
+//admin/role/:name
+router.get('/role/:name',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['name']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_get_permissions]),
+    adminControllers.getRoleDataByName);
+
 //admin/role/new_role
 router.post('/role/new_role',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'permissionIds_body']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_create_role]),
     adminControllers.createNewRole);
+
+//admin/role/edit_role/:name
+router.post('/role/edit_role/:name',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['name', 'name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'permissionIds_body']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_edit_role]),
+    adminControllers.editRoleData);
+
+//admin/remove_role/:name
+router.delete('/remove_role/:name',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['name']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_delete_role]),
+    adminControllers.removeRoleByName);
 
 //---------------------------------------------------
 //---------------------------------------------------

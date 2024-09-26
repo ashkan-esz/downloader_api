@@ -587,13 +587,51 @@ export async function getAllRoles(searchingPermissions) {
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function getRoleDataByName(roleName) {
+    let result = await roleAndPermissionsDbMethods.getRoleDataByName(roleName);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!result) {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+    return generateServiceResult({data: result}, 200, '');
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function createNewRole() {
+export async function createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+    let result = await roleAndPermissionsDbMethods.addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === "name already exist") {
+        return generateServiceResult({data: null}, 409, "Already exist");
+    }
 
-    //todo : handle unique name of role
+    return generateServiceResult({data: result}, 200, '');
+}
 
-    return generateServiceResult({data: null}, 200, '');
+export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+    let result = await roleAndPermissionsDbMethods.editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!result) {
+        return generateServiceResult({data: null}, 404, "Not found");
+    } else if (result === "name already exist") {
+        return generateServiceResult({data: null}, 409, "Already exist");
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+export async function removeRoleByName(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+    let result = await roleAndPermissionsDbMethods.removeRoleByNameDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!result) {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+
+    return generateServiceResult({data: result}, 200, '');
 }
 

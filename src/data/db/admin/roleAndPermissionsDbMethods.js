@@ -292,3 +292,122 @@ export async function getAllRolesWithPermissionsDb(searchingPermissions = []) {
         return null;
     }
 }
+
+export async function getRoleDataByName(roleName) {
+    try {
+        return await prisma.role.findFirst({
+            where: {
+                name: roleName,
+            },
+            include: {
+                permissions: {
+                    include: {
+                        permission: {
+                            select: {
+                                name: true,
+                                description: true,
+                                id: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        saveError(error);
+        return "error";
+    }
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+    try {
+        return await prisma.role.create({
+            data: {
+                name: name,
+                description: description,
+                torrentLeachLimitGb: torrentLeachLimitGb,
+                torrentSearchLimit: torrentSearchLimit,
+                permissions: {
+                    createMany: {
+                        data: permissionIds.map(pid => ({permissionId: pid})),
+                        skipDuplicates: true,
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        if (error.code === "P2002" && error.meta?.target?.[0] === "name") {
+            return 'name already exist';
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+    try {
+        return await prisma.role.update({
+            where: {
+                name: name,
+            },
+            data: {
+                name: newName,
+                description: description,
+                torrentLeachLimitGb: torrentLeachLimitGb,
+                torrentSearchLimit: torrentSearchLimit,
+                permissions: {
+                    createMany: {
+                        data: permissionIds.map(pid => ({permissionId: pid})),
+                        skipDuplicates: true,
+                    },
+                    deleteMany: {
+                        permissionId: {
+                            notIn: permissionIds,
+                        }
+                    },
+                }
+            },
+            include: {
+                permissions: {
+                    include: {
+                        permission: {
+                            select: {
+                                name: true,
+                                description: true,
+                                id: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        if (error.code === "P2002" && error.meta?.target?.[0] === "name") {
+            return 'name already exist';
+        }
+        if (error.code === 'P2025') {
+            return null;
+        }
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function removeRoleByNameDb(roleName) {
+    try {
+        return await prisma.role.delete({
+            where: {
+                name: roleName,
+            }
+        })
+    } catch (error) {
+        if (error.code === "P2025") {
+            return null;
+        }
+        saveError(error);
+        return 'error';
+    }
+}

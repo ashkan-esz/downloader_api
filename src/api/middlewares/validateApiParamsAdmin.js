@@ -508,7 +508,10 @@ const validations = Object.freeze({
         .isString().withMessage("Invalid parameter profileImageExtensionLimit :: String"),
 
     torrentDownloadMaxFileSize: body('torrentDownloadMaxFileSize')
-        .isInt({min:1, max: 10000}).withMessage("Invalid parameter torrentDownloadMaxFileSize :: Integer{min: 1, max: 10000}"),
+        .isInt({
+            min: 1,
+            max: 10000
+        }).withMessage("Invalid parameter torrentDownloadMaxFileSize :: Integer{min: 1, max: 10000}"),
 
     disableBotsNotifications: body('disableBotsNotifications')
         .isBoolean().withMessage("Invalid parameter disableBotsNotifications :: Boolean")
@@ -604,6 +607,37 @@ const validations = Object.freeze({
         .customSanitizer(value => {
             return (value || '').split(',')
         }),
+
+    name: param('name')
+        .exists().withMessage("Missed parameter name")
+        .isString().withMessage("name must be String")
+        .trim().escape(),
+
+    name_body: body('name')
+        .exists().withMessage("Missed parameter name")
+        .isString().withMessage("name must be String")
+        .trim().toLowerCase().escape(),
+
+    torrentLeachLimitGb_body: body('torrentLeachLimitGb')
+        .exists().withMessage("Missed parameter torrentLeachLimitGb")
+        .isInt({min: 0}).withMessage("torrentLeachLimitGb must be Number starting from 0r")
+        .toInt(),
+
+    torrentSearchLimit_body: body('torrentSearchLimit')
+        .exists().withMessage("Missed parameter torrentSearchLimit")
+        .isInt({min: 0}).withMessage("torrentSearchLimit must be Number starting from 0")
+        .toInt(),
+
+    permissionIds_body: body('permissionIds')
+        .exists().withMessage("Missed parameter permissionIds")
+        .isArray().withMessage("permissionIds must be Array(Int)")
+        .custom((value, {req, loc, path}) => {
+            if (!Array.isArray(value) || !value.every(id => Number.isInteger(id) && id >= 0)) {
+                throw new Error("permissionIds must be Array(Int)");
+            }
+            return value;
+        }),
+
 });
 
 export function checkApiParamsAndSendError(apiParams) {
