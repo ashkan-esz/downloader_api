@@ -347,8 +347,6 @@ export async function getTotalAndActiveUsersCount() {
 
 export async function removeUserById(id) {
     try {
-        //todo : check permission to remove user, admin_user
-        //todo : cannot remove main admin user
         return await prisma.$transaction(async (prisma) => {
             const removedUser = await prisma.user.delete({
                 where: {

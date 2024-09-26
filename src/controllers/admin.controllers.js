@@ -264,7 +264,7 @@ export async function removeRelatedTitle(req, res) {
 
 export async function removeDocsRows(req, res) {
     let {removeType, id} = req.params;
-    let result = await adminServices.removeDocsRows(removeType, id);
+    let result = await adminServices.removeDocsRows(removeType, id, req.permissions);
     return sendResponse(req, res, result);
 }
 

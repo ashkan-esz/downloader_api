@@ -15,6 +15,7 @@ export const PermissionsList = Object.freeze({
     //-----------------------------
     admin_create_admin: "admin_create_admin",
     admin_remove_admin: "admin_remove_admin",
+    admin_remove_user: "admin_remove_user",
     //-----------------------------
     admin_get_users: "admin_get_users",
     admin_get_permissions: "admin_get_permissions",
@@ -71,7 +72,7 @@ export const Default_Role_Names = Object.freeze({
 });
 
 export function checkPermissionIsAdminPermission(perm) {
-    return perm.startsWith('admin_')
+    return perm.startsWith('admin_');
 }
 
 export function checkRoleIsAdminRole(name) {

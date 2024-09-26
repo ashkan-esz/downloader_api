@@ -526,7 +526,7 @@ export async function removeRelatedTitle(id1, id2) {
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function removeDocsRows(removeType, id) {
+export async function removeDocsRows(removeType, id, currentAdminPermissions) {
     let result;
     if (removeType === 'movie') {
         result = await moviesDbMethods.removeMovieById(id);
@@ -546,7 +546,32 @@ export async function removeDocsRows(removeType, id) {
         if (isNaN(id)) {
             result = "invalid id";
         } else {
-            result = await usersDbMethods.removeUserById(Number(id));
+            id = Number(id);
+
+            const admin_remove_user = roleAndPermissionsDbMethods.PermissionsList.admin_remove_user;
+            if (!currentAdminPermissions.includes(admin_remove_user)) {
+                return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_remove_user}]) permissions`);
+            }
+
+            const userRoles = await roleAndPermissionsDbMethods.getRoleUsersByIdDb(id);
+
+            if (userRoles.find(r =>
+                r.id === roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin || r.name === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role)) {
+                return generateServiceResult({data: null}, 403, `Forbidden, cannot remove main-admin`);
+            }
+
+            if (userRoles.find(r => roleAndPermissionsDbMethods.checkRoleIsAdminRole(r.name))) {
+                const admin_remove_admin = roleAndPermissionsDbMethods.PermissionsList.admin_remove_admin;
+                if (!currentAdminPermissions.includes(admin_remove_admin)) {
+                    return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_remove_admin}]) permissions`);
+                }
+            }
+
+            if (id === _testUserId) {
+                return generateServiceResult({data: null}, 403, `Forbidden, cannot remove $$test_user$$`);
+            }
+
+            result = await usersDbMethods.removeUserById(id);
             if (result !== 'notfound' && result !== 'error') {
                 //remove profileImages from s3
                 for (let i = 0; i < result.profileImages.length; i++) {
