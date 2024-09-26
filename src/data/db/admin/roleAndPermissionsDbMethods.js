@@ -9,9 +9,12 @@ export const PermissionsList = Object.freeze({
     admin_create_role: "admin_create_role",
     admin_edit_role: "admin_edit_role",
     admin_delete_role: "admin_delete_role",
+    admin_manage_admin_role: "admin_manage_admin_role", //todo : implement
     //-----------------------------
-    admin_create_admin: "admin_create_admin",
-    admin_remove_admin: "admin_remove_admin",
+    admin_edit_user_roles: "admin_edit_user_roles", //todo : implement
+    //-----------------------------
+    admin_create_admin: "admin_create_admin", //todo : implement
+    admin_remove_admin: "admin_remove_admin", //todo : implement
     //-----------------------------
     admin_get_users: "admin_get_users",
     admin_get_permissions: "admin_get_permissions",
@@ -59,6 +62,25 @@ export const Default_Role_Ids = Object.freeze({
     defaultBot: 4,
 });
 
+export const Default_Role_Names = Object.freeze({
+    main_admin_role: "main_admin_role",
+    default_admin_role: "default_admin_role",
+    default_user_role: "default_user_role",
+    test_user_role: "test_user_role",
+    default_bot_role: "default_bot_role",
+});
+
+export async function checkPermissionIsAdminPermission(perm) {
+    return perm.startsWith('admin_')
+}
+
+export async function checkRoleIsAdminRole(name) {
+    return name.startsWith('admin_') || [Default_Role_Names.main_admin_role, Default_Role_Names.default_admin_role].includes(name);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export async function addPermissionsToPostgres() {
     try {
         let rr = Object.keys(PermissionsList).map((item, index) => ({
@@ -83,7 +105,7 @@ export async function addMainAdminRoleToPostgres() {
         let res = await prisma.role.create({
             data: {
                 id: Default_Role_Ids.mainAdmin,
-                name: "main_admin_role",
+                name: Default_Role_Names.main_admin_role,
                 description: "",
                 torrentLeachLimitGb: 0,
                 torrentSearchLimit: 0,
@@ -113,7 +135,7 @@ export async function addDefaultAdminRoleToPostgres() {
         let res = await prisma.role.create({
             data: {
                 id: Default_Role_Ids.defaultAdmin,
-                name: "default_admin_role",
+                name: Default_Role_Names.default_admin_role,
                 description: "",
                 torrentLeachLimitGb: 0,
                 torrentSearchLimit: 0,
@@ -147,7 +169,7 @@ export async function addDefaultUserRoleToPostgres() {
         let res = await prisma.role.create({
             data: {
                 id: Default_Role_Ids.defaultUser,
-                name: "default_user_role",
+                name: Default_Role_Names.default_user_role,
                 description: "",
                 torrentLeachLimitGb: 1,
                 torrentSearchLimit: 1,
@@ -169,7 +191,7 @@ export async function addTestUserRoleToPostgres() {
         let res = await prisma.role.create({
             data: {
                 id: Default_Role_Ids.testUser,
-                name: "test_user_role",
+                name: Default_Role_Names.test_user_role,
                 description: "",
                 torrentLeachLimitGb: 1,
                 torrentSearchLimit: 1,
@@ -191,7 +213,7 @@ export async function addDefaultBotRoleToPostgres() {
         let res = await prisma.role.create({
             data: {
                 id: Default_Role_Ids.defaultBot,
-                name: "default_bot_role",
+                name: Default_Role_Names.default_bot_role,
                 description: "",
                 torrentLeachLimitGb: 1,
                 torrentSearchLimit: 1,
@@ -241,6 +263,21 @@ export async function getUserPermissionsByRoleIds(roleIds) {
     } catch (error) {
         saveError(error);
         return null;
+    }
+}
+
+export async function getRolesByIds(roleIds) {
+    try {
+        return await prisma.role.findMany({
+            where: {
+                id: {
+                    in: roleIds,
+                }
+            },
+        });
+    } catch (error) {
+        saveError(error);
+        return 'error';
     }
 }
 
@@ -474,5 +511,80 @@ export async function getRoleUsersDb(roleName, skip, limit) {
     } catch (error) {
         saveError(error);
         return null;
+    }
+}
+
+export async function getRoleUsersByIdDb(userId) {
+    try {
+        let res = await prisma.userToRole.findMany({
+            where: {
+                userId: userId,
+            },
+            select: {
+                role: {
+                    include: {
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        description: true,
+                                        createdAt: true,
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+            },
+        });
+
+        if (!res) {
+            return null;
+        }
+
+        return res.map(r => r.role);
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function editUserRoles(userId, roleIds) {
+    try {
+        return await prisma.user.update({
+            where: {
+                userId: userId,
+            },
+            data: {
+                roles: {
+                    createMany: {
+                        data: roleIds.map(pid => ({roleId: pid})),
+                        skipDuplicates: true,
+                    },
+                    deleteMany: {
+                        roleId: {
+                            notIn: roleIds,
+                        }
+                    },
+                },
+            },
+            select: {
+                userId: true,
+            }
+        });
+    } catch (error) {
+        if (error.code === "P2003") {
+            return 'role not found';
+        }
+        if (error.code === 'P2025') {
+            return null;
+        }
+        saveError(error);
+        return 'error';
     }
 }

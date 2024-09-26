@@ -319,5 +319,11 @@ export async function getRoleUsers(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function editUserRoles(req, res) {
+    let {userId, roleIds} = req.body;
+    let result = await adminServices.editUserRoles(userId, roleIds, req.permissions);
+    return sendResponse(req, res, result);
+}
+
 //---------------------------------------------------
 //---------------------------------------------------

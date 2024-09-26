@@ -419,6 +419,14 @@ router.delete('/remove_role/:name',
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_delete_role]),
     adminControllers.removeRoleByName);
 
+//admin/edit_user_roles
+router.put('/edit_user_roles',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['userId_body', 'roleIds_body']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_edit_user_roles]),
+    adminControllers.editUserRoles);
+
 //---------------------------------------------------
 //---------------------------------------------------
 

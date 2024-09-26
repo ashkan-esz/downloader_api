@@ -659,6 +659,20 @@ const validations = Object.freeze({
             return value;
         }),
 
+    roleIds_body: body('roleIds')
+        .exists().withMessage("Missed parameter roleIds")
+        .isArray().withMessage("roleIds must be Array(Int)")
+        .custom((value, {req, loc, path}) => {
+            if (!Array.isArray(value) || !value.every(id => Number.isInteger(id) && id >= 0)) {
+                throw new Error("roleIds must be Array(Int)");
+            }
+            return value;
+        }),
+
+    userId_body: body('userId')
+        .exists().withMessage("Missed parameter userId")
+        .isInt({min: 0}).withMessage("userId must be Number >= 0")
+        .toInt(),
 });
 
 export function checkApiParamsAndSendError(apiParams) {

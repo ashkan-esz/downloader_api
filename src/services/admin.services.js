@@ -649,5 +649,36 @@ export async function getRoleUsers(roleName, skip, limit) {
     return generateServiceResult({data: result}, 200, '');
 }
 
+export async function editUserRoles(userId, roleIds, currentAdminPermissions) {
+    const prevRoles = await roleAndPermissionsDbMethods.getRoleUsersByIdDb(userId);
+    if (prevRoles === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!prevRoles) {
+        return generateServiceResult({}, 404, "Not found");
+    }
+
+    const newRoles = await roleAndPermissionsDbMethods.getRolesByIds(roleIds);
+    if (newRoles === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+
+    // const addingRoles = newRoles.filter(nr => !prevRoles.find(pr => pr.id === nr.id));
+    // const removingRoles = prevRoles.filter(pr => !newRoles.find(nr => pr.id === nr.id));
+    // console.log(addingRoles)
+    // console.log(removingRoles)
+    // return generateServiceResult({data: prevRoles}, 200, '');
+
+    let result = await roleAndPermissionsDbMethods.editUserRoles(userId, roleIds);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (result === "role not found") {
+        return generateServiceResult({}, 404, "Role not found");
+    }else if (!result) {
+        return generateServiceResult({}, 404, "Not found");
+    }
+
+    return generateServiceResult({}, 200, '');
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
