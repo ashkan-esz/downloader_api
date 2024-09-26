@@ -9,9 +9,9 @@ export const PermissionsList = Object.freeze({
     admin_create_role: "admin_create_role",
     admin_edit_role: "admin_edit_role",
     admin_delete_role: "admin_delete_role",
-    admin_manage_admin_role: "admin_manage_admin_role", //todo : implement
+    admin_manage_admin_role: "admin_manage_admin_role",
     //-----------------------------
-    admin_edit_user_roles: "admin_edit_user_roles", //todo : implement
+    admin_edit_user_roles: "admin_edit_user_roles",
     //-----------------------------
     admin_create_admin: "admin_create_admin", //todo : implement
     admin_remove_admin: "admin_remove_admin", //todo : implement
@@ -70,11 +70,11 @@ export const Default_Role_Names = Object.freeze({
     default_bot_role: "default_bot_role",
 });
 
-export async function checkPermissionIsAdminPermission(perm) {
+export function checkPermissionIsAdminPermission(perm) {
     return perm.startsWith('admin_')
 }
 
-export async function checkRoleIsAdminRole(name) {
+export function checkRoleIsAdminRole(name) {
     return name.startsWith('admin_') || [Default_Role_Names.main_admin_role, Default_Role_Names.default_admin_role].includes(name);
 }
 

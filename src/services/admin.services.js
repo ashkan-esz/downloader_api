@@ -600,7 +600,25 @@ export async function getRoleDataByName(roleName) {
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+export async function createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions) {
+    const permissions = Object.keys(roleAndPermissionsDbMethods.PermissionsList);
+    if (permissionIds.some(pid => roleAndPermissionsDbMethods.checkPermissionIsAdminPermission(permissions[pid] || ''))) {
+        // admin role
+        if (!name.startsWith('admin_')) {
+            return generateServiceResult({data: null}, 400, "Name of Roles with admin permissions must start with \'admin_\'");
+        }
+
+        const admin_manage_admin_role = roleAndPermissionsDbMethods.PermissionsList.admin_manage_admin_role;
+        if (!currentAdminPermissions.includes(admin_manage_admin_role)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_manage_admin_role}]) permissions`);
+        }
+    } else {
+        // normal role
+        if (name.startsWith('admin_')) {
+            return generateServiceResult({data: null}, 400, "Name of Roles without admin permissions cannot start with \'admin_\'");
+        }
+    }
+
     let result = await roleAndPermissionsDbMethods.addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
@@ -611,7 +629,25 @@ export async function createNewRole(name, description, torrentLeachLimitGb, torr
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions) {
+    const permissions = Object.keys(roleAndPermissionsDbMethods.PermissionsList);
+    if (permissionIds.some(pid => roleAndPermissionsDbMethods.checkPermissionIsAdminPermission(permissions[pid] || ''))) {
+        // admin role
+        if (!newName.startsWith('admin_')) {
+            return generateServiceResult({data: null}, 400, "Name of Roles with admin permissions must start with \'admin_\'");
+        }
+
+        const admin_manage_admin_role = roleAndPermissionsDbMethods.PermissionsList.admin_manage_admin_role;
+        if (!currentAdminPermissions.includes(admin_manage_admin_role)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_manage_admin_role}]) permissions`);
+        }
+    } else {
+        // normal role
+        if (newName.startsWith('admin_')) {
+            return generateServiceResult({data: null}, 400, "Name of Roles without admin permissions cannot start with \'admin_\'");
+        }
+    }
+
     let result = await roleAndPermissionsDbMethods.editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
@@ -624,8 +660,16 @@ export async function editRoleData(name, newName, description, torrentLeachLimit
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function removeRoleByName(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
-    let result = await roleAndPermissionsDbMethods.removeRoleByNameDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+export async function removeRoleByName(name, currentAdminPermissions) {
+    if (roleAndPermissionsDbMethods.checkRoleIsAdminRole(name)) {
+        // admin role
+        const admin_manage_admin_role = roleAndPermissionsDbMethods.PermissionsList.admin_manage_admin_role;
+        if (!currentAdminPermissions.includes(admin_manage_admin_role)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_manage_admin_role}]) permissions`);
+        }
+    }
+
+    let result = await roleAndPermissionsDbMethods.removeRoleByNameDb(name);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (!result) {
@@ -650,6 +694,10 @@ export async function getRoleUsers(roleName, skip, limit) {
 }
 
 export async function editUserRoles(userId, roleIds, currentAdminPermissions) {
+    if (roleIds.length === 0) {
+        roleIds = [roleAndPermissionsDbMethods.Default_Role_Ids.defaultUser];
+    }
+
     const prevRoles = await roleAndPermissionsDbMethods.getRoleUsersByIdDb(userId);
     if (prevRoles === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
@@ -673,7 +721,7 @@ export async function editUserRoles(userId, roleIds, currentAdminPermissions) {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (result === "role not found") {
         return generateServiceResult({}, 404, "Role not found");
-    }else if (!result) {
+    } else if (!result) {
         return generateServiceResult({}, 404, "Not found");
     }
 

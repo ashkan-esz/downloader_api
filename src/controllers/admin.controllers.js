@@ -293,20 +293,20 @@ export async function getRoleDataByName(req, res) {
 
 export async function createNewRole(req, res) {
     let {name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds} = req.body;
-    let result = await adminServices.createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    let result = await adminServices.createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, req.permissions);
     return sendResponse(req, res, result);
 }
 
 export async function editRoleData(req, res) {
     let {name} = req.params;
     let {name: newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds} = req.body;
-    let result = await adminServices.editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    let result = await adminServices.editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, req.permissions);
     return sendResponse(req, res, result);
 }
 
 export async function removeRoleByName(req, res) {
     let {name} = req.params;
-    let result = await adminServices.removeRoleByName(name);
+    let result = await adminServices.removeRoleByName(name, req.permissions);
     return sendResponse(req, res, result);
 }
 
