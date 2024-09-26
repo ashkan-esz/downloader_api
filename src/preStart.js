@@ -12,7 +12,7 @@ import {restoreBackupDbJobFunc} from "./jobs/dbBackup.js";
 import {addNotificationEntityTypes} from "./data/db/notificationDbMethods.js";
 import {addBotsFromMongodbToPostgres} from "./data/db/botsDbMethods.js";
 
-export let testUserCreated = false;
+export let _testUserId = null;
 
 export async function preStart(force = false) {
     if (config.nodeEnv !== 'dev') {
@@ -64,7 +64,7 @@ export async function preStart(force = false) {
     if (config.initDbsOnStart || force) {
         await createCollectionsAndIndexes();
         await createBuckets();
-        if (!testUserCreated) {
+        if (!_testUserId) {
             await createTestUser();
         }
     }
@@ -80,7 +80,7 @@ async function createTestUser() {
             let testUserData = await usersDbMethods.findUser('$$test_user$$', '', true);
             if (testUserData.activeSessions && testUserData.activeSessions.length > 0) {
                 console.log('====> [[Creating Guest User: Already Exists]]');
-                testUserCreated = true;
+                _testUserId = testUserData.userId;
                 return;
             } else {
                 userData = testUserData;
@@ -95,7 +95,7 @@ async function createTestUser() {
         const deviceId = uuidv4();
         await usersDbMethods.addSession(userData.userId, {}, deviceId, tokens.refreshToken); //deviceInfo, deviceId
         console.log('====> [[Creating Guest User: Done]]');
-        testUserCreated = true;
+        _testUserId = userData.userId;
         //---------------------------------
         //---------------------------------
     } catch (error) {

@@ -300,7 +300,7 @@ export async function createNewRole(req, res) {
 export async function editRoleData(req, res) {
     let {name} = req.params;
     let {name: newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds} = req.body;
-    let result = await adminServices.editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, req.permissions);
+    let result = await adminServices.editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, req.permissions, req.jwtUserData);
     return sendResponse(req, res, result);
 }
 
@@ -321,7 +321,7 @@ export async function getRoleUsers(req, res) {
 
 export async function editUserRoles(req, res) {
     let {userId, roleIds} = req.body;
-    let result = await adminServices.editUserRoles(userId, roleIds, req.permissions);
+    let result = await adminServices.editUserRoles(userId, roleIds, req.permissions, req.jwtUserData);
     return sendResponse(req, res, result);
 }
 

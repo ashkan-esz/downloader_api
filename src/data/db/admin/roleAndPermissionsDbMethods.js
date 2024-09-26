@@ -13,8 +13,8 @@ export const PermissionsList = Object.freeze({
     //-----------------------------
     admin_edit_user_roles: "admin_edit_user_roles",
     //-----------------------------
-    admin_create_admin: "admin_create_admin", //todo : implement
-    admin_remove_admin: "admin_remove_admin", //todo : implement
+    admin_create_admin: "admin_create_admin",
+    admin_remove_admin: "admin_remove_admin",
     //-----------------------------
     admin_get_users: "admin_get_users",
     admin_get_permissions: "admin_get_permissions",

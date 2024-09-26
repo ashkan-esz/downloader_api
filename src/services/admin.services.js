@@ -29,6 +29,7 @@ import {getCronJobsStatus, startCronJobByName} from "../utils/cronJobsStatus.js"
 import * as Cache from "../data/cache.js";
 import config from "../config/index.js";
 import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermissionsDbMethods.js";
+import {_testUserId} from "../preStart.js";
 
 export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
@@ -629,7 +630,7 @@ export async function createNewRole(name, description, torrentLeachLimitGb, torr
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions) {
+export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions, jwtUserData) {
     const permissions = Object.keys(roleAndPermissionsDbMethods.PermissionsList);
     if (permissionIds.some(pid => roleAndPermissionsDbMethods.checkPermissionIsAdminPermission(permissions[pid] || ''))) {
         // admin role
@@ -645,6 +646,17 @@ export async function editRoleData(name, newName, description, torrentLeachLimit
         // normal role
         if (newName.startsWith('admin_')) {
             return generateServiceResult({data: null}, 400, "Name of Roles without admin permissions cannot start with \'admin_\'");
+        }
+    }
+
+    if (name === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role || newName === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role) {
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot edit main-admin-role`);
+    }
+
+    if (!jwtUserData.roleIds.includes(roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin)) {
+        const roleData = await roleAndPermissionsDbMethods.getRoleDataByName(name);
+        if (roleData && jwtUserData.roleIds.includes(roleData?.id)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, cannot edit the roles of yourself`);
         }
     }
 
@@ -693,7 +705,7 @@ export async function getRoleUsers(roleName, skip, limit) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editUserRoles(userId, roleIds, currentAdminPermissions) {
+export async function editUserRoles(userId, roleIds, currentAdminPermissions, jwtUserData) {
     if (roleIds.length === 0) {
         roleIds = [roleAndPermissionsDbMethods.Default_Role_Ids.defaultUser];
     }
@@ -710,11 +722,35 @@ export async function editUserRoles(userId, roleIds, currentAdminPermissions) {
         return generateServiceResult({}, 500, errorMessage.serverError);
     }
 
-    // const addingRoles = newRoles.filter(nr => !prevRoles.find(pr => pr.id === nr.id));
-    // const removingRoles = prevRoles.filter(pr => !newRoles.find(nr => pr.id === nr.id));
-    // console.log(addingRoles)
-    // console.log(removingRoles)
-    // return generateServiceResult({data: prevRoles}, 200, '');
+    const addingRoles = newRoles.filter(nr => !prevRoles.find(pr => pr.id === nr.id));
+    const removingRoles = prevRoles.filter(pr => !newRoles.find(nr => pr.id === nr.id));
+
+    if (addingRoles.some(r => roleAndPermissionsDbMethods.checkRoleIsAdminRole(r.name))) {
+        const admin_create_admin = roleAndPermissionsDbMethods.PermissionsList.admin_create_admin;
+        if (!currentAdminPermissions.includes(admin_create_admin)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_create_admin}]) permissions`);
+        }
+    }
+
+    if (removingRoles.some(r => roleAndPermissionsDbMethods.checkRoleIsAdminRole(r.name))) {
+        const admin_remove_admin = roleAndPermissionsDbMethods.PermissionsList.admin_remove_admin;
+        if (!currentAdminPermissions.includes(admin_remove_admin)) {
+            return generateServiceResult({data: null}, 403, `Forbidden, need ([${admin_remove_admin}]) permissions`);
+        }
+    }
+
+    if (newRoles.find(r =>
+        r.id === roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin || r.name === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role)) {
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot give or get main-admin-role`);
+    }
+
+    if (userId === jwtUserData.userId && !jwtUserData.roleIds.includes(roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin)) {
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot edit the roles of yourself`);
+    }
+
+    if (userId === _testUserId) {
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot edit the roles of $$test_user$$`);
+    }
 
     let result = await roleAndPermissionsDbMethods.editUserRoles(userId, roleIds);
     if (result === "error") {
