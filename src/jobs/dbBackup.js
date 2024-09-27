@@ -148,7 +148,7 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
             }
         }
 
-         backupFiles = backupFiles.sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
+        backupFiles = backupFiles.sort((a, b) => _modelNames.indexOf(a.Key.split('-')[1]) - _modelNames.indexOf(b.Key.split('-')[1]));
 
         if (backupFiles.length === 0) {
             updateCronJobsStatus('restoreBackupDb', 'end');
@@ -191,19 +191,6 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
                         loopCounter++;
                         let insertData = data.splice(0, loopSize);
                         try {
-                            if (['staff', 'character', 'credit', 'user'].includes(modelName)) {
-                                if (modelName === 'user') {
-                                    insertData = insertData.map(d => {
-                                        delete d.userId;
-                                        return d;
-                                    });
-                                } else {
-                                    insertData = insertData.map(d => {
-                                        delete d.id;
-                                        return d;
-                                    });
-                                }
-                            }
                             await prisma[modelName].createMany({data: insertData, skipDuplicates: true});
                         } catch (error2) {
                             saveError(error2);
@@ -215,6 +202,9 @@ export async function restoreBackupDbJobFunc(autoStartOnServerUp = false) {
                 });
             });
         }
+
+        updateCronJobsStatus('restoreBackupDb', 'fixing serial id counter');
+        await fixSerialIdCounterAfterBackupRestore();
 
         updateCronJobsStatus('restoreBackupDb', 'end');
         return {status: 'ok'};
@@ -248,6 +238,62 @@ export async function checkPostgresEmpty() {
     } catch (error) {
         saveError(error);
         return true;
+    }
+}
+
+export async function fixSerialIdCounterAfterBackupRestore() {
+    const models = [
+        {
+            name: 'User',
+            fieldName: 'userId',
+        },
+        {
+            name: 'Role',
+            fieldName: 'id',
+        },
+        {
+            name: 'Permission',
+            fieldName: 'id',
+        },
+        {
+            name: 'Staff',
+            fieldName: 'id',
+        },
+        {
+            name: 'Character',
+            fieldName: 'id',
+        },
+        {
+            name: 'Credit',
+            fieldName: 'id',
+        },
+        {
+            name: 'Room',
+            fieldName: 'roomId',
+        },
+        {
+            name: 'Message',
+            fieldName: 'id',
+        },
+        {
+            name: 'MediaFile',
+            fieldName: 'id',
+        },
+        {
+            name: 'Notification',
+            fieldName: 'id',
+        },
+    ];
+
+    for (let i = 0; i < models.length; i++) {
+        try {
+            console.log(`====> [[Fixing PostgresDb Serial Id Counter: ${models[i].name}]]`);
+            updateCronJobsStatus('restoreBackupDb', `fixing serial id counter [${models[i].name}]`);
+            const raw = `SELECT setval(pg_get_serial_sequence('"${models[i].name}"', '${models[i].fieldName}'), coalesce(max("${models[i].fieldName}"),0) + 1, false) FROM "${models[i].name}";`
+            await prisma.$executeRawUnsafe(raw);
+        } catch (error) {
+            saveError(error);
+        }
     }
 }
 
