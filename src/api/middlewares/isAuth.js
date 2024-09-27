@@ -264,7 +264,7 @@ export function checkUserHavePermissions(neededPermissions) {
                         isCacheData: false,
                     });
                 }
-                await Cache.setRolesPermissionsCacheByKey(cacheKey, permissions);
+                await Cache.setRolesPermissionsCacheByKey(cacheKey, permissions, 2);
             }
 
             req.permissions = permissions;

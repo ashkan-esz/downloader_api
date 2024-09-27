@@ -9,7 +9,7 @@ import {defaultProfileImage} from "../data/cloudStorage.js";
 import * as computeUserData from "../data/db/computeUserData.js";
 import countries from "i18n-iso-countries";
 import * as Cache from "../data/cache.js";
-import {Default_Role_Ids} from "../data/db/admin/roleAndPermissionsDbMethods.js";
+import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermissionsDbMethods.js";
 
 export async function signup(username, email, password, deviceInfo, ip, fingerprint, host) {
     try {
@@ -17,7 +17,8 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         let verifyToken = await bcrypt.hash(uuidv4(), 11);
         verifyToken = verifyToken.replace(/\//g, '');
         let verifyToken_expire = Date.now() + (6 * 60 * 60 * 1000);  //6 hour
-        let userData = await usersDbMethods.addUser(username, email, hashedPassword, Default_Role_Ids.defaultUser, verifyToken, verifyToken_expire, defaultProfileImage);
+        const defaultRoleId = roleAndPermissionsDbMethods.Default_Role_Ids.defaultUser;
+        let userData = await usersDbMethods.addUser(username, email, hashedPassword, defaultRoleId, verifyToken, verifyToken_expire, defaultProfileImage);
         if (userData === 'userId exist') {
             return generateServiceResult({}, 403, errorMessage.userIdAlreadyExist);
         }
@@ -30,7 +31,7 @@ export async function signup(username, email, password, deviceInfo, ip, fingerpr
         if (!userData) {
             return generateServiceResult({}, 500, errorMessage.serverError);
         }
-        const user = getJwtPayload(userData, [Default_Role_Ids.defaultUser]);
+        const user = getJwtPayload(userData, [roleAndPermissionsDbMethods.Default_Role_Ids.defaultUser]);
         const tokens = generateAuthTokens(user);
         deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         const deviceId = fingerprint.hash || uuidv4();
@@ -92,12 +93,15 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
 
 export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRefreshToken, includeProfileImages, isAdminLogin) {
     try {
+        const roles = await roleAndPermissionsDbMethods.getUserRoleByIdDb(jwtUserData.userId);
+
         const user = {
             userId: jwtUserData.userId,
             username: jwtUserData.username,
-            roleIds: jwtUserData.roleIds,
+            roleIds: roles.map(r => r.roleId),
             generatedAt: Date.now(),
         };
+
         const tokens = isAdminLogin ? generateAuthTokens(user, '1h', '6h') : generateAuthTokens(user);
         deviceInfo = fixDeviceInfo(deviceInfo, fingerprint);
         let result = await usersDbMethods.updateSessionRefreshToken(jwtUserData.userId, deviceInfo, tokens.refreshToken, prevRefreshToken, includeProfileImages);
@@ -110,7 +114,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             userId: jwtUserData.userId,
-            roleIds: jwtUserData.roleIds,
+            roleIds: roles.map(r => r.roleId),
             username: result.user?.rawUsername,
             profileImages: result.user?.profileImages,
         }, 200, '', tokens);

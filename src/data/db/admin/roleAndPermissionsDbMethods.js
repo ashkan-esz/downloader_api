@@ -552,6 +552,28 @@ export async function getRoleUsersByIdDb(userId) {
     }
 }
 
+export async function getUserRoleByIdDb(userId) {
+    try {
+        let res = await prisma.userToRole.findMany({
+            where: {
+                userId: userId,
+            },
+            select: {
+                role: true,
+            },
+        });
+
+        if (!res) {
+            return null;
+        }
+
+        return res.map(r => r.role);
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 
