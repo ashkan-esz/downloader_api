@@ -390,7 +390,7 @@ router.get('/role/users',
 //admin/role/new_role
 router.post('/role/new_role',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'permissionIds_body']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'botsNotification_body', 'permissionIds_body']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_create_role]),
     adminControllers.createNewRole);
@@ -406,7 +406,7 @@ router.get('/role/:name',
 //admin/role/edit_role/:name
 router.post('/role/edit_role/:name',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
-    middlewares.validateApiParamsAdmin.checkApiParams(['name', 'name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'permissionIds_body']),
+    middlewares.validateApiParamsAdmin.checkApiParams(['name', 'name_body', 'description', 'torrentLeachLimitGb_body', 'torrentSearchLimit_body', 'botsNotification_body', 'permissionIds_body']),
     middlewares.validateApiParamsAdmin.apiParams_sendError,
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_edit_role]),
     adminControllers.editRoleData);

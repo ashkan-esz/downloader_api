@@ -626,7 +626,7 @@ export async function getRoleDataByName(roleName) {
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions) {
+export async function createNewRole(name, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds, currentAdminPermissions) {
     const permissions = Object.keys(roleAndPermissionsDbMethods.PermissionsList);
     if (permissionIds.some(pid => roleAndPermissionsDbMethods.checkPermissionIsAdminPermission(permissions[pid] || ''))) {
         // admin role
@@ -645,7 +645,7 @@ export async function createNewRole(name, description, torrentLeachLimitGb, torr
         }
     }
 
-    let result = await roleAndPermissionsDbMethods.addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    let result = await roleAndPermissionsDbMethods.addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (result === "name already exist") {
@@ -655,7 +655,7 @@ export async function createNewRole(name, description, torrentLeachLimitGb, torr
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds, currentAdminPermissions, jwtUserData) {
+export async function editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds, currentAdminPermissions, jwtUserData) {
     const permissions = Object.keys(roleAndPermissionsDbMethods.PermissionsList);
     if (permissionIds.some(pid => roleAndPermissionsDbMethods.checkPermissionIsAdminPermission(permissions[pid] || ''))) {
         // admin role
@@ -685,7 +685,7 @@ export async function editRoleData(name, newName, description, torrentLeachLimit
         }
     }
 
-    let result = await roleAndPermissionsDbMethods.editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds);
+    let result = await roleAndPermissionsDbMethods.editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds);
     if (result === "error") {
         return generateServiceResult({}, 500, errorMessage.serverError);
     } else if (!result) {

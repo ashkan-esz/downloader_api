@@ -649,6 +649,11 @@ const validations = Object.freeze({
         .isInt({min: 0}).withMessage("torrentSearchLimit must be Number starting from 0")
         .toInt(),
 
+    botsNotification_body: body('botsNotification')
+        .exists().withMessage("Missed parameter botsNotification")
+        .isBoolean({strict: true}).withMessage("botsNotification must be Boolean")
+        .toBoolean(),
+
     permissionIds_body: body('permissionIds')
         .exists().withMessage("Missed parameter permissionIds")
         .isArray().withMessage("permissionIds must be Array(Int)")

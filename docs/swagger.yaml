@@ -3230,6 +3230,10 @@ paths:
                   type: number
                   required: true
                   minimum: 0
+                botsNotification:
+                  type: boolean
+                  required: true
+                  default: false
                 permissionIds:
                   type: array
                   required: true
@@ -3281,6 +3285,10 @@ paths:
                   type: number
                   required: true
                   minimum: 0
+                botsNotification:
+                  type: boolean
+                  required: true
+                  default: false
                 permissionIds:
                   type: array
                   required: true
@@ -5212,6 +5220,8 @@ security:
           type: number
         torrentSearchLimit:
           type: number
+        botsNotification:
+          type: boolean
         permissions:
           type: array
           items:

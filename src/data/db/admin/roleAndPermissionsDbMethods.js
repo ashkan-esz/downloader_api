@@ -110,6 +110,7 @@ export async function addMainAdminRoleToPostgres() {
                 description: "",
                 torrentLeachLimitGb: 0,
                 torrentSearchLimit: 0,
+                botsNotification: true,
                 permissions: {
                     createMany: {
                         data: Object.keys(PermissionsList).map((ite, index) => ({
@@ -140,6 +141,7 @@ export async function addDefaultAdminRoleToPostgres() {
                 description: "",
                 torrentLeachLimitGb: 0,
                 torrentSearchLimit: 0,
+                botsNotification: true,
                 permissions: {
                     createMany: {
                         data: [
@@ -172,8 +174,9 @@ export async function addDefaultUserRoleToPostgres() {
                 id: Default_Role_Ids.defaultUser,
                 name: Default_Role_Names.default_user_role,
                 description: "",
-                torrentLeachLimitGb: 1,
-                torrentSearchLimit: 1,
+                torrentLeachLimitGb: 50,
+                torrentSearchLimit: 20,
+                botsNotification: true,
             }
         });
 
@@ -196,6 +199,7 @@ export async function addTestUserRoleToPostgres() {
                 description: "",
                 torrentLeachLimitGb: 1,
                 torrentSearchLimit: 1,
+                botsNotification: false,
             }
         });
 
@@ -218,6 +222,7 @@ export async function addDefaultBotRoleToPostgres() {
                 description: "",
                 torrentLeachLimitGb: 1,
                 torrentSearchLimit: 1,
+                botsNotification: true,
                 permissions: {
                     createMany: {
                         data: [
@@ -318,6 +323,7 @@ export async function getAllRolesWithPermissionsDb(searchingPermissions = []) {
             description: role.description,
             torrentLeachLimitGb: role.torrentLeachLimitGb,
             torrentSearchLimit: role.torrentSearchLimit,
+            botsNotification: role.botsNotification,
             permissions: role.permissions.map(p => ({
                 id: p.permission.id,
                 name: p.permission.name,
@@ -360,7 +366,7 @@ export async function getRoleDataByName(roleName) {
 //---------------------------------------------------
 //---------------------------------------------------
 
-export async function addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+export async function addNewRoleDb(name, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds) {
     try {
         return await prisma.role.create({
             data: {
@@ -368,6 +374,7 @@ export async function addNewRoleDb(name, description, torrentLeachLimitGb, torre
                 description: description,
                 torrentLeachLimitGb: torrentLeachLimitGb,
                 torrentSearchLimit: torrentSearchLimit,
+                botsNotification: botsNotification,
                 permissions: {
                     createMany: {
                         data: permissionIds.map(pid => ({permissionId: pid})),
@@ -385,7 +392,7 @@ export async function addNewRoleDb(name, description, torrentLeachLimitGb, torre
     }
 }
 
-export async function editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, permissionIds) {
+export async function editRoleDb(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds) {
     try {
         return await prisma.role.update({
             where: {
@@ -396,6 +403,7 @@ export async function editRoleDb(name, newName, description, torrentLeachLimitGb
                 description: description,
                 torrentLeachLimitGb: torrentLeachLimitGb,
                 torrentSearchLimit: torrentSearchLimit,
+                botsNotification: botsNotification,
                 permissions: {
                     createMany: {
                         data: permissionIds.map(pid => ({permissionId: pid})),
