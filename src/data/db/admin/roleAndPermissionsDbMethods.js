@@ -6,6 +6,8 @@ export const PermissionsList = Object.freeze({
     torrent_leach: "torrent_leach",
     crawl_source: "crawl_source",
     //-----------------------------
+    admin_manage_torrent: "admin_manage_torrent",
+    //-----------------------------
     admin_create_role: "admin_create_role",
     admin_edit_role: "admin_edit_role",
     admin_delete_role: "admin_delete_role",
@@ -177,6 +179,16 @@ export async function addDefaultUserRoleToPostgres() {
                 torrentLeachLimitGb: 50,
                 torrentSearchLimit: 20,
                 botsNotification: true,
+                permissions: {
+                    createMany: {
+                        data: [
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.torrent_search)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.torrent_leach)},
+                            {permissionId: Object.keys(PermissionsList).indexOf(PermissionsList.crawl_source)},
+                        ],
+                        skipDuplicates: true,
+                    }
+                }
             }
         });
 
