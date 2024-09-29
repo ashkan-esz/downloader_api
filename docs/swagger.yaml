@@ -4773,8 +4773,6 @@ security:
                       type: string
                     localLinkExpire:
                       type: integer
-                    downloadsCount:
-                      type: integer
                     okCount:
                       type: integer
                     badCount:
@@ -4839,8 +4837,6 @@ security:
               localLink:
                 type: string
               localLinkExpire:
-                type: integer
-              downloadsCount:
                 type: integer
               okCount:
                 type: integer

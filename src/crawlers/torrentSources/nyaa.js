@@ -141,7 +141,6 @@ function extractLinks($, sourceUrl) {
                     size: size, //in mb
                     localLink: "",
                     localLinkExpire: 0,
-                    downloadsCount: 0,
                     okCount: 0,
                     badCount: 0,
                 }
