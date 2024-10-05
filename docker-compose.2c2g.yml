@@ -3,13 +3,14 @@ version: '3.4'
 services:
   api:
     image: downloader-api
+    container_name: api
     depends_on:
       - redis
     #      - rabbitmq
     network_mode: host
     build:
       context: .
-      dockerfile: ./Dockerfile.light
+      dockerfile: ./Dockerfile.2c2g
       network: host
     env_file: ./env/.env
     volumes:
@@ -20,10 +21,10 @@ services:
       REDIS_URL: redis://127.0.0.1:6379
       DISABLE_CRAWLER: 'false'
       DISABLE_TORRENT_CRAWLER: 'false'
-      CRAWLER_CONCURRENCY: 6
+      CRAWLER_CONCURRENCY: 8
       PAUSE_CRAWLER_ON_HIGH_LOAD: 'true'
-      CRAWLER_TOTAL_MEMORY: 560
-      CRAWLER_MEMORY_LIMIT: 520
+      CRAWLER_TOTAL_MEMORY: 760
+      CRAWLER_MEMORY_LIMIT: 720
       CRAWLER_PAUSE_DURATION_LIMIT: 10
       TOTAL_DISK_SPACE: 1024
       CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site --- https://chat.movietracker.site
@@ -34,8 +35,8 @@ services:
       resources:
         #also check --max_old_space_size in Dockerfile
         limits:
-          cpus: "0.5"
-          memory: 800M
+          cpus: "0.8"
+          memory: 900M
         reservations:
           memory: 50M
     restart: always
@@ -43,6 +44,7 @@ services:
   redis:
     image: "redis:7.2.3-alpine"
     network_mode: host
+    container_name: redis
     env_file: ./env/.env
     environment:
       - ALLOW_EMPTY_PASSWORD=no
@@ -52,12 +54,12 @@ services:
     #      - "6379:6379"
     volumes:
       - redis:/data
-    entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 50mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD"
+    entrypoint: /bin/sh -c "redis-server --latency-monitor-threshold 100 --maxmemory 60mb --maxmemory-policy allkeys-lfu --save 60 1 --appendonly yes --requirepass $$REDIS_PASSWORD --loglevel warning"
     deploy:
       resources:
         limits:
-          cpus: "0.1"
-          memory: 50M
+          cpus: "0.2"
+          memory: 60M
         reservations:
           memory: 10M
     restart: always
@@ -65,12 +67,14 @@ services:
   telegrambot:
     image: ashkanaz2828/downloader_telegrambot
     network_mode: host
+    container_name: telegramBot
     depends_on:
       - api
     env_file: ./env/telegrambot.env
     environment:
       - API_URL=https://api.movietracker.site
       - CHAT_API_URL=https://chat.movietracker.site
+      - TORRENT_API_URL=https://download.movietracker.site
       - WEB_URL=https://movietracker.site
       - MIN_IMDB_RATE=7.5
       - MIN_MAL_RATE=7.5
@@ -80,8 +84,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.1"
-          memory: 70M
+          cpus: "0.2"
+          memory: 100M
         reservations:
           memory: 10M
     restart: always
@@ -89,6 +93,7 @@ services:
   adminpanel:
     image: ashkanaz2828/downloader_adminpanel
     network_mode: host
+    container_name: adminPanel
     depends_on:
       - api
       - torrent
@@ -109,6 +114,7 @@ services:
   website:
     image: ashkanaz2828/downloader_website
     network_mode: host
+    container_name: website
     depends_on:
       - api
     environment:
@@ -129,6 +135,7 @@ services:
     build: ./docker/nginx
     #    ports:
     #      - '80:80'
+    container_name: nginx
     depends_on:
       - api
       - chat
@@ -137,7 +144,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.15"
+          cpus: "0.2"
           memory: 100M
         reservations:
           memory: 10M
@@ -148,6 +155,7 @@ services:
       - redis
     #      - rabbitmq
     network_mode: host
+    container_name: goChat
     env_file: env/chatservice.env
     environment:
       PORT: 3002
@@ -200,6 +208,7 @@ services:
   torrent:
     image: ashkanaz2828/downloader_torrent
     network_mode: host
+    container_name: goTorrent
     env_file: env/torrentservice.env
     environment:
       PORT: 3003
@@ -217,7 +226,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: 400M
+          memory: 300M
         reservations:
           memory: 15M
     restart: always
@@ -235,17 +244,66 @@ services:
     #      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/postgres/postgresql-light.conf:/etc/postgresql/postgresql.conf
+      - ./docker/postgres/postgresql-2c2g.conf:/etc/postgresql/postgresql.conf
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     #    shm_size: '64mb'
-    #    shm_size: '90mb'
+    #    shm_size: '150mb'
     deploy:
       resources:
         limits:
           cpus: "0.5"
-          memory: 300M
+          memory: 400M
         reservations:
           memory: 40M
+    restart: always
+
+  mailService:
+    image: ashkanaz2828/downloader_email
+    container_name: goMail
+    depends_on:
+      - rabbitmq
+      - mailServer
+    network_mode: host
+    env_file: ./env/mailservice.env
+    environment:
+      MAIN_SERVER_ADDRESS: api.movieTracker.site
+      CORS_ALLOWED_ORIGINS: https://www.movietracker.site --- https://movietracker.site --- http://movietracker.site --- https://admin.movietracker.site --- http://admin.movietracker.site  --- https://chat.movietracker.site
+      MAILSERVER_HOST: localhost
+      MAILSERVER_PORT: 587
+      MAILSERVER_USERNAME: webmaster@movietracker.site
+      LOG_PANIC_TRACE: 'true'
+      INITIAL_WAIT_FOR_MAIL_SERVER_SEC: 30
+    #    ports:
+    #      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 100M
+        reservations:
+          memory: 10M
+    restart: always
+
+  #more details in https://github.com/ashkan-esz/downloader_email
+  mailServer:
+    image: boky/postfix
+    container_name: mailServer
+    #    network_mode: host
+    environment:
+      - ALLOWED_SENDER_DOMAINS=localhost movietracker.site chat.movietracker.site download.movietracker.site
+    ports:
+      - "587:587"
+      - "250:25"
+    #    volumes:
+    #      - ./postfix/main.cf:/etc/postfix/main.cf
+    #      - ./postfix/virtual:/etc/postfix/virtual
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 100M
+        reservations:
+          memory: 10M
     restart: always
 
 volumes:
