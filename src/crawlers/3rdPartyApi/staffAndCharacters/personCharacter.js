@@ -177,9 +177,9 @@ async function handleJikanStaff_voiceActors(pageLink, movieId, jikanCharactersAr
 
 async function handleJikanStaff(pageLink, movieId, jikanStaffArray, credits, isVoiceActors = false) {
     if (isVoiceActors) {
-        changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-voiceActor: 0/?)`, true);
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-voiceActor: 0/?)`, true);
     } else {
-        changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-staff: 0/?)`, true);
+        changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-staff: 0/?)`, true);
     }
     const promiseQueue = new PQueue({concurrency: _pqConcurrency});
     for (let i = 0; i < jikanStaffArray.length && i < _maxStaffOrCharacterSize; i++) {
@@ -199,9 +199,9 @@ async function handleJikanStaff(pageLink, movieId, jikanStaffArray, credits, isV
     promiseQueue.on('next', () => {
         counter++;
         if (isVoiceActors) {
-            changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-voiceActor: ${counter}(+${promiseQueue.pending})/${total})`, true);
+            changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-voiceActor: ${counter}(+${promiseQueue.pending})/${total})`, true);
         } else {
-            changePageLinkStateFromCrawlerStatus(pageLink, ` ([4/6] jikan-staff: ${counter}(+${promiseQueue.pending})/${total})`, true);
+            changePageLinkStateFromCrawlerStatus(pageLink, ` ([3/6] jikan-staff: ${counter}(+${promiseQueue.pending})/${total})`, true);
         }
         if (checkForceStopCrawler()) {
             promiseQueue.clear();

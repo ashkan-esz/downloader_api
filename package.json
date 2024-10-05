@@ -23,6 +23,7 @@
     "upload_sourceamp": "sentry-cli releases files 1 upload-sourcemaps bundle.js",
     "deploy": "prisma migrate deploy && NODE_ENV=production node --optimize_for_size --max_old_space_size=900 src/server.js",
     "deploy_light": "prisma migrate deploy && NODE_ENV=production node --optimize_for_size --max_old_space_size=600 src/server.js",
+    "deploy_2c2g": "prisma migrate deploy && NODE_ENV=production node --optimize_for_size --max_old_space_size=800 src/server.js",
     "dev_deploy": "prisma migrate deploy && NODE_ENV=dev nodemon -r dotenv/config src/server.js"
   },
   "dependencies": {

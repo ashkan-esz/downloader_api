@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "UserTorrent" ALTER COLUMN "torrentLeachGb" SET DATA TYPE DOUBLE PRECISION;

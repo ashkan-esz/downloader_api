@@ -81,6 +81,12 @@ export async function addUser(username, email, hashedPassword, roleId, emailVeri
                         roleId: roleId,
                     }
                 },
+                userTorrent:{
+                  create:{
+                      torrentLeachGb: 0,
+                      torrentSearch: 0,
+                  }
+                },
                 defaultProfile: defaultProfileImage,
                 movieSettings: {
                     create: {}

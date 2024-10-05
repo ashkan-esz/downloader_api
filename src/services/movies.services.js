@@ -240,7 +240,7 @@ export async function searchMovieById(userId, id, dataLevel, filters, embedRelat
     }
     userStatsDbMethods.incrementMovieView(id);
 
-    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result);
+    let {isCacheData} = await handleSetingMovieCache(cacheKey, cacheResult, result, 1);
     await Promise.allSettled([
         addRelatedTitlesToMovie(result, embedRelatedTitles),
         addCollectionsToMovie(userId, result, embedCollections),
