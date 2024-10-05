@@ -32,7 +32,7 @@ export const encodersRegex = new RegExp([
 
 export const linkInfoRegex = new RegExp([
     /^((\d\d\d\d?p)|(1080p\.FULL-HD)|(1440p\.2K)|(2160p\.4K)|(2160p\.UHD))/,
-    /((\.x265)?(\.10bit)?(\.HDR)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
+    /((\.x265)?(\.10bit)?(\.HDR(10)?)?(\.3D)?(\.HSBS)?(\.[876]CH)?)?/,
     /(\.Episode\(\d\d?\d?-\d\d?\d?\))?/,
     /(\.Episode\(\d\d?\.5\))?/,
     /((\.\d)?\.(((Christmas\.)?Special)|OVA|ONA|OAD|NCED|NCOP|Redial)(_\d)?)?/,
@@ -74,7 +74,7 @@ const countries = [
 export const countriesRegex = new RegExp(`(480p|720p|1080p)(\\.FULL-HD)?(\\.Preview)?(\\.[1-5])?\\.(${countries.join('|')})`, 'i');
 
 export const specialWords = new RegExp([
-    /x265|10bit|3D|HDR|HSBS/,
+    /x265|10bit|3D|HDR10|HDR|HSBS/,
     /|HardSub|SoftSub|dubbed|Sub|Censored/,
     /|FULL-HD|2K|4K|[876]CH/,
     /|DIRECTORS-CUT|ALT-UNIVERSE-CUT/,
@@ -95,7 +95,7 @@ const chapterRegex = /Chapter_\d/;
 const ceremonyRegex = /(Main-Ceremony)|(Red-Carpet)|(Oscar)/;
 const orders = Object.freeze([
     'qualityRegex', 'full-hd', '2k', '4k', 'uhd',
-    'x265', '10bit', 'hdr',
+    'x265', '10bit', 'hdr10', 'hdr',
     '3d', 'hsbs', '6ch', '7ch', '8ch',
     'episodeRangeRegex',
     'episodeRangeRegex2',

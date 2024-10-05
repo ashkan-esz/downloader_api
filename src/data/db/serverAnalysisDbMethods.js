@@ -5,6 +5,7 @@ import {getDecodedLink} from "../../crawlers/utils/utils.js";
 
 const _maxSaveLogDuration = 1;
 const _pageSize = 24;
+const _maxTimeOut = 10 * 1000;
 
 export async function removeOldAnalysis() {
     try {
@@ -13,6 +14,8 @@ export async function removeOldAnalysis() {
         let yearAndMonth = (now.getFullYear() - _maxSaveLogDuration) + '-' + (now.getMonth() + 1);
         let result = await collection.deleteMany({
             yearAndMonth: yearAndMonth,
+        }, {
+            maxTimeMS: _maxTimeOut,
         });
         return result.value;
     } catch (error) {
@@ -42,7 +45,7 @@ export async function saveTotalAndActiveUsersCount(counts) {
                     $position: 0,
                 }
             }
-        });
+        }, {maxTimeMS: _maxTimeOut,});
         if (result.modifiedCount === 0) {
             //new year/month, new bucket
             let newBucket = getNewBucket(yearAndMonth);
@@ -51,7 +54,7 @@ export async function saveTotalAndActiveUsersCount(counts) {
                 active: counts.active,
                 date: now,
             });
-            await collection.insertOne(newBucket);
+            await collection.insertOne(newBucket, {maxTimeMS: _maxTimeOut});
         }
         return 'ok';
     } catch (error) {
@@ -72,7 +75,7 @@ export async function saveCrawlerLog(crawlerLog) {
                 $set: {
                     'crawlerLogs.$': crawlerLog
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
 
             if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new crawl
@@ -85,7 +88,7 @@ export async function saveCrawlerLog(crawlerLog) {
                             $position: 0,
                         }
                     }
-                });
+                }, {maxTimeMS: _maxTimeOut,});
             }
         } else {
             //create new bucket
@@ -122,12 +125,12 @@ export async function saveServerLog(logMessage) {
                         $position: 0,
                     }
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
         } else {
             //create new bucket
             let newBucket = getNewBucket(yearAndMonth);
             newBucket.serverLogs.push(newServerLog);
-            await collection.insertOne(newBucket);
+            await collection.insertOne(newBucket, {maxTimeMS: _maxTimeOut,});
         }
 
         return 'ok';
@@ -159,7 +162,7 @@ export async function saveGoogleCacheCall(url) {
                 $inc: {
                     'googleCacheCalls.$.count': 1,
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
 
             if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new cache call
@@ -169,13 +172,13 @@ export async function saveGoogleCacheCall(url) {
                     $push: {
                         googleCacheCalls: newGoogleCacheCall,
                     }
-                });
+                }, {maxTimeMS: _maxTimeOut,});
             }
         } else {
             //create new bucket
             let newBucket = getNewBucket(yearAndMonth);
             newBucket.googleCacheCalls.push(newGoogleCacheCall);
-            await collection.insertOne(newBucket);
+            await collection.insertOne(newBucket, {maxTimeMS: _maxTimeOut,});
         }
 
         return 'ok';
@@ -209,7 +212,7 @@ export async function saveCrawlerBadLink(sourceName, pageLink, links) {
                 $inc: {
                     'badLinks.$.count': 1,
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
 
             if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new
@@ -219,13 +222,13 @@ export async function saveCrawlerBadLink(sourceName, pageLink, links) {
                     $push: {
                         badLinks: newBadLink,
                     }
-                });
+                }, {maxTimeMS: _maxTimeOut,});
             }
         } else {
             //create new bucket
             let newBucket = getNewBucket(yearAndMonth);
             newBucket.badLinks.push(newBadLink);
-            await collection.insertOne(newBucket);
+            await collection.insertOne(newBucket, {maxTimeMS: _maxTimeOut,});
         }
 
         return 'ok';
@@ -264,7 +267,7 @@ export async function saveCrawlerWarning(message) {
                 $inc: {
                     'warnings.$.count': 1,
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
 
             if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
                 //new warning
@@ -274,13 +277,13 @@ export async function saveCrawlerWarning(message) {
                     $push: {
                         warnings: newWarning
                     }
-                });
+                }, {maxTimeMS: _maxTimeOut,});
             }
         } else {
             //create new bucket
             let newBucket = getNewBucket(yearAndMonth);
             newBucket.warnings.push(newWarning);
-            await collection.insertOne(newBucket);
+            await collection.insertOne(newBucket, {maxTimeMS: _maxTimeOut,});
         }
 
         return 'ok';
@@ -303,7 +306,7 @@ export async function resolveCrawlerWarning(message) {
                     'warnings.$.resolved': true,
                     'warnings.$.resolvedDate': new Date(),
                 }
-            });
+            }, {maxTimeMS: _maxTimeOut,});
 
             if (updateResult.modifiedCount === 0) {
                 return "not found";
@@ -545,7 +548,7 @@ async function getCollectionAndBucket() {
     let now = new Date();
     let yearAndMonth = now.getFullYear() + '-' + (now.getMonth() + 1);
 
-    let bucket = await collection.find({yearAndMonth: yearAndMonth}).limit(1).toArray();
+    let bucket = await collection.find({yearAndMonth: yearAndMonth}, {maxTimeMS: _maxTimeOut,}).limit(1).toArray();
     return {now, yearAndMonth, bucket, collection};
 }
 
