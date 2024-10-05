@@ -15,6 +15,9 @@ export async function getFileSize(url, opt = {}) {
     }
 
     try {
+        if (url.match(/^https?:\/\/ww\d+\./)) {
+            return opt.errorReturnValue;
+        }
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
         let response = await client.head(url, {timeout: opt.timeout});

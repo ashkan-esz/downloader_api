@@ -265,7 +265,7 @@ export async function getUserPermissionsByRoleIds(roleIds) {
         const res = await prisma.roleToPermission.findMany({
             where: {
                 roleId: {
-                    in: roleIds,
+                    in: roleIds.filter(r => r !== null),
                 }
             },
             include: {

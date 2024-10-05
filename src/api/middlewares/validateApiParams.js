@@ -37,6 +37,9 @@ const validations = Object.freeze({
         .trim()
         .isString().withMessage('Invalid parameter id :: String'),
 
+    id_mongo: param('id')
+        .isMongoId().withMessage('Invalid parameter id :: Mongodb.Id'),
+
     id_int: param('id')
         .trim()
         .isInt().withMessage('Invalid parameter id_int :: Integer')

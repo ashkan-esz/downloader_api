@@ -90,7 +90,7 @@ router.get('/searchMovie/:dataLevel/:page',
 router.get('/searchById/:id/:dataLevel',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(
-        ['id', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedRelatedTitles', 'embedCollections', 'embedStaffAndCharacter', 'noUserStats']
+        ['id_mongo', 'dataLevel', 'seasons_query', 'episodes_query', 'qualities_query', 'embedDownloadLinksConfig', 'embedRelatedTitles', 'embedCollections', 'embedStaffAndCharacter', 'noUserStats']
     ),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.searchMovieById);

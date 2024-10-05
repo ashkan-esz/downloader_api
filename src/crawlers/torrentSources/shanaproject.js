@@ -40,10 +40,10 @@ export default async function shanaproject({movie_url, serial_url}, pageCount, e
 
         return [1]; //pageNumber
     } catch (error) {
+        if (extraConfigs.retryCounter === undefined) {
+            extraConfigs.retryCounter = 0;
+        }
         if (error.code === "EAI_AGAIN") {
-            if (extraConfigs.retryCounter === undefined) {
-                extraConfigs.retryCounter = 0;
-            }
             if (extraConfigs.retryCounter < 2) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
@@ -51,7 +51,12 @@ export default async function shanaproject({movie_url, serial_url}, pageCount, e
             }
             return [1];
         }
-        if (error.response?.status !== 521 && error.response?.status !== 522) {
+        if ([500, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            extraConfigs.retryCounter++;
+            return await shanaproject({movie_url, serial_url}, pageCount, extraConfigs);
+        }
+        if (![521, 522, 525].includes(error.response?.status)) {
             saveError(error);
         }
         return [1];

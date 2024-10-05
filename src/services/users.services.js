@@ -94,11 +94,14 @@ export async function login(username_email, password, deviceInfo, ip, fingerprin
 export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRefreshToken, includeProfileImages, isAdminLogin) {
     try {
         const roles = await roleAndPermissionsDbMethods.getUserRoleByIdDb(jwtUserData.userId);
+        if (!roles || roles === "error") {
+            return generateServiceResult({}, 500, errorMessage.serverError);
+        }
 
         const user = {
             userId: jwtUserData.userId,
             username: jwtUserData.username,
-            roleIds: roles.map(r => r.roleId),
+            roleIds: roles.map(r => r.id),
             generatedAt: Date.now(),
         };
 
@@ -114,7 +117,7 @@ export async function getToken(jwtUserData, deviceInfo, ip, fingerprint, prevRef
             accessToken: tokens.accessToken,
             accessToken_expire: tokens.accessToken_expire,
             userId: jwtUserData.userId,
-            roleIds: roles.map(r => r.roleId),
+            roleIds: roles.map(r => r.id),
             username: result.user?.rawUsername,
             profileImages: result.user?.profileImages,
         }, 200, '', tokens);
