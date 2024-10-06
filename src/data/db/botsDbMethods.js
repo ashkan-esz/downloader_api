@@ -313,3 +313,30 @@ export async function updateAccountNotificationForBot(userId, botId, notificatio
         return 'error';
     }
 }
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+
+export async function getBotsUserCounts() {
+    try {
+        let res = await prisma.bot.findMany({
+            select: {
+                botName: true,
+                _count: {
+                    select: {
+                        users: true,
+                    }
+                }
+            }
+        });
+
+        return res.map(item => {
+            item.count = item._count.users;
+            delete item._count;
+            return item;
+        });
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

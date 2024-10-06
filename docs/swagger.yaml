@@ -3720,6 +3720,7 @@ security:
       schema:
         type: string
         enum:
+          - botUserCounts
           - userCounts
           - crawlerLogs
           - serverLogs

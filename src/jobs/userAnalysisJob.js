@@ -1,5 +1,6 @@
 import {getTotalAndActiveUsersCount} from "../data/db/usersDbMethods.js";
 import {removeOldAnalysis, saveTotalAndActiveUsersCount} from "../data/db/serverAnalysisDbMethods.js";
+import {getBotsUserCounts} from "../data/db/botsDbMethods.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 import {saveError} from "../error/saveError.js";
 
@@ -22,7 +23,8 @@ export async function saveTotalUsersCountJobFunc() {
         if (!counts) {
             return {status: 'error'};
         }
-        let saveResult = await saveTotalAndActiveUsersCount(counts);
+        let botsUserCounts = await getBotsUserCounts();
+        let saveResult = await saveTotalAndActiveUsersCount(counts, botsUserCounts || []);
         updateCronJobsStatus('saveTotalUsersCount', 'end', counts);
         if (saveResult === 'error') {
             return {status: 'error'};

@@ -294,9 +294,10 @@ services:
     ports:
       - "587:587"
       - "250:25"
-    #    volumes:
-    #      - ./postfix/main.cf:/etc/postfix/main.cf
-    #      - ./postfix/virtual:/etc/postfix/virtual
+    volumes:
+#      - ./postfix/main.cf:/etc/postfix/main.cf
+#      - ./postfix/virtual:/etc/postfix/virtual
+      - ./docker/mailserver/rsyslog.conf:/etc/postfix/rsyslog.conf
     deploy:
       resources:
         limits:

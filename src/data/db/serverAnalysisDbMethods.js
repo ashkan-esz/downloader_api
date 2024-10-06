@@ -27,7 +27,7 @@ export async function removeOldAnalysis() {
 //-----------------------------------------
 //-----------------------------------------
 
-export async function saveTotalAndActiveUsersCount(counts) {
+export async function saveTotalAndActiveUsersCount(counts, botsUserCounts) {
     try {
         let collection = await getCollection('serverAnalysis');
         let now = new Date();
@@ -42,6 +42,10 @@ export async function saveTotalAndActiveUsersCount(counts) {
                         active: counts.active,
                         date: now,
                     }],
+                    $position: 0,
+                },
+                botUserCounts: {
+                    $each: [botsUserCounts],
                     $position: 0,
                 }
             }
@@ -555,6 +559,7 @@ async function getCollectionAndBucket() {
 function getNewBucket(yearAndMonth) {
     return ({
         yearAndMonth: yearAndMonth,
+        botUserCounts: [],
         userCounts: [],
         crawlerLogs: [],
         serverLogs: [],
@@ -564,4 +569,4 @@ function getNewBucket(yearAndMonth) {
     });
 }
 
-export const serverAnalysisFields = Object.freeze(['userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls', 'badLinks']);
+export const serverAnalysisFields = Object.freeze(['botUserCounts', 'userCounts', 'crawlerLogs', 'serverLogs', 'warnings', 'googleCacheCalls', 'badLinks']);
