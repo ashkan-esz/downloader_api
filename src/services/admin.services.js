@@ -30,6 +30,8 @@ import * as Cache from "../data/cache.js";
 import config from "../config/index.js";
 import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermissionsDbMethods.js";
 import {_testUserId} from "../preStart.js";
+import PQueue from "p-queue";
+import axios from "axios";
 
 export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
@@ -477,6 +479,75 @@ export async function deleteBot(botId, userData) {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     }
     return generateServiceResult({data: result}, 200, '');
+}
+
+export async function sendMessageToAllBotUsers(botId, message) {
+    message = escapeMarkdownV2(message)
+
+    let pageCounter = 0;
+    const pageSize = 200;
+    const promiseQueue = new PQueue({concurrency: 25});
+    while (true) {
+        pageCounter++;
+        let skip = (pageCounter - 1) * pageSize;
+        let userBots = await botsDbMethods.getBotUsers(botId, skip, pageSize);
+        if (!userBots) {
+            await promiseQueue.onIdle();
+            return generateServiceResult({data: null}, 500, errorMessage.serverError);
+        }
+        if (userBots.length === 0) {
+            if (pageCounter === 1) {
+                await promiseQueue.onIdle();
+                return generateServiceResult({}, 404, errorMessage.botNotFound);
+            } else {
+                break;
+            }
+        }
+
+        for (let i = 0; i < userBots.length; i++) {
+            promiseQueue.add(() => sendMessageToTelegram(userBots[i].bot, userBots[i].chatId, message))
+        }
+        await promiseQueue.onSizeLessThan(3 * pageSize);
+    }
+    await promiseQueue.onIdle();
+    return generateServiceResult({}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------
+
+export async function sendMessageToTelegram(botData, chatId, message) {
+    if (botData.botType !== "telegram") {
+        return;
+    }
+    try {
+        const apiUrl = `https://api.telegram.org/bot${botData.botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=MarkdownV2`;
+        let res = await axios.get(apiUrl);
+    } catch (error) {
+        if (error.response?.data?.error_code === 429) {
+            await new Promise(resolve => setTimeout(resolve, 2 * 1000));
+            return await sendMessageToTelegram(botData, chatId, message);
+        }
+        if (error.response?.data?.error_code !== 400) {
+            saveError(error);
+        }
+    }
+}
+
+function escapeMarkdownV2(text) {
+    const specialChars = '_*[]()~`>#+-=|{}.!';
+
+    return text.replace(
+        new RegExp(`([${specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}])|(\\\\[${specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}])`, 'g'),
+        (match, char, escapedChar) => {
+            if (escapedChar) {
+                // If it's already escaped
+                return escapedChar.replace("\\", "");
+            }
+            // Otherwise, escape the special character
+            return char ? '\\' + char : match;
+        }
+    );
 }
 
 //---------------------------------------------------

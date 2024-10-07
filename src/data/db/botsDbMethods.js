@@ -340,3 +340,24 @@ export async function getBotsUserCounts() {
         return null;
     }
 }
+
+export async function getBotUsers(botId, skip, limit) {
+    try {
+        return await prisma.userBot.findMany({
+            where: {
+                botId: botId,
+            },
+            include: {
+                bot: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            skip: skip,
+            take: limit,
+        });
+    } catch (error) {
+        saveError(error);
+        return null;
+    }
+}

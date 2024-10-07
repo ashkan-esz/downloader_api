@@ -562,13 +562,14 @@ model Bot {
 }
 
 model UserBot {
-  notification Boolean @default(true)
+  notification Boolean  @default(true)
   username     String
   chatId       String
+  createdAt    DateTime @default(now())
   botId        String
-  bot          Bot     @relation(fields: [botId], references: [botId], onDelete: Cascade, onUpdate: Cascade)
+  bot          Bot      @relation(fields: [botId], references: [botId], onDelete: Cascade, onUpdate: Cascade)
   userId       Int
-  user         User    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([userId, botId])
   @@index([userId, botId])

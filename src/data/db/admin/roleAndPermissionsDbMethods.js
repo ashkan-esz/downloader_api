@@ -47,6 +47,7 @@ export const PermissionsList = Object.freeze({
     //-----------------------------
     admin_get_bots: "admin_get_bots",
     admin_edit_bots: "admin_edit_bots",
+    admin_send_message_to_bot: "admin_send_message_to_bot",
     //-----------------------------
     admin_get_cronjobs: "admin_get_cronjobs",
     admin_run_cronjobs: "admin_run_cronjobs",
