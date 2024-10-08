@@ -141,9 +141,9 @@ function extractLinks($, sourceUrl) {
                 }
 
                 let title = getTitle(info);
-                let yearMatch = title.match(/\s\d\d\d\d/i);
+                let yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d/i);
                 let year = "";
-                if (yearMatch?.[0] && Number(yearMatch[0]) > 2010) {
+                if (yearMatch?.[0] && Number(yearMatch[0]) > 2010 && Number(yearMatch[0]) < 2050) {
                     title = title.replace(yearMatch[0], '').trim();
                     year = Number(yearMatch[0]);
                 }
