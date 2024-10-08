@@ -308,6 +308,16 @@ export async function getMoviesDataForBot(req, res) {
 //--------------------------------------------
 //--------------------------------------------
 
+export async function searchTorrentByName(req, res) {
+    let {addToDb} = req.query;
+    let {name} = req.params;
+    let result = await moviesServices.searchTorrentByName(req.jwtUserData, name, addToDb);
+    return sendResponse(req, res, result);
+}
+
+//--------------------------------------------
+//--------------------------------------------
+
 function filterObjectFalsyValues(object) {
     let filters = Object.keys(object)
         .filter((key) => {

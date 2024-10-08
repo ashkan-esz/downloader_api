@@ -10,7 +10,11 @@ import {getDatesBetween, replaceSpecialCharacters} from "../crawlers/utils/utils
 import PQueue from 'p-queue';
 import {getMoviesCacheByKey, setMoviesCacheByKey} from "../data/cache.js";
 import {saveError} from "../error/saveError.js";
-import {getSourcesMethods} from "../crawlers/sourcesArray.js";
+import {getSourcesMethods, torrentSourcesNames} from "../crawlers/sourcesArray.js";
+import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
+import * as Cache from "../data/cache.js";
+import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermissionsDbMethods.js";
+import {getUserTorrent, increaseUserTorrentSearch} from "../data/db/torrentDbMethods.js";
 
 
 export async function getMoviesOfApiName(userId, apiName, types, dataLevel, imdbScores, malScores, page, embedStaffAndCharacter, noUserStats, isGuest) {
@@ -742,6 +746,76 @@ export async function getTodayBirthday(jwtUserData, staffOrCharacter, followedOn
     }
 
     return generateServiceResult({data: result}, 200, '');
+}
+
+//-----------------------------------------------------
+//-----------------------------------------------------
+
+export async function searchTorrentByName(jwtUserData, name, addToDb) {
+    if (jwtUserData.isBotRequest) {
+        let botId = jwtUserData.botId;
+        // get bot data - cache first
+        let botData = await Cache.getBotDataCacheByKey(botId);
+        if (!botData) {
+            // check db - update cache
+            botData = await botsDbMethods.getBotDataFromPostgres(botId);
+            if (botData === 'error') {
+                return generateServiceResult({}, 500, errorMessage.serverError);
+            } else if (!botData) {
+                return generateServiceResult({}, 404, errorMessage.botNotFound);
+            }
+            await Cache.setBotDataCacheByKey(botId, botData, 2 * 60);
+        }
+
+        if (!botData.permissionToTorrentSearch || botData.disabled) {
+            return generateServiceResult({}, 403, errorMessage.botNoTorrentSearchPermission);
+        }
+    }
+
+    let roles = await roleAndPermissionsDbMethods.getUserRoleByIdDb(jwtUserData.userId);
+    roles = roles.sort((a, b) => b.torrentSearchLimit - a.torrentSearchLimit);
+    let searchLimit = roles[0].torrentSearchLimit;
+    let userTorrent = await getUserTorrent(jwtUserData.userId);
+    if (userTorrent.torrentSearch >= searchLimit) {
+        return generateServiceResult({}, 403, `reached limit: ${userTorrent.torrentSearch}/${searchLimit}`);
+    }
+
+    let sourcesObj = await getSourcesObjDB();
+    if (!sourcesObj) {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    }
+
+    let torrentSources = torrentSourcesNames;
+    let sources = getSourcesMethods();
+
+    let titles = [];
+    for (let i = 0; i < torrentSources.length; i++) {
+        let info = sourcesObj[torrentSources[i]];
+        let s = sources[torrentSources[i]];
+
+        let res = await s.searchByTitle(info.movie_url, name, {returnTitlesOnly: !addToDb, equalTitlesOnly: addToDb});
+        if (res[0] !== 1) {
+            for (let j = 0; j < res.length; j++) {
+                let findTitle = titles.find(t => t.title === res[j].title);
+                if (findTitle) {
+                    findTitle.links = [...findTitle.links, ...res[j].links];
+                    findTitle.sources.push(torrentSources[i]);
+                } else {
+                    titles.push({
+                        title: res[j].title,
+                        links: res[j].links,
+                        sources: [torrentSources[i]],
+                    })
+                }
+            }
+        }
+    }
+
+    if (addToDb) {
+        await increaseUserTorrentSearch(jwtUserData.userId);
+    }
+
+    return generateServiceResult({data: titles}, 200, '');
 }
 
 //-----------------------------------------------------

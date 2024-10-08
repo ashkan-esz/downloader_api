@@ -57,6 +57,7 @@ export const errorMessage = Object.freeze({
     //----------------------
     botIsDisabled: 'This bot is disabled',
     botNoLoginPermission: 'This bot doesnt have the permission to login',
+    botNoTorrentSearchPermission: 'This bot doesnt have the permission to searchTorrent',
     //----------------------
     adminPermissionNeeded: 'Forbidden, needed [admin] permission',
 });

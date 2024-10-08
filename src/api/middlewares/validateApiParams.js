@@ -499,6 +499,13 @@ const validations = Object.freeze({
         .trim().toLowerCase()
         .isIn(staffOrCharacter).withMessage(`Invalid parameter staffOrCharacter :: (${staffOrCharacter.join('|')})`),
 
+    name: param('name')
+        .trim()
+        .customSanitizer(value => {
+            return value || '';
+        })
+        .isString().withMessage(`Invalid parameter name :: String`),
+
     apiName: param('apiName')
         .trim().toLowerCase()
         .isIn(apiName).withMessage(`Invalid parameter apiName :: (${apiName.join('|')})`),
@@ -654,6 +661,14 @@ const validations = Object.freeze({
             return value || false
         })
         .isBoolean().withMessage('Invalid parameter noUserStats :: (true|false)')
+        .toBoolean(),
+
+    addToDb_query: query('addToDb')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter addToDb :: (true|false)')
         .toBoolean(),
 
     creditsCount: query('creditsCount')

@@ -1785,6 +1785,51 @@ paths:
                         englishName:
                           type: string
 
+  /torrent/searchByName/{name}:
+    get:
+      tags:
+        - Torrent
+      summary: Search Torrent
+      description: Return found titles
+      operationId: torrent-searchByName
+      parameters:
+        - name: name
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: addToDb
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        sources:
+                          type: array
+                          items:
+                            type: string
+                        links:
+                          type: array
+                          items:
+                            type: object
+
   /admin/login:
     post:
       tags:

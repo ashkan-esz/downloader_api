@@ -87,7 +87,16 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
 
         let $ = cheerio.load(res.data);
         let titles = extractLinks($, sourceUrl);
-        titles = titles.slice(0, 5);
+
+        if (extraConfigs.equalTitlesOnly) {
+            titles = titles.filter(t => t.title === title);
+        } else {
+            titles = titles.slice(0, 5);
+        }
+
+        if (extraConfigs.returnTitlesOnly) {
+            return titles;
+        }
 
         await handleSearchedCrawledTitles(titles, 1, 1, saveCrawlData, sourceConfig, extraConfigs);
 

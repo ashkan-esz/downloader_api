@@ -34,6 +34,7 @@ export const _botRequestsWhitelist = Object.freeze([
     "/movies/:staffOrCharacter/credits/:id/:page",
     "/movies/searchStaff/:dataLevel/:page",
     "/movies/searchCharacter/:dataLevel/:page",
+    "/movies/torrent/searchByName/:name",
 ]);
 
 //----------------------------------------------

@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import {moviesControllers} from '../../controllers/index.js';
 import middlewares from '../middlewares/index.js';
+import {PermissionsList} from "../../data/db/admin/roleAndPermissionsDbMethods.js";
 
 const router = Router();
 
@@ -280,5 +281,17 @@ router.get('/bots/:botId/:moviesRequestName/:types/:dataLevel/:imdbScores/:malSc
     middlewares.validateApiParams.checkApiParams(['moviesRequestName', 'types', 'dataLevel', 'imdbScores', 'malScores', 'dontUpdateServerDate', 'embedStaffAndCharacter', 'noUserStats']),
     middlewares.validateApiParams.apiParams_sendError,
     moviesControllers.getMoviesDataForBot);
+
+//--------------------------------------------
+//--------------------------------------------
+
+//movies/torrent/searchByName/:name
+router.get('/torrent/searchByName/:name',
+    middlewares.rateLimit.rateLimit_5,
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParams.checkApiParams(['name', 'addToDb_query']),
+    middlewares.validateApiParams.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.torrent_search]),
+    moviesControllers.searchTorrentByName);
 
 export default router;
