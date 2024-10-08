@@ -79,7 +79,7 @@ router.get('/searchMovie/:dataLevel/:page',
     middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
     middlewares.validateApiParams.checkApiParams(
         ['dataLevel', 'page',
-            'title_query', 'types_query', 'years_query',
+            'title_query', 'types_query', 'years_query', 'fuzzy_search_query',
             'imdbScores_query', 'malScores_query', 'genres_query', 'country_query', 'movieLang_query',
             'dubbed_query', 'hardSub_query', 'censored_query', 'subtitle_query', 'watchOnlineLink_query',
             'numberOfSeason_query', 'embedStaffAndCharacter', 'noUserStats'

@@ -264,6 +264,14 @@ const validations = Object.freeze({
             }
         }),
 
+    fuzzy_search_query: query("fuzzy_search")
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter fuzzy_search :: (true|false)')
+        .toBoolean(),
+
     score: param('score')
         .isFloat({min: 0, max: 10}).withMessage('Invalid parameter score :: [0-10]')
         .toFloat(),

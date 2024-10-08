@@ -414,10 +414,16 @@ export async function searchOnMovieCollectionWithFilters(filters, skip, limit, p
         ];
 
         if (filters.title) {
-            aggregationPipeline[0]['$match'].$text = {
-                $search: '\"' + filters.title + '\"',
+            if (filters.fuzzy_search) {
+                let query = getFuzzySearchQuery(filters.title);
+                aggregationPipeline[0]['$match'].$or = query;
+            } else {
+                aggregationPipeline[0]['$match'].$text = {
+                    $search: '\"' + filters.title + '\"',
+                }
             }
         }
+
         if (filters.types) {
             aggregationPipeline[0]['$match'].type = {$in: filters.types};
         }
@@ -483,6 +489,84 @@ export async function searchOnMovieCollectionWithFilters(filters, skip, limit, p
         saveError(error);
         return 'error';
     }
+}
+
+function getFuzzySearchQuery(title) {
+    let query = [
+        {title: title},
+        {title: title.replace('uu', 'u')},
+        {title: title.replace('u', 'uu')},
+        {title: title.replace(' o', ' wo')},
+        {title: title.replace(' wo', ' o')},
+        {alternateTitles: title},
+        {titleSynonyms: title},
+    ];
+
+    try {
+        let temp = title
+            .split('').map(item => item ? item.trim() + '\\s?' : '\\s?').join('')
+            .replace(/\*/g, '\\*')
+            .replace(/\\s\?\\s\?/g, '\\s?')
+            .replace(/\\s\?$/, '');
+
+        query.push({
+            title: new RegExp(temp),
+        });
+        query.push({
+            title: new RegExp(temp.replace(/uu/g, 'uu?')),
+        });
+        query.push({
+            title: new RegExp(temp.replace(/u+/g, 'uu?')),
+        });
+        query.push({
+            title: new RegExp(temp.replace(/\\s\?o/g, '\\s?w?\\s?o')),
+        });
+        query.push({
+            title: new RegExp(temp.replace(/\\s\?w\\s\?o/g, '\\s?w?\\s?o')),
+        });
+    } catch (error2) {
+        saveError(error2);
+    }
+
+    try {
+        let temp = title
+            .split('').map(item => item.trim() + '\\s?').join('')
+            .replace(/\*/g, '\\*')
+            .replace(/\\s\?$/, '');
+        query.push({
+            title: new RegExp(temp)
+        });
+
+        if (!title.startsWith('the ')) {
+            query.push({
+                title: 'the ' + title,
+            });
+        }
+    } catch (error2) {
+        saveError(error2);
+    }
+
+    try {
+        let temp2 = title
+            .split('')
+            .map(item => {
+                if (item === ' ') {
+                    item = ':?-?\\.?\\s?';
+                } else {
+                    item = item + '\\\'?';
+                }
+                return item;
+            })
+            .join('')
+            .replace(/\*/g, '\\*');
+        query.push({
+            alternateTitles: new RegExp(temp2 + '!?\\.?\\??', 'i')
+        });
+    } catch (error2) {
+        saveError(error2);
+    }
+
+    return query;
 }
 
 export async function searchOnMoviesById(id, filters, projection, dataLevel = '') {
