@@ -1,17 +1,17 @@
-import config from "../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks} from "../utils/utils.js";
-import {getTitleAndYear} from "../movieTitle.js";
+import config from "../../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {validateYear, getType, replacePersianNumbers, removeDuplicateLinks} from "../../utils/utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
 import {
     purgeEncoderText,
     purgeSizeText,
     fixLinkInfoOrder,
     fixLinkInfo,
     purgeQualityText,
-} from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
-import save from "../save_changes_db.js";
-import {saveError} from "../../error/saveError.js";
+} from "../../linkInfoUtils.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extractors/index.js";
+import save from "../../save_changes_db.js";
+import {saveError} from "../../../error/saveError.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "avamovie",
