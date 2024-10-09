@@ -68,7 +68,7 @@ export async function getJikanApiData(title, year, type, jikanID) {
             }
         }
 
-        let jikanSearchResult = await getJikanSearchResult(title, year);
+        let jikanSearchResult = await getJikanSearchResult(title, type, year);
         if (!jikanSearchResult) {
             return null;
         }
@@ -113,7 +113,7 @@ export async function getJikanApiData(title, year, type, jikanID) {
     }
 }
 
-async function getJikanSearchResult(title, year) {
+async function getJikanSearchResult(title, type, year) {
     let searchTitle = (title.match(/^\d+$/g) || title.length < 3) ? (' ' + title) : title;
     searchTitle = (searchTitle.length < 3) ? (' ' + searchTitle) : searchTitle;
     let yearSearch = '';
@@ -136,6 +136,11 @@ async function getJikanSearchResult(title, year) {
             data = await handleApiCall(animeSearchUrl);
             data = data?.data;
         }
+    } else if (year && type.includes('movie')) {
+        let temp = Number(year);
+        let animeSearchUrl = `https://api.jikan.moe/v4/anime?q=${searchTitle}&limit=10&start_date=${temp - 1}-01-01`.trim();
+        data = await handleApiCall(animeSearchUrl);
+        data = data?.data;
     }
 
     return data;
@@ -152,11 +157,31 @@ function checkTitle(title, type, allTitles) {
     return (
         title.replace(/tv|the|precent|\s+/g, '').replace(/volume \d/, (res) => res.replace('volume', 'vol')).trim() ===
         apiTitle_simple.replace(/the|tv|precent|\s+/g, '').replace(/volume \d/, (res) => res.replace('volume', 'vol')).trim() ||
-        title === apiTitleEnglish_simple.replace(/the/gi, '').replace(/\s\s+/g, ' ') ||
+        normalizeText(title) === normalizeText(apiTitle_simple) ||
+        normalizeText(title) === normalizeText(apiTitleEnglish_simple) ||
         title === apiTitleJapanese ||
         titleSynonyms.includes(title) ||
-        titleSynonyms.map(item => item.replace(/\s+/g, '')).includes(title.replace(/\s+/g, ''))
+        titleSynonyms.map(item => item.replace(/\s+/g, '')).includes(title.replace(/\s+/g, '')) ||
+        normalizeText(title) === normalizeText(apiTitle_simple + " " + apiTitleEnglish_simple) ||
+        normalizeText(title) === normalizeText(apiTitle_simple + " " + titleSynonyms[0]) ||
+        normalizeText(title) === normalizeText(apiTitle_simple + " " + titleSynonyms[1])
     );
+}
+
+function normalizeText(text) {
+    return utils.replaceSpecialCharacters(text)
+        .replace(' movie', '')
+        .replace('specials', 'ova')
+        .replace('3rd season', '3')
+        .replace('season 3', '3')
+        .replace(/\dth season/, r => r.replace('th season', ''))
+        .replace(/season \d/, r => r.replace('season ', ''))
+        .replace(/tv|the|precent|will|\s+/g, '')
+        .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
+        .replace(/[ck]/g, 'c')
+        .replace(/wo|ou|o+/g, 'o')
+        .replace(/ai|ia|s/g, '')
+        .trim();
 }
 
 export function getJikanApiFields(data) {

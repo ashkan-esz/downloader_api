@@ -90,6 +90,15 @@ export function purgeTitle(title, type, keepLastNumber = true) {
     title = title
         .replace(/\d%/, (res) => res.replace('%', 'percent'))
         .replace(/\d+\.0/, res => res.replace('.0', ''));
+
+    let titleSynonym = title.match(/\(.+\)/g)?.pop();
+    if (titleSynonym) {
+        let t = replaceSpecialCharacters(titleSynonym);
+        if (titleSynonym !== t && title.includes(t)) {
+            title = title.replace(titleSynonym, '');
+        }
+    }
+
     title = replaceSpecialCharacters(title.trim());
     let matchsinamaii = title.match(/سینمایی \d/g);
     title = title

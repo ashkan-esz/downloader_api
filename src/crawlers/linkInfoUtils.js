@@ -219,6 +219,7 @@ export function purgeQualityText(qualityText) {
         .replace(/BD(-)?RIP/gi, 'BD-RIP')
         .replace(/DvdRip/gi, 'DVDRip')
         .replace(/hdrip/gi, 'HD-RIP')
+        .replace(/hk-?rip/gi, 'HD-RIP')
         .replace(/hdtv/gi, 'HDTV')
         .replace(/full?[\s.]hd/gi, 'FULL-HD')
         .replace(/(?<=(\s|\.|^))fhd/i, 'FULL-HD')

@@ -8,7 +8,8 @@ import {pauseCrawler} from "../status/crawlerController.js";
 export const _japaneseCharactersRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/g;
 
 export async function handleCrawledTitles(titles, pageNumber, pageCount, saveCrawlDataFunc, sourceConfig, extraConfigs) {
-    const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+    // const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+    const concurrencyNumber = 1;
     const promiseQueue = new PQueue({concurrency: concurrencyNumber});
     updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber, extraConfigs);
     for (let i = 0; i < titles.length; i++) {
@@ -29,7 +30,8 @@ export async function handleCrawledTitles(titles, pageNumber, pageCount, saveCra
 }
 
 export async function handleSearchedCrawledTitles(titles, pageNumber, pageCount, saveCrawlDataFunc, sourceConfig, extraConfigs) {
-    const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+    // const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+    const concurrencyNumber = 1;
     const promiseQueue = new PQueue({concurrency: concurrencyNumber});
     updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber, extraConfigs);
     for (let i = 0; i < titles.length; i++) {
@@ -81,6 +83,7 @@ export function removeSeasonText(text) {
         .replace(' part two', ' part 2')
         .replace(' part three', ' part 3')
         .replace(' part four', ' part 4')
+        .replace(/\sdvd$/i, '')
         .trim();
 }
 

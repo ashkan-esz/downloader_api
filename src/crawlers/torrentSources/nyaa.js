@@ -7,6 +7,7 @@ import {saveLinksStatus} from "../searchTools.js";
 import save from "../save_changes_db.js";
 import {addPageLinkToCrawlerStatus} from "../status/crawlerStatus.js";
 import {
+    _japaneseCharactersRegex,
     fixSeasonEpisode,
     getFixedFileSize, handleCrawledTitles, handleSearchedCrawledTitles,
     mergeTitleLinks,
@@ -196,26 +197,34 @@ function fixLinkInfo(info) {
         let temp = quality[0].match(/\d\d\d\d?p/i)[0];
         info = temp + '.' + info.replace(quality[0], '');
     }
-
+    info = info.replace(/([a-zA-Z])(?<![se])(?=\d)/g, '$1 ')
     return info;
 }
 
 function getTitle(text) {
     text = text.split(' - ')[0]
         .replace(/^zip\./, '')
+        .replace(/hk-?rip/gi, 'HD-RIP')
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
+        .split(_japaneseCharactersRegex)[0]
+        .split(/_-_\d+/g)[0]
+        .split(/_\d+-\d+_/g)[0]
         .replace(/^\d\d\d\d?p\./, '')
         .replace(/(\s\d\d+)?\.(mkv|mp4|avi|wmv)/, '')
         .replace(/\sii+$/, '')
         .replace(/\s\(\d{4}\)/, '')
         .split(/[\[？|]/g)[0]
-        .split(/\s\((web|dvd|raw)\s/)[0]
+        .split(/\s\((web|dvd|raw|vhd|ld)/)[0]
         .split(/\s(480|720|1080|2160)p/)[0]
         .split(/_\(\d+x\d+/)[0]
+        .trim()
         .replace(/(?<!(movie))\s?(_\d+\s?)+_?$/, '')
         .replace(/\s\(\d+-\d+\)\s*$/, '')
         .replace(/\send$/, '')
+        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
+        .replace(/\ss0?1$/, '')
         .trim();
     let splitArr = text.split(/\s|\./g);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))

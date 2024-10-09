@@ -8,6 +8,7 @@ import {addPageLinkToCrawlerStatus} from "../status/crawlerStatus.js";
 import {CookieJar} from "tough-cookie";
 import {wrapper} from "axios-cookiejar-support";
 import {
+    _japaneseCharactersRegex,
     fixSeasonEpisode,
     getFixedFileSize, handleCrawledTitles, handleSearchedCrawledTitles,
     mergeTitleLinks,
@@ -143,7 +144,7 @@ function extractLinks($, sourceUrl) {
                 let title = getTitle(info);
                 let yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d/i);
                 let year = "";
-                if (yearMatch?.[0] && Number(yearMatch[0]) > 2010 && Number(yearMatch[0]) < 2050) {
+                if (yearMatch?.[0] && Number(yearMatch[0]) >= 1999 && Number(yearMatch[0]) < 2050) {
                     title = title.replace(yearMatch[0], '').trim();
                     year = Number(yearMatch[0]);
                 }
@@ -215,11 +216,20 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .split(_japaneseCharactersRegex)[0]
+        .split(/_-_\d+/g)[0]
+        .split(/_\d+-\d+_/g)[0]
         .replace(/^zip\./, '')
         .replace(/^\d\d\d\d?p\./, '')
         .replace(/(\s\d\d+)?\.\s?(mkv|mp4|avi|wmv)/, '')
         .replace(/\s\(\d{4}\)/, '')
         .split(/[\[？]/g)[0]
+        .replace(/\s\(ja|ca|au|uk|us|nz|afl\)$/, '')
+        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
+        .replace(/\s(au|uk|us|ca|nz|afl)$/, '')
+        .replace(/(?<=[a-zA-Z])\ss\s(?=[a-zA-Z])/, 's ')
+        .replace(/\sin l a/, ' in la')
+        .replace(/\ss0?1$/, '')
         .trim();
     let splitArr = text.split(/\s|\./g);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/));

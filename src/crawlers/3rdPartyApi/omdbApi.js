@@ -17,7 +17,7 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
             .replace(' all seasons', '')
             .replace(' all', '')
             .replace(' full episodes', '');
-        title = replaceSpecialCharacters(title);
+        title = replaceSpecialCharacters(title, ['\'']);
 
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
@@ -36,11 +36,25 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         } else {
             data = await handle_OMDB_ApiCall(url);
         }
+
         if (data === null) {
             if (canRetry) {
                 let newTitle = getEditedTitle(title);
                 if (newTitle !== title) {
-                    return await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                    let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                    if (retryRes) {
+                        return retryRes;
+                    }
+                }
+
+                let splitTitle = title.split(" ").filter(item => item.endsWith('s'));
+                for (let i = 0; i < splitTitle.length; i++) {
+                    let newSpl = splitTitle[i].replace(/s$/, '\'s');
+                    newTitle = title.replace(splitTitle[i], newSpl);
+                    let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                    if (retryRes) {
+                        return retryRes;
+                    }
                 }
             }
             return null;
@@ -119,6 +133,10 @@ function getEditedTitle(title) {
         .replace(' zunousen', ' zuno sen')
         .replace(' kusoge', ' kusogee')
         .replace(/(?<=(^|\s))vol \d/, (res) => res.replace('vol', 'volume'))
+        .replace(' part 1', ' part one')
+        .replace(' part 2', ' part two')
+        .replace(' part 3', ' part three')
+        .replace(' part 4', ' part four')
         .replace(/\s\s+/g, '')
         .trim();
 }

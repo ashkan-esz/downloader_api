@@ -10,7 +10,7 @@ import {getFixedGenres, getFixedSummary} from "../extractors/utils.js";
 export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, imdbID, premiered, type, canReTry = true) {
     title = title.toLowerCase()
         .replace(' all seasons', '')
-        .replace(' all', '')
+        .replace(/\sall$/, '')
         .replace(' full episodes', '');
     title = replaceSpecialCharacters(title);
     const url = `https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast&embed[]=images`;
@@ -95,6 +95,27 @@ async function getTvMazeApiData_multiSearches(title, alternateTitles, titleSynon
             }
         }
     }
+
+    if (data.length === 1) {
+        let id = data[0]?.show?.id;
+        if (id) {
+            let url = `https://api.tvmaze.com/shows/${id}/akas`;
+            let res = await handleApiCall(url);
+            if (res) {
+                for (let i = 0; i < res.length; i++) {
+                    data[0].show.name = res[i].name;
+                    if (checkTitle(data[0].show, title, alternateTitles, titleSynonyms, imdbID, premiered)) {
+                        let titleUrl = `https://api.tvmaze.com/shows/${id}?embed[]=nextepisode&embed[]=episodes&embed[]=cast&embed[]=images`;
+                        let titleData = await handleApiCall(titleUrl);
+                        if (titleData) {
+                            return titleData;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     return null;
 }
 
@@ -188,8 +209,8 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premier
 
     return (
         imdbID && imdbID === data.externals.imdb ||
-        title.replace(/\s+/g, '') === apiTitle.replace(/\s+/g, '') ||
-        title.replace(/precent|\s+/g, '') === apiTitle_simple.replace(/precent|\s+/g, '') ||
+        normalizeText(title) === normalizeText(apiTitle) ||
+        normalizeText(title) === normalizeText(apiTitle_simple) ||
         title.replace(' wo ', ' o ') === apiTitle_simple ||
         title.replace(/\swo$/, ' o') === apiTitle_simple ||
         specialCase4 === apiTitle_simple ||
@@ -202,8 +223,28 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premier
         titleSynonyms.includes(apiTitle) ||
         titleSynonyms.includes(apiTitle_simple) ||
         title.replace(/.$/, '') === apiTitle_simple ||
-        title.replace(/..$/, '') === apiTitle_simple
+        title.replace(/..$/, '') === apiTitle_simple ||
+        checkSpecialCases(title, apiTitle_simple)
     );
+}
+
+function checkSpecialCases(title, apiTitle_simple) {
+    let lastWord = title.split(" ").pop();
+    let temp = apiTitle_simple.split(" ");
+    let words = temp.slice(temp.length - lastWord.length);
+    return title === apiTitle_simple.replace(words.join(' '), words.map(w => w[0]).join(''));
+}
+
+function normalizeText(text) {
+    return text
+        .replace(' movie', '')
+        .replace('specials', 'ova')
+        .replace(/tv|the|precent|will|\s+/g, '')
+        .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
+        .replace(/[ck]/g, 'c')
+        .replace(/wo|ou/g, 'o')
+        .replace(/ai|ia|s/g, '')
+        .trim();
 }
 
 function getNextEpisode(data) {

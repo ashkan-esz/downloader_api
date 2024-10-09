@@ -69,23 +69,27 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
         }
 
         try {
-            let temp2 = titleObj.title
-                .split('')
-                .map(item => {
-                    if (item === ' ') {
-                        item = ':?-?\\.?\\s?';
-                    } else {
-                        item = item + '\\\'?';
-                    }
-                    return item;
-                })
-                .join('')
-                .replace(/\*/g, '\\*');
             searchObj['$or'].push({
-                alternateTitles: new RegExp('^' + temp2 + '!?\\.?\\??$', 'i')
+                alternateTitles: createSearchRegexOnAlternativeTitles(titleObj.title),
             });
         } catch (error2) {
             saveError(error2);
+        }
+
+        if (titleObj.title.match(/\s\d$/)) {
+            const romanNumerals = ['', 'i', 'ii', 'iii', 'iv', 'v', 'vi'];
+            let temp = titleObj.title.replace(/(\d+)$/, (match, number) => {
+                const num = parseInt(number, 10);
+                return romanNumerals[num] || num.toString();
+            });
+
+            try {
+                searchObj['$or'].push({
+                    alternateTitles: createSearchRegexOnAlternativeTitles(temp),
+                });
+            } catch (error2) {
+                saveError(error2);
+            }
         }
 
         return await collection.find(searchObj, {projection: dataConfig}).toArray();
@@ -93,6 +97,25 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
         saveError(error);
         return [];
     }
+}
+
+function createSearchRegexOnAlternativeTitles(title) {
+    let temp2 = title
+        .split('')
+        .map(item => {
+            if (item === ' ') {
+                item = ',?:?-?\\.?\\s?';
+            } else {
+                item = item + '\\\'?';
+            }
+            return item;
+        })
+        .join('')
+        .replace(/\*/g, '\\*');
+
+    temp2 = temp2.replace(/e/g, "[eéëèēê]");
+
+    return  new RegExp('^' + temp2 + '!?\\.?\\??$', 'i');
 }
 
 export async function searchOnMovieCollectionDB(searchQuery, projection = {}) {

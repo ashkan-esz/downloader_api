@@ -1,11 +1,11 @@
 import {saveError} from "../../error/saveError.js";
 
 
-export function replaceSpecialCharacters(input) {
+export function replaceSpecialCharacters(input, whiteList = []) {
     return input
         .replace('&#39;', '')
-        .replace(/[;؛:·…\/☆★°♡♪δ⅙√◎␣＋+×＿_–−-]|(\|)/g, ' ')
-        .replace(/[”“"'’‘٫.:?¿？!¡#%,()~♥♡△∽Ωωψ‎]/g, '')
+        .replace(/[;؛:·…\/☆★°♂♡♪δ⅙√◎␣＋+×＿_–−-]|(\|)/g, ' ')
+        .replace(/[”“"'’‘٫.:?¿？!¡#%,()~♥♡△�؟∽Ωωψ‎]/g, r => whiteList.includes(r) ? r : '')
         .replace(/\s\s+/g, ' ')
         .replace('twelve', '12')
         .replace('½', ' 1/2')
@@ -13,7 +13,7 @@ export function replaceSpecialCharacters(input) {
         .replace('／', ' ')
         .replace(/&/g, 'and')
         .replace('∞', ' infinity')
-        .replace(/[áåäà@æ]/g, 'a')
+        .replace(/[áåäàã@æ]/g, 'a')
         .replace(/[éëèēê]/g, 'e')
         .replace('†', 't')
         .replace(/[ß♭]/g, 'b')
@@ -23,6 +23,7 @@ export function replaceSpecialCharacters(input) {
         .replace(/[üúûùū]/g, 'u')
         .replace(/ñ/g, 'n')
         .replace(/[ıíï]/g, 'i')
+        .replace(/ğ/g, 'g')
         .replace(/(^|\s)iii/gi, ' 3')
         .replace(' ii', ' 2')
         .replace(' ∬', ' 2')

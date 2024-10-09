@@ -29,7 +29,7 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
                 fullData = fullData.data;
                 if (fullData) {
                     addTitleObjToKitsuData(fullData, year);
-                    if (checkTitle(title, year, fullData)) {
+                    if (checkTitle(title, year, type, fullData)) {
                         return fullData;
                     }
                 }
@@ -74,7 +74,7 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
 
             if (searchResult[i]) {
                 addTitleObjToKitsuData(searchResult[i], year);
-                if (checkTitle(title, year, searchResult[i])) {
+                if (checkTitle(title, year, type, searchResult[i])) {
                     return searchResult[i];
                 }
             }
@@ -86,9 +86,10 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
     }
 }
 
-function checkTitle(title, year, apiData) {
+function checkTitle(title, year, type, apiData) {
     return (
         normalizeText(title) === normalizeText(apiData.titleObj.title) ||
+        (type.includes('movie') && normalizeText(title.replace(/\spart\s\d+/, '')) === normalizeText(apiData.titleObj.title.replace(/\spart\s\d+/, ''))) ||
         normalizeSeasonText(title) === normalizeSeasonText(apiData.titleObj.title) ||
         title === apiData.attributes.slug.replace(/-/g, ' ') ||
         apiData.titleObj.alternateTitles.includes(title) ||
@@ -101,8 +102,9 @@ function checkTitle(title, year, apiData) {
 
 function normalizeText(text) {
     return text
+        .replace(' movie', '')
         .replace('specials', 'ova')
-        .replace(/tv|the|precent|\s+/g, '')
+        .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
         .replace(/wo|ou/g, 'o')

@@ -6,6 +6,7 @@ import {saveLinksStatus} from "../searchTools.js";
 import save from "../save_changes_db.js";
 import {addPageLinkToCrawlerStatus} from "../status/crawlerStatus.js";
 import {
+    _japaneseCharactersRegex,
     fixSeasonEpisode,
     getFixedFileSize, handleCrawledTitles, handleSearchedCrawledTitles,
     mergeTitleLinks,
@@ -124,12 +125,30 @@ function extractLinks($, sourceUrl) {
                     continue;
                 }
 
-                let year = new Date().getFullYear();
+                let currentYear = new Date().getFullYear();
                 let title = $($($a[i]).prev().prev().prev().children().children()[0]).text().toLowerCase();
                 title = title.split(' - ')[0];
-                title = replaceSpecialCharacters(title).replace(" " + year, "").replace(" " + (year - 1), "");
-                title = title.split(/(\s|\.|_)s\d+e\d+/gi)[0];
+                title = replaceSpecialCharacters(title).replace(" " + currentYear, "").replace(" " + (currentYear - 1), "");
+                title = title
+                    .split(/(\s|\.|_)s\d+e\d+/gi)[0]
+                    .split(_japaneseCharactersRegex)[0]
+                    .split(/_-_\d+/g)[0]
+                    .split(/_\d+-\d+_/g)[0]
+                    .split(/(\.|\s)sdr(\.|\s)/g)[0]
+                    .replace(/\ss0?1$/, '')
+                    .replace(/\sfilms?$/, '');
                 title = removeSeasonText(title);
+
+                if (title.includes('tv complete')) {
+                    continue
+                }
+
+                let yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d$/i);
+                let year = "";
+                if (yearMatch?.[0] && Number(yearMatch[0]) >= 1999 && Number(yearMatch[0]) < 2050) {
+                    title = title.replace(yearMatch[0], '').trim();
+                    year = Number(yearMatch[0]);
+                }
 
                 let se = fixSeasonEpisode(info, false);
                 let sizeText = $($($a[i]).prev())?.text() || "";
@@ -171,6 +190,7 @@ function extractLinks($, sourceUrl) {
                 } else {
                     titles.push({
                         title: title,
+                        year: year,
                         links: [link],
                     })
                 }
@@ -203,6 +223,8 @@ function fixLinkInfo(info) {
         .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
         .replace(/\.\s?(mkv|mp4|avi|wmv)/g, "")
+        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .trim();
 
     info = normalizeSeasonText(info.toLowerCase());

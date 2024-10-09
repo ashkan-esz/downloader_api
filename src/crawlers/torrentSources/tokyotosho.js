@@ -7,6 +7,7 @@ import {saveLinksStatus} from "../searchTools.js";
 import save from "../save_changes_db.js";
 import {addPageLinkToCrawlerStatus} from "../status/crawlerStatus.js";
 import {
+    _japaneseCharactersRegex,
     fixSeasonEpisode,
     getFixedFileSize, handleCrawledTitles, handleSearchedCrawledTitles,
     mergeTitleLinks,
@@ -153,7 +154,14 @@ function extractLinks($) {
                     se = fixSeasonEpisode(info, false);
                 }
 
-                if (title.match(/\ss\d+$/i) || title.match(/\svol\s\d/i)) {
+                let yearMatch = title.match(/(?<!(at|of))\s\d\d\d\d$/i);
+                let year = "";
+                if (yearMatch?.[0] && Number(yearMatch[0]) >= 1999 && Number(yearMatch[0]) < 2050) {
+                    title = title.replace(yearMatch[0], '').trim();
+                    year = Number(yearMatch[0]);
+                }
+
+                if (title.match(/\ss\d+$/i) || title.match(/\svol\s\d/i) || title.includes('tv complete')) {
                     continue;
                 }
 
@@ -177,6 +185,7 @@ function extractLinks($) {
                 } else {
                     titles.push({
                         title: title,
+                        year: year,
                         links: [link],
                     })
                 }
@@ -211,18 +220,31 @@ function fixLinkInfo(info) {
 
 function getTitle(text) {
     text = text.split(' - ')[0]
+        .replace(/\.\s?m4v$/, '')
         .replace(/^zip\./, '')
+        .replace(/hk-?rip/gi, 'HD-RIP')
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
+        .split(_japaneseCharactersRegex)[0]
+        .split(/_-_\d+/g)[0]
+        .split(/_\d+-\d+_/g)[0]
         .replace(/\.+\s+/g, ' ')
         .replace(/\d+v\d/i, r => r.split(/v/i)[0])
         .replace(/(\s\d\d+\s)\[[a-zA-Z\d]+]$/, '')
         .replace(/\s\d\d+$/, '')
         .replace(/\s\(([a-zA-Z]{3,4}\s)?\d{4}\)/, '')
         .split('[')[0]
-        .split(/\s(480|720|1080|2160)p/)[0]
+        .split(/\s\((web|dvd|raw|vhd|ld)/)[0]
+        .split(/\s\d+\s\((480|720|1080|2160)p/)[0]
+        .split(/\s\(?(480|720|1080|2160)([p)])/)[0]
+        .split(/\s\d+(_|\s)\(\d+x\d+/)[0]
+        .split(/(\.|\s)sdr(\.|\s)/g)[0]
         .split(/\sep\d/)[0]
         .replace(/(?<!(movie))\s_\d+\s?_$/, '')
+        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
+        .replace(/\ss0?1$/, '')
+        .replace(/\sfilms?$/, '')
         .trim();
 
     // let year = new Date().getFullYear();
