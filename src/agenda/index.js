@@ -75,7 +75,7 @@ export async function startAgenda() {
         //for more info check https://crontab.guru
         await agenda.every("0 2 * * *", "start crawler cycle", {}, {timezone: "Asia/Tehran"}); //At 02:00.
         await agenda.every("0 */3 * * *", "start crawler", {}, {timezone: "Asia/Tehran"});
-        await agenda.every("5-59/10 * * * *", "start torrent crawler", {}, {timezone: "Asia/Tehran"});
+        await agenda.every("7-59/10 * * * *", "start torrent crawler", {}, {timezone: "Asia/Tehran"});
         await agenda.every("15 * * * *", "check movie source domains", {}, {timezone: "Asia/Tehran"});// Every hour - **:15
         await agenda.every("0 */12 * * *", "update jikan data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
         await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30

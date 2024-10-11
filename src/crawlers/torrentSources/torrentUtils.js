@@ -9,7 +9,7 @@ export const _japaneseCharactersRegex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0
 
 export async function handleCrawledTitles(titles, pageNumber, pageCount, saveCrawlDataFunc, sourceConfig, extraConfigs) {
     // const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
-    const concurrencyNumber = 1;
+    const concurrencyNumber = 3;
     const promiseQueue = new PQueue({concurrency: concurrencyNumber});
     updatePageNumberCrawlerStatus(pageNumber, pageCount, concurrencyNumber, extraConfigs);
     for (let i = 0; i < titles.length; i++) {

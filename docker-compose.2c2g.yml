@@ -144,10 +144,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: 100M
+          cpus: "0.3"
+          memory: 300M
         reservations:
-          memory: 10M
+          memory: 20M
 
   chat:
     image: ashkanaz2828/downloader_gochat

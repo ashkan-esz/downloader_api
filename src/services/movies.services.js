@@ -690,7 +690,7 @@ export async function getMovieSources() {
     let sourcesUrls = Object.keys(result).map(sourceName => ({
         sourceName: sourceName,
         url: result[sourceName].movie_url.replace('/page/', ''),
-        isTorrent: sourcesMethods[sourceName].sourceConfig.isTorrent,
+        isTorrent: sourcesMethods[sourceName]?.sourceConfig.isTorrent,
     }));
 
     if (sourcesUrls.length === 0) {
