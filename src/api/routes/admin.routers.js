@@ -315,6 +315,14 @@ router.delete('/bots/deleteBot/:botId',
     middlewares.auth.checkUserHavePermissions([PermissionsList.admin_edit_bots]),
     adminControllers.deleteBot);
 
+//admin/bots/sendMessage/:botId
+router.post('/bots/sendMessage/:botId',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['botId_param', 'message', 'userId_body']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_send_message_to_bot]),
+    adminControllers.sendMessageToAllBotUsers);
+
 //---------------------------------------------------
 //---------------------------------------------------
 

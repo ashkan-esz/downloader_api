@@ -45,7 +45,10 @@ export async function saveTotalAndActiveUsersCount(counts, botsUserCounts) {
                     $position: 0,
                 },
                 botUserCounts: {
-                    $each: [botsUserCounts],
+                    $each: [{
+                        bots: botsUserCounts,
+                        date: now,
+                    }],
                     $position: 0,
                 }
             }

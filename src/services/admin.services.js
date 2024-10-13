@@ -481,16 +481,15 @@ export async function deleteBot(botId, userData) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function sendMessageToAllBotUsers(botId, message) {
-    message = escapeMarkdownV2(message)
-
+export async function sendMessageToAllBotUsers(botId, message, userId) {
+    message = escapeMarkdownV2(message);
     let pageCounter = 0;
     const pageSize = 200;
     const promiseQueue = new PQueue({concurrency: 25});
     while (true) {
         pageCounter++;
         let skip = (pageCounter - 1) * pageSize;
-        let userBots = await botsDbMethods.getBotUsers(botId, skip, pageSize);
+        let userBots = await botsDbMethods.getBotUsers(botId, userId, skip, pageSize);
         if (!userBots) {
             await promiseQueue.onIdle();
             return generateServiceResult({data: null}, 500, errorMessage.serverError);
@@ -835,9 +834,13 @@ export async function editUserRoles(userId, roleIds, currentAdminPermissions, jw
         }
     }
 
-    if (newRoles.find(r =>
+    if (addingRoles.find(r =>
         r.id === roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin || r.name === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role)) {
-        return generateServiceResult({data: null}, 403, `Forbidden, cannot give or get main-admin-role`);
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot add main-admin-role`);
+    }
+    if (removingRoles.find(r =>
+        r.id === roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin || r.name === roleAndPermissionsDbMethods.Default_Role_Names.main_admin_role)) {
+        return generateServiceResult({data: null}, 403, `Forbidden, cannot remove main-admin-role`);
     }
 
     if (userId === jwtUserData.userId && !jwtUserData.roleIds.includes(roleAndPermissionsDbMethods.Default_Role_Ids.mainAdmin)) {

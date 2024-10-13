@@ -231,6 +231,13 @@ export async function deleteBot(req, res) {
     return sendResponse(req, res, result);
 }
 
+export async function sendMessageToAllBotUsers(req, res) {
+    let {botId} = req.params;
+    let {message, userId} = req.body;
+    let result = await adminServices.sendMessageToAllBotUsers(botId, message, userId);
+    return sendResponse(req, res, result);
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 

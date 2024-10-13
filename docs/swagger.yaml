@@ -2995,6 +2995,38 @@ paths:
                   data:
                     type: string
 
+  /admin/bots/sendMessage/{botId}:
+    post:
+      tags:
+        - Admin-Bots
+      summary: Send Message Bot
+      description: send message to users of a bot
+      operationId: admin-bots-sendMessage
+      parameters:
+        - $ref: '#/components/parameters/botId_param'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  required: true
+                userId:
+                  type: number
+                  required: false
+                  description: send message to this user only
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ResponseCode'
+
   /admin/cronjobs:
     get:
       tags:
@@ -3440,8 +3472,8 @@ paths:
                           items:
                             $ref: '#/components/schemas/Role'
 
-  /admin/edit_user_rols:
-    post:
+  /admin/edit_user_roles:
+    put:
       tags:
         - Admin-Role-Permission
       summary: Edit User Role

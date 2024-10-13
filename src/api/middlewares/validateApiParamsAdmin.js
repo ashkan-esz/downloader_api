@@ -675,7 +675,9 @@ const validations = Object.freeze({
         }),
 
     userId_body: body('userId')
-        .exists().withMessage("Missed parameter userId")
+        .customSanitizer(value => {
+            return (value && Number.isInteger(value)) ? Number(value) : 0;
+        })
         .isInt({min: 0}).withMessage("userId must be Number >= 0")
         .toInt(),
 });

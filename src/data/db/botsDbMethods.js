@@ -341,11 +341,12 @@ export async function getBotsUserCounts() {
     }
 }
 
-export async function getBotUsers(botId, skip, limit) {
+export async function getBotUsers(botId, userId, skip, limit) {
     try {
         return await prisma.userBot.findMany({
             where: {
                 botId: botId,
+                userId: userId > 0 ? userId : undefined,
             },
             include: {
                 bot: true,
