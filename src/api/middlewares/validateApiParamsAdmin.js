@@ -527,9 +527,112 @@ const validations = Object.freeze({
             max: 10000
         }).withMessage("Invalid parameter torrentDownloadMaxFileSize :: Integer{min: 1, max: 10000}"),
 
+    torrentDownloadMaxSpaceSize: body('torrentDownloadMaxSpaceSize')
+        .isInt({
+            min: 1000,
+        }).withMessage("Invalid parameter torrentDownloadMaxSpaceSize :: Integer{min: 1000, max: infinite}"),
+
+    torrentDownloadSpaceThresholdSize: body('torrentDownloadSpaceThresholdSize')
+        .isInt({
+            min: 500,
+            max: 10000
+        }).withMessage("Invalid parameter torrentDownloadSpaceThresholdSize :: Integer{min: 500, max: 10000}"),
+
+    torrentFilesExpireHour: body('torrentFilesExpireHour')
+        .isInt({
+            min: 1,
+            max: 10000
+        }).withMessage("Invalid parameter torrentFilesExpireHour :: Integer{min: 1, max: 10000}"),
+
+    torrentFilesServingConcurrencyLimit: body('torrentFilesServingConcurrencyLimit')
+        .isInt({
+            min: 1,
+            max: 10000
+        }).withMessage("Invalid parameter torrentFilesServingConcurrencyLimit :: Integer{min: 1, max: 10000}"),
+
+    torrentDownloadTimeoutMin: body('torrentDownloadTimeoutMin')
+        .isInt({
+            min: 5,
+            max: 90
+        }).withMessage("Invalid parameter torrentDownloadTimeoutMin :: Integer{min: 5, max: 90}"),
+
+    torrentDownloadConcurrencyLimit: body('torrentDownloadConcurrencyLimit')
+        .isInt({
+            min: 1,
+            max: 20
+        }).withMessage("Invalid parameter torrentDownloadConcurrencyLimit :: Integer{min: 1, max: 20}"),
+
+    torrentFileExpireDelayFactor: body('torrentFileExpireDelayFactor')
+        .isFloat({
+            min: 0.1,
+            max: 5.0,
+        }).withMessage("Invalid parameter torrentFileExpireDelayFactor :: Float{min: 0.1, max: 5.0}"),
+
+    torrentFileExpireExtendHour: body('torrentFileExpireExtendHour')
+        .isInt({
+            min: 1,
+            max: 24
+        }).withMessage("Invalid parameter torrentFileExpireExtendHour :: Integer{min: 1, max: 24}"),
+
+    torrentUserEnqueueLimit: body('torrentUserEnqueueLimit')
+        .isInt({
+            min: 1,
+            max: 20
+        }).withMessage("Invalid parameter torrentUserEnqueueLimit :: Integer{min: 1, max: 20}"),
+
     disableBotsNotifications: body('disableBotsNotifications')
         .isBoolean().withMessage("Invalid parameter disableBotsNotifications :: Boolean")
         .toBoolean(),
+
+    torrentDownloadDisabled: body('torrentDownloadDisabled')
+        .isBoolean().withMessage("Invalid parameter torrentDownloadDisabled :: Boolean")
+        .toBoolean(),
+
+    torrentFilesServingDisabled: body('torrentFilesServingDisabled')
+        .isBoolean().withMessage("Invalid parameter torrentFilesServingDisabled :: Boolean")
+        .toBoolean(),
+
+    torrentSendResultToBot: body('torrentSendResultToBot')
+        .isBoolean().withMessage("Invalid parameter torrentSendResultToBot :: Boolean")
+        .toBoolean(),
+
+    defaultTorrentDownloaderConfig: body('defaultTorrentDownloaderConfig')
+        .exists().withMessage("Missed parameter defaultTorrentDownloaderConfig :: Object")
+        .isObject().withMessage("Invalid parameter defaultTorrentDownloaderConfig :: Object")
+        .custom((value) => {
+            if (!["", "all", "serial", "movie"].includes(value.disabled)) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.disabled :: (${["", "all", "serial", "movie"].join('|')})`);
+            }
+            if (!["default", "force", "ignore"].includes(value.status)) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.status :: (${["default", "force", "ignore"].join('|')})`);
+            }
+            if (isNaN(value.minImdbScore) || value.minImdbScore < 0) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.minImdbScore :: Float > 0`);
+            }
+            if (isNaN(value.minMalScore) || value.minMalScore < 0) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.minMalScore :: Float > 0`);
+            }
+            if (!value.newEpisodeQualities || value.newEpisodeQualities.split(',').some(item => !item.match(/\s?\d\d\d\d?p/))) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.newEpisodeQualities :: Array(\d\d\d\dP).join(\,)`);
+            }
+            if (!value.movieQualities || value.movieQualities.split(',').some(item => !item.match(/\s?\d\d\d\d?p/))) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.movieQualities :: Array(\d\d\d\dP).join(\,)`);
+            }
+            if (!Number.isInteger(value.torrentFilesExpireHour) || value.torrentFilesExpireHour < 1) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.torrentFilesExpireHour :: Integer > 0`);
+            }
+            if (![true, false].includes(value.bypassIfHasDownloadLink)) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.bypassIfHasDownloadLink :: true|false`);
+            }
+            if (!Number.isInteger(value.movieLinkLimit) || value.movieLinkLimit < 0) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.movieLinkLimit :: Integer > 0`);
+            }
+            if (!Number.isInteger(value.newEpisodeLinkLimit) || value.newEpisodeLinkLimit < 0) {
+                throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.newEpisodeLinkLimit :: Integer > 0`);
+            }
+
+            return value;
+        }),
 
     ids: body('ids')
         .exists().withMessage("Missed parameter ids")

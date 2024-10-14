@@ -17,7 +17,20 @@ dbConfigs = {
     mediaFileExtensionLimit: String, //default value: 'jpg, jpeg, png, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
     profileImageExtensionLimit: String, //default value: 'jpg, jpeg, png, webp',
     torrentDownloadMaxFileSize: Int, //default value: 800,
-    disableBotsNotifications: Boolean //default value: false,
+    torrentDownloadMaxSpaceSize: Int, //default value: 10000,
+    torrentDownloadSpaceThresholdSize: Int, //default value: 1000,
+    torrentFilesExpireHour: Int, //default value: 36,
+    torrentFilesServingConcurrencyLimit: Int, //default value: 20,
+    torrentDownloadTimeoutMin: Int, //default value: 30,
+    torrentDownloadConcurrencyLimit: Int, //default value: 3,
+    torrentFileExpireDelayFactor: Float, //default value: 1.5,
+    torrentFileExpireExtendHour: Int, //default value: 4,
+    torrentUserEnqueueLimit: Int, //default value: 2,
+    disableBotsNotifications: Boolean, //default value: false,
+    torrentDownloadDisabled: Boolean, //default value: false,
+    torrentFilesServingDisabled: Boolean, //default value: false,
+    torrentSendResultToBot: Boolean, //default value: false,
+    defaultTorrentDownloaderConfig: Object,
 }
 ```
 

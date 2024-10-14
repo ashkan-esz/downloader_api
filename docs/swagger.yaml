@@ -2668,8 +2668,45 @@ paths:
                   type: integer
                   default: 800
                   description: it is in mb
+                torrentDownloadMaxSpaceSize:
+                  type: integer
+                  default: 10000
+                  description: it is in mb
+                torrentDownloadSpaceThresholdSize:
+                  type: integer
+                  default: 1000
+                  description: it is in mb
+                torrentFilesExpireHour:
+                  type: integer
+                  default: 36
+                torrentFilesServingConcurrencyLimit:
+                  type: integer
+                  default: 20
+                torrentDownloadTimeoutMin:
+                  type: integer
+                  default: 30
+                torrentDownloadConcurrencyLimit:
+                  type: integer
+                  default: 3
+                torrentFileExpireDelayFactor:
+                  type: number
+                  default: 1.5
+                torrentFileExpireExtendHour:
+                  type: integer
+                  default: 4
+                torrentUserEnqueueLimit:
+                  type: integer
+                  default: 2
                 disableBotsNotifications:
                   type: boolean
+                torrentDownloadDisabled:
+                  type: boolean
+                torrentFilesServingDisabled:
+                  type: boolean
+                torrentSendResultToBot:
+                  type: boolean
+                defaultTorrentDownloaderConfig:
+                  $ref: "#/components/schemas/DefaultTorrentDownloaderConfig"
       responses:
         200:
           description: Ok
@@ -4768,9 +4805,82 @@ security:
         torrentDownloadMaxFileSize:
           type: integer
           default: 800
+        torrentDownloadMaxSpaceSize:
+          type: integer
+          default: 10000
+        torrentDownloadSpaceThresholdSize:
+          type: integer
+          default: 1000
+        torrentFilesExpireHour:
+          type: integer
+          default: 36
+        torrentFilesServingConcurrencyLimit:
+          type: integer
+          default: 20
+        torrentDownloadTimeoutMin:
+          type: integer
+          default: 30
+        torrentDownloadConcurrencyLimit:
+          type: integer
+          default: 3
+        torrentFileExpireDelayFactor:
+          type: number
+          default: 1.5
+        torrentFileExpireExtendHour:
+          type: integer
+          default: 4
+        torrentUserEnqueueLimit:
+          type: integer
+          default: 2
         disableBotsNotifications:
           type: boolean
           default: false
+        torrentDownloadDisabled:
+          type: boolean
+          default: false
+        torrentFilesServingDisabled:
+          type: boolean
+          default: false
+        torrentSendResultToBot:
+          type: boolean
+          default: false
+        defaultTorrentDownloaderConfig:
+          $ref: "#/components/schemas/DefaultTorrentDownloaderConfig"
+
+    DefaultTorrentDownloaderConfig:
+      type: object
+      properties:
+        disabled:
+          type: string
+          enum:
+            - ""
+            - all
+            - serial
+            - movie
+        status:
+          type: string
+          enum:
+            - default
+            - force
+            - ignore
+        minImdbScore:
+          type: number
+        minMalScore:
+          type: number
+        newEpisodeQualities:
+          type: string
+          example: 1080p,720p
+        movieQualities:
+          type: string
+          example: 1080p
+        torrentFilesExpireHour:
+          type: integer
+        bypassIfHasDownloadLink:
+          type: boolean
+        newEpisodeLinkLimit:
+          type: integer
+        movieLinkLimit:
+          type: integer
 
     Season:
       type: object

@@ -84,7 +84,19 @@ export const defaultConfigsDb = Object.freeze({
     mediaFileExtensionLimit: 'jpg, jpeg, png, webp, mp4, avi, flv, m4v, mkv, mov, mpeg, wmv',
     profileImageExtensionLimit: 'jpg, jpeg, png, webp',
     torrentDownloadMaxFileSize: 800,
+    torrentDownloadMaxSpaceSize: 10000,
+    torrentDownloadSpaceThresholdSize: 1000,
+    torrentFilesExpireHour: 36,
+    torrentFilesServingConcurrencyLimit: 20,
+    torrentDownloadTimeoutMin: 30,
+    torrentDownloadConcurrencyLimit: 3,
+    torrentFileExpireDelayFactor: 1.5,
+    torrentFileExpireExtendHour: 4,
+    torrentUserEnqueueLimit: 2,
     disableBotsNotifications: false,
+    torrentDownloadDisabled: false,
+    torrentFilesServingDisabled: false,
+    torrentSendResultToBot: false,
     defaultTorrentDownloaderConfig: defaultTorrentDownloaderConfig,
 });
 
@@ -93,7 +105,10 @@ export const safeFieldsToEdit_array = Object.freeze([
     'disableCrawler', 'developmentFaze',
     'mediaFileSizeLimit', 'profileFileSizeLimit', 'profileImageCountLimit',
     'mediaFileExtensionLimit', 'profileImageExtensionLimit', 'torrentDownloadMaxFileSize',
-    'disableBotsNotifications',
+    'defaultTorrentDownloaderConfig', 'torrentDownloadSpaceThresholdSize', 'torrentDownloadMaxSpaceSize',
+    'torrentDownloadTimeoutMin', 'torrentFilesServingConcurrencyLimit', 'torrentFilesExpireHour',
+    'torrentUserEnqueueLimit', 'torrentFileExpireExtendHour', 'torrentFileExpireDelayFactor', 'torrentDownloadConcurrencyLimit',
+    'disableBotsNotifications', 'torrentDownloadDisabled', 'torrentFilesServingDisabled', 'torrentSendResultToBot',
 ]);
 export const safeFieldsToRead_array = Object.freeze(Object.keys(defaultConfigsDb).filter(item => item !== 'title'));
 export const safeFieldsToRead = Object.freeze(safeFieldsToRead_array.reduce((obj, item) => {
