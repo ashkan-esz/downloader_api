@@ -334,3 +334,13 @@ export async function editUserRoles(req, res) {
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function editMoviesTorrentConfig(req, res) {
+    let {id} = req.params;
+    let {torrentDownloaderConfig} = req.body;
+    let result = await adminServices.editMoviesTorrentConfig(id, torrentDownloaderConfig);
+    return sendResponse(req, res, result);
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

@@ -865,3 +865,21 @@ export async function editUserRoles(userId, roleIds, currentAdminPermissions, jw
 
 //---------------------------------------------------
 //---------------------------------------------------
+
+export async function editMoviesTorrentConfig(id, torrentDownloaderConfig) {
+    if (Object.keys(torrentDownloaderConfig).length === 0) {
+        //removing config
+        torrentDownloaderConfig = null;
+    }
+    let result = await moviesDbMethods.updateMovieTorrentConfigOfMovieDb(id, torrentDownloaderConfig);
+    if (result === "error") {
+        return generateServiceResult({}, 500, errorMessage.serverError);
+    } else if (!result) {
+        return generateServiceResult({data: null}, 404, "Not found");
+    }
+
+    return generateServiceResult({data: result}, 200, '');
+}
+
+//---------------------------------------------------
+//---------------------------------------------------

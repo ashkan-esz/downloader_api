@@ -671,6 +671,14 @@ const validations = Object.freeze({
         .isBoolean().withMessage('Invalid parameter noUserStats :: (true|false)')
         .toBoolean(),
 
+    withTorrentConfigOnly: query('withTorrentConfigOnly')
+        .trim()
+        .customSanitizer(value => {
+            return value || false
+        })
+        .isBoolean().withMessage('Invalid parameter withTorrentConfigOnly :: (true|false)')
+        .toBoolean(),
+
     addToDb_query: query('addToDb')
         .trim()
         .customSanitizer(value => {

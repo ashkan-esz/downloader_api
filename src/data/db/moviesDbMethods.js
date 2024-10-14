@@ -478,6 +478,10 @@ export async function searchOnMovieCollectionWithFilters(filters, skip, limit, p
             }
         }
 
+        if (filters.withTorrentConfigOnly) {
+            aggregationPipeline[0]['$match']['torrentDownloaderConfig'] = {$ne: null};
+        }
+
         if (Object.keys(projection).length > 0) {
             aggregationPipeline.push({
                 $project: projection,
@@ -1005,6 +1009,23 @@ export async function removeMovieById(id) {
         if (mongoRemoveResult?.deletedCount === 0 && error.code === 'P2025') {
             return 'notfound';
         }
+        saveError(error);
+        return 'error';
+    }
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function updateMovieTorrentConfigOfMovieDb(id, torrentConfig) {
+    try {
+        let collection = await getCollection('movies');
+        return await collection.updateOne({_id: new mongodb.ObjectId(id)}, {
+            $set: {
+                torrentDownloaderConfig: torrentConfig,
+            }
+        });
+    } catch (error) {
         saveError(error);
         return 'error';
     }

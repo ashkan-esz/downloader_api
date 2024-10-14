@@ -99,6 +99,9 @@ const validations = Object.freeze({
         .isString().withMessage('Invalid parameter vid :: String')
         .trim(),
 
+    id_mongo: param('id')
+        .isMongoId().withMessage('Invalid parameter id :: Mongodb.Id'),
+
     id1: param('id1')
         .isString().withMessage('Invalid parameter id1 :: String')
         .trim(),
@@ -629,6 +632,39 @@ const validations = Object.freeze({
             }
             if (!Number.isInteger(value.newEpisodeLinkLimit) || value.newEpisodeLinkLimit < 0) {
                 throw new Error(`Invalid parameter defaultTorrentDownloaderConfig.newEpisodeLinkLimit :: Integer > 0`);
+            }
+
+            return value;
+        }),
+
+    torrentDownloaderConfig: body('torrentDownloaderConfig')
+        .exists().withMessage("Missed parameter torrentDownloaderConfig :: Object")
+        .isObject().withMessage("Invalid parameter torrentDownloaderConfig :: Object")
+        .custom((value) => {
+            if (Object.keys(value).length === 0) {
+                //remove config
+                return {};
+            }
+            if (![true, false].includes(value.disabled)) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.disabled :: true|false`);
+            }
+            if (!value.newEpisodeQualities || value.newEpisodeQualities.split(',').some(item => !item.match(/\s?\d\d\d\d?p/))) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.newEpisodeQualities :: Array(\d\d\d\dP).join(\,)`);
+            }
+            if (!value.movieQualities || value.movieQualities.split(',').some(item => !item.match(/\s?\d\d\d\d?p/))) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.movieQualities :: Array(\d\d\d\dP).join(\,)`);
+            }
+            if (!Number.isInteger(value.torrentFilesExpireHour) || value.torrentFilesExpireHour < 1) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.torrentFilesExpireHour :: Integer > 0`);
+            }
+            if (![true, false].includes(value.bypassIfHasDownloadLink)) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.bypassIfHasDownloadLink :: true|false`);
+            }
+            if (!Number.isInteger(value.movieLinkLimit) || value.movieLinkLimit < 0) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.movieLinkLimit :: Integer > 0`);
+            }
+            if (!Number.isInteger(value.newEpisodeLinkLimit) || value.newEpisodeLinkLimit < 0) {
+                throw new Error(`Invalid parameter torrentDownloaderConfig.newEpisodeLinkLimit :: Integer > 0`);
             }
 
             return value;

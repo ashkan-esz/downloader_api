@@ -441,4 +441,15 @@ router.put('/edit_user_roles',
 //---------------------------------------------------
 //---------------------------------------------------
 
+//admin/edit_torrent_config/:id
+router.put('/edit_torrent_config/:id',
+    middlewares.auth.attachAuthFlag, middlewares.auth.blockUnAuthorized,
+    middlewares.validateApiParamsAdmin.checkApiParams(['id_mongo', 'torrentDownloaderConfig']),
+    middlewares.validateApiParamsAdmin.apiParams_sendError,
+    middlewares.auth.checkUserHavePermissions([PermissionsList.admin_manage_torrent]),
+    adminControllers.editMoviesTorrentConfig);
+
+//---------------------------------------------------
+//---------------------------------------------------
+
 export default router;
