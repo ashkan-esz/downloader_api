@@ -110,6 +110,7 @@ services:
       - torrent
     environment:
       - REACT_APP_BASE_URL=http://api.localhost
+      - REACT_APP_CHAT_BASE_URL=https://chat.movietracker.site
       - REACT_APP_TORRENT_BASE_URL=http://download.localhost
     #    ports:
     #      - "7070:7070"

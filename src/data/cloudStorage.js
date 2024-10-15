@@ -865,12 +865,13 @@ async function createBucket(bucketName, retryCounter = 0, retryWithSleepCounter 
 
 function checkNeedRetryWithSleep(error, retryWithSleepCounter) {
     return (
-        retryWithSleepCounter < 2 && (
+        retryWithSleepCounter < 3 && (
             error.message === 'S3ServiceException: UnknownError' ||
             error.message === '403: UnknownError' ||
             error.message === '504: UnknownError' ||
             error.message === 'RequestTimeTooSkewed: UnknownError' ||
-            (error.response && (error.response.status === 429 || error.response.status >= 500))
+            (error.response && (error.response.status === 429 || error.response.status >= 500)) ||
+            (error.statusCode === 429 || error.statusCode >= 500)
         )
     );
 }

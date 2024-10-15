@@ -26,7 +26,12 @@ export async function getFileSize(url, opt = {}) {
         }
         return Number(response.headers['content-length']) || 0;
     } catch (error) {
-        if (error.message === 'timeout of 5000ms exceeded' || error.message === 'socket hang up' || error.code === 'EAI_AGAIN') {
+        if (error.message === 'timeout of 5000ms exceeded' ||
+            error.message === 'socket hang up' ||
+            error.code === 'EAI_AGAIN' ||
+            error.response?.status === 502 ||
+            error.response?.status === 503
+        ) {
             return opt.errorReturnValue;
         }
         if (((error.response && error.response.status === 404) || error.code === 'ERR_UNESCAPED_CHARACTERS') &&
@@ -76,7 +81,7 @@ export async function downloadImage(url, retryCounter = 0) {
             url = url.replace(fileName, encodeURIComponent(fileName));
             return await downloadImage(url, retryCounter);
         }
-        if ((error.message === 'timeout of 8000ms exceeded' || error.message === 'timeout of 5000ms exceeded') && retryCounter < 1) {
+        if ((error.message === 'timeout of 8000ms exceeded' || error.message === 'timeout of 5000ms exceeded') && retryCounter < 2) {
             retryCounter++;
             return await downloadImage(url, retryCounter);
         }
