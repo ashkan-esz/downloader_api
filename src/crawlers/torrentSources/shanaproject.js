@@ -125,19 +125,8 @@ function extractLinks($, sourceUrl) {
                     continue;
                 }
 
-                let currentYear = new Date().getFullYear();
                 let title = $($($a[i]).prev().prev().prev().children().children()[0]).text().toLowerCase();
-                title = title.split(' - ')[0];
-                title = replaceSpecialCharacters(title).replace(" " + currentYear, "").replace(" " + (currentYear - 1), "");
-                title = title
-                    .split(/(\s|\.|_)s\d+e\d+/gi)[0]
-                    .split(_japaneseCharactersRegex)[0]
-                    .split(/_-_\d+/g)[0]
-                    .split(/_\d+-\d+_/g)[0]
-                    .split(/(\.|\s)sdr(\.|\s)/g)[0]
-                    .replace(/\ss0?1$/, '')
-                    .replace(/\sfilms?$/, '');
-                title = removeSeasonText(title);
+                title = getTitle(title);
 
                 if (title.includes('tv complete')) {
                     continue
@@ -223,7 +212,7 @@ function fixLinkInfo(info) {
         .replace(/(?<!(part|\.))\s\d+\s+-\s+\d+\s/i, r => r.replace(/^\s/, ".S").replace(/\s+-\s+/, 'E')) // 12 - 13
         .replace(/\s-\s(?=s\d+e\d+)/i, '.')
         .replace(/\.\s?(mkv|mp4|avi|wmv)/g, "")
-        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\(?(ja|ca|sp|op)\)?\s*$/, '')
         .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .trim();
 
@@ -236,4 +225,24 @@ function fixLinkInfo(info) {
     }
 
     return info;
+}
+
+function getTitle(title) {
+    const currentYear = new Date().getFullYear();
+
+    title = title.split(' - ')[0];
+    title = replaceSpecialCharacters(title).replace(" " + currentYear, "").replace(" " + (currentYear - 1), "");
+
+    title = title
+        .split(/(\s|\.|_)s\d+e\d+/gi)[0]
+        .split(_japaneseCharactersRegex)[0]
+        .split(/_-_\d+/g)[0]
+        .split(/_\d+-\d+_/g)[0]
+        .split(/(\.|\s)sdr(\.|\s)/g)[0]
+        .replace(/\ss0?1$/, '')
+        .replace(/\sfilms?$/, '')
+        .replace(/\s\(?(ja|ca|sp|op)\)?\s*$/, '');
+
+    title = removeSeasonText(title);
+    return title;
 }

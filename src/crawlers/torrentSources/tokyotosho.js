@@ -226,7 +226,7 @@ function getTitle(text) {
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .split(_japaneseCharactersRegex)[0]
-        .split(/_-_\d+/g)[0]
+        .split(/_-\s?_\d+/g)[0]
         .split(/_\d+-\d+_/g)[0]
         .replace(/\.+\s+/g, ' ')
         .replace(/\d+v\d/i, r => r.split(/v/i)[0])
@@ -234,14 +234,15 @@ function getTitle(text) {
         .replace(/\s\d\d+$/, '')
         .replace(/\s\(([a-zA-Z]{3,4}\s)?\d{4}\)/, '')
         .split('[')[0]
-        .split(/\s\((web|dvd|raw|vhd|ld)/)[0]
+        .split(/\s\d+-\d+\s*_?\s?$/g)[0]
+        .split(/\s\((web|dvd|raw|vhd|ld|jpbd)/)[0]
         .split(/\s\d+\s\((480|720|1080|2160)p/)[0]
         .split(/\s\(?(480|720|1080|2160)([p)])/)[0]
-        .split(/\s\d+(_|\s)\(\d+x\d+/)[0]
+        .split(/((\s|-|_)\d+)+(_|\s)+\(\d+x\d+/)[0]
         .split(/(\.|\s)sdr(\.|\s)/g)[0]
         .split(/\sep\d/)[0]
         .replace(/(?<!(movie))\s_\d+\s?_$/, '')
-        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\(?(ja|ca|sp|op)\)?\s*$/, '')
         .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .replace(/\ss0?1$/, '')
         .replace(/\sfilms?$/, '')
@@ -257,19 +258,21 @@ function getTitle(text) {
     if (index !== -1) {
         let temp = splitArr.slice(0, index).join(" ").split("(")[0];
         temp = temp
-            .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)+(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
+            .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)*(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
             .replace(/\s\d+([-,]\d+)+\s\(engsubs?\)$/, '')
-            .replace(/\s\d\d\d+-\d\d\d+$/, '');
+            .replace(/\s\d\d\d+-\d\d\d+$/, '')
+            .split('(')[0];
         temp = replaceSpecialCharacters(temp);
         return removeSeasonText(temp);
     }
 
     text = text
         .replace(/\s\(\d\d\d+x\d\d\d+\)$/, '')
-        .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)+(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
+        .replace(/\s(tv|OVA|ONA|OAD|NCED|NCOP|Redial)\s\d+([-,]\d+)*(\s\(engsubs?\))?(\+[a-z]+)?$/i, '')
         .replace(/\s\d+([-,]\d+)+\s\(engsubs?\)$/, '')
         .replace(/\s\d\d\d+-\d\d\d+$/, '')
-        .replace(/\s1-\d$/, '');
+        .replace(/\s1-\d$/, '')
+        .split('(')[0];
     let temp = replaceSpecialCharacters(text);
     return removeSeasonText(temp);
 }

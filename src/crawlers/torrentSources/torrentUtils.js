@@ -73,17 +73,22 @@ export function removeSeasonText(text) {
         .replace(/season \d/, "")
         .replace(/\srepack$/, '')
         .replace(/\stv\s(0[1-9])+([1-9]0)?$/, '') // tv 010203 | tv 010230
-        .replace(/\stv\s\d+-\d+$/, '') // tv 04-09 | tv 11-15
+        .replace(/\stv\s\d+([-,]\d+)?$/, '') // tv 04-09 | tv 11-15 | tv 10,12 | tv 10
         .replace(/(\sv2)?\s(tv|ld)$/, '')
         .replace(/\s\d\d\d+-\d\d\d+$/, '') // 008-009
         .replace(/s\d+\s(\d+\s?)+/, '')
         .replace(/(?<=(\s2))\s\d+$/, '')
         .replace(/(?<=(\s\d))\s0$/, '')
+        .replace(/\s?s\d+\s?e\d+\s?$/, '')
+        .replace(/\s?s\d+\scomplete$/, '')
         .replace(' part one', ' part 1')
         .replace(' part two', ' part 2')
         .replace(' part three', ' part 3')
         .replace(' part four', ' part 4')
         .replace(/\sdvd$/i, '')
+        .split(/\s*(engrish|english) eradication edition/g)[0]
+        .replace(/\s(the\s)?(animated\s)?movie(\s\d+)?$/i, '')
+        .replace(/\sop\sed$/, '')
         .trim();
 }
 
@@ -91,7 +96,7 @@ export function fixSeasonEpisode(text, isLinkInput) {
     // console.log(text)
     let se = getSeasonEpisode(text, isLinkInput);
     if (se.season === 1 && se.episode === 0) {
-        let temp = text.replace(/\s?[(\[][a-zA-Z\d\sx]+[)\]]/g, '').match(/\s\d+(-\d+)?(v\d)?(\s(end|raw))?(\.\s*(mkv|mp4|avi|wmv))?$/);
+        let temp = text.replace(/(\s|_)*[(\[][a-zA-Z\d\s-_x]+[)\]](\s_)?/g, '').match(/(\s|_)\d+(-\d+)?(v\d)?(\s(end|raw))?(\.\s*(mkv|mp4|avi|wmv))?$/);
         if (temp) {
             se.episode = Number(temp[0].match(/\d+/g)[0]);
         }
@@ -157,9 +162,14 @@ export function mergeTitleLinks(titles) {
 function checkInvalidTitle(title) {
     return !title ||
         title.includes(" scripts fonts for ") ||
+        title.includes(" scrips fonts for ") ||
         title.includes(" music collection") ||
         title.includes(" music video") ||
-        title.includes("random subbed episodes pack");
+        title.includes(" soundtrack extra") ||
+        title.includes(" textless songs") ||
+        title.includes("random subbed episodes pack") ||
+        title.match(/\scds v\d$/) ||
+        title.endsWith(" zip");
 }
 
 function simplifyTitle(title) {

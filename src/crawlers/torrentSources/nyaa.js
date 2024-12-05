@@ -215,17 +215,19 @@ function getTitle(text) {
         .replace(/\sii+$/, '')
         .replace(/\s\(\d{4}\)/, '')
         .split(/[\[？|]/g)[0]
-        .split(/\s\((web|dvd|raw|vhd|ld)/)[0]
-        .split(/\s(480|720|1080|2160)p/)[0]
+        .split(/\s\((web|dvd|raw|vhd|ld|jpbd)/)[0]
+        .split(/\s\(?(480|720|1080|2160)p/)[0]
         .split(/_\(\d+x\d+/)[0]
         .trim()
         .replace(/(?<!(movie))\s?(_\d+\s?)+_?$/, '')
         .replace(/\s\(\d+-\d+\)\s*$/, '')
         .replace(/\send$/, '')
-        .replace(/\s\(ja|ca\)$/, '')
+        .replace(/\s\((ja|ca)\)$/, '')
         .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .replace(/\ss0?1$/, '')
+        .replace(/\s\(?dual audio\)?/, '')
         .trim();
+
     let splitArr = text.split(/\s|\./g);
     let index = splitArr.findIndex(item => item.match(/s\d+e\d+/))
     if (index !== -1) {

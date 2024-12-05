@@ -249,7 +249,7 @@ export async function getGogoOnlineLink(gogoID, nineAnimeID, episodeNumber) {
     }
 }
 
-async function handleApiCall(url) {
+export async function handleApiCall(url) {
     let waitCounter = 0;
     while (waitCounter < 12) {
         try {
@@ -261,6 +261,10 @@ async function handleApiCall(url) {
                 continue;
             }
             if (response.data?.code === 404) {
+                return null;
+            }
+            // special cases like maintenance mode?
+            if (typeof response.data == "string") {
                 return null;
             }
             return response.data;

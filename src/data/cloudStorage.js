@@ -250,6 +250,9 @@ export async function uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, y
             const abortController = new AbortController();
             let videoReadStream = null;
             try {
+                // if (!ytdl.validateURL(originalUrl)) {
+                //     return resolve(null);
+                // }
                 videoReadStream = ytdl(originalUrl, {
                     filter: 'audioandvideo',
                     quality: "highestvideo",

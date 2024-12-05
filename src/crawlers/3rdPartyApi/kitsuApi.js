@@ -222,9 +222,13 @@ async function handleApiCall(url) {
             if (error.message === 'timeout of 20000ms exceeded') {
                 return null;
             }
-            if (error.response && error.response.status === 429) {
+            if (error.response?.status === 429) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));
+                waitCounter++;
+            } else if (error.response?.status === 500 && waitCounter < 2) {
+                // failure from kitsu server
+                await new Promise((resolve => setTimeout(resolve, 3000)));
                 waitCounter++;
             } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 error.isAxiosError = true;
