@@ -13,6 +13,7 @@ import {
     normalizeSeasonText,
     removeSeasonText
 } from "./torrentUtils.js";
+import {releaseRegex, releaseRegex2} from "../linkInfoUtils.js";
 
 
 export const sourceConfig = Object.freeze({
@@ -234,7 +235,10 @@ function getTitle(title) {
     title = replaceSpecialCharacters(title).replace(" " + currentYear, "").replace(" " + (currentYear - 1), "");
 
     title = title
+        .replace(/ blu ray/, '')
         .split(/(\s|\.|_)s\d+e\d+/gi)[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
+        .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .split(_japaneseCharactersRegex)[0]
         .split(/_-_\d+/g)[0]
         .split(/_\d+-\d+_/g)[0]

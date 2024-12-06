@@ -82,7 +82,7 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
             titles = titles.slice(0, 5);
         }
 
-        // console.log(JSON.stringify(titles, null , 4))
+        // console.log(JSON.stringify(titles, null, 4))
         // return
 
         if (extraConfigs.returnTitlesOnly) {
@@ -115,7 +115,7 @@ async function saveCrawlData(titleData, extraConfigs) {
         rating: null,
         cookies: [],
     };
-    await save(titleData.title, "anime_serial", "", sourceData, 1, extraConfigs);
+    await save(titleData.title, titleData.type || "anime_serial", "", sourceData, 1, extraConfigs);
 }
 
 function extractLinks($) {
@@ -130,6 +130,11 @@ function extractLinks($) {
             }
 
             if ($($a[i]).parent().hasClass("desc-top")) {
+                let animeType = "anime_serial";
+                if (info.includes(' movie')) {
+                    animeType = 'anime_movie';
+                }
+
                 let title = getTitle(info);
                 let se = fixSeasonEpisode(info, false);
                 let sizeText = $($($a[i]).parent().parent().next().children()[0])?.text() || "";
@@ -149,6 +154,9 @@ function extractLinks($) {
                     info = fixLinkInfo($($a[i]).next().text());
                     if (ignoreLink(info)) {
                         continue;
+                    }
+                    if (info.includes(' movie')) {
+                        animeType = 'anime_movie';
                     }
                     title = getTitle(info);
                     se = fixSeasonEpisode(info, false);
@@ -185,6 +193,7 @@ function extractLinks($) {
                 } else {
                     titles.push({
                         title: title,
+                        type: animeType,
                         year: year,
                         links: [link],
                     })
@@ -223,6 +232,7 @@ function getTitle(text) {
         .replace(/\.\s?m4v$/, '')
         .replace(/^zip\./, '')
         .replace(/hk-?rip/gi, 'HD-RIP')
+        .replace(/\sblu(\s|-)ray/, '')
         .split(new RegExp(`[\(\\[](${releaseRegex.source}|BD)`, 'i'))[0]
         .split(new RegExp(`[\(\\[](${releaseRegex2.source}|BD)`, 'i'))[0]
         .split(_japaneseCharactersRegex)[0]

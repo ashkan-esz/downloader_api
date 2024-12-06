@@ -66,6 +66,10 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
+            if (title.endsWith(' movie') || title.match(/\smovie\s\d+$/)) {
+                type = type.replace('serial','movie')
+            }
+
             if (!prevTitles.find(item => (item.title === title && item.year === year && item.type === type))) {
                 prevTitles.push({title, type, year});
                 if (prevTitles.length > 50) {

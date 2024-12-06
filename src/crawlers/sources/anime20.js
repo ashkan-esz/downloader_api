@@ -44,6 +44,11 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
+            if (title.endsWith(' movie') || title.includes(' movie ') || title.match(/\smovie\s\d+/)) {
+                title = title.replace(/\sthe\s?movie$/,'')
+                type = type.replace('serial','movie')
+            }
+
             if (title !== '') {
                 let pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                 if (pageSearchResult) {

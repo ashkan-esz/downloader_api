@@ -62,6 +62,9 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                     searchObj['$or'].push({
                         title: 'the ' + titleObj.title,
                     });
+                    searchObj['$or'].push({
+                        title: titleObj.title.replace('the ', ''),
+                    });
                 }
             } catch (error2) {
                 saveError(error2);
@@ -115,7 +118,7 @@ function createSearchRegexOnAlternativeTitles(title) {
 
     temp2 = temp2.replace(/e/g, "[eéëèēê]");
 
-    return  new RegExp('^' + temp2 + '!?\\.?\\??$', 'i');
+    return new RegExp('^' + temp2 + '!?\\.?\\??$', 'i');
 }
 
 export async function searchOnMovieCollectionDB(searchQuery, projection = {}) {
