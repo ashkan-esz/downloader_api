@@ -53,7 +53,7 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
             }
             return [1];
         }
-        if ([500, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
+        if ([500, 504, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             extraConfigs.retryCounter++;
             return await nyaa({movie_url, serial_url}, pageCount, extraConfigs);

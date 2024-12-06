@@ -53,7 +53,7 @@ export default async function tokyotosho({movie_url, serial_url}, pageCount, ext
             }
             return [1];
         }
-        if ([500, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
+        if ([500, 504, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             extraConfigs.retryCounter++;
             return await tokyotosho({movie_url, serial_url}, pageCount, extraConfigs);

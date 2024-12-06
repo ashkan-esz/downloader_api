@@ -51,6 +51,7 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extra
 async function checkSourcesUrl(sourcesUrls, extraConfigs) {
     let changedSources = [];
     try {
+        let retryCounter = 0;
         for (let i = 0; i < sourcesUrls.length; i++) {
             let responseUrl;
             let homePageLink = sourcesUrls[i].url.replace(/\/page\/|\/(movie-)*anime\?page=/g, '');
@@ -67,6 +68,7 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                     responseUrl = await getResponseUrl(homePageLink);
                 }
                 sourcesUrls[i].checked = true;
+                retryCounter = 0;
                 if (!responseUrl) {
                     continue;
                 }
@@ -87,9 +89,14 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                         sourcesUrls[i].errorMessage = error2.message || '';
                         continue;
                     }
+                } else if ([502, 504].includes(error.response?.status) && retryCounter < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    retryCounter++;
+                    i--;
+                    continue;
                 } else {
                     if (error.code !== 'ETIMEDOUT' && error.code !== 'EAI_AGAIN' &&
-                        error.response?.status !== 521 && error.response?.status !== 522 && error.response?.status !== 524) {
+                        ![521, 522, 524].includes(error.response?.status)) {
                         await saveErrorIfNeeded(error);
                     }
                     sourcesUrls[i].checked = true;
@@ -138,11 +145,11 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                     await saveErrorIfNeeded(error2);
                 }
             } else if (
-                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' || error.response?.status === 521 || error.response?.status === 522) &&
-                retryCounter < 2)
+                (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' ||
+                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 2)
             {
                 retryCounter++;
-                await new Promise((resolve => setTimeout(resolve, 2000)));
+                await new Promise((resolve => setTimeout(resolve, 3000)));
                 return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
             } else {
                 // if (torrentSourcesNames.includes(sourceName) && (error.response?.status === 521 || error.response?.status === 522) ) {
