@@ -27,7 +27,10 @@ Sentry.init({
     ],
     tracesSampleRate: 0.2,
 });
-app.set('trust proxy', 1);
+
+app.set('trust proxy', true);
+// app.set('trust proxy', 1);
+
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 app.use(helmet());
