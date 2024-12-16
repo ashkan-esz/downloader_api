@@ -33,9 +33,11 @@ const s3 = new S3Client({
         accessKeyId: config.cloudStorage.accessKeyId,
         secretAccessKey: config.cloudStorage.secretAccessKey,
     },
+    maxAttempts: 5,
 });
 
 // s3 error codes:
+// 408: unknown/timeout error
 // 500: internal error
 // 502: gateway error
 // 503: too many request to prefix
@@ -545,7 +547,7 @@ export async function uploadDbBackupFileToS3(file, fileName, retryCounter = 0, r
                 Key: fileName,
                 ACL: 'private',
             },
-            queueSize: 4, // optional concurrency configuration
+            queueSize: 3, // optional concurrency configuration
             partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
             leavePartsOnError: false, // optional manually handle dropped parts
         });
