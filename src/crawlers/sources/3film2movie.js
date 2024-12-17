@@ -17,6 +17,7 @@ import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 import * as axiosUtils from "../utils/axiosUtils.js";
+import {getLinksDoesntMatchLinkRegex} from "../extractors/downloadLinks.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "film2movie",
@@ -67,7 +68,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title.endsWith(' movie') || title.match(/\smovie\s\d+$/)) {
-                type = type.replace('serial','movie')
+                type = type.replace('serial', 'movie')
             }
 
             if (!prevTitles.find(item => (item.title === title && item.year === year && item.type === type))) {
@@ -314,7 +315,13 @@ function getFileData_serial($, link, type) {
     text = replacePersianNumbers(text.replace(/[:_|]/g, ''));
     const linkHref = $(link).attr('href');
     const Censored = (text.toLowerCase().includes('family') || checkDubbed(text, linkHref) || checkHardSub(text) || checkHardSub(linkHref)) ? 'Censored' : '';
-    const quality = purgeQualityText(text).replace(/\s/g, '.').replace('.Family', '');
+    let quality = purgeQualityText(text).replace(/\s/g, '.').replace('.Family', '');
+
+    let resMatch = quality.match(/^\d+p/g)?.[0] || null
+    if (resMatch && Number(resMatch.replace('p', '')) < 480) {
+        quality = quality.replace(/^\d+p\.?/, '')
+    }
+
     const roundMatch = linkHref.match(/\.Round\d\d?\./i);
     const round = roundMatch?.pop().replace(/\./g, '').replace(/\d\d?/, (res) => '_' + res) || '';
     let info = [quality, round, Censored].filter(Boolean).join('.');
