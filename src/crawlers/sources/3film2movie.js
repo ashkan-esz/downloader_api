@@ -17,7 +17,6 @@ import {getSubtitleModel} from "../../models/subtitle.js";
 import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 import * as axiosUtils from "../utils/axiosUtils.js";
-import {getLinksDoesntMatchLinkRegex} from "../extractors/downloadLinks.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "film2movie",

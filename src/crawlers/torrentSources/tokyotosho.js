@@ -187,7 +187,7 @@ function extractLinks($) {
                     badCount: 0,
                 }
 
-                let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''));
+                let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, '') && item.type === animeType);
                 if (findResult) {
                     findResult.links.push(link);
                 } else {

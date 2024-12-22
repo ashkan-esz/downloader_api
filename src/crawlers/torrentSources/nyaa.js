@@ -110,8 +110,8 @@ async function saveCrawlData(titleData, extraConfigs) {
         rating: null,
         cookies: [],
     };
-    const type = titleData.links.length > 0 && titleData.links.every(l => l.info.includes('- movie')) ? 'anime_movie' : 'anime_serial';
-    await save(titleData.title, type, "", sourceData, 1, extraConfigs);
+
+    await save(titleData.title, titleData.type || "anime_serial", "", sourceData, 1, extraConfigs);
 }
 
 function extractLinks($, sourceUrl) {
@@ -137,6 +137,11 @@ function extractLinks($, sourceUrl) {
                     continue;
                 }
 
+                let animeType = "anime_serial";
+                if (info.match(/(\s|-|_|\+)movie/)) {
+                    animeType = 'anime_movie';
+                }
+
                 let title = getTitle(info);
                 if (title.match(/\svol\s\d/i)) {
                     continue;
@@ -160,12 +165,13 @@ function extractLinks($, sourceUrl) {
                     badCount: 0,
                 }
 
-                let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''));
+                let findResult = titles.find(item => item.title.replace(/\s+/g, '') === title.replace(/\s+/g, '') && item.type === animeType);
                 if (findResult) {
                     findResult.links.push(link);
                 } else {
                     titles.push({
                         title: title,
+                        type: animeType,
                         links: [link],
                     })
                 }
@@ -226,6 +232,8 @@ function getTitle(text) {
         .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
         .replace(/\ss0?1$/, '')
         .replace(/\s\(?dual audio\)?/, '')
+        .replace(/ovas$/, 'ova')
+        .replace(/(\s|-|_|\+)movie('?)(s?)$/, '')
         .trim();
 
     let splitArr = text.split(/\s|\./g);

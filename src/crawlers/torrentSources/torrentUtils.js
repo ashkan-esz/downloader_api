@@ -74,6 +74,7 @@ export function removeSeasonText(text) {
         .replace(/\srepack$/, '')
         .replace(/\stv\s(0[1-9])+([1-9]0)?$/, '') // tv 010203 | tv 010230
         .replace(/\stv\s\d+([-,]\d+)?$/, '') // tv 04-09 | tv 11-15 | tv 10,12 | tv 10
+        .replace(/\stv\sova(s?)/, ' ova')
         .replace(/(\sv2)?\s(tv|ld)$/, '')
         .replace(/\s\d\d\d+-\d\d\d+$/, '') // 008-009
         .replace(/s\d+\s(\d+\s?)+/, '')
