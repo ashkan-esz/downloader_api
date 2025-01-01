@@ -384,12 +384,18 @@ async function handleDbUpdate(db_data, persianSummary, subUpdates, sourceName, d
             }
         }
         if (latestDataUpdate && PrimaryLatestDataUpdate) {
-            if (db_data.type.includes('serial')) {
-                if (db_data.latestData.updateReason !== 'quality' || getDatesBetween(new Date(), db_data.update_date).days < 90) {
+            // don't update time, if it's new source for abandoned title
+            if (!updateFields.sources || db_data.sources.length > 1 ||
+                db_data.sources[0]?.sourceName !== sourceName ||
+                db_data.latestData.updateReason !== 'quality' ||
+                getDatesBetween(new Date(), db_data.insert_date).days < 90) {
+                if (db_data.type.includes('serial')) {
+                    if (db_data.latestData.updateReason !== 'quality' || getDatesBetween(new Date(), db_data.update_date).days < 90) {
+                        updateFields.update_date = new Date();
+                    }
+                } else if (getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
                     updateFields.update_date = new Date();
                 }
-            } else if (getDatesBetween(new Date(), db_data.insert_date).hours > 1) {
-                updateFields.update_date = new Date();
             }
         }
 
