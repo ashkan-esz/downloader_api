@@ -24,8 +24,8 @@ export const sourceConfig = Object.freeze({
     sourceAuthStatus: "ok",
     vpnStatus: Object.freeze({
         poster: 'allOk',
-        trailer: 'allOk',
-        downloadLink: 'allOk',
+        trailer: 'noVpn',
+        downloadLink: 'noVpn',
     }),
     isTorrent: false,
     replaceInfoOnDuplicate: true,

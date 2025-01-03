@@ -493,8 +493,12 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
         return;
     }
     const promiseQueue = new PQueue({concurrency: 6});
+    let failedCounter = 0;
     if (type.includes('movie')) {
         for (let j = 0, _length = downloadLinks.length; j < _length; j++) {
+            if (failedCounter > 5) {
+                break;
+            }
             if (!downloadLinks[j].info.includes(' - ')) {
                 let url = downloadLinks[j].link;
                 if (sourceName === "film2movie") {
@@ -511,6 +515,8 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
                         size = Math.ceil(size / 1024 / 1024);
                         size = size < 1000 ? `${size}MB` : `${(size / 1024).toFixed(1)}GB`;
                         downloadLinks[j].info = downloadLinks[j].info + ' - ' + size;
+                    } else {
+                        failedCounter++;
                     }
                 }));
             }
@@ -530,6 +536,9 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
 
         for (let j = 0; j < gps.length; j++) {
             if (groupedDownloadLinks[gps[j]].every(l => !l.info.includes(' - '))) {
+                if (failedCounter > 5) {
+                    break;
+                }
                 let url = groupedDownloadLinks[gps[j]][0].link;
                 if (sourceName === "film2movie") {
                     let temp = url.match(/\/\?s=\d+&f=/gi);
@@ -548,6 +557,8 @@ async function addFileSizeToDownloadLinks(type, downloadLinks, sourceName, sourc
                         for (let k = 0; k < groupedDownloadLinks[g].length; k++) {
                             groupedDownloadLinks[g][k].info = groupedDownloadLinks[g][k].info + ' - ' + size;
                         }
+                    } else {
+                        failedCounter++;
                     }
                 }));
             }
