@@ -12,7 +12,7 @@ import {
     S3Client
 } from "@aws-sdk/client-s3";
 import {Upload} from "@aws-sdk/lib-storage";
-import ytdl from "ytdl-core";
+import ytdl from "@distube/ytdl-core";
 import {compressImage, getImageThumbnail} from "../utils/sharpImageMethods.js";
 import {getAllS3CastImageDB, getAllS3PostersDB, getAllS3TrailersDB, getAllS3WidePostersDB} from "./db/s3FilesDB.js";
 import {getYoutubeDownloadLink} from "../crawlers/remoteHeadlessBrowser.js";
