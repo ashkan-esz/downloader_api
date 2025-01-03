@@ -212,7 +212,7 @@ export function groupMovieLinks(links, watchOnlineLinks, torrentLinks) {
             }
         }
         if (!matchQuality) {
-            qualities.find(item => item.quality === 'others').watchOnlineLinks.push(links[i]);
+            qualities.find(item => item.quality === 'others').watchOnlineLinks.push(watchOnlineLinks[i]);
         }
     }
 
@@ -226,7 +226,7 @@ export function groupMovieLinks(links, watchOnlineLinks, torrentLinks) {
             }
         }
         if (!matchQuality) {
-            qualities.find(item => item.quality === 'others').torrentLinks.push(links[i]);
+            qualities.find(item => item.quality === 'others').torrentLinks.push(torrentLinks[i]);
         }
     }
 
