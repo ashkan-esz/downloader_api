@@ -1,6 +1,6 @@
 import config from "../../config/index.js";
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues, getDatesBetween} from "../utils/utils.js";
+import * as utils from "../utils/utils.js";
 import {getEpisodeModel} from "../../models/episode.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
@@ -12,12 +12,17 @@ const apiKeys = createApiKeys(config.apiKeys.omdbApiKeys);
 
 export async function getOMDBApiData(title, alternateTitles, titleSynonyms, premiered, type, canRetry = true) {
     try {
+        let originalTitle = title;
         title = title.toLowerCase()
             .replace('!!', '!')
             .replace(' all seasons', '')
             .replace(' all', '')
             .replace(' full episodes', '');
-        title = replaceSpecialCharacters(title, ['\'']);
+        title = utils.replaceSpecialCharacters(title, ['\'']);
+
+        if (originalTitle.match(/\si+$/) && !canRetry) {
+            title = originalTitle;
+        }
 
         let titleYear = premiered.split('-')[0];
         let searchType = (type.includes('movie')) ? 'movie' : 'series';
@@ -40,6 +45,10 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         if (data === null) {
             if (canRetry) {
                 let newTitle = getEditedTitle(title);
+                if (newTitle === title) {
+                    newTitle = getEditedTitleMovie(title);
+                }
+
                 if (newTitle !== title) {
                     let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
                     if (retryRes) {
@@ -54,6 +63,16 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
                     let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
                     if (retryRes) {
                         return retryRes;
+                    }
+                }
+
+                if (type.includes('anime')) {
+                    newTitle = title.replace(/wo|ou/g, 'o').replace(/uu/g, 'u');
+                    if (newTitle !== title) {
+                        let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                        if (retryRes) {
+                            return retryRes;
+                        }
                     }
                 }
             }
@@ -74,7 +93,24 @@ export async function getOMDBApiData(title, alternateTitles, titleSynonyms, prem
         if (data) {
             data.yearIgnored = yearIgnored;
         }
-        return checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) ? data : null;
+        if (checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type)) {
+            return data;
+        }
+        if (canRetry) {
+            let newTitle = getEditedTitle(title);
+            if (newTitle === title) {
+                newTitle = getEditedTitleMovie(title);
+            }
+
+            if (newTitle !== title) {
+                let retryRes = await getOMDBApiData(newTitle, alternateTitles, titleSynonyms, premiered, type, false);
+                if (retryRes) {
+                    return retryRes;
+                }
+            }
+        }
+
+        return null;
     } catch (error) {
         if (!error.response || error.response.status !== 500) {
             await saveError(error);
@@ -122,6 +158,7 @@ function getEditedTitle(title) {
         .replace('aruiwa', 'arui wa')
         .replace(' the movie', '')
         .replace(' movie ', ' ')
+        .replace(' movie', '')
         .replace('summons', 'calls')
         .replace('dont', 'don\'t')
         .replace('wont', 'won\'t')
@@ -138,7 +175,19 @@ function getEditedTitle(title) {
         .replace(' part 3', ' part three')
         .replace(' part 4', ' part four')
         .replace(/\s\s+/g, '')
+        .replace(/[a-zA-Z]\d/, r => r.split('').join(' '))
+        .replace('eiga', '')
         .trim();
+}
+
+
+function getEditedTitleMovie(title) {
+    return title
+        .replace(/(?<=\s)\d$/, r => r
+            .replace('4', 'iv')
+            .replace('3', 'iii')
+            .replace('2', 'ii')
+            .replace('1', 'i'))
 }
 
 export function getOMDBApiFields(data, type) {
@@ -152,7 +201,7 @@ export function getOMDBApiFields(data, type) {
             genres: data.Genre ? getFixedGenres(data.Genre.split(',')) : [],
             isAnime: (data.Genre?.toLowerCase().includes('anime')),
             rating: data.Ratings ? extractRatings(data.Ratings) : {},
-            omdbTitle: replaceSpecialCharacters(data.Title.toLowerCase()),
+            omdbTitle: utils.replaceSpecialCharacters(data.Title.toLowerCase()),
             yearIgnored: data.yearIgnored,
             year: data.Year.split(/[-–]/g)[0],
             poster: data?.Poster?.replace('N/A', '') || "",
@@ -167,7 +216,7 @@ export function getOMDBApiFields(data, type) {
                 awards: data.Awards || '',
             },
         };
-        apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
+        apiFields.updateFields = utils.purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {
         if (!error.response || error.response.status !== 500) {
@@ -265,13 +314,14 @@ function getSeasonEpisode_episode(omdbTitle, searchYear, episodes, seasonEpisode
 
 function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, yearIgnored, type) {
     let originalTitle = title;
-    title = replaceSpecialCharacters(originalTitle).replace(/volume \d/, (res) => res.replace('volume', 'vol'));
-    alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
-    titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
-    let apiTitle = replaceSpecialCharacters(data.Title.toLowerCase().trim()).replace(/volume \d/, (res) => res.replace('volume', 'vol'));
+    title = utils.replaceSpecialCharacters(originalTitle).replace(/volume \d/, (res) => res.replace('volume', 'vol'));
+    alternateTitles = alternateTitles.map(value => utils.replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
+    titleSynonyms = titleSynonyms.map(value => utils.replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
+    let apiTitle = utils.replaceSpecialCharacters(data.Title.toLowerCase().trim());
+    let apiTitle2 = utils.replaceSpecialCharacters(data.Title.split('-')[0].replace(/(?<=\d)\.0/, '').toLowerCase().trim());
     let apiYear = data.Year.split(/[-–]/g)[0];
     let matchYear = (type.includes('movie') || yearIgnored) ? Math.abs(Number(titleYear) - Number(apiYear)) <= 1 : true;
-    if (!matchYear) {
+    if (!matchYear && titleYear) {
         return false;
     }
     let splitTitle = title.split(' ');
@@ -284,12 +334,12 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, year
         }
     }
 
-    const normalizeRegex = /\s+|precent|movie|eiga|gekijouban/gi;
-
     return (
-        matchYear &&
+        (matchYear || (type.includes('anime') && !titleYear)) &&
         (
-            title.replace(normalizeRegex, '') === apiTitle.replace(normalizeRegex, '') ||
+            normalizeText(title) === normalizeText(apiTitle) ||
+            normalizeText(title).replace(titleYear, '') === normalizeText(apiTitle).replace(titleYear, '') ||
+            normalizeText(title) === normalizeText(apiTitle2) ||
             title.replace('uu', 'u') === apiTitle.replace('uu', 'u') ||
             (originalTitle.includes('the movie:') && title.replace('the movie', '').replace(/\s\s+/g, ' ') === apiTitle) ||
             alternateTitles.includes(apiTitle.replace('uu', 'u')) ||
@@ -299,6 +349,26 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, titleYear, year
             (splitTitle.length > 8 && apiTitle.includes(title))
         )
     );
+}
+
+function normalizeText(text) {
+    return utils.replaceSpecialCharacters(text)
+        .replace(/[\[\]]/g, '')
+        .replace(' movie', '')
+        .replace('specials', 'ova')
+        .replace('3rd season', '3')
+        .replace('season 3', '3')
+        .replace(/\dth season/, r => r.replace('th season', ''))
+        .replace(/season \d/, r => r.replace('season ', ''))
+        .replace(/\s?the animation(\s\d+)?$/, '')
+        .replace(/tv|the|precent|will|\s+/g, '')
+        .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
+        .replace(/(\s+|precent|movie|eiga|gekijou?ban)/gi, '')
+        .replace(/[ck]/g, 'c')
+        .replace(/wo|ou|o+/g, 'o')
+        .replace(/ai|ia|s/g, '')
+        .replace(/an/g, 'a')
+        .trim();
 }
 
 async function handle_OMDB_ApiCall(url) {
@@ -397,7 +467,7 @@ function getApiKey() {
 function freeApiKeys() {
     let now = new Date();
     for (let i = 0; i < apiKeys.length; i++) {
-        if (apiKeys[i].firstCallTime && getDatesBetween(now, apiKeys[i].firstCallTime).hours >= 12) {
+        if (apiKeys[i].firstCallTime && utils.getDatesBetween(now, apiKeys[i].firstCallTime).hours >= 12) {
             apiKeys[i].callCount = 0;
             apiKeys[i].firstCallTime = 0;
         }

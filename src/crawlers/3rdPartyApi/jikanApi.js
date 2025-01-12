@@ -87,7 +87,7 @@ export async function getJikanApiData(title, year, type, jikanID) {
             if (
                 (
                     type.includes('serial') &&
-                    jikanSearchResult[i].aired?.from?.split('-')[0] !== year &&
+                    year && jikanSearchResult[i].aired?.from?.split('-')[0] !== year &&
                     Number(jikanSearchResult[i].episodes) === 0
                 ) ||
                 (type.includes('movie') && Number(jikanSearchResult[i].episodes) > 1)
@@ -148,6 +148,7 @@ async function getJikanSearchResult(title, type, year) {
 
 function checkTitle(title, type, allTitles) {
     let {
+        apiTitle,
         apiTitle_simple,
         apiTitleEnglish_simple,
         apiTitleJapanese,
@@ -164,7 +165,8 @@ function checkTitle(title, type, allTitles) {
         titleSynonyms.map(item => item.replace(/\s+/g, '')).includes(title.replace(/\s+/g, '')) ||
         normalizeText(title) === normalizeText(apiTitle_simple + " " + apiTitleEnglish_simple) ||
         normalizeText(title) === normalizeText(apiTitle_simple + " " + titleSynonyms[0]) ||
-        normalizeText(title) === normalizeText(apiTitle_simple + " " + titleSynonyms[1])
+        normalizeText(title) === normalizeText(apiTitle_simple + " " + titleSynonyms[1]) ||
+        apiTitle.toLowerCase().includes("\"" + title + "\"")
     );
 }
 
@@ -176,11 +178,14 @@ function normalizeText(text) {
         .replace('season 3', '3')
         .replace(/\dth season/, r => r.replace('th season', ''))
         .replace(/season \d/, r => r.replace('season ', ''))
+        .replace(/\sthe animation(\s\d+)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
+        .replace(/y/g, 'ies')
         .replace(/wo|ou|o+/g, 'o')
         .replace(/ai|ia|s/g, '')
+        .replace(/an/g, 'a')
         .trim();
 }
 
@@ -426,7 +431,7 @@ async function handleApiCall(url, timeoutSec = 0) {
 }
 
 function getTitlesFromData(fullData) {
-    let apiTitle = fullData.title || fullData.titles?.find(t => t.type === 'Default')?.title;
+    let apiTitle = fullData.title || fullData.titles?.find(t => t.type === 'Default')?.title.replace(/\sthe animation(\s\d+)?$/, '');
     let yearMatch = apiTitle?.match(/\(\d\d\d\d\)/g)?.pop() || null;
     if (yearMatch) {
         apiTitle = apiTitle.replace(yearMatch, '').trim();

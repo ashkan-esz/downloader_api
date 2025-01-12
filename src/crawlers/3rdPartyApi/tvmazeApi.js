@@ -1,5 +1,5 @@
 import axios from "axios";
-import {replaceSpecialCharacters, purgeObjFalsyValues, getDayName} from "../utils/utils.js";
+import * as utils from "../utils/utils.js";
 import {getEpisodeModel} from "../../models/episode.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
@@ -12,7 +12,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
         .replace(' all seasons', '')
         .replace(/\sall$/, '')
         .replace(' full episodes', '');
-    title = replaceSpecialCharacters(title);
+    title = utils.replaceSpecialCharacters(title);
     const url = `https://api.tvmaze.com/singlesearch/shows?q=${decodeURIComponent(title)}&embed[]=nextepisode&embed[]=episodes&embed[]=cast&embed[]=images`;
     let waitCounter = 0;
     while (waitCounter < 12) {
@@ -148,9 +148,9 @@ export function getTvMazeApiFields(data) {
         }
         if (!apiFields.releaseDay && apiFields.premiered) {
             let dayNumber = new Date(apiFields.premiered).getDay();
-            apiFields.releaseDay = getDayName(dayNumber);
+            apiFields.releaseDay = utils.getDayName(dayNumber);
         }
-        apiFields.updateFields = purgeObjFalsyValues(apiFields.updateFields);
+        apiFields.updateFields = utils.purgeObjFalsyValues(apiFields.updateFields);
         return apiFields;
     } catch (error) {
         saveError(error);
@@ -195,9 +195,9 @@ function checkTitle(data, title, alternateTitles, titleSynonyms, imdbID, premier
         return false;
     }
     let apiTitle = data.name.toLowerCase();
-    let apiTitle_simple = replaceSpecialCharacters(apiTitle);
-    alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()));
-    titleSynonyms = titleSynonyms.map(value => replaceSpecialCharacters(value.toLowerCase()));
+    let apiTitle_simple = utils.replaceSpecialCharacters(apiTitle);
+    alternateTitles = alternateTitles.map(value => utils.replaceSpecialCharacters(value.toLowerCase()));
+    titleSynonyms = titleSynonyms.map(value => utils.replaceSpecialCharacters(value.toLowerCase()));
 
     let specialCase1 = title.replace('cautious hero: the hero is overpowered but overly cautious', 'the hero is overpowered but overly cautious');
     let specialCase2 = title.replace('iya na kao sare nagara opantsu misete moraitai', 'i want you to make a disgusted face and show me your underwear');
@@ -239,11 +239,14 @@ function normalizeText(text) {
     return text
         .replace(' movie', '')
         .replace('specials', 'ova')
+        .replace(/\sthe animation(\s\d+)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
         .replace(/wo|ou/g, 'o')
         .replace(/ai|ia|s/g, '')
+        .replace(/an/g, 'a')
+        .replace(/\s?[&:]\s?/g, '')
         .trim();
 }
 

@@ -95,6 +95,9 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
             titles = titles.slice(0, 5);
         }
 
+        // console.log(JSON.stringify(titles, null, 4))
+        // return
+
         if (extraConfigs.returnTitlesOnly) {
             return titles;
         }
@@ -226,7 +229,7 @@ function getTitle(text) {
         .split(/[\[？]/g)[0]
         .replace(/\s\((ja|ca|au|uk|us|nz|afl|sp|op)\)$/, '')
         .replace(/\s\(((un)?censored\s)?[a-zA-Z]+\ssub\)$/, '')
-        .replace(/\s(au|uk|us|ca|nz|afl|sp|op)$/, '')
+        .replace(/\s(au|uk|us|ca|nz|afl|sp|op)(?=(\ss\d+e\d+|$))/, '')
         .replace(/(?<=[a-zA-Z])\ss\s(?=[a-zA-Z])/, 's ')
         .replace(/\sin l a/, ' in la')
         .replace(/\ss0?1$/, '')

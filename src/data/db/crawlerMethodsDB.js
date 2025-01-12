@@ -38,6 +38,9 @@ export async function searchTitleDB(titleObj, searchTypes, year, dataConfig) {
                 title: new RegExp('^' + temp.replace(/u+/g, 'uu?') + '$'),
             });
             searchObj['$or'].push({
+                title: new RegExp('^' + temp.replace(/e+(\\s\?e+)?/g, 'ee?') + '$'),
+            });
+            searchObj['$or'].push({
                 title: new RegExp('^' + temp.replace(/\\s\?o/g, '\\s?w?\\s?o') + '$'),
             });
             searchObj['$or'].push({

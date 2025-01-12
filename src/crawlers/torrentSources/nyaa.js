@@ -82,6 +82,9 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
             titles = titles.slice(0, 5);
         }
 
+        // console.log(JSON.stringify(titles, null, 4))
+        // return
+
         if (extraConfigs.returnTitlesOnly) {
             return titles;
         }

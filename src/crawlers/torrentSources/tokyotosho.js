@@ -258,6 +258,8 @@ function getTitle(text) {
         .replace(/\sfilms?$/, '')
         .trim();
 
+    text = text.replace(/(?<!(\d|th|nd))\sseason(?=(\.s\d+e\d+))/, '') // up na ken season.s2e01 --> up na ken
+
     // let year = new Date().getFullYear();
     // text = text.split(new RegExp(`\\s${year}\\s(480\|720p\|1080\|2160p)p`))[0];
     text = text.split(new RegExp(`(\\s\|\\.)\\d{4}(\\s\|\\.)(480\|720p\|1080\|2160p)p`))[0];

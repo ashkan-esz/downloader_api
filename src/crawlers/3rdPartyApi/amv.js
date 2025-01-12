@@ -1,9 +1,8 @@
-import {replaceSpecialCharacters} from "../utils/utils.js";
-import {saveError} from "../../error/saveError.js";
 import axios from "axios";
+import * as utils from "../utils/utils.js";
+import {saveError} from "../../error/saveError.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
-import * as utils from "../utils/utils.js";
 import {getFixedSummary} from "../extractors/utils.js";
 
 const rateLimitConfig = {
@@ -14,6 +13,9 @@ const rateLimitConfig = {
 
 export async function getAmvApiData(title, alternateTitles, year, type, amvID) {
     try {
+        //TODO : remove this? or self-host
+        return null;
+
         let yearMatch = title.match(/\(?\d\d\d\d\)?/g);
         yearMatch = yearMatch ? yearMatch.pop() : null;
         if (yearMatch && !year && Number(yearMatch) < 3000) {
@@ -25,7 +27,7 @@ export async function getAmvApiData(title, alternateTitles, year, type, amvID) {
             .replace(' all seasons', '')
             .replace(' all', '')
             .replace(' full episodes', '');
-        title = replaceSpecialCharacters(title);
+        title = utils.replaceSpecialCharacters(title);
 
         if (amvID) {
             let animeUrl = "https://api.amvstr.me/api/v2/info/" + amvID;
@@ -87,7 +89,7 @@ export async function getAmvApiData(title, alternateTitles, year, type, amvID) {
 }
 
 function checkTitle(title, alternateTitles, year, apiData) {
-    alternateTitles = alternateTitles.map(value => replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
+    alternateTitles = alternateTitles.map(value => utils.replaceSpecialCharacters(value.toLowerCase()).replace('uu', 'u'));
     return (
         normalizeText(title) === normalizeText(apiData.titleObj.title) ||
         normalizeSeasonText(title) === normalizeSeasonText(apiData.titleObj.title) ||
@@ -95,19 +97,24 @@ function checkTitle(title, alternateTitles, year, apiData) {
         apiData.titleObj.alternateTitles.includes(title) ||
         apiData.titleObj.alternateTitles.map(item => item.toLowerCase().replace(/:/g, '').replace(/-/g, ' ')).includes(title) ||
         apiData.titleObj.alternateTitles.map(item => item.toLowerCase().replace(/:/g, '').replace(/-/g, ' ')).includes(title.replace('3rd season', '3')) ||
-        apiData.titleObj.alternateTitles.map(item => replaceSpecialCharacters(item)).includes(title) ||
-        apiData.titleObj.titleSynonyms.includes(title)
+        apiData.titleObj.alternateTitles.map(item => utils.replaceSpecialCharacters(item)).includes(title) ||
+        apiData.titleObj.alternateTitles.some(item => normalizeText(item) === normalizeText(title)) ||
+        apiData.titleObj.titleSynonyms.includes(title) ||
+        apiData.titleObj.rawTitle.toLowerCase().includes("\"" + title + "\"")
     );
 }
 
 function normalizeText(text) {
-    return text
+    return utils.replaceSpecialCharacters(text)
+        .replace(' movie', '')
+        .replace('chapter', 'movie')
         .replace('specials', 'ova')
-        .replace(/tv|the|precent|\s+/g, '')
+        .replace(/\sthe animation(\s\d+)?$/, '')
+        .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
         .replace(/wo|ou/g, 'o')
-        .replace(/ai/g, 'a')
+        .replace(/ai|an/g, 'a')
         .trim()
 }
 
@@ -122,7 +129,7 @@ function normalizeSeasonText(text) {
 function addTitleObjToAmvData(apiData, year) {
     const yearRegex = new RegExp(` \\(?${year}\\)?\$`);
     let titleObj = {
-        title: replaceSpecialCharacters(apiData.title?.userPreferred?.toLowerCase() || "").replace(yearRegex, '').replace(/\stv$/i, ''),
+        title: utils.replaceSpecialCharacters(apiData.title?.userPreferred?.toLowerCase() || "").replace(yearRegex, '').replace(/\stv$/i, ''),
         rawTitle: (apiData.title?.userPreferred || "").replace(/^["']|["']$/g, '')
             .replace(/volume \d/i, (res) => res.replace('Volume', 'Vol'))
             .replace(/!+/g, '!')

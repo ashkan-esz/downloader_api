@@ -4,7 +4,6 @@ import {saveCrawlerWarning} from "../../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "../status/crawlerWarnings.js";
 import {getFixedSummary} from "../extractors/utils.js";
 import * as utils from "../utils/utils.js";
-import {replaceSpecialCharacters} from "../utils/utils.js";
 
 
 export async function getKitsuApiData(title, year, type, kitsuID) {
@@ -20,7 +19,7 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
             .replace(' all seasons', '')
             .replace(' all', '')
             .replace(' full episodes', '');
-        title = replaceSpecialCharacters(title);
+        title = utils.replaceSpecialCharacters(title);
 
         if (kitsuID) {
             let animeUrl = "https://kitsu.io/api/edge/anime/" + kitsuID;
@@ -51,7 +50,7 @@ export async function getKitsuApiData(title, year, type, kitsuID) {
             if (
                 (
                     type.includes('serial') &&
-                    searchResult[i].attributes?.startDate?.split('-')[0] !== year &&
+                    year && searchResult[i].attributes?.startDate?.split('-')[0] !== year &&
                     Number(searchResult[i].attributes.episodeCount) === 0
                 ) ||
                 (type.includes('serial') && searchResult[i].attributes.subtype === 'movie') ||
@@ -95,20 +94,24 @@ function checkTitle(title, year, type, apiData) {
         apiData.titleObj.alternateTitles.includes(title) ||
         apiData.titleObj.alternateTitles.map(item => item.toLowerCase().replace(/:/g, '').replace(/-/g, ' ')).includes(title) ||
         apiData.titleObj.alternateTitles.map(item => item.toLowerCase().replace(/:/g, '').replace(/-/g, ' ')).includes(title.replace('3rd season', '3')) ||
-        apiData.titleObj.alternateTitles.map(item => replaceSpecialCharacters(item)).includes(title) ||
-        apiData.titleObj.titleSynonyms.includes(title)
+        apiData.titleObj.alternateTitles.map(item => utils.replaceSpecialCharacters(item)).includes(title) ||
+        apiData.titleObj.alternateTitles.some(item => normalizeText(item) === normalizeText(title)) ||
+        apiData.titleObj.titleSynonyms.includes(title) ||
+        apiData.titleObj.rawTitle.toLowerCase().includes("\"" + title + "\"")
     );
 }
 
 function normalizeText(text) {
-    return text
+    return utils.replaceSpecialCharacters(text)
         .replace(' movie', '')
+        .replace('chapter', 'movie')
         .replace('specials', 'ova')
+        .replace(/\sthe animation(\s\d+)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
         .replace(/wo|ou/g, 'o')
-        .replace(/ai/g, 'a')
+        .replace(/ai|an/g, 'a')
         .trim()
 }
 
@@ -123,7 +126,7 @@ function normalizeSeasonText(text) {
 function addTitleObjToKitsuData(apiData, year) {
     const yearRegex = new RegExp(` \\(?${year}\\)?\$`);
     let titleObj = {
-        title: replaceSpecialCharacters(apiData.attributes.canonicalTitle.toLowerCase()).replace(yearRegex, ''),
+        title: utils.replaceSpecialCharacters(apiData.attributes.canonicalTitle.toLowerCase()).replace(yearRegex, ''),
         rawTitle: apiData.attributes.canonicalTitle.replace(/^["']|["']$/g, '').replace(/volume \d/i, (res) => res.replace('Volume', 'Vol')).replace(/!+/g, '!').replace(yearRegex, ''),
         alternateTitles: [],
         titleSynonyms: [],

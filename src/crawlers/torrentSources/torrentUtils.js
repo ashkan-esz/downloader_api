@@ -89,7 +89,9 @@ export function removeSeasonText(text) {
         .replace(/\sdvd$/i, '')
         .split(/\s*(engrish|english) eradication edition/g)[0]
         .replace(/\s(the\s)?(animated\s)?movie(\s\d+)?$/i, '')
+        .replace(/\s?the animated series(\s\d+)?$/i, '')
         .replace(/\sop\sed$/, '')
+        .replace(/\sthe animation(\s\d+)?$/, '')
         .trim();
 }
 
