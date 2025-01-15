@@ -34,6 +34,9 @@ const s3 = new S3Client({
         secretAccessKey: config.cloudStorage.secretAccessKey,
     },
     maxAttempts: 5,
+    httpOptions: {
+        timeout: 5 * 60 * 1000 // 5 minutes
+    }
 });
 
 // s3 error codes:
@@ -70,9 +73,9 @@ export function getS3Client() {
 
 export const s3VpnStatus = 'allOk';
 
-export const trailerUploadConcurrency = 6;
-export const saveWarningTimeout = 70 * 1000; //70s
-const crawlerWarningMessages = getCrawlerWarningMessages(70);
+export const trailerUploadConcurrency = 8;
+export const saveWarningTimeout = 180 * 1000; //180s
+const crawlerWarningMessages = getCrawlerWarningMessages(180);
 let uploadingTrailer = 0;
 
 async function waitForTrailerUpload() {
@@ -299,6 +302,11 @@ export async function uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, y
             await new Promise((resolve => setTimeout(resolve, 2000)));
             return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
         }
+        if (error.$metadata?.httpStatusCode === 408 && retryWithSleepCounter < 5) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 10000)));
+            return await uploadTitleTrailerFromYoutubeToS3(pageLink, title, type, year, originalUrl, retryCounter, retryWithSleepCounter);
+        }
         if (error.statusCode === 410 || error.statusCode === 403) {
             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, false);
         }
@@ -364,6 +372,11 @@ export async function uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLi
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
+        }
+        if (error.$metadata?.httpStatusCode === 408 && retryWithSleepCounter < 5) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 10000)));
             return await uploadTitleTrailerFromYoutubeToS3_youtubeDownloader(pageLink, title, type, year, originalUrl, checkTrailerExist, retryCounter, retryWithSleepCounter);
         }
         if (error.response.status !== 403) {
@@ -476,7 +489,7 @@ async function uploadFileToS3(bucketName, file, fileName, fileUrl, extraCheckFil
             Key: fileName,
             ACL: 'public-read',
         },
-        queueSize: 4, // optional concurrency configuration
+        queueSize: (file.length < 5 * 1024 * 1024) ? 1 : 4, // optional concurrency configuration
         partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
         leavePartsOnError: false, // optional manually handle dropped parts
     });
@@ -547,7 +560,7 @@ export async function uploadDbBackupFileToS3(file, fileName, retryCounter = 0, r
                 Key: fileName,
                 ACL: 'private',
             },
-            queueSize: 3, // optional concurrency configuration
+            queueSize: (file.length < 5 * 1024 * 1024) ? 1 : 4, // optional concurrency configuration
             partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
             leavePartsOnError: false, // optional manually handle dropped parts
         });
@@ -564,6 +577,11 @@ export async function uploadDbBackupFileToS3(file, fileName, retryCounter = 0, r
         if (checkNeedRetryWithSleep(error, retryWithSleepCounter)) {
             retryWithSleepCounter++;
             await new Promise((resolve => setTimeout(resolve, 2000)));
+            return await uploadDbBackupFileToS3(file, fileName, retryCounter, retryWithSleepCounter);
+        }
+        if (error.$metadata?.httpStatusCode === 408 && retryWithSleepCounter < 5) {
+            retryWithSleepCounter++;
+            await new Promise((resolve => setTimeout(resolve, 20000)));
             return await uploadDbBackupFileToS3(file, fileName, retryCounter, retryWithSleepCounter);
         }
         saveError(error);
