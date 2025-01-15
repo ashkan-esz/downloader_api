@@ -321,6 +321,8 @@ function getFileData_serial($, link, type) {
         quality = quality.replace(/^\d+p\.?/, '')
     }
 
+    quality = quality.replace(/&\.(\d+\.)?/g, '');
+
     const roundMatch = linkHref.match(/\.Round\d\d?\./i);
     const round = roundMatch?.pop().replace(/\./g, '').replace(/\d\d?/, (res) => '_' + res) || '';
     let info = [quality, round, Censored].filter(Boolean).join('.');

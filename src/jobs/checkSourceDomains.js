@@ -58,6 +58,10 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
         let needToCrawl = false;
         let promiseArray = [];
         for (let i = 0; i < sources.length; i++) {
+            if (sources[i].isManualDisable) {
+                continue;
+            }
+
             let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url, extraConfigs).then(async checkUrlResult => {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                 if (checkUrlResult === "error") {

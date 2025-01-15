@@ -8,8 +8,8 @@ import {downloadImage} from "../crawlers/utils/axiosUtils.js";
 import * as Sentry from "@sentry/node";
 
 export const imageOperationsConcurrency = 100;
-export const saveWarningTimeout = 60 * 1000; //60s
-const crawlerWarningMessages = getCrawlerWarningMessages(60);
+export const saveWarningTimeout = 90 * 1000; //90s
+const crawlerWarningMessages = getCrawlerWarningMessages(90);
 let imageOperations = 0;
 
 async function waitForImageOperation() {

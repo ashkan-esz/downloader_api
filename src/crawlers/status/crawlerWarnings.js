@@ -31,7 +31,7 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             }
         },
         trailerUploadHighWait: `High wait for trailer upload to start (${data1})`,
-        imageOperationsHighWait: `High wait for trailer upload to start (${data1})`,
+        imageOperationsHighWait: `High wait for image operation to start (${data1})`,
         remoteBrowserNotWorking: `Remote Browser not working: ${data1}`,
         remoteBrowserTimeoutError: `Remote Browser timeout error (50s/70s): ${data1}`,
         crawlerCancelled: 'Crawling cancelled : sourcesObj is null',

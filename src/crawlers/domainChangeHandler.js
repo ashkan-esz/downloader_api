@@ -19,14 +19,16 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extra
         await updateCrawlerStatus_domainChangeHandlerStart();
         delete sourcesObj._id;
         delete sourcesObj.title;
-        let sourcesUrls = Object.keys(sourcesObj).map(sourceName => ({
-            sourceName: sourceName,
-            url: sourcesObj[sourceName].movie_url,
-            checked: false,
-            changed: false,
-            crawled: false,
-            errorMessage: '',
-        }));
+        let sourcesUrls = Object.keys(sourcesObj)
+            .filter(sourceName => !sourcesObj[sourceName].isManualDisable)
+            .map(sourceName => ({
+                sourceName: sourceName,
+                url: sourcesObj[sourceName].movie_url,
+                checked: false,
+                changed: false,
+                crawled: false,
+                errorMessage: '',
+            }));
 
         if (extraConfigs.torrentState === "only") {
             sourcesUrls = sourcesUrls.filter(s => torrentSourcesNames.includes(s.sourceName));
@@ -146,8 +148,7 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                 }
             } else if (
                 (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' ||
-                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 2)
-            {
+                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 2) {
                 retryCounter++;
                 await new Promise((resolve => setTimeout(resolve, 3000)));
                 return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
