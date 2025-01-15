@@ -512,6 +512,30 @@ export async function sendMessageToAllBotUsers(botId, message, userId) {
     return generateServiceResult({}, 200, '');
 }
 
+export async function sendNotificationToAdmin(message) {
+    message = escapeMarkdownV2(message);
+    const concurrency = 25;
+    const promiseQueue = new PQueue({concurrency: concurrency});
+
+    // users with permission to receive system notification or warnings with bot
+    let users = await roleAndPermissionsDbMethods.getUsersByPermissionDb(roleAndPermissionsDbMethods.PermissionsList.admin_receive_notification_telegram);
+    if (users === 'error') {
+        return 'bad';
+    }
+    for (let i = 0; i < users.length; i++) {
+        // send message to user by all of bots
+        let userBots = await botsDbMethods.getBotsOfUser(users[i].userId);
+        for (let j = 0; j < userBots.length; j++) {
+            promiseQueue.add(() => sendMessageToTelegram(userBots[j].bot, userBots[j].chatId, message));
+        }
+
+        await promiseQueue.onSizeLessThan(3 * concurrency);
+    }
+
+    await promiseQueue.onIdle();
+    return 'ok';
+}
+
 //---------------------------------------------------
 //---------------------------------------------------
 

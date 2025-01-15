@@ -2,6 +2,7 @@ import {v4 as uuidv4} from "uuid";
 import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
 import {getDecodedLink} from "../../crawlers/utils/utils.js";
+import {adminServices} from "../../services/index.js";
 
 const _maxSaveLogDuration = 1;
 const _pageSize = 24;
@@ -250,6 +251,8 @@ export async function saveCrawlerBadLink(sourceName, pageLink, links) {
 
 export async function saveCrawlerWarning(message) {
     try {
+        adminServices.sendNotificationToAdmin(message).then();
+
         let {now, yearAndMonth, bucket, collection} = await getCollectionAndBucket();
 
         let newWarning = {

@@ -56,6 +56,8 @@ export const PermissionsList = Object.freeze({
     //-----------------------------
     admin_remove_doc: "admin_remove_doc",
     //-----------------------------
+    admin_receive_notification_telegram: "admin_receive_notification_telegram",
+    //-----------------------------
 });
 
 export const Default_Role_Ids = Object.freeze({
@@ -589,6 +591,37 @@ export async function getUserRoleByIdDb(userId) {
         }
 
         return res.map(r => r.role);
+    } catch (error) {
+        saveError(error);
+        return 'error';
+    }
+}
+
+export async function getUsersByPermissionDb(permissionName) {
+    try {
+        let res = await prisma.user.findMany({
+            where: {
+                roles: {
+                    some: {
+                        role: {
+                            permissions: {
+                                some: {
+                                    permission: {
+                                        name: permissionName,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            select: {
+                userId: true,
+                username: true,
+            }
+        });
+
+        return res || [];
     } catch (error) {
         saveError(error);
         return 'error';
