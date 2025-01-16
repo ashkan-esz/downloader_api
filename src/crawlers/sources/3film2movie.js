@@ -35,8 +35,8 @@ let prevTitles = [];
 
 export default async function film2movie({movie_url}, pageCount, extraConfigs) {
     prevTitles = [];
-    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
-    return [p1];
+    let {lastPage, linksCount} = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
+    return [lastPage, linksCount];
 }
 
 async function search_title(link, pageNumber, $, url, extraConfigs) {
@@ -58,7 +58,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                 title.includes('کلاه قرمزی') ||
                 title.includes('دانلود فصل')
             ) {
-                return;
+                return 0;
             }
             let typeFix = '';
             if ((title.includes('دانلود برنامه') || title.includes('دانلود مسابقات')) && !title.includes('سریال')) {
@@ -76,7 +76,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                     prevTitles = prevTitles.slice(prevTitles.length - 30);
                 }
             } else {
-                return;
+                return 0;
             }
 
             if (title !== '') {
@@ -95,7 +95,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         type = type.replace('movie', 'serial');
                         pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
-                            return;
+                            return 0;
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
@@ -103,7 +103,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         type = type.replace('serial', 'movie');
                         pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
-                            return;
+                            return 0;
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
@@ -132,6 +132,10 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         cookies
                     };
 
+                    if (extraConfigs.returnAfterExtraction) {
+                        return downloadLinks.length;
+                    }
+
                     // check trailers are available
                     let goodTrailers = [];
                     for (let i = 0; i < sourceData.trailers.length; i++) {
@@ -147,6 +151,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                     sourceData.trailers = goodTrailers;
 
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
+                    return downloadLinks.length;
                 }
             }
         }

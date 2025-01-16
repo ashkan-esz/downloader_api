@@ -38,9 +38,15 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
         let $ = cheerio.load(res.data);
         let titles = extractLinks($, movie_url);
 
+        const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
+
+        if (extraConfigs.returnAfterExtraction) {
+            return [1, linksCount];
+        }
+
         await handleCrawledTitles(titles, 1, pageCount, saveCrawlData, sourceConfig, extraConfigs);
 
-        return [1]; //pageNumber
+        return [1, linksCount]; //pageNumber
     } catch (error) {
         if (extraConfigs.retryCounter === undefined) {
             extraConfigs.retryCounter = 0;
@@ -51,7 +57,7 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
                 extraConfigs.retryCounter++;
                 return await nyaa({movie_url, serial_url}, pageCount, extraConfigs);
             }
-            return [1];
+            return [1, 0];
         }
         if ([500, 504, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -61,7 +67,7 @@ export default async function nyaa({movie_url, serial_url}, pageCount, extraConf
         if (![521, 522, 525].includes(error.response?.status)) {
             saveError(error);
         }
-        return [1];
+        return [1, 0];
     }
 }
 
@@ -82,19 +88,24 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
             titles = titles.slice(0, 5);
         }
 
+        const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
+
         // console.log(JSON.stringify(titles, null, 4))
         // return
 
         if (extraConfigs.returnTitlesOnly) {
             return titles;
         }
+        if (extraConfigs.returnAfterExtraction) {
+            return [1, linksCount];
+        }
 
         await handleSearchedCrawledTitles(titles, 1, 1, saveCrawlData, sourceConfig, extraConfigs);
 
-        return [1]; //pageNumber
+        return [1, linksCount]; //pageNumber
     } catch (error) {
         saveError(error);
-        return [1];
+        return [1, 0];
     }
 }
 

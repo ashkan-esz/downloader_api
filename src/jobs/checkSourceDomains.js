@@ -9,6 +9,7 @@ import {getDatesBetween} from "../crawlers/utils/utils.js";
 import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 import config from "../config/index.js";
 import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
+import {getSourcesArray} from "../crawlers/sourcesArray.js";
 
 
 export default function (agenda) {
@@ -23,25 +24,25 @@ export default function (agenda) {
 export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
     try {
         updateCronJobsStatus('checkCrawlerDomains', 'start');
-        let result = await crawlerMethodsDB.getSourcesObjDB();
-        if (!result || result === 'error') {
-            updateCronJobsStatus('checkCrawlerDomains', 'end', result);
+        let sourcesObj = await crawlerMethodsDB.getSourcesObjDB();
+        if (!sourcesObj || sourcesObj === 'error') {
+            updateCronJobsStatus('checkCrawlerDomains', 'end', sourcesObj);
             return {status: 'error'};
         }
 
-        let keys = Object.keys(result);
+        let keys = Object.keys(sourcesObj);
         const sources = [];
         for (let i = 0; i < keys.length; i++) {
             if (['_id', 'title'].includes(keys[i])) {
                 continue;
             }
-            if (result[keys[i]].disabled && result[keys[i]].isManualDisable) {
+            if (sourcesObj[keys[i]].disabled && sourcesObj[keys[i]].isManualDisable) {
                 //ignore source if disabled manually
                 continue;
             }
             sources.push({
                 sourceName: keys[i],
-                ...result[keys[i]],
+                ...sourcesObj[keys[i]],
             });
         }
 
@@ -69,6 +70,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                     let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, false);
                     if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 6) {
                         //source is not working for 6 days
+                        sources[i].disabled = true;
                         await removeSource(sources[i].sourceName, null, false);
                     }
                 } else if (checkUrlResult === "ok") {
@@ -101,6 +103,26 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                 castUpdateState: 'ignore',
             });
         }
+
+        updateCronJobsStatus('checkCrawlerDomains', 'checkingVipStatus');
+        let sourcesArray = getSourcesArray(sourcesObj, 0, {
+            returnAfterExtraction: true,
+        });
+        for (let i = 0; i < sources.length; i++) {
+            if (sources[i].disabled || sources[i].isManualDisable) {
+                continue;
+            }
+
+            let findSource = sourcesArray.find(item => item.name === sources[i].sourceName);
+            if (findSource) {
+                let pagesAndCount = await findSource.starter();
+                if (pagesAndCount[pagesAndCount.length - 1] < 8) {
+                    const crawlerWarningMessages = getCrawlerWarningMessages(sources[i].sourceName);
+                    await serverAnalysisDbMethods.saveCrawlerWarning(crawlerWarningMessages.sourceStatus.possibleVip);
+                }
+            }
+        }
+
         updateCronJobsStatus('checkCrawlerDomains', 'end');
         return {status: 'ok'};
     } catch (error) {

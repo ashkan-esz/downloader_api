@@ -49,6 +49,7 @@ export function getCrawlerWarningMessages(data1 = "", data2 = "") {
             badDownloadLinks: `Source (${data1}): badDownloadLinks`,
             badPosters: `Source (${data1}): badPosters`,
             badPersianSummary: `Source (${data1}): badPersianSummary`,
+            possibleVip: `Source (${data1}): possible vip conversion`,
         },
     });
 }

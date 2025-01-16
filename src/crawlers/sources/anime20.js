@@ -22,8 +22,8 @@ export const sourceConfig = Object.freeze({
 });
 
 export default async function anime20({movie_url}, pageCount, extraConfigs) {
-    let p1 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
-    return [p1];
+    let {lastPage, linksCount} = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
+    return [lastPage, linksCount];
 }
 
 async function search_title(link, pageNumber, $, url, extraConfigs) {
@@ -45,8 +45,8 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
             ({title, year} = getTitleAndYear(title, year, type));
 
             if (title.endsWith(' movie') || title.includes(' movie ') || title.match(/\smovie\s\d+/)) {
-                title = title.replace(/\sthe\s?movie$/,'')
-                type = type.replace('serial','movie')
+                title = title.replace(/\sthe\s?movie$/, '')
+                type = type.replace('serial', 'movie')
             }
 
             if (title !== '') {
@@ -57,7 +57,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         type = type.replace('serial', 'movie');
                         pageSearchResult = await search_in_title_page(sourceConfig, extraConfigs, title, type, pageLink, pageNumber, getFileData);
                         if (!pageSearchResult) {
-                            return;
+                            return 0;
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
@@ -78,7 +78,12 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         cookies
                     };
 
+                    if (extraConfigs.returnAfterExtraction) {
+                        return downloadLinks.length;
+                    }
+
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
+                    return downloadLinks.length;
                 }
             }
         }
@@ -145,14 +150,14 @@ function getRatings($) {
                 let imdb = $($($(divs[i]).children()[1]).children()[0]).text();
                 if (imdb) {
                     imdb = imdb.split("/")[0];
-                    if (!isNaN(imdb)){
+                    if (!isNaN(imdb)) {
                         ratings.imdb = Number(imdb);
                     }
                 }
                 let mal = $($($(divs[i]).children()[3]).children()[0]).text();
                 if (mal) {
                     mal = mal.split("/")[0];
-                    if (!isNaN(mal)){
+                    if (!isNaN(mal)) {
                         ratings.myAnimeList = Number(mal);
                     }
                 }

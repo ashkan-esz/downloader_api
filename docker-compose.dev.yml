@@ -88,8 +88,8 @@ services:
       - TORRENT_API_URL=https://download.movietracker.site
       - WEB_URL=http://localhost
       - PRINT_ERRORS=false
-      - MIN_IMDB_RATE=7.5
-      - MIN_MAL_RATE=7.5
+      - MIN_IMDB_RATE=7.3
+      - MIN_MAL_RATE=7.3
       - INITIAL_SLEEP_MINUTE=1
 #    volumes:
 #      - telegrambot

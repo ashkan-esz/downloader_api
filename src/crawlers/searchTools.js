@@ -56,9 +56,10 @@ const styleRegex = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
 
 export async function wrapper_module(sourceConfig, url, pageCount, searchCB, extraConfigs) {
     let lastPageNumber = 0;
+    let linksCount = 0;
     try {
         if (!url || pageCount === 0) {
-            return lastPageNumber;
+            return {lastPage: lastPageNumber, linksCount: linksCount};
         }
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
@@ -95,7 +96,10 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                     }
                     await pauseCrawler();
                     await promiseQueue.onSizeLessThan(concurrencyNumber * 8);
-                    promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs));
+                    promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs).then((count) => {
+                            linksCount += (count || 0);
+                        })
+                    );
                 }
             } catch (error) {
                 saveError(error);
@@ -104,10 +108,10 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
         changeSourcePageFromCrawlerStatus('', '');
         await promiseQueue.onEmpty();
         await promiseQueue.onIdle();
-        return lastPageNumber;
+        return {lastPage: lastPageNumber, linksCount: linksCount};
     } catch (error) {
         saveError(error);
-        return lastPageNumber;
+        return {lastPage: lastPageNumber, linksCount: linksCount};
     }
 }
 

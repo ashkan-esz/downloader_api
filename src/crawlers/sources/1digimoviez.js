@@ -35,9 +35,16 @@ export const sourceConfig = Object.freeze({
 });
 
 export default async function digimoviez({movie_url, serial_url}, pageCount, extraConfigs) {
-    let p1 = await wrapper_module(sourceConfig, serial_url, pageCount, search_title, extraConfigs);
-    let p2 = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
-    return [p1, p2];
+    let {
+        lastPage: p1,
+        linksCount: count1
+    } = await wrapper_module(sourceConfig, serial_url, pageCount, search_title, extraConfigs);
+    let {
+        lastPage: p2,
+        linksCount: count2
+    } = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
+    let count = (count1 || 0) + (count2 || 0);
+    return [p1, p2, count];
 }
 
 export function digimovie_checkTitle(text, title, url) {
@@ -63,7 +70,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                 console.log(`digimoviez/${type}/${pageNumber}/${title}  ========>  `);
             }
             if (title.includes('ایران')) {
-                return;
+                return 0;
             }
             ({title, year} = getTitleAndYear(title, year, type));
 
@@ -82,7 +89,7 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                             getQualitySample, linkCheck, true);
 
                         if (!pageSearchResult) {
-                            return;
+                            return 0;
                         }
                         ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
                     }
@@ -103,7 +110,13 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         rating: getRatings($2),
                         cookies
                     };
+
+                    if (extraConfigs.returnAfterExtraction) {
+                        return downloadLinks.length;
+                    }
+
                     await save(title, type, year, sourceData, pageNumber, extraConfigs);
+                    return downloadLinks.length;
                 }
             }
         }
@@ -212,7 +225,7 @@ function getRatings($) {
                 let imdb = $($($(divs[i]).children()[0]).children()[0]).text();
                 if (imdb) {
                     imdb = imdb.split("/")[0];
-                    if (!isNaN(imdb)){
+                    if (!isNaN(imdb)) {
                         ratings.imdb = Number(imdb);
                     }
                 }
