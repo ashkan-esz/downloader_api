@@ -138,13 +138,16 @@ export async function crawler(sourceName, {
                     }
                     const sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
                     const disabled = sourcesObj[sourcesArray[i].name].disabled;
+                    const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
                     const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                         await saveCrawlerWarning(warningMessages.expireCookieSkip);
                         continue;
                     }
                     if (disabled) {
-                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        if (!isManualDisable) {
+                            await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        }
                         continue;
                     }
                     await resolveCrawlerWarning(warningMessages.expireCookieSkip);
@@ -167,11 +170,14 @@ export async function crawler(sourceName, {
                 if (findSource) {
                     const sourceCookies = sourcesObj[sourceName].cookies;
                     const disabled = sourcesObj[sourceName].disabled;
+                    const isManualDisable = sourcesObj[sourceName].isManualDisable;
                     const warningMessages = getCrawlerWarningMessages(sourceName);
                     if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                         await saveCrawlerWarning(warningMessages.expireCookieSkip);
                     } else if (disabled) {
-                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        if (!isManualDisable) {
+                            await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        }
                     } else {
                         await resolveCrawlerWarning(warningMessages.expireCookieSkip);
                         await resolveCrawlerWarning(warningMessages.disabledSourceSkip);
@@ -266,13 +272,16 @@ export async function torrentCrawlerSearch({
             for (let i = 0; i < sourcesArray.length; i++) {
                 const sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
                 const disabled = sourcesObj[sourcesArray[i].name].disabled;
+                const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                     await saveCrawlerWarning(warningMessages.expireCookieSkip);
                     continue;
                 }
                 if (disabled) {
-                    await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    if (!isManualDisable) {
+                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    }
                     continue;
                 }
                 await updateCrawlerStatus_sourceStart(sourcesArray[i].name, 0);
@@ -285,11 +294,14 @@ export async function torrentCrawlerSearch({
             if (findSource) {
                 const sourceCookies = sourcesObj[sourceName].cookies;
                 const disabled = sourcesObj[sourceName].disabled;
+                const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourceName);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                     await saveCrawlerWarning(warningMessages.expireCookieSkip);
                 } else if (disabled) {
-                    await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    if (!isManualDisable) {
+                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    }
                 } else {
                     await updateCrawlerStatus_sourceStart(sourceName, 0);
                     let movieUrl = sourcesObj[sourceName].movie_url;

@@ -91,7 +91,7 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                         sourcesUrls[i].errorMessage = error2.message || '';
                         continue;
                     }
-                } else if ([502, 504].includes(error.response?.status) && retryCounter < 2) {
+                } else if ([502, 504, 525].includes(error.response?.status) && retryCounter < 2) {
                     await new Promise(resolve => setTimeout(resolve, 3000));
                     retryCounter++;
                     i--;
@@ -148,9 +148,9 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                 }
             } else if (
                 (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' ||
-                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 2) {
+                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 3) {
                 retryCounter++;
-                await new Promise((resolve => setTimeout(resolve, 3000)));
+                await new Promise((resolve => setTimeout(resolve, 4000)));
                 return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
             } else {
                 // if (torrentSourcesNames.includes(sourceName) && (error.response?.status === 521 || error.response?.status === 522) ) {
@@ -196,11 +196,14 @@ async function updateDownloadLinks(sourcesObj, changedSources, fullyCrawledSourc
             if (findSource) {
                 const sourceCookies = sourcesObj[sourceName].cookies;
                 const disabled = sourcesObj[sourceName].disabled;
+                const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourceName);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                     await saveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
                 } else if (disabled) {
-                    await saveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
+                    if (!isManualDisable) {
+                        await saveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
+                    }
                 } else {
                     await resolveCrawlerWarning(warningMessages.expireCookieSkip_domainChange);
                     await resolveCrawlerWarning(warningMessages.disabledSourceSkip_domainChange);
