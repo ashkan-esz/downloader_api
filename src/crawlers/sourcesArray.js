@@ -1,28 +1,22 @@
-import * as digimoviez from "./sources/1digimoviez.js";
 import * as film2movie from "./sources/3film2movie.js";
-import * as yekmovie from "./sources/yekmovie.js";
-import * as anime20 from "./sources/anime20.js";
 import * as tokyotosho from "./torrentSources/tokyotosho.js";
 import * as shanaproject from "./torrentSources/shanaproject.js";
 import * as nyaa from "./torrentSources/nyaa.js";
 import * as eztv from "./torrentSources/eztv.js";
 
 export const sourcesNames = Object.freeze([
-    'digimoviez', 'film2movie', 'anime20', 'yekmovie',
+    'film2movie',
     'tokyotosho', 'shanaproject', 'nyaa', 'eztv', // torrent
 ]);
 export const torrentSourcesNames = Object.freeze([
     'tokyotosho', 'shanaproject', 'nyaa', 'eztv',
 ]);
-export const sortPostersOrder = Object.freeze(['digimoviez', 'film2movie', 's3Poster', 'anime20', 'yekmovie']);
-export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer', 'digimoviez', 'anime20', 'yekmovie']);
+export const sortPostersOrder = Object.freeze(['film2movie', 's3Poster']);
+export const sortTrailersOrder = Object.freeze(['film2movie', 's3Trailer']);
 
 export function getSourcesMethods() {
     return ({
-        digimoviez: digimoviez,
         film2movie: film2movie,
-        anime20: anime20,
-        yekmovie: yekmovie,
         tokyotosho: tokyotosho,
         shanaproject: shanaproject,
         nyaa: nyaa,
@@ -35,31 +29,10 @@ export function getSourcesArray(sourcesObj, crawlMode, extraConfigs) {
 
     return [
         {
-            name: 'digimoviez',
-            configs: digimoviez.sourceConfig,
-            starter: () => {
-                return digimoviez.default(sourcesObj.digimoviez, pageCount, extraConfigs);
-            },
-        },
-        {
             name: 'film2movie',
             configs: film2movie.sourceConfig,
             starter: () => {
                 return film2movie.default(sourcesObj.film2movie, pageCount, extraConfigs);
-            }
-        },
-        {
-            name: 'anime20',
-            configs: anime20.sourceConfig,
-            starter: () => {
-                return anime20.default(sourcesObj.anime20, pageCount, extraConfigs);
-            }
-        },
-        {
-            name: 'yekmovie',
-            configs: yekmovie.sourceConfig,
-            starter: () => {
-                return yekmovie.default(sourcesObj.yekmovie, pageCount, extraConfigs);
             }
         },
         {

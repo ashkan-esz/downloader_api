@@ -1,11 +1,11 @@
-import config from "../../config/index.js";
-import {search_in_title_page, wrapper_module} from "../searchTools.js";
-import {getType, removeDuplicateLinks, replacePersianNumbers} from "../utils/utils.js";
-import {getTitleAndYear} from "../movieTitle.js";
-import {purgeSizeText, fixLinkInfoOrder, fixLinkInfo, addDubAndSub} from "../linkInfoUtils.js";
-import {posterExtractor, summaryExtractor, trailerExtractor} from "../extractors/index.js";
-import save from "../save_changes_db.js";
-import {saveError} from "../../error/saveError.js";
+import config from "../../../config/index.js";
+import {search_in_title_page, wrapper_module} from "../../searchTools.js";
+import {getType, removeDuplicateLinks, replacePersianNumbers} from "../../utils/utils.js";
+import {getTitleAndYear} from "../../movieTitle.js";
+import {purgeSizeText, fixLinkInfoOrder, fixLinkInfo, addDubAndSub} from "../../linkInfoUtils.js";
+import {posterExtractor, summaryExtractor, trailerExtractor} from "../../extractors/index.js";
+import save from "../../save_changes_db.js";
+import {saveError} from "../../../error/saveError.js";
 
 export const sourceConfig = Object.freeze({
     sourceName: "anime20",

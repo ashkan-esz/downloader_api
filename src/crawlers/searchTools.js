@@ -10,7 +10,6 @@ import {getDecodedLink, getSeasonEpisode} from "./utils/utils.js";
 import {getResponseWithCookie} from "./utils/axiosUtils.js";
 import {filterLowResDownloadLinks, handleRedundantPartNumber} from "./linkInfoUtils.js";
 import {saveError, saveErrorIfNeeded} from "../error/saveError.js";
-import {digimovie_checkTitle} from "./sources/1digimoviez.js";
 import {
     addPageLinkToCrawlerStatus,
     changePageLinkStateFromCrawlerStatus,
@@ -385,27 +384,6 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
 function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, pageNumber) {
     try {
         if ($ === null || $ === undefined || pageTitle.includes('صفحه پیدا نشد')) {
-            return true;
-        }
-        if (sourceName === "digimoviez") {
-            if (pageNumber > 1 && !responseUrl.includes('page')) {
-                return true;
-            }
-            for (let i = 0, _length = links.length; i < _length; i++) {
-                const linkText = $(links[i]).text();
-                const linkTitle = $(links[i]).attr('title');
-                if (digimovie_checkTitle(linkText, linkTitle, responseUrl)) {
-                    return false;
-                }
-            }
-            return true;
-        } else if (sourceName === "animelist") {
-            const $div = $('div');
-            for (let i = 0, _length = $div.length; i < _length; i++) {
-                if ($($div[i]).hasClass('character-movie')) {
-                    return false;
-                }
-            }
             return true;
         }
 
