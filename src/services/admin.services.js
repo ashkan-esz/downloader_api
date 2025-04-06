@@ -33,6 +33,8 @@ import {_testUserId} from "../preStart.js";
 import PQueue from "p-queue";
 import axios from "axios";
 
+const adminNotifications = [];
+
 export async function startCrawler(crawlerOptions) {
     let result = await crawler(crawlerOptions.sourceName, {
         ...crawlerOptions,
@@ -514,7 +516,23 @@ export async function sendMessageToAllBotUsers(botId, message, userId) {
 
 export async function sendNotificationToAdmin(message) {
     message = escapeMarkdownV2(message);
-    const concurrency = 25;
+
+    let findNotif = adminNotifications.find(n => n.message === message);
+    if (findNotif) {
+        // dont send duplicate notification before 6 hour
+        if (Date.now() - findNotif.lastSend < 6 * 60 * 60 * 1000) {
+            return 'ok';
+        } else {
+            findNotif.lastSend = Date.now();
+        }
+    } else {
+        adminNotifications.push({
+            message: message,
+            lastSend: Date.now(),
+        });
+    }
+
+    const concurrency = 20;
     const promiseQueue = new PQueue({concurrency: concurrency});
 
     // users with permission to receive system notification or warnings with bot
