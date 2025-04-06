@@ -170,7 +170,7 @@ function checkTitle(title, type, allTitles) {
     );
 }
 
-function normalizeText(text) {
+export function normalizeText(text) {
     return utils.replaceSpecialCharacters(text)
         .replace(' movie', '')
         .replace('specials', 'ova')
@@ -178,7 +178,7 @@ function normalizeText(text) {
         .replace('season 3', '3')
         .replace(/\dth season/, r => r.replace('th season', ''))
         .replace(/season \d/, r => r.replace('season ', ''))
-        .replace(/\sthe animation(\s\d+)?$/, '')
+        .replace(/\sthe animation(\s\d+)?(\stv)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')
@@ -431,7 +431,7 @@ async function handleApiCall(url, timeoutSec = 0) {
 }
 
 function getTitlesFromData(fullData) {
-    let apiTitle = fullData.title || fullData.titles?.find(t => t.type === 'Default')?.title.replace(/\sthe animation(\s\d+)?$/, '');
+    let apiTitle = fullData.title || fullData.titles?.find(t => t.type === 'Default')?.title.replace(/\sthe animation(\s\d+)?(\stv)?$/, '');
     let yearMatch = apiTitle?.match(/\(\d\d\d\d\)/g)?.pop() || null;
     if (yearMatch) {
         apiTitle = apiTitle.replace(yearMatch, '').trim();

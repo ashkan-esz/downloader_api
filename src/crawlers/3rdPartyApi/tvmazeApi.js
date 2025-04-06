@@ -239,7 +239,7 @@ function normalizeText(text) {
     return text
         .replace(' movie', '')
         .replace('specials', 'ova')
-        .replace(/\sthe animation(\s\d+)?$/, '')
+        .replace(/\sthe animation(\s\d+)?(\stv)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/[ck]/g, 'c')

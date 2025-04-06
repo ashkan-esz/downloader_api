@@ -91,7 +91,7 @@ export function removeSeasonText(text) {
         .replace(/\s(the\s)?(animated\s)?movie(\s\d+)?$/i, '')
         .replace(/\s?the animated series(\s\d+)?$/i, '')
         .replace(/\sop\sed$/, '')
-        .replace(/\sthe animation(\s\d+)?$/, '')
+        .replace(/\sthe animation(\s\d+)?(\stv)?$/, '')
         .trim();
 }
 

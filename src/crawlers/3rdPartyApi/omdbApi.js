@@ -360,7 +360,7 @@ function normalizeText(text) {
         .replace('season 3', '3')
         .replace(/\dth season/, r => r.replace('th season', ''))
         .replace(/season \d/, r => r.replace('season ', ''))
-        .replace(/\s?the animation(\s\d+)?$/, '')
+        .replace(/\s?the animation(\s\d+)?(\stv)?$/, '')
         .replace(/tv|the|precent|will|\s+/g, '')
         .replace(/volume \d/, (res) => res.replace('volume', 'vol'))
         .replace(/(\s+|precent|movie|eiga|gekijou?ban)/gi, '')
