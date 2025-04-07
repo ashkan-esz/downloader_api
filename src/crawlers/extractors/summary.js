@@ -11,6 +11,7 @@ export function getPersianSummary($, title, year) {
         const $div = $('div');
         const $p = $('p');
         const $strong = $('strong');
+        const $summary = $('summary');
 
         for (let i = 0, divLength = $div.length; i < divLength; i++) {
             if ($($div[i]).hasClass('plot_text')) {
@@ -63,14 +64,30 @@ export function getPersianSummary($, title, year) {
             }
         }
 
-        //golchindl
+        //golchindl | vipofilm
         for (let i = 0, strongLength = $strong.length; i < strongLength; i++) {
             if ($($strong[i]).text().includes('خلاصه داستان')) {
-                return purgePersianSummary($($strong[i]).text(), title, year);
+                let summary = purgePersianSummary($($strong[i]).text(), title, year);
+                if (!summary && $($($strong[i]).parent())[0]?.name === 'span') {
+                    let parentSpan = $($($strong[i]).parent()).text();
+                    if (parentSpan) {
+                        return purgePersianSummary(parentSpan, title, year);
+                    }
+                }
+                return summary;
             }
         }
+
         for (let i = 0, pLength = $p.length; i < pLength; i++) {
             if ($($p[i]).text().includes('خلاصه فیلم')) {
+                return purgePersianSummary($($p[i]).text().split('–').pop(), title, year);
+            }
+        }
+
+        // takanime
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
+            let prev = $($p[i]).prev()[0];
+            if (prev && prev.name?.includes('h') && $(prev).text().includes('داستان')) {
                 return purgePersianSummary($($p[i]).text().split('–').pop(), title, year);
             }
         }
@@ -80,6 +97,30 @@ export function getPersianSummary($, title, year) {
             const text = $($div[i]).text();
             if (text && $($($div[i]).children())[0]?.name === 'h4' && text.includes('خلاصه')) {
                 return purgePersianSummary(text, title, year);
+            }
+        }
+
+        //nightMovie
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
+            const text = $($div[i]).text();
+            if (text && $($div[i]).children().length === 0 && $($div[i]).attr('class')?.includes('summary')) {
+                return purgePersianSummary(text, title, year);
+            }
+        }
+
+        // moboMovies
+        for (let i = 0, summaryLength = $summary.length; i < summaryLength; i++) {
+            let text = $($summary[i]).text();
+            if (text) {
+                return purgePersianSummary(text, title, year);
+            }
+        }
+
+        // roboFilm
+        for (let i = 0, pLength = $p.length; i < pLength; i++) {
+            const text = $($p[i]).text() || '';
+            if (text && $($p[i]).attr('id')?.includes('summary') && text.includes('داستان')) {
+                return purgePersianSummary(text.split('–').pop(), title, year);
             }
         }
 

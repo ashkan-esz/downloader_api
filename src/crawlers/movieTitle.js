@@ -6,6 +6,13 @@ import {saveError} from "../error/saveError.js";
 
 export function getTitleAndYear(title, year, type) {
     try {
+        let temp = title.match(/\((\d{4})\)$/);
+        if (!year && temp) {
+            if (Number(temp[1]) > 2000 && Number(temp[1]) < 2030) {
+                title = title.replace(/\((\d{4})\)/g, '$1');
+            }
+        }
+
         let splitTitle = purgeTitle(title.toLowerCase(), type);
         year = splitTitle[splitTitle.length - 1];
         if (!isNaN(year) && Number(year) > 1900 && Number(year) < 2100) {

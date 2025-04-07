@@ -116,7 +116,7 @@ export function checkDubbed(link, info = '') {
     link = link.toLowerCase();
     info = info.toLowerCase();
     return (
-        (link.includes('farsi') && !link.includes('farsisub')) ||
+        (link.includes('farsi') && !link.match(/farsi\.?sub/i)) ||
         link.includes('dual.audio') ||
         link.includes('dubbed') ||
         link.includes('duble') ||
@@ -177,6 +177,10 @@ export function getSeasonEpisode(input, isLinkInput = false) {
     try {
         if (!input) {
             return {season: 0, episode: 0, isNormalCase: false}
+        }
+
+        if (isLinkInput) {
+            input = getDecodedLink(input);
         }
 
         input = input.toLowerCase()
@@ -292,10 +296,16 @@ export function getSeasonEpisode(input, isLinkInput = false) {
                     episode = se[1].toLowerCase().replace('e', '').trim();
                 }
             } else {
-                const episodeMatch = decodeLink.match(/- e?\d+(\s?[a-d])?\s?[.\[](?!(\d*(mb|gb)))/gi);
+                const episodeMatch = decodeLink.match(/(\s\d+\s)?- e?\d+(\s?[a-d])?\s?[.\[](?!(\d*(mb|gb)))/gi);
                 if (episodeMatch && episodeMatch.length === 1) {
-                    season = '1';
-                    episode = episodeMatch[0].match(/\d+/)[0];
+                    let se = episodeMatch[0].split('-');
+                    if (se[0]) {
+                        // title 2 - E05
+                        season = se[0].match(/\d+/)[0];
+                    } else {
+                        season = '1';
+                    }
+                    episode = se[1].match(/\d+/)[0];
                 } else {
                     const episodeMatch2 = decodeLink.match(/\se\(\d+\)\s/gi);
                     if (episodeMatch2 && episodeMatch2.length === 1) {
@@ -601,4 +611,18 @@ export function getDayOfYear(now) {
     let start_utc = Date.UTC(now.getFullYear(), 0, 0);
     let oneDay = 1000 * 60 * 60 * 24;
     return Math.ceil((now_utc - start_utc) / oneDay);
+}
+
+export function getCurrentJalaliYear() {
+    const now = new Date();
+    const gregorianYear = now.getFullYear();
+    const gregorianMonth = now.getMonth() + 1; // Months are 0-indexed
+    const gregorianDay = now.getDate();
+
+    // Persian New Year (Nowruz) is March 21
+    if (gregorianMonth > 3 || (gregorianMonth === 3 && gregorianDay >= 21)) {
+        return gregorianYear - 621; // After Nowruz
+    } else {
+        return gregorianYear - 622; // Before Nowruz
+    }
 }

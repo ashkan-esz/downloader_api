@@ -6,37 +6,14 @@ import inquirer from "inquirer";
 import {getSourcePagesSamples, updateSourcePageData} from "../samples/sourcePages/sourcePagesSample.js";
 import {sourcesNames} from "../sourcesArray.js";
 import {saveError} from "../../error/saveError.js";
+import {getDecodedLink} from "../utils/utils.js";
+import {hasSidebarClass} from "../sources/generic.js";
 
 const badPosterRegex = /https:\/\/image\.salamdl\.[a-zA-Z]+\/t\/p\/w\d+_and_h\d+_bestv\d+/i;
 
-export function getPoster($, sourceName, dontRemoveDimensions = false) {
+export function getPoster($, pageLink, sourceName, dontRemoveDimensions = false) {
     try {
         const $img = $('img');
-
-        // if (sourceName === "golchindl") {
-        //     for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-        //         const parent = $img[i].parent;
-        //         if (parent.name === 'a' && ($(parent).hasClass('thumb') || $(parent).hasClass('photo'))) {
-        //             const href = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-        //             if (href && (href.includes('uploads') || href.includes('cdn.'))) {
-        //                 return purgePoster(href);
-        //             }
-        //         }
-        //     }
-        //     return "";
-        // }
-
-        // if (sourceName === "bia2anime" || sourceName === "bia2hd") {
-        //     for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-        //         if ($($img[i]).hasClass('wp-post-image')) {
-        //             const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-        //             if (src && src.includes('uploads')) {
-        //                 return purgePoster(src);
-        //             }
-        //         }
-        //     }
-        //     return "";
-        // }
 
         if (sourceName === "film2movie") {
             for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
@@ -44,41 +21,42 @@ export function getPoster($, sourceName, dontRemoveDimensions = false) {
                 const alt = $img[i].attribs.alt;
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
                 if ((id && id === 'myimg') || (src.includes('.jpg') && alt && alt.includes('دانلود'))) {
-                    return purgePoster(src, dontRemoveDimensions);
+                    return purgePoster($, $img[i], src, pageLink, dontRemoveDimensions);
                 }
             }
             return "";
         }
 
-        if (sourceName === 'anime20') {
-            for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-                const parent = $img[i].parent.name;
-                if (parent === 'p' || parent === 'div') {
-                    const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                    return src.match(badPosterRegex) ? '' : purgePoster(src, dontRemoveDimensions);
-                }
-            }
-        }
-
-        //digimoviez|avamovie|salamdl
-        for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
-            const parent = $img[i].parent;
-            if (parent.name === 'a') {
-                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                if (src.includes('uploads') && !src.toLowerCase().includes('/logo') && !src.endsWith('.gif')) {
-                    if (!src.match(badPosterRegex)) {
-                        return purgePoster(src, dontRemoveDimensions);
-                    }
-                }
-            }
-        }
-
-        //salamdl
         for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
             const parent = $img[i].parent.name;
-            if (parent === 'p' || parent === 'div' || parent === 'strong' || parent === 'span') {
+            if (["a", "figure"].includes(parent)) {
+                const parentClass = $($img[i]).parent()?.attr('class') || '';
+                if (parentClass.includes('gallery')) {
+                    continue;
+                }
+
                 const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
-                return src.match(badPosterRegex) ? '' : purgePoster(src, dontRemoveDimensions);
+                let poster = purgePoster($, $img[i], src, pageLink, dontRemoveDimensions);
+                if (poster) {
+                    return poster;
+                }
+            }
+        }
+
+        for (let i = 0, imgLen = $img.length; i < imgLen; i++) {
+            const parent = $img[i].parent.name;
+            if (["p", "div", "strong", "span", "aside"].includes(parent)) {
+
+                const parentClass = $($img[i]).parent()?.attr('class') || '';
+                if (isWidePoster(parent, parentClass)) {
+                    continue;
+                }
+
+                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                let poster = purgePoster($, $img[i], src, pageLink, dontRemoveDimensions);
+                if (poster) {
+                    return poster;
+                }
             }
         }
 
@@ -89,19 +67,125 @@ export function getPoster($, sourceName, dontRemoveDimensions = false) {
     }
 }
 
-function purgePoster(poster, dontRemoveDimensions = false) {
-    if (poster === "" || poster.includes('https://www.w3.org/') || poster.includes('data:image/') || poster.match(/\/Logo[a-z]+\./i)) {
-        if (config.nodeEnv === 'dev') {
-            console.log('************************************ BAD POSTER: ', poster);
+export function getWidePoster($, pageLink, sourceName, dontRemoveDimensions = false) {
+    try {
+        const $div = $('div[style*="background-image"]');
+        // const $div = $('div');
+        const $img = $('img');
+
+        for (let i = 0, Len = $div.length; i < Len; i++) {
+            const bgImageMatch = $($div[i]).attr('style')?.match(/background-image:\s*url\(['"]?(.*?)['"]?\)/gi);
+
+            if (!bgImageMatch || !bgImageMatch[0]) {
+                continue;
+            }
+
+            let src = bgImageMatch[0].split('url(').pop().replace(/\)$/, '');
+            let poster = purgePoster($, $div[i], src, pageLink, dontRemoveDimensions);
+            if (poster && poster !== getPoster($, pageLink, sourceName)) {
+                return poster;
+            }
         }
+
+        for (let i = 0, Len = $img.length; i < Len; i++) {
+            const parent = $img[i].parent.name;
+            const parentClass = $($img[i]).parent()?.attr('class') || '';
+
+            if (isWidePoster(parent, parentClass)) {
+                const src = $img[i].attribs['data-lazy-src'] || $img[i].attribs['data-src'] || $img[i].attribs['src'];
+                let poster = purgePoster($, $img[i], src, pageLink, dontRemoveDimensions);
+                if (poster && poster !== getPoster($, pageLink, sourceName)) {
+                    return poster;
+                }
+            }
+        }
+
+        return '';
+    } catch (error) {
+        saveError(error);
+        return '';
+    }
+}
+
+function isWidePoster(parentName, parentClass) {
+    return parentName === "div" && (
+        parentClass.includes('background') ||
+        (parentClass.includes('cover') && !parentClass.match(/post[._-]cover/)) ||
+        parentClass.match(/single.?image/g)
+    )
+}
+
+function purgePoster($, img, src, pageLink, dontRemoveDimensions = false) {
+    if (src === "" ||
+        src.match(badPosterRegex) ||
+        (!src.includes('upload') && !src.includes('/cdn/')) ||
+        src.toLowerCase().includes('/logo') ||
+        src.endsWith('.gif') ||
+        src.includes('https://www.w3.org/') ||
+        src.includes('data:image/') ||
+        src.includes('menu') ||
+        src.match(/([\/\-_])(Logo|noavatar)[a-z-_]*\./i) ||
+        src.match(/imdb\.[a-z\d]+$/i) ||
+        hasSidebarClass($(img))
+    ) {
+        // if (config.nodeEnv === 'dev') {
+        //     console.log('************************************ BAD POSTER: ', src);
+        // }
         return "";
     }
-    if (dontRemoveDimensions) {
-        return poster.replace(/.+(?=https:)/, '');
+
+    let width = Number($(img).attr('width') || 120);
+    if (width < 120) {
+        // if (config.nodeEnv === 'dev') {
+        //     console.log('************************************ BAD POSTER: ', src);
+        // }
+        return "";
     }
-    return poster
-        .replace(/.+(?=https:)/, '')
-        .replace(/-\d\d\d+x\d\d\d+(?=\.)/g, '');
+
+    //wide poster
+    if (src.includes('backdrop')) {
+        return "";
+    }
+
+    if (["a", "figure"].includes(img.parent.name)) {
+        let parentHref = $(img.parent).attr('href');
+        if (!parentHref) {
+            parentHref = $(img.parent.parent).attr('href');
+        }
+
+        if (parentHref &&
+            getDecodedLink(parentHref).replace(/\/$/, '') !== getDecodedLink(pageLink).replace(/\/$/, '') &&
+            getDecodedLink(parentHref).replace(/\/$/, '').split('-')[0] !== getDecodedLink(src).replace(/\/$/, '').split('-')[0]
+        ) {
+            return '';
+        }
+    }
+
+    if (["div"].includes(img.parent.name)) {
+        if ($(img.parent).hasClass('head')) {
+            return '';
+        }
+    }
+
+    // if (img.parent.name === "div" && img.parent.parent?.name === "div" &&
+    //     $(img.parent.parent).attr('id')?.includes('tab')) {
+    //     return '';
+    // }
+
+    src = src.replace(/.+(?=https:)/, '');
+
+    if (!dontRemoveDimensions) {
+        src = src.replace(/-\d\d\d+x\d\d\d+(?=\.)/g, '');
+    }
+
+    src = src.split(/[?&][a-zA-Z\d]+=/g)[0];
+
+    if (!src.startsWith('http')) {
+        //relative links
+        src = pageLink.split(/(?<=([a-zA-Z\d])\/)/g)[0] + src.replace(/^\//, '');
+    }
+
+    return src;
 }
 
 export async function comparePrevPosterWithNewMethod(sourceName = null, updateMode = true, autoUpdateIfNeed = false) {
@@ -146,7 +230,7 @@ export async function comparePrevPosterWithNewMethod(sourceName = null, updateMo
                         pageLink
                     } = sourcePages[j];
                     let $ = cheerio.load(pageContent);
-                    const newPoster = getPoster($, sName);
+                    const newPoster = getPoster($, pageLink, sName);
                     if (!newPoster) {
                         console.log(`--- empty poster (${title}) (year:${year}): `, fileIndex, '|', stats.checked + '/' + stats.total, '|', title, '|', type, '|', pageLink);
                     }

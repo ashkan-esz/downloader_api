@@ -6,29 +6,42 @@ export const releaseRegex = /WEB-DL|WEB-RIP|BluRay|HDTV|HD-RIP|HDTS|HDTC|BR-RIP|
 export const releaseRegex2 = /WEBa?-?DL|WEB-?RIP|BluRa?y|B-lu-Ry|HDTV|HD-?RIP|HDTS|HDTC|BR-?RIP|BD-?RIP|P?DVDRip|DVDScr|WEBSCR|CAMRip|HD-CAM/i;
 
 export const encodersRegex = new RegExp([
-    /RARBG?|Pa[Hh]e|[Pp][Ss][Aa]|YTS|[Rr][Mm][Tt]eam|EVO|R?MT|Y[Ii]?F[IY]|ShAaNiG|Ganool|Mkv?Cage|Mkvking|GalaxyR?G?|HDTS/,
-    /|Digi[Mm](ov|vo)iez|AvaMovie|SalamDL|HDETG|AdiT|GalaxyT[Vv]|DRONES|Joy|Ozlem|NitRo|nItRo|B2HD|GAZ|VXT|([tT]igo(le|el))/,
-    /|anoXmous|Judas|ETRG|jbr|Kick|STRiFE|LIMITED|SUNSCREEN|CMRG|sujaidr|[Ss]ilence|xTv|BTRG|TURG|HdT|KRT|DJT|REMARKABLE|[Bb][Tt][Xx]/,
-    /|AMRAP|SiGMA|i[Kk][Aa]|LLG|FGT|MkvHub|MW|WiKi|Hon3y|JYK|AME|ELR|NT[GB]|[Nn][Tt]b|eSc|associate|[Ss]c[Oo]rp|RDH|AMZN|afm7[23]/,
-    /|Jalucian|muhHD|GAN|AC3|[Ww]orldmkv|AiRLiNE|DEFiNiTE|HazMatt|FiDELiO|AR|monkee|vsenc|BDP|D3FiL3R|watcher|ISRA|[Mm][Kk][Vv][Cc][Aa][Gg][Ee]/,
-    /|SaNiG|Frontline|TNTVillage|LordVako|LoRD|titler|rDX|w4f|HighCode|TuGAZx|GCJM|BONE|Qman|Micromkv|d3g|NVEE|AViATOR|GECKOS|HUZZAH/,
-    /|SUJAIDR|r00t|MovCr|ACOOL|N[Oo]GRP|AAA(UHD)?|DAA|BRSHNKV|HEVCBay|TTL|NBY|KamiKaze|TEPES|MZABI|DEEP|RSG|GOOZ|[Aa][Rr][Ii][Ee][Ss]/,
-    /|Tom[Dd]oc|POIASD|SUECOS|Garshasp|SARTRE|Budgetbits|[Pp]rof?|LiBRARiANS|m2g|FreetheFish|[Nn]ickarad|AnimeRG|TombDoc|EDITH|ETHEL/,
-    /|FRISKY|3dg|SAMPA|Vyndros|ANONA911|Natty|GetSchwifty|Obey|GSFTX|RONIN|UNK|Bandi|QxR|Paso7[27]|Slinece|SPARKS|PCOK|orenji|LowFatMilk/,
-    /|DTSJYK|RZeroX|Omikron|CHD|t3nzin|PAAI|T0M|[Pp]av69|Telugu|RKO?|h3llg0d|M[Hk]UB|Panda|SADPANDA|RKHD|z97|MeGUiL|DMV|BRISK|CZ530/,
-    /|[Aa]pekat|LION|imSamir|KIMO?|Telly|TeamMCU|Grashasp|YOGI|HDSTAr|ViZNU|DREDD|TM[VK]|MHB|EXT|ION10|SECRECY|[RH]?TM|HORiZON|AccomplishedYak/,
-    /|Bollycine|InSaNe|ESubs|Lover|FC|COALiTiON|RUSTED|LCK|iExTv|[Ff]2[MmNn]|SH0W|GECK|AMIABLE|KatmovieHD|REM|PRiME|NEZU|TFP|DON|HDH/,
-    /|SMAHAWUG|CRiSC|STRONTiUM|BdC|HDC|LAZY|FraMeSToR|BAM|Felony|SECTOR7|CADAVER|YOL0W|Replica|KaKa|SPRiNTER|Sprinter|Rapta|REWARD|KEWPiE/,
-    /|ROVERS|EPSiLON|SAPHiRE|DEFLATE|BRMP|HET|BLOW|DDR|HDL|HAiKU|CiNEFiLE|SNG|FLAME|[Ii][Ff][Tt]|[Tt][Bb][Ss]|EGEN|TOMMY|Tommy|AvoHD|MRN/,
-    /|PLUTONiUM|TiTAN|JiO|SKGTV|QPEL|NM|HV|VETO|YST|SHeRiF|C1NEM4|AN0NYM0US|CROOKS|ALTEREGO|SiNNERS|FiCO|mSD|PoOlLa|MAX|GETiT|IFR|Raphael/,
-    /|ALLiANCE|DiAMOND|Team-x265|PECULATE|TIMECUT|MRCS|NAISU|PMV|SCENI|Atmos|PSYCHD|DEMAND|GOPISAHI|MkHub|VFX|[Xx][Ll][Ff]|RBX|DSNP|VIU/,
-    /|HS|LINETV|SMURF|CPNG|TVING|[Vv][Ii][Kk][Ii]|[Kk][Oo][Gg][Ii]|IQ|mottoj|Cleo|BORDURE|CtrlHD|DIMENSION|dimension|DSNY|AVS|KILLERS/,
-    /|ALiGN|FLEET|lucidtv|SVA|IMMERSE|WebCakes|[Cc][Aa][Kk][Ee][Ss]|IchiMaruGin|BTN|PTV|Improbable|Providence|Provenance|NFP|TVSmash?|MeGusta/,
-    /|SEEZN|NOSiViD|Kirion|DeeJayAhmed|GHOSTS|Rudaki|ATVP|[Mm][Ii][Nn][Xx]|SYNCOPY|XpoZ|[Ll][Oo][Kk][Ii]|[Pp][Aa][Hh][Ee]|CRYPTIC|RyRo|GDL/,
-    /|Teamx265|[Mm]T[Ee][Aa][Mm]|TayTO|Reaktor|Luvmichelle|TrueHD|Stamo|xRed|RCVR|EVOLVE|killers|WDYM|APEX|LiHDL|FLUX|bamboozle|CfaMilyRG|WELP|XEBEC|IC/,
-    /|PiGNUS|CUPCAKES|TASTETV|RiGHTNOW|Gooz|HAMR|DZ0N3|ASW|LilKim|LAMA|EthanCunt|UNRATED|DigiDigimoviezmoviez|DigimDigimoviezoviez/,
-    /|SupermanPeacemakerWalterWhite|DeviousZirconGrebeOfDiscourse|LessConfusingThanTenet|DontTakeCandyFromStrangers|IMABARBiEGiRL/
-].map(item => item.source).join(''));
+    /SupermanPeacemakerWalterWhite|DeviousZirconGrebeOfDiscourse|LessConfusingThanTenet|DontTakeCandyFromStrangers|IMABARBiEGiRL/,
+    /|AccomplishedYak/,
+    /|B2HD|DigiM(ov|vo)iez|AvaMovie|SalamDL|DigiDigimoviezmoviez|DigimDigimoviezoviez|Film2media|DonyayeSerial/, // source_name
+    /|Luvmichelle|DeeJayAhmed|IchiMaruGin|FreetheFish|GetSchwifty/, // 11
+    /|REMARKABLE|TNTVillage|Provenance|Providence|Improbable|Budgetbits|LiBRARiANS|LowFatMilk|KatmovieHD/, // 10
+    /|SUNSCREEN|associate|Frontline|EthanCunt|CfaMilyRG|bamboozle|dimension|Bollycine|COALiTiON|STRONTiUM/, // 9
+    /|FraMeSToR|AN0NYM0US|PLUTONiUM/, // 9
+    /|GalaxyR?G?|GalaxyTv|anoXmous|DEFiNiTE|Jalucian|LordVako|HighCode|Micromkv|KamiKaze|RiGHTNOW|CUPCAKES/, // 8
+    /|Team-?x265|WebCakes|GOPISAHI|PECULATE|ALLiANCE|Garshasp|Nickarad|ANONA911|SADPANDA|Grashasp|SMAHAWUG/, // 8
+    /|SPRiNTER|CiNEFiLE|ALTEREGO/, // 8
+    /|LIMITED|ShAaNiG|Mkv?Cage|Mkvking|MkvHub|sujaidr|Silence|Worldmkv|AiRLiNE|HazMatt|FiDELiO|D3FiL3R|watcher/, // 7
+    /|Mkvcage|AViATOR|SUJAIDR|BRSHNKV|HEVCBay|Slinece|Reaktor|UNRATED|TASTETV|killers|CRYPTIC|SYNCOPY|NOSiViD/, // 7
+    /|MeGusta|IMMERSE|lucidtv|KILLERS|BORDURE|TIMECUT|DiAMOND|AnimeRG|TombDoc|Vyndros|Omikron|h3llg0d|imSamir/, // 7
+    /|TeamMCU|SECRECY|HORiZON|AMIABLE|SECTOR7|CADAVER|Replica|DEFLATE|EPSiLON|SAPHiRE|Raphael|SiNNERS/, // 7
+    /|Ganool|Rmteam|TrueHD|mottoj|LilKim|EVOLVE|Rudaki|GHOSTS|Kirion|LINETV|FRISK|SPARKS|orenji|Paso7[27]Y/, // 6
+    /|(Tigo(le|el))|STRiFE|DRONES|monkee|titler|TuGAZx|GECKOS|HUZZAH|CtrlHD|PiGNUS|DEMAND|PSYCHD|TVSmash?/, // 6
+    /|DTSJYK|RZeroX|t3nzin|Telugu|MeGUiL|Apekat|HDSTAr|InSaNe|RUSTED|Felony|REWARD|KEWPiE|ROVERS|PoOlLa/, // 6
+    /|CROOKS|C1NEM4|SHeRiF/, // 6
+    /|Hon3y|HDETG|Ozlem|NitRo|DZ0N3|Judas|AMRAP|SiGMA|Scorp|muhHD|vsenc|SaNiG|MZABI|TEPES|Aries|afm7[23]/, // 5
+    /|MovCr|ACOOL|NoGRP|TayTO|MTeam|ALiGN|FLEET|SEEZN|SMURF|TVING|Stamo|Panda|ION10|XEBEC|LiHDL|FLAME/, // 5
+    /|AvoHD|Tommy|Cakes|MkHub|Atmos|SCENI|NAISU|Tomdoc|POIASD|SUECOS|SARTRE|EDITH|ETHEL|SAMPA|Natty/, // 5
+    /|GSFTX|RONIN|Bandi|Pav69|BRISK|CZ530|Telly|ViZNU|DREDD|ESubs|Lover|iExTv|PRiME|CRiSC|YOL0W|Rapta/, // 5
+    /|HAiKU|GETiT|TiTAN|SKGTV/, // 5
+    /|RARBG?|Pahe|AMZN|Yi?f[IiYy]|HDTS|GCJM|BONE|Qman|NVEE|DEEP|r00t|HAMR|Cleo|LION|FLUX|WELP|AAA(UHD)?/, // 4
+    /|LAMA|Gooz|WDYM|APEX|Loki|DSNY|RKHD|PAAI|Prof|WiKi|Kick|AdiT|ETRG|CMRG|BTRG|TURG|ISRA|LoRD|xRed|RCVR/, // 4
+    /|RyRo|XpoZ|viki|kogi|CPNG|Minx|DSNP|KaKa|EGEN|ATVP|MRCS|Obey|PCOK|M[Hk]UB|KIMO?|YOGI|SH0W|GECK|NEZU/, // 4
+    /|LAZY|BRMP|BLOW|VETO|QPEL|FiCO/, // 4
+    /|Psa|YTS|EVO|QxR|RSG|GAZ|VXT|3dg|rDX|ELR|JYK|eSc|Joy|jbr|xTv|HdT|KRT|Btx|Ika|LLG|FGT|AME|RDH|ASW|BDP|NT[GB]/, // 3
+    /|R?MT|GAN|AC3|w4f|d3g|DAA|TTL|NBY|AVS|LCK|T0M|z97|CHD|GDL|DDR|HDL|SVA|BTN|PTV|MRN|TFP|DON|HDH|VFX|Xlf|RBX|VIU/, // 3
+    /|NFP|PMV|[RH]?TM|BAM|IFR|MAX|JiO|mSD/, // 3
+    /|Ift|tbs|SNG|YST|HET|HDC|m2g|UNK|RKO?|TM[VK]|MHB|EXT|REM|DMV|BdC/, // 3
+    /|HS|MW|IQ|IC|FC|NM|HV/, // 2
+].map(item => item.source).join(''), "i");
+
+export const globalEncodersRegex = new RegExp(`(?<![a-zA-Z\d])(${encodersRegex.source})`, 'gi');
+// export const globalEncodersRegex = new RegExp(encodersRegex, 'gi');
 
 export const linkInfoRegex = new RegExp([
     /^((\d\d\d\d?p)|(1080p\.FULL-HD)|(1440p\.2K)|(2160p\.4K)|(2160p\.UHD))/,
@@ -55,7 +68,7 @@ export const linkInfoRegex = new RegExp([
     new RegExp(`(\\.(${releaseRegex.source}))?`), // --> /\.(releaseRegex)/
     new RegExp(`(\\.(${encodersRegex.source}))?`), // --> /(\.(encodersRegex))?/
     /(\.(Un)?Censored)?/,
-    /(\.(HardSub(\(.+\))?(\.dubbed)?|SoftSub(\(.+\))?(\.dubbed(\(.+\))?)?|dubbed(\(.+\))?))?/,
+    /(\.(HardSub(\(.+\))?(\.Dubbed)?|SoftSub(\(.+\))?(\.Dubbed(\(.+\))?)?|Dubbed(\(.+\))?))?/i,
     /(\.V2)?/,
     /((\.\d\d\d\d)?\.\d\d\.\d\d)?/,
     /(\.Round_\d+(\.Day_\d+(_\d+)?)?(\.(ReWatch|Preview))?)?/,
@@ -75,7 +88,7 @@ export const countriesRegex = new RegExp(`(480p|720p|1080p)(\\.FULL-HD)?(\\.Prev
 
 export const specialWords = new RegExp([
     /x265|10bit|3D|HDR10|HDR|HSBS/,
-    /|HardSub|SoftSub|dubbed|Sub|Censored/,
+    /|HardSub|SoftSub|Dubbed|Sub|Censored/,
     /|FULL-HD|2K|4K|[876]CH/,
     /|DIRECTORS-CUT|ALT-UNIVERSE-CUT/,
     /|Main-Ceremony|Red-Carpet|Backstage/,
@@ -87,7 +100,7 @@ export const specialWords = new RegExp([
 const episodeRangeRegex = /Episode\(\d\d?\d?-\d\d?\d?\)/;
 const episodeRangeRegex2 = /Episode\(\d\d?\d?-\d\d?\d?\)/;
 export const specialRegex = /(((Christmas\.)?Special)|OVA|ONA|OAD|NCED|NCOP|Redial)(_\d)?/;
-const dubbedRegex = /dubbed(\(.+\))?/;
+const dubbedRegex = /Dubbed(\(.+\))?/;
 const softSubRegex = /SoftSub(\(.+\))?/;
 const hardSubRegex = /HardSub(\(.+\))?/;
 const partRegex = /Part_\d/;
@@ -233,6 +246,8 @@ export function purgeQualityText(qualityText) {
 }
 
 export function fixLinkInfo(info, linkHref, type) {
+    linkHref = linkHref.split('=')[0];
+
     const lowCaseLinkHref = linkHref.toLowerCase();
     info = fixLinkInfoResolution(lowCaseLinkHref, info);
 
@@ -249,7 +264,8 @@ export function fixLinkInfo(info, linkHref, type) {
         .replace(/hd-?rip/gi, 'HD-RIP')
         .replace('DL.WEB', 'WEB-DL')
         .replace(/FullHD/i, 'FULL-HD')
-        .replace(/(Farsi\.Dub(bed)?)|(Dubbed\.Farsi)|(Dub\.fa)/i, 'dubbed');
+        .replace(/(Farsi\.Dub(bed)?)|(Dubbed\.Farsi)|(Dub\.fa)/i, 'Dubbed')
+        .replace(/farsi\.sub(bed)?/g, 'HardSub');
 
     if (lowCaseLinkHref.includes('10bit')) {
         info += '.10bit';
@@ -259,6 +275,15 @@ export function fixLinkInfo(info, linkHref, type) {
     }
     if (lowCaseLinkHref.includes('.3D.')) {
         info += '.3D';
+    }
+    if (lowCaseLinkHref.includes('.6ch.')) {
+        info += '.6CH';
+    }
+    if (lowCaseLinkHref.includes('.7ch.')) {
+        info += '.7CH';
+    }
+    if (lowCaseLinkHref.includes('.8ch.')) {
+        info += '.8CH';
     }
 
     if (type.includes('movie')) {
@@ -288,6 +313,17 @@ export function fixLinkInfo(info, linkHref, type) {
                 .replace(/hdtv/i, 'HDTV');
         } else if (/\.WEB(-HD)?\./i.test(linkHref)) {
             info += '.WEB-DL';
+        }
+    }
+
+    // extract/add encoder
+    if (!info.match(encodersRegex)) {
+        let encoder = linkHref.match(globalEncodersRegex);
+        if (encoder && encoder.length > 0) {
+            if (encoder.length > 1) {
+                encoder = encoder.filter(e => e.toLowerCase() !== "film2media");
+            }
+            info += "." + encoder.pop();
         }
     }
 
@@ -332,12 +368,22 @@ function fixLinkInfoResolution(lowCaseLinkHref, info) {
 
     if (!info.match(/\d\d\d\d?p/gi)) {
         let qualityMatch = lowCaseLinkHref.match(/[.\s_]\d{3,5}p[.\s_]/g);
-        let qualityMatch2 = lowCaseLinkHref.match(/\[\d\d\d\d?p?]/g);
-        let resolution = qualityMatch
-            ? qualityMatch.pop().replace(/[.\s_]/g, '')
-            : qualityMatch2
-                ? qualityMatch2.pop().replace(/[\[\]]/g, '')
-                : (info.includes('DVDRip') || lowCaseLinkHref.includes('dvdrip')) ? '576p' : '480p';
+        let resolution = '480p';
+        if (qualityMatch) {
+            resolution = qualityMatch.pop().replace(/[.\s_]/g, '');
+        } else {
+            let qualityMatch2 = lowCaseLinkHref.match(/\[\d\d\d\d?p?]/g);
+            if (qualityMatch2) {
+                resolution = qualityMatch2.pop().replace(/[\[\]]/g, '');
+            } else {
+                let qualityMatch3 = lowCaseLinkHref.match(/([-_])\d\d\d\d?\.[a-z\d]{3}($|\?)/g);
+                if (qualityMatch3) {
+                    resolution = qualityMatch3.pop().match(/\d+/g)[0];
+                } else {
+                    resolution = (info.includes('DVDRip') || lowCaseLinkHref.includes('dvdrip')) ? '576p' : '480p';
+                }
+            }
+        }
         resolution = !resolution.toLowerCase().includes('p') ? resolution + 'p' : resolution;
         info = info ? resolution + '.' + info : resolution;
     }
@@ -387,13 +433,15 @@ function handleMultiEpisode(linkHref, info) {
 
 export function addDubAndSub(lowCaseLinkHref, info) {
     if (lowCaseLinkHref.includes('dual.audio.jpn.eng') || lowCaseLinkHref.includes('dual.eng-ja')) {
-        info += '.dubbed(japanese-english)';
+        info += '.Dubbed(japanese-english)';
         info = info.replace(/(\.Dual\.Audio)|(\.?Audio\.Dual)/i, '');
     } else if (lowCaseLinkHref.includes('dual.audio.hindi.english')) {
-        info += '.dubbed(hindi-english)';
+        info += '.Dubbed(hindi-english)';
         info = info.replace(/\.Dual\.Audio/i, '');
+    } else if (lowCaseLinkHref.includes('farsi.sub')) {
+        info += '.HardSub';
     } else if (checkDubbed(lowCaseLinkHref, info)) {
-        info += '.dubbed';
+        info += '.Dubbed';
     }
     if (lowCaseLinkHref.includes('korsub')) {
         info += '.HardSub(korean)';
@@ -420,7 +468,6 @@ export function addDubAndSub(lowCaseLinkHref, info) {
 export function fixLinkInfoOrder(info) {
     info = fixInfoWrongQualityResolution(info);
     info = fixInfoDubAndSub(info);
-    info = fixInfoCaseSensitiveWords(info);
     info = getCleanLinkInfo(info);
 
     let splitInfo = info.split(/(Episode\(\d+\.5\))|\./).filter(item => item);
@@ -443,6 +490,7 @@ export function fixLinkInfoOrder(info) {
         .replace('1080p.FULL-HD.2K', '1080p.FULL-HD')
         .replace('FULL-HD.WEB-DL', 'WEB-DL')
         .replace('Digital.Extras.EXTRAS', 'EXTRAS');
+
     info = removeDuplicates(info);
     return info;
 }
@@ -503,19 +551,18 @@ function fixInfoWrongQualityResolution(info) {
 function fixInfoDubAndSub(info) {
     return info
         //dubbed
-        .replace('.Dubbed', '.dubbed')
-        .replace(/\.(DO?UBLE|Dobleh|(dubbed\.Sound))/i, '.dubbed')
-        .replace(/(?<!(\.|^))dubbed/, '.dubbed')
-        .replace(/dubbed(\.fa)?\.dubbed/i, 'dubbed')
-        .replace(/((Sync(\.\d)?)|fa)\.dubbed/i, 'dubbed')
-        .replace(/\.FA(rsi)/i, '.dubbed')
-        .replace(/dubbed\d*(\.dubbed\d*)+/gi, 'dubbed')
-        .replace(/Dual\.Audio\.(SoftSub|dubbed)/i, 'dubbed')
-        .replace(/(Dual|Dubbed)\.Audio/i, 'dubbed')
-        .replace(/ENG\.Dub(bed)?/i, 'dubbed(english)')
-        .replace(/dubbed(\.HardSub)?\.dubbed(?=(\.|$))/i, 'dubbed')
-        .replace(/EXTENDEDFarsi(\.dubbed)?/i, 'EXTENDED.dubbed')
-        .replace(/BluRayFarsi/i, 'BluRay.dubbed')
+        .replace(/\.(DO?UBLE|Dobleh|(dubbed\.Sound))/i, '.Dubbed')
+        .replace(/(?<!(\.|^))dubbed/i, '.Dubbed')
+        .replace(/dubbed(\.fa)?\.dubbed/i, 'Dubbed')
+        .replace(/((Sync(\.\d)?)|fa)\.dubbed/i, 'Dubbed')
+        .replace(/\.FA(rsi)/i, '.Dubbed')
+        .replace(/dubbed\d*(\.dubbed\d*)+/gi, 'Dubbed')
+        .replace(/Dual\.Audio\.(SoftSub|dubbed)/i, 'Dubbed')
+        .replace(/(Dual|Dubbed)\.Audio/i, 'Dubbed')
+        .replace(/ENG\.Dub(bed)?/i, 'Dubbed(english)')
+        .replace(/dubbed(\.HardSub)?\.dubbed(?=(\.|$))/i, 'Dubbed')
+        .replace(/EXTENDEDFarsi(\.dubbed)?/i, 'EXTENDED.Dubbed')
+        .replace(/BluRayFarsi/i, 'BluRay.Dubbed')
         //softSub
         .replace(/soft?sub/gi, 'SoftSub')
         .replace(/(?<!(\.|^))SoftSub/, '.SoftSub')
@@ -530,7 +577,7 @@ function fixInfoDubAndSub(info) {
         .replace(/hardsub?/gi, 'HardSub')
         .replace(/Hard?Sub(\.HardSub)+/gi, 'HardSub')
         .replace('.SoftSub.HardSub', '.SoftSub')
-        .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'dubbed')
+        .replace(/dubbed\.(SoftSub|Fixed|\d)\.dubbed/i, 'Dubbed')
         .replace('DUAL.SoftSub', 'SoftSub')
         .replace(/Fa\.(?=(Soft|Hard))/i, '');
 }
@@ -540,6 +587,8 @@ function fixInfoCaseSensitiveWords(info) {
         .replace(/remux/i, 'REMUX')
         .replace(/remastered/i, 'REMASTERED')
         .replace(/yify/gi, 'YIFY')
+        .replace(/psa/gi, 'PSA')
+        .replace(/tving/gi, 'TVING')
         .replace(/repack/i, 'REPACK');
 }
 
