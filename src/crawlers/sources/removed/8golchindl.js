@@ -107,8 +107,8 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         watchOnlineLinks: [],
                         torrentLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                        poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                         subtitles: [],
                         rating: null,
                         cookies
@@ -171,8 +171,8 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 watchOnlineLinks: [],
                 torrentLinks: [],
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                 subtitles: [],
                 rating: null,
                 cookies
@@ -491,7 +491,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
         info = fixLinkInfo(info, linkHref, type);
         info = fixLinkInfoOrder(info);
         info = info
-            .replace('HardSub.dubbed', 'dubbed')
+            .replace(/HardSub\.dubbed/i, 'Dubbed')
             .replace(/\.Www\.DownloadSpeed\.iR/i, '')
             .replace('.Golchindl', '')
             .replace(/\.ATVP\.GalaxyTV/i, '.GalaxyTV')
@@ -504,7 +504,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
             }
         }
         if (!hardSub && pageHref.match(/duble/i) && !info.includes('dubbed')) {
-            info = info + '.dubbed';
+            info = info + '.Dubbed';
         }
         const sizeMatch = info.match(/\.\d+MB(?=(\.|$))/i);
         if (sizeMatch) {

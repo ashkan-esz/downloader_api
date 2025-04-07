@@ -211,7 +211,7 @@ function getFileData_serial($, link) {
     let decodedLink = getDecodedLink($(link).attr('href'));
     let linkHref = replacePersianNumbers(decodedLink).toLowerCase().split('/').pop();
     let linkText = replacePersianNumbers($(link).text()).toLowerCase();
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'Dubbed' : '';
     let uncensored = linkHref.includes('uncen') ? 'uncensored' : '';
 
     let episodeMatch = linkText.replace(/\d\d\d+p|x265|10bit/gi, '').match(/(\(*\d+\s*-\s*\d+\)*|(ep|e)*\d+)/g);
@@ -237,7 +237,7 @@ function getFileData_movie($, link) {
             linkHref = linkHref.replace(yearMatch[0], '.');
         }
     }
-    let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+    let dubbed = checkDubbed(linkHref, '') ? 'Dubbed' : '';
     let uncensored = linkHref.includes('uncen') ? 'uncensored' : '';
 
     let part = linkText.includes('part') ? linkText : '';
@@ -342,7 +342,7 @@ function extraSearch_getFileData($, link, type, sourceLinkData, title) {
             : 'S1E' + episodeNumber[0];
 
         let quality = getQualityText(linkHref);
-        let dubbed = checkDubbed(linkHref, '') ? 'dubbed' : '';
+        let dubbed = checkDubbed(linkHref, '') ? 'Dubbed' : '';
         let uncensored = linkHref.includes('uncen') ? 'uncensored' : '';
         let size = purgeSizeText($($($(link).children()[0]).children()[3]).text());
         let info = [seasonEpisode, quality, dubbed, uncensored].filter(value => value).join('.');

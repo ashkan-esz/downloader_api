@@ -39,7 +39,7 @@ export default async function film2movie({movie_url}, pageCount, extraConfigs) {
     return [lastPage, linksCount];
 }
 
-async function search_title(link, pageNumber, $, url, extraConfigs) {
+async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs) {
     try {
         let rel = link.attr('rel');
         if (rel && rel === 'bookmark') {
@@ -125,8 +125,8 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         watchOnlineLinks: [],
                         torrentLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                        poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                         subtitles: getSubtitles($2, type, pageLink),
                         rating: null,
                         cookies
@@ -204,8 +204,8 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 watchOnlineLinks: [],
                 torrentLinks: [],
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                 subtitles: getSubtitles($2, type, pageLink),
                 rating: null,
                 cookies

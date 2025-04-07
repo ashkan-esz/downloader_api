@@ -88,8 +88,8 @@ async function search_title(link, pageNumber, $, url, extraConfigs) {
                         watchOnlineLinks: [],
                         torrentLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                        trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                        poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                         subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                         rating: null,
                         cookies
@@ -136,8 +136,8 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 watchOnlineLinks: [],
                 torrentLinks: [],
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                poster: posterExtractor.getPoster($2, sourceConfig.sourceName),
-                trailers: trailerExtractor.getTrailers($2, sourceConfig.sourceName, sourceConfig.vpnStatus),
+                poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
+                trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
                 subtitles: getSubtitles($2, type, pageLink, downloadLinks),
                 rating: null,
                 cookies
@@ -366,7 +366,7 @@ function getFileData_serial($, link, type) {
     quality = fixLinkInfo(quality, href, type);
     quality = fixLinkInfoOrder(quality);
     if (linkHref.includes('dual.audio')) {
-        quality = quality.replace('.dubbed', '.dubbed(english)');
+        quality = quality.replace('.dubbed', '.Dubbed(english)');
     }
     return [seasonEpisode, quality, halfEpisode, seasonPart, specialEpisodeName, seasonName].filter(Boolean).join('.');
 }
