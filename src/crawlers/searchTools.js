@@ -21,6 +21,7 @@ import {
 import {checkServerIsIdle, pauseCrawler} from "./status/crawlerController.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
+import {hasSidebarClass} from "./sources/generic.js";
 
 axiosRetry(axios, {
     retries: 2, // number of retries
@@ -95,7 +96,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                     }
                     await pauseCrawler();
                     await promiseQueue.onSizeLessThan(concurrencyNumber * 8);
-                    promiseQueue.add(() => searchCB($(links[j]), i, $, url, extraConfigs).then((count) => {
+                    promiseQueue.add(() => searchCB($(links[j]), i, $, url, sourceConfig, extraConfigs).then((count) => {
                             linksCount += (count || 0);
                         })
                     );
@@ -281,11 +282,16 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                     }
                     let sourcesObject = await getAxiosSourcesObject();
                     let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName]?.cookies || [] : [];
+                    let sourceHeaders = sourcesObject ? sourcesObject[sourceConfig.sourceName]?.headers || '' : '';
+                    sourceHeaders = sourceHeaders ? JSON.parse(sourceHeaders) : {};
                     const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
                     let responseTimeout = pageType === 'sourcePage' ? 15 * 1000 : 10 * 1000;
-                    let response = await getResponseWithCookie(url, cookie, responseTimeout);
+                    let response = await getResponseWithCookie(url, cookie, sourceHeaders, responseTimeout);
                     responseUrl = response.request.res.responseUrl;
-                    if (response.data.includes('<title>Security Check ...</title>') && pageType === 'movieDataPage') {
+                    if (pageType === 'movieDataPage' &&
+                        (response.data.includes('<title>Security Check ...</title>') ||
+                            response.data.includes('<title>Redirecting...</title>'))
+                    ) {
                         $ = null;
                         links = [];
                     } else {
@@ -374,7 +380,26 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             links = cacheResult.links;
             checkGoogleCache = true;
         }
-        return {$, links, cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
+
+        let uniqueLinks = [];
+        for (let i = 0; i < links.length; i++) {
+            if ($ && !hasSidebarClass($(links[i]))) {
+                let href = $(links[i]).attr('href') || "";
+
+                if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt')){
+                    continue
+                }
+
+                if (
+                    !href.includes('/tag/') &&
+                    !href.match(/\.(mp4)$/) &&
+                    !uniqueLinks.find(u => getDecodedLink($(u).attr('href')) === getDecodedLink($(links[i]).attr('href')))) {
+                    uniqueLinks.push(links[i]);
+                }
+            }
+        }
+
+        return {$, links: uniqueLinks, cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};
     } catch (error) {
         await saveErrorIfNeeded(error);
         return {$: null, links: [], cookies, checkGoogleCache, responseUrl, pageTitle, pageContent};

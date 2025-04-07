@@ -378,10 +378,12 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCou
             return result;
         }
         let sourceCookies = sourcesObject ? sourcesObject[sourceName].cookies : [];
+        let sourceHeaders = sourcesObject ? sourcesObject[sourceName].headers : '';
+        sourceHeaders = sourceHeaders ? JSON.parse(sourceHeaders) : {};
         const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
         // let timeout = sourceAuthStatus === 'login-cookie' ? 7000 : 4000;
         let timeout = 10000;
-        let response = await getResponseWithCookie(url, cookie, timeout);
+        let response = await getResponseWithCookie(url, cookie, sourceHeaders, timeout);
         // if (extraConfigs.removeScriptAndStyleFromHtml) {
         //     response.data = removeScriptAndStyle(response.data);
         // }

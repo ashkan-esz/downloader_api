@@ -92,10 +92,11 @@ export async function downloadImage(url, retryCounter = 0) {
     }
 }
 
-export async function getResponseWithCookie(url, cookie, timeout = null) {
+export async function getResponseWithCookie(url, cookie, sourceHeaders, timeout = null) {
     let config = {
         headers: {
             Cookie: cookie,
+            ...sourceHeaders,
         }
     }
     if (timeout) {
