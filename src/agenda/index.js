@@ -80,12 +80,12 @@ export async function startAgenda() {
         await agenda.every("0 */12 * * *", "update jikan data", {}, {timezone: "Asia/Tehran"}); //Every day at 12:00 and 24:00
         await agenda.every("30 */12 * * *", "update movie ranks", {}, {timezone: "Asia/Tehran"}); //Every day at 12:30 and 00:30
         await agenda.every("30 11 1 * *", "reset month likes", {}, {timezone: "Asia/Tehran"});
-        await agenda.every("0 0 * * 0", "remove unused files from s3", {}, {timezone: "Asia/Tehran"}); //At 00:00 on Sunday.
+        await agenda.every("0 2 * * 0", "remove unused files from s3", {}, {timezone: "Asia/Tehran"}); //At 02:00 on Sunday.
         await agenda.every("0 1 * * 0", "compute users favorite genres", {}, {timezone: "Asia/Tehran"}); //At 01:00 on Sunday.
         await agenda.every("0 23 * * *", "save total/active users count", {}, {timezone: "Asia/Tehran"}); //At 23:00.
-        await agenda.every("0 0 7 * *", "remove server analysis old logs", {}, {timezone: "Asia/Tehran"}); //At 00:00 on day-of-month 7.
-        await agenda.every("0 */8 * * *", "add trailers from youtube", {}, {timezone: "Asia/Tehran"}); //Every 8 hours
-        await agenda.every("0 */8 * * *", "backup db", {}, {timezone: "Asia/Tehran"}); //Every 8 hours
+        await agenda.every("0 1 7 * *", "remove server analysis old logs", {}, {timezone: "Asia/Tehran"}); //At 01:00 on day-of-month 7.
+        await agenda.every("10 */8 * * *", "add trailers from youtube", {}, {timezone: "Asia/Tehran"}); //Every 8 hours
+        await agenda.every("30 */8 * * *", "backup db", {}, {timezone: "Asia/Tehran"}); //Every 8 hours
 
     } catch (error) {
         saveError(error);

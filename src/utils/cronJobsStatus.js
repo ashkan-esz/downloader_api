@@ -54,7 +54,7 @@ const cronJobsStatus = {
         startDate: 0,
         state: '',
         value: '',
-        description: 'At 00:00 on Sunday',
+        description: 'At 02:00 on Sunday',
         startFunc: removeS3UnusedFilesJobFunc,
     },
     computeUserFavoriteGenres: {
@@ -94,7 +94,7 @@ const cronJobsStatus = {
         startDate: 0,
         state: '',
         value: '',
-        description: 'Every 8 hours',
+        description: 'Every 00:10, 08:10, 16:10',
         startFunc: addTrailersFromYoutubeJobFunc,
     },
     backupDb: {
@@ -102,7 +102,7 @@ const cronJobsStatus = {
         startDate: 0,
         state: '',
         value: '',
-        description: 'Every 8 hours',
+        description: 'Every 00:30, 08:30, 16:30',
         startFunc: () => backupDbJobFunc(true),
     },
     restoreBackupDb: {
