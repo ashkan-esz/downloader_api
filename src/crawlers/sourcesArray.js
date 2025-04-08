@@ -30,35 +30,35 @@ export function getSourcesArray(sourcesObj, crawlMode, extraConfigs) {
     return [
         {
             name: 'film2movie',
-            configs: film2movie.sourceConfig,
+            configs: sourcesObj.film2movie.config,
             starter: () => {
                 return film2movie.default(sourcesObj.film2movie, pageCount, extraConfigs);
             }
         },
         {
             name: 'tokyotosho',
-            configs: tokyotosho.sourceConfig,
+            configs: sourcesObj.tokyotosho.config,
             starter: () => {
                 return tokyotosho.default(sourcesObj.tokyotosho, pageCount, extraConfigs);
             }
         },
         {
             name: 'shanaproject',
-            configs: shanaproject.sourceConfig,
+            configs: sourcesObj.shanaproject.config,
             starter: () => {
                 return shanaproject.default(sourcesObj.shanaproject, pageCount, extraConfigs);
             }
         },
         {
             name: 'nyaa',
-            configs: nyaa.sourceConfig,
+            configs: sourcesObj.nyaa.config,
             starter: () => {
                 return nyaa.default(sourcesObj.nyaa, pageCount, extraConfigs);
             }
         },
         {
             name: 'eztv',
-            configs: eztv.sourceConfig,
+            configs: sourcesObj.eztv.config,
             starter: () => {
                 return eztv.default(sourcesObj.eztv, pageCount, extraConfigs);
             }
@@ -71,26 +71,55 @@ export const sourcesObj = () => {
     let obj = {
         title: "sources",
     };
-    for (let i = 0; i < sourcesNames.length; i++) {
-        obj[sourcesNames[i]] = {
-            movie_url: "",
-            serial_url: "",
-            crawlCycle: 0,
-            disabled: true,
-            isManualDisable: false,
-            cookies: [],
-            addDate: now,
-            disabledDate: now,
-            lastCrawlDate: 0,
-            lastDomainChangeDate: 0,
-            lastConfigUpdateDate: 0,
-            userData: null,
-            description: '',
-            status: {
-                notRespondingFrom: 0,
-                lastCheck: 0,
-            }
+
+    const sampleSourceConfig = {
+        movie_url: "",
+        serial_url: "",
+        crawlCycle: 0,
+        disabled: true,
+        isManualDisable: false,
+        cookies: [],
+        addDate: now,
+        disabledDate: now,
+        lastCrawlDate: 0,
+        lastDomainChangeDate: 0,
+        lastConfigUpdateDate: 0,
+        userData: null,
+        description: '',
+        status: {
+            notRespondingFrom: 0,
+            lastCheck: 0,
+        },
+        config: {
+            sourceName: "",
+            needHeadlessBrowser: false,
+            sourceAuthStatus: 'ok',
+            vpnStatus: Object.freeze({
+                poster: 'vpnOnly',
+                trailer: 'vpnOnly',
+                downloadLink: 'vpnOnly',
+            }),
+            isTorrent: false,
+            replaceInfoOnDuplicate: true,
+            removeScriptAndStyleFromHtml: false,
         }
     }
+
+    for (let i = 0; i < sourcesNames.length; i++) {
+        let newSource = JSON.parse(JSON.stringify(sampleSourceConfig));
+        newSource.config.sourceName = sourcesNames[i];
+        newSource.config.isTorrent = false;
+        newSource.config.removeScriptAndStyleFromHtml = true;
+        obj[sourcesNames[i]] = newSource;
+    }
+
+    for (let i = 0; i < torrentSourcesNames.length; i++) {
+        let newSource = JSON.parse(JSON.stringify(sampleSourceConfig));
+        newSource.config.sourceName = torrentSourcesNames[i];
+        newSource.config.isTorrent = true;
+        newSource.config.removeScriptAndStyleFromHtml = false;
+        obj[torrentSourcesNames[i]] = newSource;
+    }
+
     return obj;
 }

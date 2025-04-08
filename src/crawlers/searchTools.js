@@ -247,7 +247,8 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             let pageData = null;
             if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
                 saveLinksStatus(pageLink, pageType, 'fetchingStart');
-                pageData = await getPageData(url, sourceConfig.sourceName, extraConfigs, sourceConfig.sourceAuthStatus, pageType, true);
+                pageData = await getPageData(url, sourceConfig.sourceName, {...sourceConfig, ...(extraConfigs || {})},
+                    sourceConfig.sourceAuthStatus, pageType, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
@@ -386,7 +387,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             if ($ && !hasSidebarClass($(links[i]))) {
                 let href = $(links[i]).attr('href') || "";
 
-                if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt')){
+                if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt')) {
                     continue
                 }
 

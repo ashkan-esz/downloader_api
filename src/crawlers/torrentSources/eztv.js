@@ -16,34 +16,19 @@ import {
     removeSeasonText
 } from "./torrentUtils.js";
 
-
-export const sourceConfig = Object.freeze({
-    sourceName: "eztv",
-    needHeadlessBrowser: false,
-    sourceAuthStatus: 'ok',
-    vpnStatus: Object.freeze({
-        poster: 'vpnOnly',
-        trailer: 'vpnOnly',
-        downloadLink: 'vpnOnly',
-    }),
-    isTorrent: true,
-    replaceInfoOnDuplicate: true,
-    removeScriptAndStyleFromHtml: false,
-});
-
-export default async function eztv({movie_url, serial_url}, pageCount, extraConfigs = {}) {
+export default async function eztv(sourceConfig, pageCount, extraConfigs = {}) {
     try {
-        saveLinksStatus(movie_url, "sourcePage", "fetchingStart");
+        saveLinksStatus(sourceConfig.movie_url, "sourcePage", "fetchingStart");
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
-        let res = await client.get(movie_url, {
+        let res = await client.get(sourceConfig.movie_url, {
             headers: {
                 Cookie: "layout=def_wlinks;",
             }
         });
-        saveLinksStatus(movie_url, "sourcePage", "fetchingEnd");
+        saveLinksStatus(sourceConfig.movie_url, "sourcePage", "fetchingEnd");
         let $ = cheerio.load(res.data);
-        let titles = extractLinks($, movie_url);
+        let titles = extractLinks($, sourceConfig.movie_url, sourceConfig);
 
         const linksCount = titles.reduce((acc, item) => acc + item.links.length, 0);
 
@@ -62,14 +47,14 @@ export default async function eztv({movie_url, serial_url}, pageCount, extraConf
             if (extraConfigs.retryCounter < 2) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 extraConfigs.retryCounter++;
-                return await eztv({movie_url, serial_url}, pageCount, extraConfigs);
+                return await eztv(sourceConfig, pageCount, extraConfigs);
             }
             return [1, 0];
         }
         if ([500, 504, 521, 522, 525].includes(error.response?.status) && extraConfigs.retryCounter < 2) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             extraConfigs.retryCounter++;
-            return await eztv({movie_url, serial_url}, pageCount, extraConfigs);
+            return await eztv(sourceConfig, pageCount, extraConfigs);
         }
         if (![521, 522, 525].includes(error.response?.status)) {
             saveError(error);
@@ -78,7 +63,7 @@ export default async function eztv({movie_url, serial_url}, pageCount, extraConf
     }
 }
 
-export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
+export async function searchByTitle(sourceUrl, title, sourceConfig, extraConfigs = {}) {
     try {
         let searchTitle = title.replace(/\s+/g, '+');
         let searchUrl = sourceUrl.split('/home')[0] + '/search/' + searchTitle;
@@ -93,7 +78,7 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
         saveLinksStatus(searchUrl, "sourcePage", "fetchingEnd");
 
         let $ = cheerio.load(res.data);
-        let titles = extractLinks($, sourceUrl);
+        let titles = extractLinks($, sourceUrl, sourceConfig);
 
         if (extraConfigs.equalTitlesOnly) {
             titles = titles.filter(t => t.title === title);
@@ -124,10 +109,10 @@ export async function searchByTitle(sourceUrl, title, extraConfigs = {}) {
     }
 }
 
-async function saveCrawlData(titleData, extraConfigs) {
+async function saveCrawlData(titleData, sourceConfig, extraConfigs) {
     addPageLinkToCrawlerStatus("#" + titleData.title.replace(/\s+/g, '-'), 1);
     let sourceData = {
-        sourceConfig,
+        sourceConfig: sourceConfig,
         pageLink: "#" + titleData.title.replace(/\s+/g, '-'),
         downloadLinks: [],
         watchOnlineLinks: [],
@@ -142,7 +127,7 @@ async function saveCrawlData(titleData, extraConfigs) {
     await save(titleData.title, "serial", titleData.year, sourceData, 1, extraConfigs);
 }
 
-function extractLinks($, sourceUrl) {
+function extractLinks($, sourceUrl, sourceConfig) {
     let $a = $('a');
     let titles = [];
     for (let i = 0; i < $a.length; i++) {
@@ -177,7 +162,7 @@ function extractLinks($, sourceUrl) {
                     info: info,
                     season: se.season,
                     episode: se.episode,
-                    sourceName: sourceConfig.sourceName,
+                    sourceName: sourceConfig.config.sourceName,
                     type: "torrent",
                     size: size, //in mb
                     localLink: "",

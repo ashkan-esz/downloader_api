@@ -24,6 +24,7 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extra
             .map(sourceName => ({
                 sourceName: sourceName,
                 url: sourcesObj[sourceName].movie_url,
+                config: sourcesObj[sourceName].config,
                 checked: false,
                 changed: false,
                 crawled: false,
@@ -62,7 +63,9 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
                 if (checkForceStopCrawler()) {
                     return [];
                 }
-                let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName, extraConfigs);
+
+                let allConfigs = {...(sourcesUrls[i].config || {}), ...(extraConfigs || {})};
+                let pageData = await getPageData(homePageLink, sourcesUrls[i].sourceName, allConfigs);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                 } else {
@@ -122,12 +125,12 @@ async function checkSourcesUrl(sourcesUrls, extraConfigs) {
     }
 }
 
-export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, retryCounter = 0) {
+export async function checkUrlWork(sourceName, sourceUrl, allConfigs = null, retryCounter = 0) {
     try {
         let responseUrl;
         let homePageLink = sourceUrl.replace(/(\/page\/)|(\/(movie-)*anime\?page=)|(\/$)/g, '');
         try {
-            let pageData = await getPageData(homePageLink, sourceName, extraConfigs);
+            let pageData = await getPageData(homePageLink, sourceName, allConfigs);
             if (pageData && pageData.pageContent) {
                 responseUrl = pageData.responseUrl;
             } else {
@@ -151,7 +154,7 @@ export async function checkUrlWork(sourceName, sourceUrl, extraConfigs = null, r
                     [502, 521, 522].includes(error.response?.status)) && retryCounter < 3) {
                 retryCounter++;
                 await new Promise((resolve => setTimeout(resolve, 4000)));
-                return await checkUrlWork(sourceName, sourceUrl, extraConfigs, retryCounter);
+                return await checkUrlWork(sourceName, sourceUrl, allConfigs, retryCounter);
             } else {
                 // if (torrentSourcesNames.includes(sourceName) && (error.response?.status === 521 || error.response?.status === 522) ) {
                 //     // torrent source not responding on this moment, dont save error

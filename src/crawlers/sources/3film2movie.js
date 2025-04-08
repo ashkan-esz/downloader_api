@@ -18,24 +18,14 @@ import {subtitleFormatsRegex} from "../subtitle.js";
 import {saveError} from "../../error/saveError.js";
 import * as axiosUtils from "../utils/axiosUtils.js";
 
-export const sourceConfig = Object.freeze({
-    sourceName: "film2movie",
-    needHeadlessBrowser: true,
-    sourceAuthStatus: "ok",
-    vpnStatus: Object.freeze({
-        poster: 'allOk',
-        trailer: 'noVpn',
-        downloadLink: 'noVpn',
-    }),
-    isTorrent: false,
-    replaceInfoOnDuplicate: true,
-    removeScriptAndStyleFromHtml: false,
-});
 let prevTitles = [];
 
-export default async function film2movie({movie_url}, pageCount, extraConfigs) {
+export default async function film2movie(sourceConfig, pageCount, extraConfigs) {
     prevTitles = [];
-    let {lastPage, linksCount} = await wrapper_module(sourceConfig, movie_url, pageCount, search_title, extraConfigs);
+    let {
+        lastPage,
+        linksCount
+    } = await wrapper_module(sourceConfig.config, sourceConfig.movie_url, pageCount, search_title, extraConfigs);
     return [lastPage, linksCount];
 }
 
@@ -119,7 +109,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                     downloadLinks = handleLinksExtraStuff(downloadLinks);
 
                     let sourceData = {
-                        sourceConfig,
+                        sourceConfig: sourceConfig,
                         pageLink,
                         downloadLinks,
                         watchOnlineLinks: [],
@@ -127,7 +117,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                         poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
                         trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
-                        subtitles: getSubtitles($2, type, pageLink),
+                        subtitles: getSubtitles($2, type, pageLink, sourceConfig.sourceName),
                         rating: null,
                         cookies
                     };
@@ -160,7 +150,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
     }
 }
 
-export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, extraConfigs) {
+export async function handlePageCrawler(pageLink, title, type, pageNumber , sourceConfig, extraConfigs) {
     try {
         title = title.toLowerCase();
         let year;
@@ -206,7 +196,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber = 0, e
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
                 poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
                 trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
-                subtitles: getSubtitles($2, type, pageLink),
+                subtitles: getSubtitles($2, type, pageLink, sourceConfig.sourceName),
                 rating: null,
                 cookies
             };
@@ -238,7 +228,7 @@ function fixYear($) {
     }
 }
 
-function getWatchOnlineLinks($, type, pageLink) {
+function getWatchOnlineLinks($, type, pageLink, sourceName) {
     //NOTE: links from film2movie.upera.tv
     //NOTE: cannot extract season/episode from link
     try {
@@ -253,7 +243,7 @@ function getWatchOnlineLinks($, type, pageLink) {
                 const linkHref = $($a[i]).attr('href');
                 if (linkHref.includes('.upera.')) {
                     const info = getFileData($, $a[i], type);
-                    const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceConfig.sourceName);
+                    const watchOnlineLink = getWatchOnlineLinksModel(linkHref, info, type, sourceName);
                     result.push(watchOnlineLink);
                 }
             }
@@ -267,14 +257,14 @@ function getWatchOnlineLinks($, type, pageLink) {
     }
 }
 
-function getSubtitles($, type, pageLink) {
+function getSubtitles($, type, pageLink, sourceName) {
     try {
         let result = [];
         const $a = $('a');
         for (let i = 0, _length = $a.length; i < _length; i++) {
             const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceName);
                 result.push(subtitle);
             }
         }

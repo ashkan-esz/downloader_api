@@ -40,7 +40,8 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             watchOnlineLinks,
             torrentLinks,
             persianSummary,
-            poster, trailers,
+            poster, widePoster,
+            trailers,
             subtitles,
             rating,
             cookies,
@@ -50,14 +51,14 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         if (pageNumber === 1) {
             badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
-                await saveCrawlerBadLink(sourceConfig.sourceName, pageLink, badLinks.slice(0, 10));
-                const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                await saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
+                const warningMessages = getCrawlerWarningMessages(sourceConfig.config.sourceName);
                 await saveCrawlerWarning(warningMessages.crawlerBadLink);
             }
         }
 
-        if (!sourceConfig.isTorrent) {
-            checkCrawledDataForChanges(sourceConfig.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
+        if (!sourceConfig.config.isTorrent) {
+            checkCrawledDataForChanges(sourceConfig.config.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
         }
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);
@@ -67,7 +68,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
             return removePageLinkToCrawlerStatus(pageLink);
         }
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.addFileSize);
-        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.sourceName, sourceConfig.vpnStatus);
+        await addFileSizeToDownloadLinks(type, downloadLinks, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus);
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.checkingDB);
         if (checkForceStopCrawler()) {
@@ -82,7 +83,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         let {titleObj, db_data} = await getTitleObjAndDbData(title, year, type, downloadLinks, torrentLinks);
 
         let titleModel = getMovieModel(titleObj, pageLink, type, downloadLinks, torrentLinks,
-            sourceConfig.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.vpnStatus);
+            sourceConfig.config.sourceName, year, poster, persianSummary, trailers, watchOnlineLinks, subtitles, sourceConfig.config.vpnStatus);
 
         if (db_data === null) {//new title
             if (downloadLinks.length > 0 || torrentLinks.length > 0) {
@@ -92,7 +93,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
-                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.sourceName, pageLink, rating, extraConfigs);
+                let result = await addApiData(titleModel, downloadLinks, watchOnlineLinks, torrentLinks, sourceConfig.config.sourceName, pageLink, rating, extraConfigs);
                 if (checkForceStopCrawler()) {
                     return removePageLinkToCrawlerStatus(pageLink);
                 }
@@ -104,7 +105,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
                 let {
                     downloadTorrentLinks,
                     removeTorrentLinks
-                } = checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.sourceName, true);
+                } = checkTorrentAutoDownloaderMustRun(result.titleModel, sourceConfig.config.sourceName, true);
                 result.titleModel.downloadTorrentLinks = removeDuplicateElements(downloadTorrentLinks);
                 result.titleModel.removeTorrentLinks = removeDuplicateElements(removeTorrentLinks);
 
@@ -152,12 +153,12 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.sourceName, pageLink, rating, extraConfigs);
+        let apiData = await apiDataUpdate(db_data, downloadLinks, watchOnlineLinks, torrentLinks, type, poster, sourceConfig.config.sourceName, pageLink, rating, extraConfigs);
         if (checkForceStopCrawler()) {
             return removePageLinkToCrawlerStatus(pageLink);
         }
-        let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.sourceName, sourceConfig.vpnStatus);
-        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.sourceName, downloadLinks, watchOnlineLinks, torrentLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
+        let subUpdates = await handleSubUpdates(db_data, poster, trailers, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus);
+        await handleDbUpdate(db_data, persianSummary, subUpdates, sourceConfig.config.sourceName, downloadLinks, watchOnlineLinks, torrentLinks, titleModel.subtitles, type, apiData, pageLink, extraConfigs);
         removePageLinkToCrawlerStatus(pageLink);
     } catch (error) {
         await saveError(error);

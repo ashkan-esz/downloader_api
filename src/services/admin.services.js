@@ -32,6 +32,7 @@ import * as roleAndPermissionsDbMethods from "../data/db/admin/roleAndPermission
 import {_testUserId} from "../preStart.js";
 import PQueue from "p-queue";
 import axios from "axios";
+import {getSourcesObjDB} from "../data/db/crawlerMethodsDB.js";
 
 const adminNotifications = [];
 
@@ -95,7 +96,10 @@ export async function crawlUrl(sourceName, url, title, type) {
     if (!sourcesNames.includes(sourceName)) {
         return generateServiceResult({data: null}, 404, errorMessage.crawlerSourceNotFound);
     }
-    let result = await sourceMethods[sourceName].handlePageCrawler(url, title, type);
+
+    let sourcesObj = await getSourcesObjDB()
+    let sourceConfig = sourcesObj[sourceName].config;
+    let result = await sourceMethods[sourceName].handlePageCrawler(url, title, type, 0, sourceConfig);
     if (result === 'error') {
         return generateServiceResult({
             data: {

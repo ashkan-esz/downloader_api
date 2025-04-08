@@ -22,7 +22,7 @@ export async function handleCrawledTitles(titles, pageNumber, pageCount, saveCra
             break;
         }
         const t = i;
-        promiseQueue.add(() => saveCrawlDataFunc(titles[t], extraConfigs));
+        promiseQueue.add(() => saveCrawlDataFunc(titles[t], sourceConfig, extraConfigs));
     }
 
     await promiseQueue.onEmpty();
@@ -37,7 +37,7 @@ export async function handleSearchedCrawledTitles(titles, pageNumber, pageCount,
     for (let i = 0; i < titles.length; i++) {
         await promiseQueue.onSizeLessThan(concurrencyNumber);
         const t = i;
-        promiseQueue.add(() => saveCrawlDataFunc(titles[t], extraConfigs));
+        promiseQueue.add(() => saveCrawlDataFunc(titles[t], sourceConfig, extraConfigs));
     }
 
     await promiseQueue.onEmpty();

@@ -686,11 +686,11 @@ export async function getMovieSources() {
 
     delete result._id;
     delete result.title;
-    let sourcesMethods = getSourcesMethods();
     let sourcesUrls = Object.keys(result).map(sourceName => ({
         sourceName: sourceName,
         url: result[sourceName].movie_url.replace('/page/', ''),
-        isTorrent: sourcesMethods[sourceName]?.sourceConfig.isTorrent,
+        config: result[sourceName]?.config,
+        isTorrent: result[sourceName]?.config.isTorrent,
     }));
 
     if (sourcesUrls.length === 0) {

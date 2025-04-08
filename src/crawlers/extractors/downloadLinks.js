@@ -74,7 +74,7 @@ export function getDownloadLinksFromPageContent($, title, type, year, sourceName
             downloadLinks = sourceMethods.handleLinksExtraStuff(downloadLinks);
         }
 
-        return removeDuplicateLinks(downloadLinks, sourceMethods.sourceConfig.replaceInfoOnDuplicate);
+        return removeDuplicateLinks(downloadLinks, true);
     } catch (error) {
         saveError(error);
         return [];

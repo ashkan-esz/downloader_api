@@ -63,7 +63,8 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                 continue;
             }
 
-            let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url, extraConfigs).then(async checkUrlResult => {
+            let allConfigs = {...(sources[i].config || {}), ...(extraConfigs || {})};
+            let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url, allConfigs).then(async checkUrlResult => {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                 if (checkUrlResult === "error") {
                     await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
