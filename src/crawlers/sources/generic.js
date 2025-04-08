@@ -22,33 +22,33 @@ import * as axiosUtils from "../utils/axiosUtils.js";
 import * as jikanApi from "../3rdPartyApi/jikanApi.js";
 
 
-export default async function generic(config, pageCount, extraConfigs = {}) {
+export default async function generic(sourceConfig, pageCount, extraConfigs = {}) {
     let p1 = 0, p2 = 0, p3 = 0;
     let count1 = 0, count2 = 0, count3 = 0;
 
-    if (config.movie_url) {
+    if (sourceConfig.movie_url) {
         let {
             lastPage,
             linksCount
-        } = await wrapper_module(config, config.movie_url, pageCount, search_title, extraConfigs);
+        } = await wrapper_module(sourceConfig, sourceConfig.movie_url, pageCount, search_title, extraConfigs);
         p1 = lastPage;
         count1 = linksCount;
     }
 
-    if (config.serial_url) {
+    if (sourceConfig.serial_url) {
         let {
             lastPage,
             linksCount
-        } = await wrapper_module(config, config.serial_url, pageCount, search_title, extraConfigs);
+        } = await wrapper_module(sourceConfig, sourceConfig.serial_url, pageCount, search_title, extraConfigs);
         p2 = lastPage;
         count2 = linksCount;
     }
 
-    if (config.anime_url) {
+    if (sourceConfig.anime_url) {
         let {
             lastPage,
             linksCount
-        } = await wrapper_module(config, config.anime_url, pageCount, search_title, extraConfigs);
+        } = await wrapper_module(sourceConfig, sourceConfig.anime_url, pageCount, search_title, extraConfigs);
         p3 = lastPage;
         count3 = linksCount;
     }
@@ -114,7 +114,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
         }
 
         if (config.nodeEnv === 'dev') {
-            console.log(`${sourceConfig.sourceName}/${type}/${pageNumber}/${title || text}  ========>  `);
+            console.log(`${sourceConfig.config.sourceName}/${type}/${pageNumber}/${title || text}  ========>  `);
         }
 
         // crawl the movie download page
@@ -164,9 +164,9 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
             watchOnlineLinks: [],
             torrentLinks: [],
             persianSummary: summaryExtractor.getPersianSummary($2, title || text, year),
-            poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
-            widePoster: posterExtractor.getWidePoster($2, pageLink, sourceConfig.sourceName),
-            trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
+            poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName),
+            widePoster: posterExtractor.getWidePoster($2, pageLink, sourceConfig.config.sourceName),
+            trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer),
             // subtitles: getSubtitles($2, type, pageLink),
             rating: getRatings($2),
             cookies
@@ -176,7 +176,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
             return downloadLinks.length;
         }
 
-        if (sourceConfig.checkTrailers) {
+        if (sourceConfig.config.checkTrailers) {
             // check trailers are available
             sourceData.trailers = await checkTrailers(sourceData.trailers, sourceConfig);
         }
@@ -710,7 +710,7 @@ function getWatchOnlineLinks($, type, pageLink, sourceConfig) {
                 const sizeMatch = infoText.match(/(\d\d\d?\s*MB)|(\d\d?(\.\d\d?)?\s*GB)/gi);
                 const size = sizeMatch ? purgeSizeText(sizeMatch.pop()) : '';
                 info = size ? (info + ' - ' + size.replace(/\s+/, '')) : info;
-                const watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.sourceName);
+                const watchOnlineLink = getWatchOnlineLinksModel($($a[i]).prev().attr('href'), info, type, sourceConfig.config.sourceName);
                 watchOnlineLink.link = linkHref;
                 result.push(watchOnlineLink);
             }
@@ -732,7 +732,7 @@ function getSubtitles($, type, pageLink, sourceConfig) {
         for (let i = 0, _length = $a.length; i < _length; i++) {
             const linkHref = $($a[i]).attr('href');
             if (linkHref && linkHref.match(subtitleFormatsRegex)) {
-                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.sourceName);
+                const subtitle = getSubtitleModel(linkHref, '', type, sourceConfig.config.sourceName);
                 result.push(subtitle);
             }
         }
@@ -983,7 +983,7 @@ function addTitleNameToInfo(downloadLinks, title, year) {
 //----------------------------------------------------------------------
 
 function handleLinksExtraStuff(type, downloadLinks, sourceConfig) {
-    downloadLinks = utils.removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+    downloadLinks = utils.removeDuplicateLinks(downloadLinks, sourceConfig.config.replaceInfoOnDuplicate);
     const qualitySampleLinks = downloadLinks.map(item => item.qualitySample).filter(item => item);
     downloadLinks = downloadLinks.filter(item => !qualitySampleLinks.includes(item.link));
 

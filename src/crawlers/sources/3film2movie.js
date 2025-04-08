@@ -25,7 +25,7 @@ export default async function film2movie(sourceConfig, pageCount, extraConfigs) 
     let {
         lastPage,
         linksCount
-    } = await wrapper_module(sourceConfig.config, sourceConfig.movie_url, pageCount, search_title, extraConfigs);
+    } = await wrapper_module(sourceConfig, sourceConfig.movie_url, pageCount, search_title, extraConfigs);
     return [lastPage, linksCount];
 }
 
@@ -105,7 +105,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                             return item;
                         })
                     }
-                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+                    downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.config.replaceInfoOnDuplicate);
                     downloadLinks = handleLinksExtraStuff(downloadLinks);
 
                     let sourceData = {
@@ -115,9 +115,9 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                         watchOnlineLinks: [],
                         torrentLinks: [],
                         persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                        poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
-                        trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
-                        subtitles: getSubtitles($2, type, pageLink, sourceConfig.sourceName),
+                        poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName),
+                        trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer),
+                        subtitles: getSubtitles($2, type, pageLink, sourceConfig.config.sourceName),
                         rating: null,
                         cookies
                     };
@@ -184,7 +184,7 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber , sour
                 ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
             }
 
-            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.replaceInfoOnDuplicate);
+            downloadLinks = removeDuplicateLinks(downloadLinks, sourceConfig.config.replaceInfoOnDuplicate);
             downloadLinks = handleLinksExtraStuff(downloadLinks);
 
             let sourceData = {
@@ -194,9 +194,9 @@ export async function handlePageCrawler(pageLink, title, type, pageNumber , sour
                 watchOnlineLinks: [],
                 torrentLinks: [],
                 persianSummary: summaryExtractor.getPersianSummary($2, title, year),
-                poster: posterExtractor.getPoster($2, pageLink, sourceConfig.sourceName),
-                trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.sourceName, sourceConfig.vpnStatus.trailer),
-                subtitles: getSubtitles($2, type, pageLink, sourceConfig.sourceName),
+                poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName),
+                trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer),
+                subtitles: getSubtitles($2, type, pageLink, sourceConfig.config.sourceName),
                 rating: null,
                 cookies
             };

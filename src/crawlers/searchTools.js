@@ -61,7 +61,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
         if (!url || pageCount === 0) {
             return {lastPage: lastPageNumber, linksCount: linksCount};
         }
-        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.sourceName, sourceConfig.needHeadlessBrowser, extraConfigs);
+        const concurrencyNumber = await getConcurrencyNumber(sourceConfig.config.sourceName, sourceConfig.config.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; (pageCount === null || i <= pageCount); i++) {
             if (checkForceStopCrawler()) {
@@ -80,12 +80,12 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                 changeSourcePageFromCrawlerStatus(url + `${i}`, linkStateMessages.sourcePage.fetchingEnd);
                 updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber, extraConfigs);
                 lastPageNumber = i;
-                if (checkLastPage($, links, checkGoogleCache, sourceConfig.sourceName, responseUrl, pageTitle, i)) {
+                if (checkLastPage($, links, checkGoogleCache, sourceConfig.config.sourceName, responseUrl, pageTitle, i)) {
                     if (i !== 2 || pageCount !== 1) {
-                        await saveServerLog(`end of crawling (${sourceConfig.sourceName}), last page: ${url + i}::${pageCount}`);
+                        await saveServerLog(`end of crawling (${sourceConfig.config.sourceName}), last page: ${url + i}::${pageCount}`);
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
-                        const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName, i);
+                        const warningMessages = getCrawlerWarningMessages(sourceConfig.config.sourceName, i);
                         await saveCrawlerWarning(warningMessages.sourceLastPage);
                     }
                     break;
@@ -132,7 +132,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
             links,
             cookies,
             pageContent,
-        } = await getLinks(page_link, sourceConfig, 'movieDataPage', extraConfigs, sourceLinkData);
+        } = await getLinks(page_link, sourceConfig.config, 'movieDataPage', extraConfigs, sourceLinkData);
         if ($ === null || $ === undefined || checkForceStopCrawler()) {
             removePageLinkToCrawlerStatus(page_link);
             return null;
@@ -172,7 +172,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
                         link: link.trim(),
                         info: link_info.replace(/^s\d+e\d+(-?e\d+)?\./i, ''),
                         qualitySample: getDecodedLink(qualitySample),
-                        sourceName: sourceConfig.sourceName,
+                        sourceName: sourceConfig.config.sourceName,
                         season, episode,
                     });
                 }
@@ -225,7 +225,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
     }
 }
 
-async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData = null, retryCounter = 0) {
+async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = null, retryCounter = 0) {
     let checkGoogleCache = false;
     let responseUrl = '';
     let pageTitle = '';
@@ -245,16 +245,16 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             }
             await pauseCrawler();
             let pageData = null;
-            if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+            if (!extraConfigs?.dontUseRemoteBrowser && config.needHeadlessBrowser && !sourceLinkData) {
                 saveLinksStatus(pageLink, pageType, 'fetchingStart');
-                pageData = await getPageData(url, sourceConfig.sourceName, {...sourceConfig, ...(extraConfigs || {})},
-                    sourceConfig.sourceAuthStatus, pageType, true);
+                pageData = await getPageData(url, config.sourceName, {...config, ...(extraConfigs || {})},
+                    config.sourceAuthStatus, pageType, true);
                 if (pageData && pageData.pageContent) {
                     responseUrl = pageData.responseUrl;
                     pageTitle = pageData.pageTitle;
                     cookies = pageData.cookies;
                     pageContent = pageData.pageContent;
-                    if (sourceConfig.removeScriptAndStyleFromHtml) {
+                    if (config.removeScriptAndStyleFromHtml) {
                         pageData.pageContent = removeScriptAndStyle(pageData.pageContent);
                     }
                     $ = cheerio.load(pageData.pageContent);
@@ -263,27 +263,27 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
             }
             if (!pageData || (!pageData.pageContent && !pageData.isAxiosCalled)) {
                 freeAxiosBlackListSources();
-                let sourceData = axiosBlackListSources.find(item => item.sourceName === sourceConfig.sourceName);
+                let sourceData = axiosBlackListSources.find(item => item.sourceName === config.sourceName);
                 if (sourceData && sourceData.isBlocked && !sourceLinkData && pageType === 'movieDataPage') {
                     $ = null;
                     links = [];
                 } else {
                     if (pageType === 'sourcePage') {
-                        if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                        if (!extraConfigs?.dontUseRemoteBrowser && config.needHeadlessBrowser && !sourceLinkData) {
                             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.retryAxiosCookie);
                         } else {
                             changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingStart_axios);
                         }
                     } else {
-                        if (!extraConfigs?.dontUseRemoteBrowser && sourceConfig.needHeadlessBrowser && !sourceLinkData) {
+                        if (!extraConfigs?.dontUseRemoteBrowser && config.needHeadlessBrowser && !sourceLinkData) {
                             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.retryAxiosCookie);
                         } else {
                             changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.gettingPageData.gettingPageData_axios);
                         }
                     }
                     let sourcesObject = await getAxiosSourcesObject();
-                    let sourceCookies = sourcesObject ? sourcesObject[sourceConfig.sourceName]?.cookies || [] : [];
-                    let sourceHeaders = sourcesObject ? sourcesObject[sourceConfig.sourceName]?.headers || '' : '';
+                    let sourceCookies = sourcesObject ? sourcesObject[config.sourceName]?.cookies || [] : [];
+                    let sourceHeaders = sourcesObject ? sourcesObject[config.sourceName]?.headers || '' : '';
                     sourceHeaders = sourceHeaders ? JSON.parse(sourceHeaders) : {};
                     const cookie = sourceCookies.map(item => item.name + '=' + item.value + ';').join(' ');
                     let responseTimeout = pageType === 'sourcePage' ? 15 * 1000 : 10 * 1000;
@@ -297,14 +297,14 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                         links = [];
                     } else {
                         pageContent = response.data;
-                        if (sourceConfig.removeScriptAndStyleFromHtml) {
+                        if (config.removeScriptAndStyleFromHtml) {
                             response.data = removeScriptAndStyle(response.data);
                         }
                         $ = cheerio.load(response.data);
                         links = $('a');
                     }
                     if (links.length < 5 && !sourceLinkData) {
-                        addSourceToAxiosBlackList(sourceConfig.sourceName, extraConfigs);
+                        addSourceToAxiosBlackList(config.sourceName, extraConfigs);
                     }
                 }
             }
@@ -318,7 +318,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                 url = url.replace(/(?<=(page\/\d+))\/$/, '');
                 retryCounter++;
                 saveLinksStatus(pageLink, pageType, 'retryOnNotFound');
-                return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
             }
             if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 if (decodeURIComponent(url) === url) {
@@ -326,7 +326,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                     if (temp) {
                         url = url.replace(temp, encodeURIComponent(temp));
                         saveLinksStatus(pageLink, pageType, 'retryUnEscapedCharacters');
-                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                        return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 }
                 error.isAxiosError = true;
@@ -335,7 +335,7 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                 await saveErrorIfNeeded(error);
             } else {
                 if (!sourceLinkData) {
-                    addSourceToAxiosBlackList(sourceConfig.sourceName, extraConfigs);
+                    addSourceToAxiosBlackList(config.sourceName, extraConfigs);
                 }
                 saveLinksStatus(pageLink, pageType, 'fromCache');
                 let cacheResult = await getFromGoogleCache(url);
@@ -343,31 +343,31 @@ async function getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkDat
                 links = cacheResult.links;
                 checkGoogleCache = true;
                 if (error.message === 'timeout of 10000ms exceeded') {
-                    const warningMessages = getCrawlerWarningMessages('10s', sourceConfig.sourceName);
+                    const warningMessages = getCrawlerWarningMessages('10s', config.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
-                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                        return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
-                    const warningMessages = getCrawlerWarningMessages('15s', sourceConfig.sourceName);
+                    const warningMessages = getCrawlerWarningMessages('15s', config.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
-                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                        return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.message === 'aborted') {
-                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    const warningMessages = getCrawlerWarningMessages(config.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosAbortError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
-                        return await getLinks(url, sourceConfig, pageType, extraConfigs, sourceLinkData, retryCounter);
+                        return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.code === 'EAI_AGAIN') {
-                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    const warningMessages = getCrawlerWarningMessages(config.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosEaiError);
                 } else if (error.message === 'Request failed with status code 403') {
-                    const warningMessages = getCrawlerWarningMessages(sourceConfig.sourceName);
+                    const warningMessages = getCrawlerWarningMessages(config.sourceName);
                     await saveCrawlerWarning(warningMessages.sourceErrors.axios403);
                 } else {
                     await saveErrorIfNeeded(error);
