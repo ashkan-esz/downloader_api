@@ -151,7 +151,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
                 (extraChecker && extraChecker($, links[j], title, type)) ||
                 check_format(link, title)
             ) {
-                let link_info = getFileData($, links[j], type, sourceLinkData, title);
+                let link_info = getFileData($, links[j], type, sourceLinkData, title, sourceConfig);
                 let qualitySample = getQualitySample ? getQualitySample($, links[j], type) || '' : '';
                 if (link_info !== 'trailer' && link_info !== 'ignore') {
                     let season = 0, episode = 0, isNormalCase = false;
@@ -387,7 +387,8 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
             if ($ && !hasSidebarClass($(links[i]))) {
                 let href = $(links[i]).attr('href') || "";
 
-                if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt')) {
+                if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt') &&
+                !href.match(/\.(avi|flv|m4v|mkv|mka|mov|mp4|mpg|mpeg|rm|swf|wmv)(\?((md\d)|(par))=.+)?$/i)) {
                     continue
                 }
 

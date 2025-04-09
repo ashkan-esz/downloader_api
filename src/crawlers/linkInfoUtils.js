@@ -612,7 +612,7 @@ export function getCleanLinkInfo(info) {
         .replace(/10?B?itr?/i, '10bit')
         .replace('.HDR10Plus', '.HDR10')
         .replace(/\.10\.Bit/i, '.10bit')
-        .replace(/\.(H264|HEVC|mkv|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
+        .replace(/\.(H264|HEVC|mkv|mka|mp4|uRay|WEB|Dolby|vision|x26|x65|x2256|265|P2P|DC|CM|AMZN|Ultra)(?=(\.|$))/gi, '')
         .replace(/Part([\s.])\d/g, (res) => res.replace(/[\s.]/, '_'))
         .replace(/Part\d/g, (res) => res.replace('Part', 'Part_'))
         .replace(/Special\d/, (res) => res.replace('Special', 'Special_'))

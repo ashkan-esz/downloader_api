@@ -164,9 +164,10 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
             watchOnlineLinks: [],
             torrentLinks: [],
             persianSummary: summaryExtractor.getPersianSummary($2, title || text, year),
-            poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName),
+            poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.dontRemoveDimensions),
             widePoster: posterExtractor.getWidePoster($2, pageLink, sourceConfig.config.sourceName),
             trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer),
+            subtitles: [],
             // subtitles: getSubtitles($2, type, pageLink),
             rating: getRatings($2),
             cookies
@@ -812,7 +813,7 @@ function extraSearchMatch($, link, title) {
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-export function getFileData($, link, type, sourceLinkData, title) {
+export function getFileData($, link, type, sourceLinkData, title, sourceConfig) {
     try {
         if ($(link).hasClass("wp-embedded-video")) {
             return "ignore";
@@ -836,7 +837,7 @@ export function getFileData($, link, type, sourceLinkData, title) {
         //     .replace('.Anime.20Dubbing', '')
         //     .replace(/Galaxy\.Tv/i, 'GalaxyTv');
 
-        const Censored = linkHref.match(/(?<!(the[._-]))family(?!([._-]\d+))/) ? 'Censored' : '';
+        const Censored = sourceConfig?.config?.is_censored || linkHref.match(/(?<!(the[._-]))family(?!([._-]\d+))/) ? 'Censored' : '';
 
         const roundMatch = linkHref.match(/\.Round\d\d?\./i);
         const round = roundMatch?.pop().replace(/\./g, '').replace(/\d\d?/, (res) => '_' + res) || '';
