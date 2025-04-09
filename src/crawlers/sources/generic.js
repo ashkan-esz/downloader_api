@@ -161,13 +161,21 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
             sourceConfig,
             pageLink,
             downloadLinks,
-            watchOnlineLinks: [],
+            watchOnlineLinks: sourceConfig.config.has_watch_online ? [] : [],
             torrentLinks: [],
-            persianSummary: summaryExtractor.getPersianSummary($2, title || text, year),
-            poster: posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.dontRemoveDimensions),
-            widePoster: posterExtractor.getWidePoster($2, pageLink, sourceConfig.config.sourceName),
-            trailers: trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer),
-            subtitles: [],
+            persianSummary: sourceConfig.config.has_summary
+                ? summaryExtractor.getPersianSummary($2, title || text, year)
+                : "",
+            poster: sourceConfig.config.has_poster
+                ? posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.dontRemoveDimensions)
+            : "",
+            widePoster: sourceConfig.config.has_wide_poster
+                ? posterExtractor.getWidePoster($2, pageLink, sourceConfig.config.sourceName)
+                : "",
+            trailers: sourceConfig.config.has_trailer
+            ? trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer)
+                : [],
+            subtitles: sourceConfig.config.has_subtitle ?  [] : [],
             // subtitles: getSubtitles($2, type, pageLink),
             rating: getRatings($2),
             cookies
