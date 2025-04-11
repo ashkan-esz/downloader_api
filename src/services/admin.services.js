@@ -198,10 +198,11 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, description, userData) {
+export async function editSource(sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies, reCrawl, description, userData) {
     let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
         movie_url,
         serial_url,
+        anime_url,
         crawlCycle,
         disabled,
         cookies,
@@ -236,10 +237,11 @@ export async function removeSource(sourceName, userData) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies) {
+export async function addSource(sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies) {
     let result = await adminCrawlerDbMethods.addSourceDB(sourceName, {
         movie_url,
         serial_url,
+        anime_url,
         crawlCycle,
         disabled,
         cookies

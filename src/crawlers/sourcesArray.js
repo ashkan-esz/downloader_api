@@ -75,6 +75,7 @@ export const sourcesObj = () => {
     const sampleSourceConfig = {
         movie_url: "",
         serial_url: "",
+        anime_url: "",
         crawlCycle: 0,
         disabled: true,
         isManualDisable: false,
@@ -92,6 +93,22 @@ export const sourcesObj = () => {
         },
         config: {
             sourceName: "",
+            //------------------
+            isGeneric: false,
+            checkTrailers: false,
+            headers: '',
+            //------------------
+            is_censored: false,
+            is_half_network: false,
+            dontRemoveDimensions: false,
+            //------------------
+            has_watch_online: false,
+            has_summary: true,
+            has_poster: true,
+            has_wide_poster: true,
+            has_trailer: true,
+            has_subtitle: false,
+            //------------------
             needHeadlessBrowser: false,
             sourceAuthStatus: 'ok',
             vpnStatus: Object.freeze({

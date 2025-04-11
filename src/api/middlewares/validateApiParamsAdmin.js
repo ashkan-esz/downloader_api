@@ -367,6 +367,22 @@ const validations = Object.freeze({
         .trim()
         .replace('empty', ''),
 
+    anime_url: body('anime_url')
+        .exists().withMessage("Missed parameter anime_url")
+        .isString().withMessage("anime_url must be String")
+        .custom((value, {req, loc, path}) => {
+            if (value === "") {
+                return "empty";// optional
+            }
+            if (!isUri(value.toString()) || !value.toString().match(/[?/]page[/=]$/gi)) {
+                throw new Error("anime_url must be a valid url match regex :: [?/]page[/=]$");
+            } else {
+                return value;
+            }
+        })
+        .trim()
+        .replace('empty', ''),
+
     url_body: body('url')
         .exists().withMessage("Missed parameter url")
         .isString().withMessage("url must be String")

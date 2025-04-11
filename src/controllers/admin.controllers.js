@@ -88,8 +88,9 @@ export async function getCrawlerSources(req, res) {
 }
 
 export async function editSource(req, res) {
-    let {movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, description} = req.body;
-    let result = await adminServices.editSource(req.params.sourceName, movie_url, serial_url, crawlCycle, disabled, cookies, reCrawl, description, req.jwtUserData);
+    let {movie_url, serial_url, anime_url, crawlCycle, disabled, cookies, reCrawl, description} = req.body;
+    let result = await adminServices.editSource(req.params.sourceName,
+        movie_url, serial_url, anime_url, crawlCycle, disabled, cookies, reCrawl, description, req.jwtUserData);
     return sendResponse(req, res, result);
 }
 
@@ -99,8 +100,8 @@ export async function removeSource(req, res) {
 }
 
 export async function addSource(req, res) {
-    let {sourceName, movie_url, serial_url, crawlCycle, disabled, cookies} = req.body;
-    let result = await adminServices.addSource(sourceName, movie_url, serial_url, crawlCycle, disabled, cookies);
+    let {sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies} = req.body;
+    let result = await adminServices.addSource(sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies);
     return sendResponse(req, res, result);
 }
 
@@ -306,7 +307,14 @@ export async function createNewRole(req, res) {
 
 export async function editRoleData(req, res) {
     let {name} = req.params;
-    let {name: newName, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds} = req.body;
+    let {
+        name: newName,
+        description,
+        torrentLeachLimitGb,
+        torrentSearchLimit,
+        botsNotification,
+        permissionIds
+    } = req.body;
     let result = await adminServices.editRoleData(name, newName, description, torrentLeachLimitGb, torrentSearchLimit, botsNotification, permissionIds, req.permissions, req.jwtUserData);
     return sendResponse(req, res, result);
 }

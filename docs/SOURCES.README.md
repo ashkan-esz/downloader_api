@@ -9,6 +9,7 @@
     [sourceName]: {
         movie_url: "https://example.com/page/",
         serial_url: "https://example.com/serie/page/", //if needed
+        anime_url: "https://example.com/anime/page/", //if needed
         lastCrawlDate: Date,
         crawlCycle: Number, // 0 means no cycle
         cookies: Array({
@@ -40,6 +41,7 @@ for example ::
     digimoviez: {
         movie_url: "https://digimovie.vip/page/",
         serial_url: "https://digimovie.vip/serie/page/",
+        anime_url: "https://digimovie.vip/anime/page/",
         lastCrawlDate: 2022-09-14T18:37:22.403Z,
         crawlCycle: 3,
         cookies: [],

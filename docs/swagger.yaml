@@ -2249,6 +2249,8 @@ paths:
                   type: string
                 serial_url:
                   type: string
+                anime_url:
+                  type: string
                 crawlCycle:
                   type: integer
                   minimum: 0
@@ -2321,6 +2323,8 @@ paths:
                 movie_url:
                   type: string
                 serial_url:
+                  type: string
+                anime_url:
                   type: string
                 crawlCycle:
                   type: integer
@@ -4732,6 +4736,9 @@ security:
         movie_url:
           type: string
         serial_url:
+          type: string
+          required: false
+        anime_url:
           type: string
           required: false
         lastCrawlDate:
