@@ -70,6 +70,7 @@ export async function addSourceDB(data, userData) {
             return 'already exist';
         }
 
+        data.config.sourceName = data.sourceName;
         data.disabledDate = data.disabled ? new Date() : 0;
         data.addDate = new Date();
         data.lastCrawlDate = 0;
@@ -108,6 +109,14 @@ export async function updateSourceResponseStatus(sourceName, isResponsible) {
         }
 
         sourceData = sourceData[sourceName];
+
+        if (!sourceData.status) {
+            sourceData.status = {
+                lastCheck: 0,
+                notRespondingFrom: 0,
+            };
+        }
+
         sourceData.status.lastCheck = new Date();
         let temp = 0;
         if (isResponsible) {

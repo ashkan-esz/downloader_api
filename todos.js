@@ -1,4 +1,8 @@
 
+//todo : create docker image for auto downloader
+//todo : implement auto downloader on website
+//todo : implement auto downloader interface on website
+//todo : implement auto downloader
 //todo : 80. add feature: share movies between users
 //todo : 135.1 check bun
 //todo : 135.2 check fastify

@@ -14,6 +14,7 @@ import {
 import {resolveCrawlerWarning, saveCrawlerWarning, saveServerLog} from "../data/db/serverAnalysisDbMethods.js";
 import {getCrawlerWarningMessages} from "./status/crawlerWarnings.js";
 import {checkAndHandleSourceChange} from "./status/crawlerChange.js";
+import * as generic from "./sources/generic.js";
 
 
 export async function crawlerCycle() {
@@ -122,78 +123,61 @@ export async function crawler(sourceName, {
             };
         }
 
-        const sourcesNames = Object.keys(sourcesObj);
+        let sourcesNames = Object.keys(sourcesObj);
+        sourcesNames = sourcesNames.filter(item => !!sourcesObj[item].config);
         let sourcesArray = getSourcesArray(sourcesObj, crawlMode, extraConfigs);
         sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
         let fullyCrawledSources = [];
 
         if (!handleDomainChangeOnly) {
-            if (!sourceName) {
-                for (let i = 0; i < sourcesArray.length; i++) {
-                    if (
-                        (torrentState === "ignore" && sourcesArray[i].configs.isTorrent) ||
-                        (torrentState === "only" && !sourcesArray[i].configs.isTorrent)
-                    ) {
-                        continue;
+            for (let i = 0; i < sourcesNames.length; i++) {
+                if (
+                    (torrentState === "ignore" && sourcesObj[sourcesNames[i]].configs.isTorrent) ||
+                    (torrentState === "only" && !sourcesObj[sourcesNames[i]].configs.isTorrent) ||
+                    (sourceName && sourcesNames[i] !== sourceName) // in single source mode
+                ) {
+                    continue;
+                }
+
+                const sourceCookies = sourcesObj[sourcesNames[i]].cookies;
+                const disabled = sourcesObj[sourcesNames[i]].disabled;
+                const isManualDisable = sourcesObj[sourcesNames[i]].isManualDisable;
+                const warningMessages = getCrawlerWarningMessages(sourcesNames[i]);
+                if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
+                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                    continue;
+                }
+                if (disabled) {
+                    if (!isManualDisable) {
+                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
                     }
-                    const sourceCookies = sourcesObj[sourcesArray[i].name].cookies;
-                    const disabled = sourcesObj[sourcesArray[i].name].disabled;
-                    const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
-                    const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
-                    if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        await saveCrawlerWarning(warningMessages.expireCookieSkip);
-                        continue;
-                    }
-                    if (disabled) {
-                        if (!isManualDisable) {
-                            await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                    continue;
+                }
+                await resolveCrawlerWarning(warningMessages.expireCookieSkip);
+                await resolveCrawlerWarning(warningMessages.disabledSourceSkip);
+                await updateCrawlerStatus_sourceStart(sourcesNames[i], crawlMode);
+
+                let sourceStarter = sourcesArray.find(s => s.name === sourcesNames[i]);
+                if (!sourceStarter && sourcesObj[sourcesNames[i]].config.isGeneric) {
+                    const pageCount = crawlMode === 0 ? 1 : crawlMode === 1 ? 20 : null;
+                    sourceStarter = {
+                        starter: () => {
+                            return generic.default(sourcesObj[sourcesNames[i]], pageCount, extraConfigs);
                         }
-                        continue;
-                    }
-                    await resolveCrawlerWarning(warningMessages.expireCookieSkip);
-                    await resolveCrawlerWarning(warningMessages.disabledSourceSkip);
-                    await updateCrawlerStatus_sourceStart(sourcesArray[i].name, crawlMode);
-                    let lastPages = await sourcesArray[i].starter();
-                    await updateCrawlerStatus_sourceEnd(lastPages);
-                    await checkAndHandleSourceChange();
-                    if (crawlMode === 2) {
-                        fullyCrawledSources.push(sourcesArray[i].name);
-                        let now = new Date();
-                        sourcesObj[sourcesArray[i].name].lastCrawlDate = now;
-                        await updateSourcesObjDB({
-                            [sourcesArray[i].name + '.lastCrawlDate']: now,
-                        });
                     }
                 }
-            } else {
-                let findSource = sourcesArray.find(x => x.name === sourceName);
-                if (findSource) {
-                    const sourceCookies = sourcesObj[sourceName].cookies;
-                    const disabled = sourcesObj[sourceName].disabled;
-                    const isManualDisable = sourcesObj[sourceName].isManualDisable;
-                    const warningMessages = getCrawlerWarningMessages(sourceName);
-                    if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                        await saveCrawlerWarning(warningMessages.expireCookieSkip);
-                    } else if (disabled) {
-                        if (!isManualDisable) {
-                            await saveCrawlerWarning(warningMessages.disabledSourceSkip);
-                        }
-                    } else {
-                        await resolveCrawlerWarning(warningMessages.expireCookieSkip);
-                        await resolveCrawlerWarning(warningMessages.disabledSourceSkip);
-                        await updateCrawlerStatus_sourceStart(sourceName, crawlMode);
-                        let lastPages = await findSource.starter();
-                        await updateCrawlerStatus_sourceEnd(lastPages);
-                        await checkAndHandleSourceChange();
-                        if (crawlMode === 2) {
-                            fullyCrawledSources.push(sourceName);
-                            let now = new Date();
-                            sourcesObj[sourceName].lastCrawlDate = now;
-                            await updateSourcesObjDB({
-                                [sourceName + '.lastCrawlDate']: now,
-                            });
-                        }
-                    }
+
+                let lastPages = await sourceStarter.starter();
+
+                await updateCrawlerStatus_sourceEnd(lastPages);
+                await checkAndHandleSourceChange();
+                if (crawlMode === 2) {
+                    fullyCrawledSources.push(sourcesNames[i]);
+                    let now = new Date();
+                    sourcesObj[sourcesNames[i]].lastCrawlDate = now;
+                    await updateSourcesObjDB({
+                        [sourcesNames[i] + '.lastCrawlDate']: now,
+                    });
                 }
             }
         }

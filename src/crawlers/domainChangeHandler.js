@@ -12,6 +12,7 @@ import {
     updateCrawlerStatus_domainChangeHandlerEnd,
     updateCrawlerStatus_domainChangeHandlerStart
 } from "./status/crawlerStatus.js";
+import * as generic from "./sources/generic.js";
 
 
 export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extraConfigs) {
@@ -23,7 +24,9 @@ export async function domainChangeHandler(sourcesObj, fullyCrawledSources, extra
             .filter(sourceName => !sourcesObj[sourceName].isManualDisable)
             .map(sourceName => ({
                 sourceName: sourceName,
-                url: sourcesObj[sourceName].movie_url,
+                url: sourcesObj[sourceName].movie_url ||
+                    sourcesObj[sourceName].serial ||
+                    sourcesObj[sourceName].anime_url,
                 config: sourcesObj[sourceName].config,
                 checked: false,
                 changed: false,
@@ -196,6 +199,15 @@ async function updateDownloadLinks(sourcesObj, changedSources, fullyCrawledSourc
             await saveServerLog(`domain change handler: (${sourceName} reCrawl start)`);
             changeDomainChangeHandlerState(changedSources, linkStateMessages.domainChangeHandler.crawlingSources + ` || ${sourceName}`);
             let findSource = sourcesArray.find(item => item.name === sourceName);
+
+            if (!findSource && sourcesObj[sourceName].config.isGeneric) {
+                findSource = {
+                    starter: () => {
+                        return generic.default(sourcesObj[sourceName], null, {});
+                    }
+                }
+            }
+
             if (findSource) {
                 const sourceCookies = sourcesObj[sourceName].cookies;
                 const disabled = sourcesObj[sourceName].disabled;

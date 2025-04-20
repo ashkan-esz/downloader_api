@@ -95,7 +95,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                         break;
                     }
                     await pauseCrawler();
-                    await promiseQueue.onSizeLessThan(concurrencyNumber * 8);
+                    await promiseQueue.onSizeLessThan(concurrencyNumber * 6);
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url, sourceConfig, extraConfigs).then((count) => {
                             linksCount += (count || 0);
                         })

@@ -59,6 +59,12 @@ export default async function generic(sourceConfig, pageCount, extraConfigs = {}
 
 async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs) {
     try {
+
+        if (sourceConfig.config.isTorrent) {
+            //TODO : not implemented
+            return 0;
+        }
+
         let pageLink = link.attr('href');
 
         let {text, title} = getTitle($, link, pageLink, url);

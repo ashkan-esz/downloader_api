@@ -229,7 +229,7 @@ async function handleApiCall(url) {
                 //too much request
                 await new Promise((resolve => setTimeout(resolve, 1000)));
                 waitCounter++;
-            } else if (error.response?.status === 500 && waitCounter < 2) {
+            } else if ([500, 521].includes(error.response?.status) && waitCounter < 2) {
                 // failure from kitsu server
                 await new Promise((resolve => setTimeout(resolve, 3000)));
                 waitCounter++;
@@ -239,7 +239,7 @@ async function handleApiCall(url) {
                 await saveError(error);
                 return null;
             } else {
-                if (error.response && error.response.status !== 404 && error.response.status !== 503) {
+                if (![404, 503, 521].includes(error.response?.status)) {
                     await saveError(error);
                 }
                 return null;

@@ -10,6 +10,7 @@ import {updateCronJobsStatus} from "../utils/cronJobsStatus.js";
 import config from "../config/index.js";
 import {checkCrawlerIsDisabledByConfigsDb} from "../config/configsDb.js";
 import {getSourcesArray} from "../crawlers/sourcesArray.js";
+import * as generic from "../crawlers/sources/generic.js";
 
 
 export default function (agenda) {
@@ -107,6 +108,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
 
         updateCronJobsStatus('checkCrawlerDomains', 'checkingVipStatus');
         let sourcesArray = getSourcesArray(sourcesObj, 0, {
+            ...extraConfigs,
             returnAfterExtraction: true,
         });
         for (let i = 0; i < sources.length; i++) {
@@ -115,6 +117,18 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
             }
 
             let findSource = sourcesArray.find(item => item.name === sources[i].sourceName);
+
+            if (!findSource && sources[i].config.isGeneric) {
+                findSource = {
+                    starter: () => {
+                        return generic.default(sources[i], 1, {
+                            ...extraConfigs,
+                            returnAfterExtraction: true,
+                        });
+                    }
+                }
+            }
+
             if (findSource) {
                 let pagesAndCount = await findSource.starter();
                 if (pagesAndCount[pagesAndCount.length - 1] < 8) {
