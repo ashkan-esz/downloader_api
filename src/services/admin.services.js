@@ -198,16 +198,12 @@ export async function getCrawlerSources() {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function editSource(sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies, reCrawl, description, userData) {
-    let result = await adminCrawlerDbMethods.updateSourceData(sourceName, {
-        movie_url,
-        serial_url,
-        anime_url,
-        crawlCycle,
-        disabled,
-        cookies,
-        description,
-    }, userData);
+export async function editSource(sourceName, sourceData, userData) {
+    let reCrawl = sourceData.reCrawl;
+    delete sourceData.reCrawl;
+
+    sourceData.config.sourceName = sourceName;
+    let result = await adminCrawlerDbMethods.updateSourceData(sourceName, sourceData, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result === "notfound") {
@@ -237,15 +233,8 @@ export async function removeSource(sourceName, userData) {
     return generateServiceResult({data: result}, 200, '');
 }
 
-export async function addSource(sourceName, movie_url, serial_url, anime_url, crawlCycle, disabled, cookies) {
-    let result = await adminCrawlerDbMethods.addSourceDB(sourceName, {
-        movie_url,
-        serial_url,
-        anime_url,
-        crawlCycle,
-        disabled,
-        cookies
-    });
+export async function addSource(sourceData, userData) {
+    let result = await adminCrawlerDbMethods.addSourceDB(sourceData, userData);
     if (result === "error") {
         return generateServiceResult({data: null}, 500, errorMessage.serverError);
     } else if (result === "notfound") {

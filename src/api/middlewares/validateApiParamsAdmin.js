@@ -7,6 +7,7 @@ import {relations} from "../../data/db/moviesDbMethods.js";
 const types = ['movie', 'serial', 'anime_movie', 'anime_serial'];
 const mutateType = ['enable', 'disable'];
 const removeTypes = ['movie', 'staff', 'character', 'user'];
+const vpnStatusValues = ['allOk', 'noVpn', 'vpnOnly'];
 
 const validations = Object.freeze({
 
@@ -399,6 +400,79 @@ const validations = Object.freeze({
         .exists().withMessage("Missed parameter description")
         .isString().withMessage("description must be String")
         .trim().escape(),
+
+    sourceConfig: body('config')
+        .exists().withMessage("Missed parameter config")
+        .isObject().withMessage("config must be an Object")
+        .custom((value) => {
+            if (typeof value.sourceName !== 'string' || !value.sourceName.trim()) {
+                throw new Error('config.sourceName is required and must be a string');
+            }
+            if (typeof value.isGeneric !== 'boolean') {
+                throw new Error('config.isGeneric must be a boolean');
+            }
+            if (typeof value.checkTrailers !== 'boolean') {
+                throw new Error('config.checkTrailers must be a boolean');
+            }
+            if (value.headers !== undefined && typeof value.headers !== 'string') {
+                throw new Error('config.headers must be a string');
+            }
+            if (typeof value.is_censored !== 'boolean') {
+                throw new Error('config.is_censored must be a boolean');
+            }
+            if (typeof value.is_half_network !== 'boolean') {
+                throw new Error('config.is_half_network must be a boolean');
+            }
+            if (typeof value.dontRemoveDimensions !== 'boolean') {
+                throw new Error('config.dontRemoveDimensions must be a boolean');
+            }
+            if (typeof value.has_watch_online !== 'boolean') {
+                throw new Error('config.has_watch_online must be a boolean');
+            }
+            if (typeof value.has_summary !== 'boolean') {
+                throw new Error('config.has_summary must be a boolean');
+            }
+            if (typeof value.has_poster !== 'boolean') {
+                throw new Error('config.has_poster must be a boolean');
+            }
+            if (typeof value.has_wide_poster !== 'boolean') {
+                throw new Error('config.has_wide_poster must be a boolean');
+            }
+            if (typeof value.has_trailer !== 'boolean') {
+                throw new Error('config.has_trailer must be a boolean');
+            }
+            if (typeof value.has_subtitle !== 'boolean') {
+                throw new Error('config.has_subtitle must be a boolean');
+            }
+            if (typeof value.needHeadlessBrowser !== 'boolean') {
+                throw new Error('config.needHeadlessBrowser must be a boolean');
+            }
+            if (typeof value.sourceAuthStatus !== 'string' || !value.sourceAuthStatus.trim()) {
+                throw new Error('config.sourceAuthStatus is required and must be a string');
+            }
+            if (!value.vpnStatus || typeof value.vpnStatus !== 'object') {
+                throw new Error('config.vpnStatus must be an object');
+            }
+            if (!vpnStatusValues.includes(value.vpnStatus.poster)) {
+                throw new Error(`config.vpnStatus.poster must be one of: ${vpnStatusValues.join(', ')}`);
+            }
+            if (!vpnStatusValues.includes(value.vpnStatus.trailer)) {
+                throw new Error(`config.vpnStatus.trailer must be one of: ${vpnStatusValues.join(', ')}`);
+            }
+            if (!vpnStatusValues.includes(value.vpnStatus.downloadLink)) {
+                throw new Error(`config.vpnStatus.downloadLink must be one of: ${vpnStatusValues.join(', ')}`);
+            }
+            if (typeof value.isTorrent !== 'boolean') {
+                throw new Error('config.isTorrent must be a boolean');
+            }
+            if (typeof value.replaceInfoOnDuplicate !== 'boolean') {
+                throw new Error('config.replaceInfoOnDuplicate must be a boolean');
+            }
+            if (typeof value.removeScriptAndStyleFromHtml !== 'boolean') {
+                throw new Error('config.removeScriptAndStyleFromHtml must be a boolean');
+            }
+            return true;
+        }),
 
     title: body('title')
         .exists().withMessage("Missed parameter title")

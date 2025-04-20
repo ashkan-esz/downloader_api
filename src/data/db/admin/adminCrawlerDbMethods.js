@@ -57,16 +57,16 @@ export async function updateSourceData(sourceName, data, userData) {
     }
 }
 
-export async function addSourceDB(sourceName, data) {
+export async function addSourceDB(data, userData) {
     try {
         let collection = await getCollection('sources');
         let sourceData = await collection.findOne({title: 'sources'}, {
             projection: {
                 _id: 0,
-                [sourceName]: 1,
+                [data.sourceName]: 1,
             }
         });
-        if (sourceData && sourceData[sourceName]) {
+        if (sourceData && sourceData[data.sourceName]) {
             return 'already exist';
         }
 
@@ -74,16 +74,20 @@ export async function addSourceDB(sourceName, data) {
         data.addDate = new Date();
         data.lastCrawlDate = 0;
         data.lastDomainChangeDate = 0;
+        data.userData = {
+            userId: userData.userId,
+        }
 
         let res = await collection.findOneAndUpdate({title: 'sources'}, {
             $set: {
-                [sourceName]: data,
+                [data.sourceName]: data,
             }
         }, {returnDocument: "after"});
-        if (!res || !res.value) {
+
+        if (!res) {
             return "notfound";
         }
-        return {...res.value[sourceName], sourceName: sourceName};
+        return {...res[data.sourceName], sourceName: data.sourceName};
     } catch (error) {
         saveError(error);
         return 'error';
