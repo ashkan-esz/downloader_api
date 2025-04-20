@@ -35,12 +35,12 @@ export const encodersRegex = new RegExp([
     /|LAZY|BRMP|BLOW|VETO|QPEL|FiCO/, // 4
     /|Psa|YTS|EVO|QxR|RSG|GAZ|VXT|3dg|rDX|ELR|JYK|eSc|Joy|jbr|xTv|HdT|KRT|Btx|Ika|LLG|FGT|AME|RDH|ASW|BDP|NT[GB]/, // 3
     /|R?MT|GAN|AC3|w4f|d3g|DAA|TTL|NBY|AVS|LCK|T0M|z97|CHD|GDL|DDR|HDL|SVA|BTN|PTV|MRN|TFP|DON|HDH|VFX|Xlf|RBX|VIU/, // 3
-    /|NFP|PMV|[RH]?TM|BAM|IFR|MAX|JiO|mSD/, // 3
+    /|NFP|PMV|[RH]?TM|BAM|IFR|MAX|JiO|mSD|F2M/, // 3
     /|Ift|tbs|SNG|YST|HET|HDC|m2g|UNK|RKO?|TM[VK]|MHB|EXT|REM|DMV|BdC/, // 3
     /|HS|MW|IQ|IC|FC|NM|HV/, // 2
 ].map(item => item.source).join(''), "i");
 
-export const globalEncodersRegex = new RegExp(`(?<![a-zA-Z\d])(${encodersRegex.source})`, 'gi');
+export const globalEncodersRegex = new RegExp(`(?<![a-zA-Z\d\/])(${encodersRegex.source})`, 'gi');
 // export const globalEncodersRegex = new RegExp(encodersRegex, 'gi');
 
 export const linkInfoRegex = new RegExp([
@@ -173,6 +173,7 @@ export function purgeQualityText(qualityText) {
         .replace('سه زبانه', '')
         .replace('زیرنویس', '')
         .replace('فارسی', '')
+        .replace(/فا.رسی/, '')
         .replace('فاربسی', '')
         .replace('چسبیده', '')
         .replace('هاردساب', '')

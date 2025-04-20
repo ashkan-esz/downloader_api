@@ -9,7 +9,9 @@ import {
 import {getSourcesMethods, sourcesNames} from "../sourcesArray.js";
 import {getSeasonEpisode, removeDuplicateLinks} from "../utils/utils.js";
 import {
-    countriesRegex, filterLowResDownloadLinks,
+    countriesRegex,
+    encodersRegex,
+    filterLowResDownloadLinks,
     fixLinkInfoOrder,
     handleRedundantPartNumber,
     linkInfoRegex,
@@ -105,6 +107,9 @@ export function getLinksDoesntMatchLinkRegex(downloadLinks, type) {
     const badLinks = downloadLinks.filter(item =>
         (
             !item.info.match(linkInfoRegex) &&
+            !item.info.replace(
+                new RegExp(`\\.(${encodersRegex.source})(?=(\\.|$))`, 'gi'), '')
+                .match(linkInfoRegex) &&
             !item.info.match(countriesRegex)
         )
         || item.info.match(/[\u0600-\u06FF]/)
