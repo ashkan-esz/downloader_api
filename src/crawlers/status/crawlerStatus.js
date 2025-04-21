@@ -4,7 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 import {saveCrawlerLog} from "../../data/db/serverAnalysisDbMethods.js";
 import {getDatesBetween, getDecodedLink} from "../utils/utils.js";
 import {crawlerMemoryLimit} from "./crawlerController.js";
-import {getCpuAverageLoad, getMemoryStatus} from "../../utils/serverStatus.js";
+import {averageCpu, getMemoryStatus} from "../../utils/serverStatus.js";
 import {blackListSources, remoteBrowsers} from "../remoteHeadlessBrowser.js";
 import {axiosBlackListSources} from "../searchTools.js";
 
@@ -100,7 +100,7 @@ const crawlerLog = () => ({
 });
 
 setInterval(async () => {
-    crawlerStatus.limits.cpu.value = getCpuAverageLoad();
+    crawlerStatus.limits.cpu.value = [averageCpu];
     getMemoryStatus(false).then(res => {
         crawlerStatus.limits.memory.value = res.used.toFixed(0);
     });

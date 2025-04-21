@@ -688,7 +688,9 @@ export async function getMovieSources() {
     delete result.title;
     let sourcesUrls = Object.keys(result).map(sourceName => ({
         sourceName: sourceName,
-        url: result[sourceName].movie_url.replace('/page/', ''),
+        url: (result[sourceName].movie_url ||
+            result[sourceName].serial_url ||
+            result[sourceName].anime_url).replace('/page/', ''),
         config: result[sourceName]?.config,
         isTorrent: result[sourceName]?.config.isTorrent,
     }));

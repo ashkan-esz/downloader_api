@@ -1,5 +1,5 @@
 import config from "../../config/index.js";
-import {getCpuAverageLoad, getMemoryStatus} from "../../utils/serverStatus.js";
+import {averageCpu, getMemoryStatus} from "../../utils/serverStatus.js";
 import {
     checkForceResume,
     checkForceStopCrawler,
@@ -67,9 +67,8 @@ export async function pauseCrawler() {
     manualPauseDuration = 0;
     manualPauseUntil = 0;
     let memoryStatus = await getMemoryStatus(false);
-    let cpuAverageLoad = getCpuAverageLoad();
     const startTime = Date.now();
-    while (memoryStatus.used >= crawlerMemoryLimit || cpuAverageLoad[0] > config.crawler.cpuLimit) {
+    while (memoryStatus.used >= crawlerMemoryLimit || averageCpu > config.crawler.cpuLimit) {
         if (Date.now() - startTime > config.crawler.pauseDurationLimit * 60 * 1000) {
             const warningMessages = getCrawlerWarningMessages(config.crawler.pauseDurationLimit);
             await saveCrawlerWarning(warningMessages.crawlerPauseLimit);
@@ -80,7 +79,7 @@ export async function pauseCrawler() {
         }
         const pauseReason = memoryStatus.used >= crawlerMemoryLimit
             ? `memory/limit: ${memoryStatus.used.toFixed(0)}/${crawlerMemoryLimit.toFixed(0)} `
-            : `cpu/limit: ${cpuAverageLoad[0]}/${config.crawler.cpuLimit}`;
+            : `cpu/limit: ${averageCpu}/${config.crawler.cpuLimit}`;
         saveCrawlerPause(pauseReason);
         if (checkForceResume()) {
             disableForceResume();
@@ -94,19 +93,16 @@ export async function pauseCrawler() {
         // }
         await new Promise(resolve => setTimeout(resolve, 50));
         memoryStatus = await getMemoryStatus(false);
-        cpuAverageLoad = getCpuAverageLoad();
     }
     removeCrawlerPause();
 }
 
 export async function checkServerIsIdle() {
     const memoryStatus = await getMemoryStatus(false);
-    const cpuAverageLoad = getCpuAverageLoad();
     return (
         memoryStatus.used < crawlerMemoryLimit &&
         memoryStatus.used < (config.crawler.totalMemory * 0.6) &&
-        cpuAverageLoad[0] < 50 &&
-        cpuAverageLoad[1] < 50
+        averageCpu < 50
     );
 }
 

@@ -7,7 +7,15 @@ import {getCrawlerStatusObj} from "../crawlers/status/crawlerStatus.js";
 import {getJikanCacheSize} from "../crawlers/3rdPartyApi/jikanApi.js";
 import {getCronJobsStatus} from "./cronJobsStatus.js";
 
-nou.options.INTERVAL = 10000;
+const interval = 1000; // 1 second
+const cpuLimit = getCpuLimit();
+let lastMeasure = { time: process.hrtime(), usage: process.cpuUsage() };
+const samples = [];
+const SAMPLE_WINDOW = 5; // Average over 5 samples
+export let averageCpu = 0;
+nou.options.INTERVAL = 11000;
+
+schedule();
 
 export async function getServerResourcesStatus() {
     try {
@@ -40,16 +48,13 @@ export async function getCpuStatus(includeUsage = true) {
         model: cpu.model(),
         loadAvg: cpu.loadavg(),
         loadAvgTime: cpu.loadavgTime(),
+        _averageCpu: averageCpu,
     }
     if (includeUsage) {
         result.usage = await nou.cpu.usage(1000);
         result.free = await nou.cpu.free(1000);
     }
     return result;
-}
-
-export function getCpuAverageLoad() {
-    return nou.cpu.loadavg();
 }
 
 export async function getMemoryStatus(includeAll = true) {
@@ -104,4 +109,53 @@ export async function getDiskStatus() {
             free: diskStatus_os.free / (1024 * 1024),
         },
     });
+}
+
+// Use setImmediate to avoid timer drift
+function schedule() {
+    logCpuUsage();
+    setTimeout(schedule, interval - (performance.now() % interval));
+}
+
+function logCpuUsage() {
+    const cpu = getCpuUsage();
+
+    samples.push(cpu);
+    if (samples.length > SAMPLE_WINDOW) samples.shift();
+
+    averageCpu = samples.reduce((a, b) => a + b, 0) / samples.length;
+    // console.log(`Avg CPU (${SAMPLE_WINDOW}s): ${averageCpu.toFixed(2)}%`);
+}
+
+function getCpuUsage() {
+    const currentTime = process.hrtime();
+    const currentUsage = process.cpuUsage();
+
+    // Calculate elapsed time in microseconds
+    const elapsedTime =
+        (currentTime[0] - lastMeasure.time[0]) * 1e6 + // Seconds to microseconds
+        (currentTime[1] - lastMeasure.time[1]) / 1e3;  // Nanoseconds to microseconds
+
+    const elapsedUsage = {
+        user: currentUsage.user - lastMeasure.usage.user,
+        system: currentUsage.system - lastMeasure.usage.system,
+    };
+
+    // Update last measurement
+    lastMeasure = { time: currentTime, usage: currentUsage };
+
+    // Calculate CPU percentage relative to the 0.8 CPU limit
+    const cpuPercent =
+        (elapsedUsage.user + elapsedUsage.system) / (elapsedTime * cpuLimit) * 100;
+
+    return cpuPercent;
+}
+
+function getCpuLimit() {
+    // Read from environment variable
+    // if (process.env.CONTAINER_CPU_LIMIT) {
+    //     return parseFloat(process.env.CONTAINER_CPU_LIMIT);
+    // }
+
+    return 1;
 }

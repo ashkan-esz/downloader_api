@@ -341,7 +341,7 @@ export async function getServerAnalysisInTimesDB(fieldName, startTime, endTime, 
 
         const matchField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : 'date';
         const sortField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : 'date';
-        const sortMode = ['crawlerLogs'].includes(fieldName) ? -1 : 0;
+        const sortMode = ['crawlerLogs'].includes(fieldName) ? -1 : 1;
 
         let aggregationPipeline = [
             {
