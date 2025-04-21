@@ -29,11 +29,40 @@ export async function crawlerCycle() {
             await saveCrawlerWarning(warningMessages.crawlerCycleCancelled);
             return warningMessages.crawlerCycleCancelled;
         }
+
+        delete sourcesObj._id;
+        delete sourcesObj.title;
         const sourcesNames = Object.keys(sourcesObj);
-        // ignore torrent sources
-        let sourcesArray = getSourcesArray(sourcesObj, 2).filter(item => !item.configs.isTorrent);
-        sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name));
-        sourcesArray = sourcesArray.map(item => ({name: item.name, ...sourcesObj[item.name]}));
+
+        let temp = getSourcesArray(sourcesObj, 2);
+        let sourcesArray = [];
+
+        for (let i = 0; i < sourcesNames.length; i++) {
+            if (sourcesObj[sourcesNames[i]].config.isTorrent) {
+                // ignore torrent sources
+                continue
+            }
+
+            if (sourcesObj[sourcesNames[i]].config.isGeneric) {
+                sourcesArray.push({
+                    name: sourcesNames[i],
+                    ...sourcesObj[sourcesNames[i]],
+                    starter: () => {
+                        return generic.default(sourcesObj[sourcesNames[i]], null, {});
+                    }
+                })
+            } else {
+                let findSource = temp.find(s => s.name === sourcesNames[i]);
+                if (findSource) {
+                    findSource = {
+                        name: sourcesNames[i],
+                        ...findSource,
+                        ...sourcesObj[sourcesNames[i]],
+                    }
+                    sourcesArray.push(findSource);
+                }
+            }
+        }
 
         //handle sources with crawlCycle
         let now = new Date();
@@ -132,8 +161,8 @@ export async function crawler(sourceName, {
         if (!handleDomainChangeOnly) {
             for (let i = 0; i < sourcesNames.length; i++) {
                 if (
-                    (torrentState === "ignore" && sourcesObj[sourcesNames[i]].configs.isTorrent) ||
-                    (torrentState === "only" && !sourcesObj[sourcesNames[i]].configs.isTorrent) ||
+                    (torrentState === "ignore" && sourcesObj[sourcesNames[i]].config.isTorrent) ||
+                    (torrentState === "only" && !sourcesObj[sourcesNames[i]].config.isTorrent) ||
                     (sourceName && sourcesNames[i] !== sourceName) // in single source mode
                 ) {
                     continue;
@@ -249,7 +278,7 @@ export async function torrentCrawlerSearch({
 
         const sourcesNames = Object.keys(sourcesObj);
         let sourcesArray = getSourcesArray(sourcesObj, 0, extraConfigs);
-        sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name) && item.configs.isTorrent);
+        sourcesArray = sourcesArray.filter(item => sourcesNames.includes(item.name) && sourcesObj[item.name].config.isTorrent);
         let sourcesMethods = getSourcesMethods();
 
         if (!sourceName) {
