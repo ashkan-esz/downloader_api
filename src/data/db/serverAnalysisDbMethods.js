@@ -341,6 +341,7 @@ export async function getServerAnalysisInTimesDB(fieldName, startTime, endTime, 
 
         const matchField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : 'date';
         const sortField = ['crawlerLogs'].includes(fieldName) ? 'startTime' : 'date';
+        const sortMode = ['crawlerLogs'].includes(fieldName) ? -1 : 0;
 
         let aggregationPipeline = [
             {
@@ -358,7 +359,7 @@ export async function getServerAnalysisInTimesDB(fieldName, startTime, endTime, 
             },
             {
                 $sort: {
-                    [`${fieldName}.${sortField}`]: 1,
+                    [`${fieldName}.${sortField}`]: sortMode,
                 }
             },
             {
@@ -374,7 +375,13 @@ export async function getServerAnalysisInTimesDB(fieldName, startTime, endTime, 
             },
         ];
 
-        return await collection.aggregate(aggregationPipeline).toArray();
+        let analytics = await collection.aggregate(aggregationPipeline).toArray();
+
+        if (sortMode === -1) {
+            analytics = analytics.reverse();
+        }
+
+        return analytics;
     } catch (error) {
         saveError(error);
         return 'error';
