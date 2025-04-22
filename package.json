@@ -32,7 +32,7 @@
     "@aws-sdk/abort-controller": "^3.374.0",
     "@aws-sdk/client-s3": "^3.703.0",
     "@aws-sdk/lib-storage": "^3.703.0",
-    "@distube/ytdl-core": "^4.15.8",
+    "@distube/ytdl-core": "^4.16.8",
     "@mongodb-js/zstd": "^1.2.2",
     "@prisma/client": "^5.20.0",
     "@sentry/node": "^7.109.0",
