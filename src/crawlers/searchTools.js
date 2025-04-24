@@ -84,7 +84,7 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(pageLink, sourceConfig, 'sourcePage', extraConfigs);
+                } = await getLinks(pageLink, sourceConfig.config, 'sourcePage', extraConfigs);
                 changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingEnd);
                 updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber, extraConfigs);
                 lastPageNumber = i;
@@ -351,11 +351,15 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
                 if (!sourceLinkData) {
                     addSourceToAxiosBlackList(config.sourceName, extraConfigs);
                 }
-                saveLinksStatus(pageLink, pageType, 'fromCache');
-                let cacheResult = await getFromGoogleCache(url);
-                $ = cacheResult.$;
-                links = cacheResult.links;
-                checkGoogleCache = true;
+
+                if (config.use_google_cache) {
+                    saveLinksStatus(pageLink, pageType, 'fromCache');
+                    let cacheResult = await getFromGoogleCache(url);
+                    $ = cacheResult.$;
+                    links = cacheResult.links;
+                    checkGoogleCache = true;
+                }
+
                 if (error.message === 'timeout of 10000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('10s', config.sourceName);
                     await saveCrawlerWarning(warningMessages.axiosTimeoutError);
@@ -389,7 +393,7 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
             }
         }
 
-        if (links.length < 5 && !checkGoogleCache) {
+        if (links.length < 5 && !checkGoogleCache && config.use_google_cache) {
             let cacheResult = await getFromGoogleCache(url);
             $ = cacheResult.$;
             links = cacheResult.links;

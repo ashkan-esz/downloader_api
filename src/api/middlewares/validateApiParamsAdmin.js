@@ -444,6 +444,9 @@ const validations = Object.freeze({
             if (typeof value.has_subtitle !== 'boolean') {
                 throw new Error('config.has_subtitle must be a boolean');
             }
+            if (typeof value.use_google_cache !== 'boolean') {
+                throw new Error('config.use_google_cache must be a boolean');
+            }
             if (typeof value.needHeadlessBrowser !== 'boolean') {
                 throw new Error('config.needHeadlessBrowser must be a boolean');
             }

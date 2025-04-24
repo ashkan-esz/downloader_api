@@ -108,6 +108,7 @@ export const sourcesObj = () => {
             has_wide_poster: true,
             has_trailer: true,
             has_subtitle: false,
+            use_google_cache: false,
             //------------------
             needHeadlessBrowser: false,
             sourceAuthStatus: 'ok',
