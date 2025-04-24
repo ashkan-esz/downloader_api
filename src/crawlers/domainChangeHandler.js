@@ -154,7 +154,7 @@ export async function checkUrlWork(sourceName, sourceUrl, allConfigs = null, ret
                 }
             } else if (
                 (error.code === 'ENOTFOUND' || error.code === 'ECONNRESET' || error.code === 'EAI_AGAIN' ||
-                    [502, 521, 522].includes(error.response?.status)) && retryCounter < 3) {
+                    [502, 521, 522, 525].includes(error.response?.status)) && retryCounter < 3) {
                 retryCounter++;
                 await new Promise((resolve => setTimeout(resolve, 4000)));
                 return await checkUrlWork(sourceName, sourceUrl, allConfigs, retryCounter);

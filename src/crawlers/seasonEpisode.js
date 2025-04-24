@@ -3,6 +3,7 @@ import {getEpisodeModel_placeholder} from "../models/episode.js";
 import {groupSerialLinks, updateSerialLinks} from "./link.js";
 import {replaceSpecialCharacters} from "./utils/utils.js";
 import {wordsToNumbers} from "words-to-numbers";
+import {saveError} from "../error/saveError.js";
 
 export async function handleSeasonEpisodeUpdate(db_data, sourceName, site_links, siteWatchOnlineLinks, torrentLinks, totalSeasons, omdbApiFields, tvmazeApiFields, titleExist = true) {
     let links_seasons = groupSerialLinks(site_links, siteWatchOnlineLinks, torrentLinks);

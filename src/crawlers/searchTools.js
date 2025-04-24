@@ -57,6 +57,7 @@ const styleRegex = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
 export async function wrapper_module(sourceConfig, url, pageCount, searchCB, extraConfigs) {
     let lastPageNumber = 0;
     let linksCount = 0;
+    let linksCountInPages = [];
     try {
         if (!url || pageCount === 0) {
             return {lastPage: lastPageNumber, linksCount: linksCount};
@@ -64,25 +65,32 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
         const concurrencyNumber = await getConcurrencyNumber(sourceConfig.config.sourceName, sourceConfig.config.needHeadlessBrowser, extraConfigs);
         const promiseQueue = new PQueue({concurrency: concurrencyNumber});
         for (let i = 1; (pageCount === null || i <= pageCount); i++) {
+            let pageLink = url + `${i}`;
+
+            linksCountInPages.push({
+                page: i,
+                linksCount: 0,
+            })
+
             if (checkForceStopCrawler()) {
                 break;
             }
             await pauseCrawler();
             try {
-                changeSourcePageFromCrawlerStatus(url + `${i}`, linkStateMessages.sourcePage.start);
+                changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.start);
                 let {
                     $,
                     links,
                     checkGoogleCache,
                     responseUrl,
                     pageTitle
-                } = await getLinks(url + `${i}`, sourceConfig, 'sourcePage', extraConfigs);
-                changeSourcePageFromCrawlerStatus(url + `${i}`, linkStateMessages.sourcePage.fetchingEnd);
+                } = await getLinks(pageLink, sourceConfig, 'sourcePage', extraConfigs);
+                changeSourcePageFromCrawlerStatus(pageLink, linkStateMessages.sourcePage.fetchingEnd);
                 updatePageNumberCrawlerStatus(i, pageCount, concurrencyNumber, extraConfigs);
                 lastPageNumber = i;
-                if (checkLastPage($, links, checkGoogleCache, sourceConfig.config.sourceName, responseUrl, pageTitle, i)) {
+                if (checkLastPage($, links, checkGoogleCache, responseUrl, pageTitle, i, linksCountInPages)) {
                     if (i !== 2 || pageCount !== 1) {
-                        await saveServerLog(`end of crawling (${sourceConfig.config.sourceName}), last page: ${url + i}::${pageCount}`);
+                        await saveServerLog(`end of crawling (${sourceConfig.config.sourceName}), last page: ${pageLink}::${pageCount}`);
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
                         const warningMessages = getCrawlerWarningMessages(sourceConfig.config.sourceName, i);
@@ -96,8 +104,13 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                     }
                     await pauseCrawler();
                     await promiseQueue.onSizeLessThan(concurrencyNumber * 6);
+                    const page = i;
                     promiseQueue.add(() => searchCB($(links[j]), i, $, url, sourceConfig, extraConfigs).then((count) => {
                             linksCount += (count || 0);
+                            let temp = linksCountInPages.find(item => item.page === page);
+                            if (temp) {
+                                temp.linksCount += (count || 0);
+                            }
                         })
                     );
                 }
@@ -132,6 +145,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
             links,
             cookies,
             pageContent,
+            responseUrl,
         } = await getLinks(page_link, sourceConfig.config, 'movieDataPage', extraConfigs, sourceLinkData);
         if ($ === null || $ === undefined || checkForceStopCrawler()) {
             removePageLinkToCrawlerStatus(page_link);
@@ -217,7 +231,7 @@ export async function search_in_title_page(sourceConfig, extraConfigs, title, ty
         await Promise.allSettled(promiseArray);
         downloadLinks = filterLowResDownloadLinks(downloadLinks);
         downloadLinks = handleRedundantPartNumber(downloadLinks);
-        return {downloadLinks: downloadLinks, $2: $, cookies, pageContent};
+        return {downloadLinks: downloadLinks, $2: $, cookies, pageContent, responseUrl};
     } catch (error) {
         saveError(error);
         removePageLinkToCrawlerStatus(page_link);
@@ -388,13 +402,17 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
                 let href = $(links[i]).attr('href') || "";
 
                 if ($(links[i]).children().length === 0 && !$(links[i]).attr('title') && !$(links[i]).attr('alt') &&
-                !href.match(/\.(avi|flv|m4v|mkv|mka|mov|mp4|mpg|mpeg|rm|swf|wmv)(\?((md\d)|(par))=.+)?$/i)) {
-                    continue
+                    !href.match(/\.(avi|flv|m4v|mkv|mka|mov|mp4|mpg|mpeg|rm|swf|wmv)(\?((md\d)|(par))=.+)?$/i)) {
+                    continue;
+                }
+
+                if (href.match(/\/(director|writer)\//) || href.match(/\/release\/\d{4}/)) {
+                    continue;
                 }
 
                 if (
                     !href.includes('/tag/') &&
-                    !href.match(/\.(mp4)$/) &&
+                    (!href.match(/\.(mp4)$/) || href.match(/[-_.\s]\d{3,4}p[-_.\s]/)) &&
                     !uniqueLinks.find(u => getDecodedLink($(u).attr('href')) === getDecodedLink($(links[i]).attr('href')))) {
                     uniqueLinks.push(links[i]);
                 }
@@ -408,7 +426,7 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
     }
 }
 
-function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, pageTitle, pageNumber) {
+function checkLastPage($, links, checkGoogleCache, responseUrl, pageTitle, pageNumber, linksCountInPages) {
     try {
         if ($ === null || $ === undefined || pageTitle.includes('صفحه پیدا نشد')) {
             return true;
@@ -417,6 +435,14 @@ function checkLastPage($, links, checkGoogleCache, sourceName, responseUrl, page
         if (links.length === 0 && checkGoogleCache) {
             return true;
         }
+
+        if (linksCountInPages.length > 8) {
+            let temp = linksCountInPages.slice(linksCountInPages.length - 6);
+            if (temp.every(item => item.linksCount === 0)) {
+                return true;
+            }
+        }
+
         return !(pageNumber === 1 || responseUrl.includes('page'));
     } catch (error) {
         saveErrorIfNeeded(error);

@@ -84,15 +84,20 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
         let detectedTitle = '';
         let type = utils.getType(title || text);
 
-        if (title.includes('فصل') ||
-            text.includes('فصل') ||
+        if ((title.includes('فصل') && !title.includes('فیلم فصل')) ||
+            (text.includes('فصل') && !text.includes('فیلم فصل')) ||
             text.includes('سریال') ||
             utils.getDecodedLink(pageLink).includes('سریال') ||
             pageLink.includes('serie') ||
             pageLink.includes('/series/') ||
             url.includes('/series/')) {
             type = type.replace('movie', 'serial');
-        } else if (type.includes('serial') && (url.includes('/movies/') || url.includes('/film'))) {
+        } else if (type.includes('serial') && (
+            title.includes('فیلم') ||
+            text.includes('فیلم') ||
+            url.includes('/movies/') ||
+            url.includes('/film')
+        )) {
             type = type.replace('serial', 'movie');
         }
 
@@ -130,7 +135,7 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
             return 0;
         }
 
-        let {downloadLinks, $2, cookies, pageContent} = pageSearchResult;
+        let {downloadLinks, $2, cookies, pageContent, responseUrl} = pageSearchResult;
 
         // check type of the result
         let newType = checkResultType(type, downloadLinks);
@@ -144,7 +149,11 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                 return 0;
             }
 
-            ({downloadLinks, $2, cookies, pageContent} = pageSearchResult);
+            ({downloadLinks, $2, cookies, pageContent, responseUrl} = pageSearchResult);
+        }
+
+        if (utils.getDecodedLink(responseUrl).includes(`redirect_to=${pageLink.replace(/\/$/, '')}`)) {
+            return 0;
         }
 
         if (!year) {
@@ -174,14 +183,14 @@ async function search_title(link, pageNumber, $, url, sourceConfig, extraConfigs
                 : "",
             poster: sourceConfig.config.has_poster
                 ? posterExtractor.getPoster($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.dontRemoveDimensions)
-            : "",
+                : "",
             widePoster: sourceConfig.config.has_wide_poster
                 ? posterExtractor.getWidePoster($2, pageLink, sourceConfig.config.sourceName)
                 : "",
             trailers: sourceConfig.config.has_trailer
-            ? trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer)
+                ? trailerExtractor.getTrailers($2, pageLink, sourceConfig.config.sourceName, sourceConfig.config.vpnStatus.trailer)
                 : [],
-            subtitles: sourceConfig.config.has_subtitle ?  [] : [],
+            subtitles: sourceConfig.config.has_subtitle ? [] : [],
             // subtitles: getSubtitles($2, type, pageLink),
             rating: getRatings($2),
             cookies
@@ -213,9 +222,19 @@ function getTitle($, link, pageLink, url) {
     if ($(link).children().length === 0) {
         isPureTitle = true;
     }
+
     if (!isInvalid(title, text, link, pageLink, url, isPureTitle)) {
         return {text, title};
     }
+
+    if (!isPureTitle && title.match(/^[a-zA-Z\s.\d:]+$/)) {
+        isPureTitle = true;
+        text = "";
+        if (!isInvalid(title, text, link, pageLink, url, isPureTitle)) {
+            return {text, title};
+        }
+    }
+
     isPureTitle = false;
 
     text = $($(link).children()[1] || link).text().toLowerCase() || '';
@@ -664,7 +683,7 @@ function getRatings($) {
                 let text = $($div[i]).text().toLowerCase();
                 let cls = $($div[i]).attr('class') || "";
 
-                if (text && !hasSidebarClass($($div[i])) &&(
+                if (text && !hasSidebarClass($($div[i])) && (
                     text.includes('imdb') ||
                     (cls.includes('imdb') && cls.includes('rate')) ||
                     (cls.includes('imdb') && text.trim().match(/^(\d+\.?\d*)\sاز\s([\d,]+)\sرای$/))

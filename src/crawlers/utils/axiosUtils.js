@@ -65,6 +65,9 @@ export async function downloadImage(url, retryCounter = 0) {
             responseType: "arraybuffer",
             responseEncoding: "binary",
             timeout: timeout,
+            // Size limits
+            maxContentLength: 50 * 1024 * 1024, // 50MB
+            maxBodyLength: 50 * 1024 * 1024     // 50MB
         });
         if (response.headers['content-type'].includes('text/html')) {
             return null;
@@ -125,26 +128,34 @@ export async function getArrayBufferResponse(url, cookie = null) {
     try {
         const jar = new CookieJar();
         const client = wrapper(axios.create({jar}));
-        let config = {
+
+        const config = {
             responseType: "arraybuffer",
-            responseEncoding: "binary"
+            responseEncoding: "binary",
+            // Size limits
+            maxContentLength: 50 * 1024 * 1024, // 50MB
+            maxBodyLength: 50 * 1024 * 1024     // 50MB
         };
+
         if (cookie) {
             config.headers = {
                 Cookie: cookie,
-            }
+            };
         }
-        let result = await client.get(url, config);
+
+        const result = await client.get(url, config);
+
         if (result.headers['content-type'] === "text/html") {
             return null;
         }
+
         return result;
     } catch (error) {
-        if (error.message === 'certificate has expired' || error.code === "ERR_TLS_CERT_ALTNAME_INVALID") {
+        if (error.message === 'certificate has expired' ||
+            error.code === "ERR_TLS_CERT_ALTNAME_INVALID") {
             return null;
-        } else {
-            throw error;
         }
+        throw error;
     }
 }
 

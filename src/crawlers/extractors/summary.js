@@ -124,6 +124,14 @@ export function getPersianSummary($, title, year) {
             }
         }
 
+        // f2m
+        for (let i = 0, divLength = $div.length; i < divLength; i++) {
+            const text = $($div[i]).text();
+            if (text && $($($div[i]).children())[0]?.name === 'p' && $($div[i]).attr('class')?.includes('excerpt')) {
+                return purgePersianSummary(text, title, year);
+            }
+        }
+
         return '';
     } catch (error) {
         saveError(error);
@@ -156,7 +164,7 @@ function purgePersianSummary(persianSummary, title, year) {
             })
             .join('');
 
-        const titleRegex = new RegExp("^(\\s)?" + title.replace(/\*/g, '\\*') + `( ${year})?(!)?`, 'i');
+        const titleRegex = new RegExp("^(\\s)?" + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + `( ${year})?(!)?`, 'i');
         const titleRegex2 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title2.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
         const titleRegex3 = new RegExp("^(\\s)?(خلاصه( داستان)? (انیمیشن|فیلم|فيلم|سریال|انییمشن) )?" + title3.replace(/\*/g, '\\*') + `(!)?(\\?)?( ${year})?(!)?`, 'i');
         persianSummary = persianSummary.replace(titleRegex, '');
