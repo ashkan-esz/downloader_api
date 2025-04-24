@@ -58,7 +58,7 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         }
 
         if (!sourceConfig.config.isTorrent) {
-            checkCrawledDataForChanges(sourceConfig.config.sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary);
+            checkCrawledDataForChanges(sourceConfig, pageLink, downloadLinks, badLinks, poster, persianSummary);
         }
 
         changePageLinkStateFromCrawlerStatus(pageLink, linkStateMessages.paused);

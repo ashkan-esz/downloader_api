@@ -9,9 +9,9 @@ const changesStatus = {
     badPersianSummary: [],
 }
 
-export function checkCrawledDataForChanges(sourceName, pageLink, downloadLinks, badLinks, poster, persianSummary) {
-    if (changesStatus.sourceName !== sourceName) {
-        changesStatus.sourceName = sourceName;
+export function checkCrawledDataForChanges(sourceConfig, pageLink, downloadLinks, badLinks, poster, persianSummary) {
+    if (changesStatus.sourceName !== sourceConfig.config.sourceName) {
+        changesStatus.sourceName = sourceConfig.config.sourceName;
         changesStatus.badDownloadLinks = [];
         changesStatus.badPosters = [];
         changesStatus.badPersianSummary = [];
@@ -20,10 +20,11 @@ export function checkCrawledDataForChanges(sourceName, pageLink, downloadLinks, 
     if (badLinks.length > 0) {
         changesStatus.badDownloadLinks.push(pageLink);
     }
-    if (!poster) {
+
+    if (sourceConfig.config.has_poster && !poster) {
         changesStatus.badPosters.push(pageLink);
     }
-    if (!persianSummary) {
+    if (sourceConfig.config.has_summary && !persianSummary) {
         changesStatus.badPersianSummary.push(pageLink);
     }
 }
