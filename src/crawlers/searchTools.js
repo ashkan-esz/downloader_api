@@ -90,11 +90,11 @@ export async function wrapper_module(sourceConfig, url, pageCount, searchCB, ext
                 lastPageNumber = i;
                 if (checkLastPage($, links, checkGoogleCache, responseUrl, pageTitle, i, linksCountInPages)) {
                     if (i !== 2 || pageCount !== 1) {
-                        await saveServerLog(`end of crawling (${sourceConfig.config.sourceName}), last page: ${pageLink}::${pageCount}`);
+                        saveServerLog(`end of crawling (${sourceConfig.config.sourceName}), last page: ${pageLink}::${pageCount}`);
                     }
                     if (i === 1 || (pageCount && i < pageCount)) {
                         const warningMessages = getCrawlerWarningMessages(sourceConfig.config.sourceName, i);
-                        await saveCrawlerWarning(warningMessages.sourceLastPage);
+                        saveCrawlerWarning(warningMessages.sourceLastPage);
                     }
                     break;
                 }
@@ -362,31 +362,31 @@ async function getLinks(url, config, pageType, extraConfigs, sourceLinkData = nu
 
                 if (error.message === 'timeout of 10000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('10s', config.sourceName);
-                    await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                    saveCrawlerWarning(warningMessages.axiosTimeoutError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.message === 'timeout of 15000ms exceeded') {
                     const warningMessages = getCrawlerWarningMessages('15s', config.sourceName);
-                    await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+                    saveCrawlerWarning(warningMessages.axiosTimeoutError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.message === 'aborted') {
                     const warningMessages = getCrawlerWarningMessages(config.sourceName);
-                    await saveCrawlerWarning(warningMessages.axiosAbortError);
+                    saveCrawlerWarning(warningMessages.axiosAbortError);
                     if (pageType === 'sourcePage' && retryCounter < 2) {
                         retryCounter++;
                         return await getLinks(url, config, pageType, extraConfigs, sourceLinkData, retryCounter);
                     }
                 } else if (error.code === 'EAI_AGAIN') {
                     const warningMessages = getCrawlerWarningMessages(config.sourceName);
-                    await saveCrawlerWarning(warningMessages.axiosEaiError);
+                    saveCrawlerWarning(warningMessages.axiosEaiError);
                 } else if (error.message === 'Request failed with status code 403') {
                     const warningMessages = getCrawlerWarningMessages(config.sourceName);
-                    await saveCrawlerWarning(warningMessages.sourceErrors.axios403);
+                    saveCrawlerWarning(warningMessages.sourceErrors.axios403);
                 } else {
                     await saveErrorIfNeeded(error);
                 }

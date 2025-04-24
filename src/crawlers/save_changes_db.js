@@ -51,9 +51,9 @@ export default async function save(title, type, year, sourceData, pageNumber, ex
         if (pageNumber === 1) {
             badLinks = getLinksDoesntMatchLinkRegex(downloadLinks, type);
             if (badLinks.length > 0) {
-                await saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
+                saveCrawlerBadLink(sourceConfig.config.sourceName, pageLink, badLinks.slice(0, 10));
                 const warningMessages = getCrawlerWarningMessages(sourceConfig.config.sourceName);
-                await saveCrawlerWarning(warningMessages.crawlerBadLink);
+                saveCrawlerWarning(warningMessages.crawlerBadLink);
             }
         }
 

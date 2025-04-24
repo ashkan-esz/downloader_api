@@ -26,7 +26,7 @@ export async function crawlerCycle() {
         let sourcesObj = await getSourcesObjDB();
         if (!sourcesObj) {
             const warningMessages = getCrawlerWarningMessages();
-            await saveCrawlerWarning(warningMessages.crawlerCycleCancelled);
+            saveCrawlerWarning(warningMessages.crawlerCycleCancelled);
             return warningMessages.crawlerCycleCancelled;
         }
 
@@ -145,7 +145,7 @@ export async function crawler(sourceName, {
         if (!sourcesObj) {
             const warningMessages = getCrawlerWarningMessages();
             await updateCrawlerStatus_crawlerCrashed(warningMessages.crawlerCancelled);
-            await saveCrawlerWarning(warningMessages.crawlerCancelled);
+            saveCrawlerWarning(warningMessages.crawlerCancelled);
             return {
                 isError: true,
                 message: warningMessages.crawlerCancelled,
@@ -173,17 +173,17 @@ export async function crawler(sourceName, {
                 const isManualDisable = sourcesObj[sourcesNames[i]].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourcesNames[i]);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                    saveCrawlerWarning(warningMessages.expireCookieSkip);
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        saveCrawlerWarning(warningMessages.disabledSourceSkip);
                     }
                     continue;
                 }
-                await resolveCrawlerWarning(warningMessages.expireCookieSkip);
-                await resolveCrawlerWarning(warningMessages.disabledSourceSkip);
+                resolveCrawlerWarning(warningMessages.expireCookieSkip);
+                resolveCrawlerWarning(warningMessages.disabledSourceSkip);
                 await updateCrawlerStatus_sourceStart(sourcesNames[i], crawlMode);
 
                 let sourceStarter = sourcesArray.find(s => s.name === sourcesNames[i]);
@@ -269,7 +269,7 @@ export async function torrentCrawlerSearch({
         if (!sourcesObj) {
             const warningMessages = getCrawlerWarningMessages();
             await updateCrawlerStatus_crawlerCrashed(warningMessages.crawlerCancelled);
-            await saveCrawlerWarning(warningMessages.crawlerCancelled);
+            saveCrawlerWarning(warningMessages.crawlerCancelled);
             return {
                 isError: true,
                 message: warningMessages.crawlerCancelled,
@@ -288,12 +288,12 @@ export async function torrentCrawlerSearch({
                 const isManualDisable = sourcesObj[sourcesArray[i].name].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourcesArray[i].name);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                    saveCrawlerWarning(warningMessages.expireCookieSkip);
                     continue;
                 }
                 if (disabled) {
                     if (!isManualDisable) {
-                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        saveCrawlerWarning(warningMessages.disabledSourceSkip);
                     }
                     continue;
                 }
@@ -310,10 +310,10 @@ export async function torrentCrawlerSearch({
                 const isManualDisable = sourcesObj[sourceName].isManualDisable;
                 const warningMessages = getCrawlerWarningMessages(sourceName);
                 if (sourceCookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
-                    await saveCrawlerWarning(warningMessages.expireCookieSkip);
+                    saveCrawlerWarning(warningMessages.expireCookieSkip);
                 } else if (disabled) {
                     if (!isManualDisable) {
-                        await saveCrawlerWarning(warningMessages.disabledSourceSkip);
+                        saveCrawlerWarning(warningMessages.disabledSourceSkip);
                     }
                 } else {
                     await updateCrawlerStatus_sourceStart(sourceName, 0);
@@ -328,7 +328,7 @@ export async function torrentCrawlerSearch({
         const crawlDuration = getDatesBetween(endTime, startTime).minutes;
         await updateCrawlerStatus_crawlerEnd(endTime, crawlDuration);
         let message = `crawling done in : ${crawlDuration}min`;
-        await saveServerLog(message);
+        saveServerLog(message);
         return {
             isError: false,
             message: message,

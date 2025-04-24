@@ -52,7 +52,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
             let cookies = sources[i].cookies;
             if (cookies.find(item => item.expire && (Date.now() > (item.expire - 60 * 60 * 1000)))) {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName);
-                await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.expireCookie);
+                serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.expireCookie);
             }
         }
 
@@ -68,7 +68,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
             let prom = checkUrlWork(sources[i].sourceName, sources[i].movie_url, allConfigs).then(async checkUrlResult => {
                 const warningMessages = getCrawlerWarningMessages(sources[i].sourceName, checkUrlResult);
                 if (checkUrlResult === "error") {
-                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
+                    serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.notWorking);
                     let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, false);
                     if (responseStatus !== 'error' && responseStatus !== 'notfound' && responseStatus !== 0 && getDatesBetween(new Date(), responseStatus).days >= 6) {
                         //source is not working for 6 days
@@ -76,8 +76,8 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                         await removeSource(sources[i].sourceName, null, false);
                     }
                 } else if (checkUrlResult === "ok") {
-                    await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
-                    await serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
+                    serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.notWorking);
+                    serverAnalysisDbMethods.resolveCrawlerWarning(warningMessages.domainChange);
                     //reCrawl source if it was not responding in last 5 days
                     let responseStatus = await updateSourceResponseStatus(sources[i].sourceName, true);
                     updateCronJobsStatus('checkCrawlerDomains', 'starting crawler on source activation', sources[i].sourceName);
@@ -90,7 +90,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                         });
                     }
                 } else if (checkUrlResult !== "ok") {
-                    await serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
+                    serverAnalysisDbMethods.saveCrawlerWarning(warningMessages.domainChange);
                     needToCrawl = true;
                 }
             });
@@ -133,7 +133,7 @@ export async function checkCrawlerDomainsJobFunc(extraConfigs = null) {
                 let pagesAndCount = await findSource.starter();
                 if (pagesAndCount[pagesAndCount.length - 1] < 8) {
                     const crawlerWarningMessages = getCrawlerWarningMessages(sources[i].sourceName);
-                    await serverAnalysisDbMethods.saveCrawlerWarning(crawlerWarningMessages.sourceStatus.possibleVip);
+                    serverAnalysisDbMethods.saveCrawlerWarning(crawlerWarningMessages.sourceStatus.possibleVip);
                 }
             }
         }

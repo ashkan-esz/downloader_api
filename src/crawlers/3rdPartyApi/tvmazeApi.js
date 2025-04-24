@@ -54,7 +54,7 @@ export async function getTvMazeApiData(title, alternateTitles, titleSynonyms, im
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
+    saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
     return null;
 }
 
@@ -185,7 +185,7 @@ async function handleApiCall(url) {
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
+    saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.tvmaze.lotsOfApiCall);
     return null;
 }
 

@@ -397,7 +397,7 @@ async function handleApiCall(url, timeoutSec = 0) {
             } else {
                 if (error.code === 'EAI_AGAIN') {
                     const warningMessages = getCrawlerWarningMessages('');
-                    await saveCrawlerWarning(warningMessages.apiCalls.jikan.eaiError);
+                    saveCrawlerWarning(warningMessages.apiCalls.jikan.eaiError);
                     return null;
                 }
                 if (error.message === 'hard timeout') {
@@ -426,7 +426,7 @@ async function handleApiCall(url, timeoutSec = 0) {
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.jikan.lotsOfApiCall);
+    saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.jikan.lotsOfApiCall);
     return null;
 }
 

@@ -412,24 +412,24 @@ async function useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCou
 
         if (error.message === 'timeout of 10000ms exceeded') {
             const warningMessages = getCrawlerWarningMessages('10s', sourceName);
-            await saveCrawlerWarning(warningMessages.axiosTimeoutError);
+            saveCrawlerWarning(warningMessages.axiosTimeoutError);
             if (pageType === 'sourcePage' && retryCounter < 2) {
                 retryCounter++;
                 return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
             }
         } else if (error.message === 'aborted') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
-            await saveCrawlerWarning(warningMessages.axiosAbortError);
+            saveCrawlerWarning(warningMessages.axiosAbortError);
             if (pageType === 'sourcePage' && retryCounter < 2) {
                 retryCounter++;
                 return await useAxiosGet(url, sourceName, sourceAuthStatus, pageType, retryCounter);
             }
         } else if (error.code === 'EAI_AGAIN') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
-            await saveCrawlerWarning(warningMessages.axiosEaiError);
+            saveCrawlerWarning(warningMessages.axiosEaiError);
         } else if (error.message === 'Request failed with status code 403') {
             const warningMessages = getCrawlerWarningMessages(sourceName);
-            await saveCrawlerWarning(warningMessages.sourceErrors.axios403);
+            saveCrawlerWarning(warningMessages.sourceErrors.axios403);
         } else if (error.message !== 'certificate has expired' && error.code !== "ERR_TLS_CERT_ALTNAME_INVALID") {
             if (Object.isExtensible(error) && !Object.isFrozen(error) && !Object.isSealed(error)) {
                 error.isAxiosError2 = true;
@@ -579,13 +579,13 @@ async function checkAndSaveErrorIfNeed(error, url, sourceName, selectedBrowser, 
     if (error.response && error.response.status === 503) {
         const baseCall = !checkingBrowser ? ` (${sourceName})` : '';
         const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
-        await saveCrawlerWarning(warningMessages.remoteBrowserNotWorking + baseCall);
+        saveCrawlerWarning(warningMessages.remoteBrowserNotWorking + baseCall);
         return;
     }
     if ((error.message === "timeout of 50000ms exceeded" || error.message === "timeout of 70000ms exceeded")) {
         const baseCall = !checkingBrowser ? ` (${sourceName})` : '';
         const warningMessages = getCrawlerWarningMessages(selectedBrowser.endpoint);
-        await saveCrawlerWarning(warningMessages.remoteBrowserTimeoutError + baseCall);
+        saveCrawlerWarning(warningMessages.remoteBrowserTimeoutError + baseCall);
         return;
     }
 

@@ -382,7 +382,7 @@ async function handle_OMDB_ApiCall(url) {
                     if (config.nodeEnv === 'dev') {
                         console.log('ERROR: more omdb api keys are needed');
                     } else {
-                        await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.omdb.moreApiKeyNeeded);
+                        saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.omdb.moreApiKeyNeeded);
                     }
                     return null;
                 }
@@ -397,7 +397,7 @@ async function handle_OMDB_ApiCall(url) {
                         if (config.nodeEnv === 'dev') {
                             console.log(`ERROR: Invalid omdb api key: ${key.apiKey}, (${error.response.data?.Error})`);
                         } else {
-                            await saveCrawlerWarning(getCrawlerWarningMessages(key.apiKey, error.response.data?.Error).apiCalls.omdb.invalid);
+                            saveCrawlerWarning(getCrawlerWarningMessages(key.apiKey, error.response.data?.Error).apiCalls.omdb.invalid);
                         }
                         key.limit = 0;
                     }
@@ -412,7 +412,7 @@ async function handle_OMDB_ApiCall(url) {
                 } else {
                     if (error.code === 'EAI_AGAIN') {
                         const warningMessages = getCrawlerWarningMessages('');
-                        await saveCrawlerWarning(warningMessages.apiCalls.omdb.eaiError);
+                        saveCrawlerWarning(warningMessages.apiCalls.omdb.eaiError);
                         continue;
                     } else if (error.response?.status !== 500 &&
                         error.response?.status !== 503 &&

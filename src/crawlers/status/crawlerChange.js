@@ -33,17 +33,17 @@ export async function checkAndHandleSourceChange() {
     // let reasons = [];
     if (changesStatus.badDownloadLinks.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName);
-        await saveCrawlerWarning(warningMessages.sourceStatus.badDownloadLinks);
+        saveCrawlerWarning(warningMessages.sourceStatus.badDownloadLinks);
         // reasons.push('downloadLinks');
     }
     if (changesStatus.badPosters.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName);
-        await saveCrawlerWarning(warningMessages.sourceStatus.badPosters);
+        saveCrawlerWarning(warningMessages.sourceStatus.badPosters);
         // reasons.push('poster');
     }
     if (changesStatus.badPersianSummary.length >= 20) {
         const warningMessages = getCrawlerWarningMessages(changesStatus.sourceName);
-        await saveCrawlerWarning(warningMessages.sourceStatus.badPersianSummary);
+        saveCrawlerWarning(warningMessages.sourceStatus.badPersianSummary);
         // reasons.push('persianSummary');
     }
 

@@ -246,6 +246,6 @@ async function handleApiCall(url) {
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.kitsu.lotsOfApiCall);
+    saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.kitsu.lotsOfApiCall);
     return null;
 }

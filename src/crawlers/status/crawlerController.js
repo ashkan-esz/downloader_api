@@ -71,7 +71,7 @@ export async function pauseCrawler() {
     while (memoryStatus.used >= crawlerMemoryLimit || averageCpu > config.crawler.cpuLimit) {
         if (Date.now() - startTime > config.crawler.pauseDurationLimit * 60 * 1000) {
             const warningMessages = getCrawlerWarningMessages(config.crawler.pauseDurationLimit);
-            await saveCrawlerWarning(warningMessages.crawlerPauseLimit);
+            saveCrawlerWarning(warningMessages.crawlerPauseLimit);
             break;
         }
         if (checkForceStopCrawler()) {

@@ -24,7 +24,7 @@ export async function getFromGoogleCache(url, retryCounter = 0) {
         if (config.nodeEnv === 'dev') {
             console.log('google cache: ', decodedLink);
         }
-        await saveGoogleCacheCall(decodedLink);
+        saveGoogleCacheCall(decodedLink);
         let cacheUrl = "http://webcache.googleusercontent.com/search?channel=fs&client=ubuntu&q=cache%3A";
         let webCacheUrl = cacheUrl + decodedLink;
         let response = await axios.get(webCacheUrl);

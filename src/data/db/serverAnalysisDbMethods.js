@@ -3,18 +3,27 @@ import getCollection from "../mongoDB.js";
 import {saveError} from "../../error/saveError.js";
 import {getDecodedLink} from "../../crawlers/utils/utils.js";
 import {adminServices} from "../../services/index.js";
+import {ObjectId} from "mongodb";
 
-const _maxSaveLogDuration = 1;
+const _maxSaveLogDurationMonth = 3;
 const _pageSize = 24;
 const _maxTimeOut = 10 * 1000;
 
 export async function removeOldAnalysis() {
     try {
         let collection = await getCollection('serverAnalysis');
-        let now = new Date();
-        let yearAndMonth = (now.getFullYear() - _maxSaveLogDuration) + '-' + (now.getMonth() + 1);
+
+        const threshHoldTime = new Date();
+        threshHoldTime.setMonth(threshHoldTime.getMonth() - _maxSaveLogDurationMonth + 2);
+
+        // Convert date to ObjectId-compatible timestamp
+        const cutoffTimestamp = Math.floor(threshHoldTime.getTime() / 1000);
+
+        // Create a boundary ObjectId (all documents older than this will be deleted)
+        const boundaryObjectId = ObjectId.createFromTime(cutoffTimestamp);
+
         let result = await collection.deleteMany({
-            yearAndMonth: yearAndMonth,
+            _id: {$lt: boundaryObjectId},
         }, {
             maxTimeMS: _maxTimeOut,
         });
@@ -571,6 +580,7 @@ async function getCollectionAndBucket() {
 
 function getNewBucket(yearAndMonth) {
     return ({
+        CreatedAt: Date.now(),
         yearAndMonth: yearAndMonth,
         botUserCounts: [],
         userCounts: [],

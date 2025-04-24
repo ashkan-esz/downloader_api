@@ -288,7 +288,7 @@ export async function handleApiCall(url) {
                 await new Promise((resolve => setTimeout(resolve, 3000)));
             } else if (error.code === 'EAI_AGAIN') {
                 const warningMessages = getCrawlerWarningMessages('');
-                await saveCrawlerWarning(warningMessages.apiCalls.amv.eaiError);
+                saveCrawlerWarning(warningMessages.apiCalls.amv.eaiError);
                 return null;
             } else if (error.code === 'ERR_UNESCAPED_CHARACTERS') {
                 error.isAxiosError = true;
@@ -303,7 +303,7 @@ export async function handleApiCall(url) {
             }
         }
     }
-    await saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.amv.lotsOfApiCall);
+    saveCrawlerWarning(getCrawlerWarningMessages().apiCalls.amv.lotsOfApiCall);
     return null;
 }
 
